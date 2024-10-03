@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
@@ -21,7 +21,10 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::BTo, "anonymous function")?;
 
     let body = it.parse(&parse_expression, "anonymous function", start)?;
-    let node = Node::AnonFun { args, body: body.clone() };
+    let node = Node::AnonFun {
+        args,
+        body: body.clone(),
+    };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
 }
 
@@ -41,10 +44,17 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 it.eat(&Token::LRBrack, "direct call")?;
                 let args = it.parse_vec(&parse_arguments, "direct call", pre.pos)?;
                 let end = it.eat(&Token::RRBrack, "direct call")?;
-                let node = Node::FunctionCall { name: Box::from(pre.clone()), args };
+                let node = Node::FunctionCall {
+                    name: Box::from(pre.clone()),
+                    args,
+                };
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
-            _ => Err(Box::from(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call"))),
+            _ => Err(Box::from(expected_one_of(
+                &[Token::Point, Token::LRBrack],
+                ast,
+                "function call",
+            ))),
         },
         &[Token::Point, Token::LRBrack],
         "function call",
@@ -64,9 +74,9 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::{AST, Node};
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::{Node, AST};
+    use crate::parse::{parse, parse_direct};
 
     #[test]
     fn op_assign() {
@@ -77,7 +87,7 @@ mod test {
             .iter()
             .map(|ast| match &ast.node {
                 Node::Reassign { op, .. } => op.clone(),
-                other => panic!("Expected reassign {:?}", other)
+                other => panic!("Expected reassign {:?}", other),
             })
             .collect();
 
@@ -101,7 +111,12 @@ mod test {
         };
 
         assert_eq!(args.len(), 0);
-        assert_eq!(body.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 
     #[test]
@@ -116,16 +131,49 @@ mod test {
         assert_eq!(args.len(), 2);
         let (id1, id2) = match (&args[0], &args[1]) {
             (
-                AST { node: Node::FunArg { var: id1, ty: None, mutable: true, .. }, .. },
-                AST { node: Node::FunArg { var: id2, ty: None, mutable: true, .. }, .. },
+                AST {
+                    node:
+                        Node::FunArg {
+                            var: id1,
+                            ty: None,
+                            mutable: true,
+                            ..
+                        },
+                    ..
+                },
+                AST {
+                    node:
+                        Node::FunArg {
+                            var: id2,
+                            ty: None,
+                            mutable: true,
+                            ..
+                        },
+                    ..
+                },
             ) => (id1.clone(), id2.clone()),
             other => panic!("Id's of anon fun not expression type: {:?}", other),
         };
 
-        assert_eq!(id1.node, Node::Id { lit: String::from("a") });
-        assert_eq!(id2.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            id1.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            id2.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
 
-        assert_eq!(body.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 
     #[test]
@@ -133,14 +181,30 @@ mod test {
         let source = String::from("a(b, c)");
         let statements = parse_direct(&source).unwrap();
 
-        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node else {
+        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node
+        else {
             panic!("first element script was anon fun.")
         };
 
-        assert_eq!(name.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            name.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
         assert_eq!(args.len(), 2);
-        assert_eq!(args[0].node, Node::Id { lit: String::from("b") });
-        assert_eq!(args[1].node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            args[0].node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
+        assert_eq!(
+            args[1].node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 
     #[test]
@@ -156,12 +220,32 @@ mod test {
             other => panic!("first element script was property call {:?}", other),
         };
 
-        assert_eq!(instance.node, Node::Id { lit: String::from("instance") });
-        assert_eq!(name.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            instance.node,
+            Node::Id {
+                lit: String::from("instance")
+            }
+        );
+        assert_eq!(
+            name.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
 
         assert_eq!(args.len(), 2);
-        assert_eq!(args[0].node, Node::Id { lit: String::from("b") });
-        assert_eq!(args[1].node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            args[0].node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
+        assert_eq!(
+            args[1].node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 
     #[test]

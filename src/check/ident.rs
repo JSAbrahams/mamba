@@ -6,7 +6,7 @@ use std::ops::Deref;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Identifier {
@@ -56,7 +56,10 @@ impl IdentiCall {
                     let msg = format!("Call does not have identifier '{str}'");
                     Err(vec![TypeErr::new(pos, &msg)])
                 }
-                obj => Ok(IdentiCall::Call(Box::from(obj.without_obj(object, pos)?), call.clone())),
+                obj => Ok(IdentiCall::Call(
+                    Box::from(obj.without_obj(object, pos)?),
+                    call.clone(),
+                )),
             },
         }
     }
@@ -132,8 +135,10 @@ impl TryFrom<&AST> for Identifier {
                 Ok(identifier.as_mutable(*mutable))
             }
             Node::Tuple { elements } => {
-                let elements =
-                    elements.iter().map(Identifier::try_from).collect::<Result<_, _>>()?;
+                let elements = elements
+                    .iter()
+                    .map(Identifier::try_from)
+                    .collect::<Result<_, _>>()?;
                 Ok(Identifier::from(&elements))
             }
             _ => {
@@ -169,11 +174,16 @@ mod tests {
     use crate::check::ident::{IdentiCall, Identifier};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn from_id() -> TypeResult<()> {
-        let ast = AST::new(Position::invisible(), Node::Id { lit: String::from("r") });
+        let ast = AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: String::from("r"),
+            },
+        );
         let iden = Identifier::try_from(&ast)?;
         assert_eq!(iden, Identifier::from((true, "r")));
         Ok(())
@@ -218,7 +228,12 @@ mod tests {
         let ast = AST::new(
             Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: String::from("h"),
+                    },
+                )),
                 mutable: false,
                 ty: None,
             },
@@ -234,7 +249,12 @@ mod tests {
         let ast = AST::new(
             Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: String::from("h"),
+                    },
+                )),
                 mutable: false,
                 ty: None,
             },
@@ -247,7 +267,12 @@ mod tests {
 
     #[test]
     fn from_int_error() {
-        let ast = AST::new(Position::invisible(), Node::Int { lit: String::from("r") });
+        let ast = AST::new(
+            Position::invisible(),
+            Node::Int {
+                lit: String::from("r"),
+            },
+        );
         let res = Identifier::try_from(&ast);
         assert!(res.is_err())
     }
@@ -256,8 +281,18 @@ mod tests {
     fn from_tuple() -> TypeResult<()> {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(Position::invisible(), Node::Id { lit: String::from("a") }),
-                AST::new(Position::invisible(), Node::Id { lit: String::from("b") }),
+                AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: String::from("a"),
+                    },
+                ),
+                AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: String::from("b"),
+                    },
+                ),
             ],
         };
         let ast = AST::new(Position::invisible(), node);
@@ -276,8 +311,18 @@ mod tests {
     fn from_tuple_with_int_err() {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(Position::invisible(), Node::Int { lit: String::from("a") }),
-                AST::new(Position::invisible(), Node::Id { lit: String::from("b") }),
+                AST::new(
+                    Position::invisible(),
+                    Node::Int {
+                        lit: String::from("a"),
+                    },
+                ),
+                AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: String::from("b"),
+                    },
+                ),
             ],
         };
         let ast = AST::new(Position::invisible(), node);

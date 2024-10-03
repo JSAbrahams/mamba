@@ -4,17 +4,17 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::{arg, clss};
 use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::python::{INIT, STR};
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::{Any, Empty, Name};
+use crate::check::context::{arg, clss};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Any, Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
@@ -60,7 +60,11 @@ impl GenericClass {
     }
 
     pub fn all_pure(self, pure: bool) -> TypeResult<Self> {
-        let functions = self.functions.iter().map(|f| f.clone().pure(pure)).collect();
+        let functions = self
+            .functions
+            .iter()
+            .map(|f| f.clone().pure(pure))
+            .collect();
         Ok(GenericClass { functions, ..self })
     }
 }
@@ -97,7 +101,12 @@ impl TryFrom<&AST> for GenericClass {
 
     fn try_from(class: &AST) -> TypeResult<GenericClass> {
         match &class.node {
-            Node::Class { ty, args, parents, body } => {
+            Node::Class {
+                ty,
+                args,
+                parents,
+                body,
+            } => {
                 let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
@@ -169,7 +178,10 @@ impl TryFrom<&AST> for GenericClass {
                     .collect();
 
                 if !errs.is_empty() {
-                    return Err(errs.iter().map(|(pos, msg)| TypeErr::new(*pos, msg)).collect());
+                    return Err(errs
+                        .iter()
+                        .map(|(pos, msg)| TypeErr::new(*pos, msg))
+                        .collect());
                 }
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
@@ -195,10 +207,15 @@ impl TryFrom<&AST> for GenericClass {
                     })
                 }
 
-                let (parents, parent_errs): (Vec<_>, Vec<_>) =
-                    parents.iter().map(GenericParent::try_from).partition(Result::is_ok);
+                let (parents, parent_errs): (Vec<_>, Vec<_>) = parents
+                    .iter()
+                    .map(GenericParent::try_from)
+                    .partition(Result::is_ok);
                 if !parent_errs.is_empty() {
-                    return Err(parent_errs.into_iter().flat_map(Result::unwrap_err).collect());
+                    return Err(parent_errs
+                        .into_iter()
+                        .flat_map(Result::unwrap_err)
+                        .collect());
                 }
 
                 Ok(GenericClass {
@@ -267,7 +284,10 @@ impl TryFrom<&AST> for GenericClass {
                 functions: HashSet::new(),
                 parents: HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]),
             }),
-            _ => Err(vec![TypeErr::new(class.pos, "Expected class or type definition")]),
+            _ => Err(vec![TypeErr::new(
+                class.pos,
+                "Expected class or type definition",
+            )]),
         }
     }
 }
@@ -296,7 +316,10 @@ fn get_fields_and_functions(
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
-                        let msg = format!("Class field '{}' was not assigned a type", generic_field.name);
+                        let msg = format!(
+                            "Class field '{}' was not assigned a type",
+                            generic_field.name
+                        );
                         return Err(vec![TypeErr::new(generic_field.pos, &msg)]);
                     }
                 }
@@ -321,9 +344,9 @@ mod test {
     use itertools::Itertools;
 
     use crate::check::context::clss::generic::GenericClass;
-    use crate::check::name::Name;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::Name;
     use crate::parse::parse_direct;
     use crate::TypeErr;
 
@@ -370,7 +393,11 @@ mod test {
         assert!(!generic_class.args[2].has_default);
 
         assert_eq!(generic_class.fields.len(), 2);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "a");
@@ -414,7 +441,11 @@ mod test {
         assert!(!generic_class.args[0].has_default);
 
         assert_eq!(generic_class.fields.len(), 1);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -429,8 +460,11 @@ mod test {
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "class MyClass[T]\n    def c: T\n";
-        let ast =
-            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -449,7 +483,11 @@ mod test {
         assert!(!generic_class.args[0].has_default);
 
         assert_eq!(generic_class.fields.len(), 1);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -464,8 +502,11 @@ mod test {
     #[test]
     fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType[T]\n    def c: T\n";
-        let ast =
-            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -484,7 +525,11 @@ mod test {
         assert!(!generic_class.args[0].has_default);
 
         assert_eq!(generic_class.fields.len(), 1);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -499,8 +544,11 @@ mod test {
     #[test]
     fn from_type_def() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType\n    def c: String\n";
-        let ast =
-            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -518,7 +566,11 @@ mod test {
         assert!(!generic_class.args[0].has_default);
 
         assert_eq!(generic_class.fields.len(), 1);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");

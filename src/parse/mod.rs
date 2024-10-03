@@ -1,5 +1,5 @@
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::lex::tokenize;
@@ -28,7 +28,12 @@ mod ty;
 /// Parse input, which is a string.
 pub fn parse(input: &str) -> ParseResult {
     let tokens: Vec<Lex> = tokenize(input)
-        .map(|tokens| tokens.into_iter().filter(|t| !matches!(t.token, Token::Comment(_))).collect())
+        .map(|tokens| {
+            tokens
+                .into_iter()
+                .filter(|t| !matches!(t.token, Token::Comment(_)))
+                .collect()
+        })
         .map_err(ParseErr::from)?;
 
     let mut iterator = LexIterator::new(tokens.iter().peekable());
@@ -39,10 +44,17 @@ pub fn parse(input: &str) -> ParseResult {
         }
     }
 
-    let start = statements.first().map_or_else(Position::invisible, |stmt| stmt.pos);
-    let end = statements.last().map_or_else(Position::invisible, |stmt| stmt.pos);
+    let start = statements
+        .first()
+        .map_or_else(Position::invisible, |stmt| stmt.pos);
+    let end = statements
+        .last()
+        .map_or_else(Position::invisible, |stmt| stmt.pos);
 
-    Ok(Box::from(AST::new(start.union(end), Node::Block { statements })))
+    Ok(Box::from(AST::new(
+        start.union(end),
+        Node::Block { statements },
+    )))
 }
 
 #[cfg(test)]

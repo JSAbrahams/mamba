@@ -27,49 +27,81 @@ fn body_is_stmt() {
 
 #[test]
 fn function_ret_in_class_not_super() {
-    let source = resource_content(false, &["type", "definition"], "function_ret_in_class_not_super.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "function_ret_in_class_not_super.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn function_raise_not_super() {
-    let source = resource_content(false, &["type", "definition"], "function_raise_not_super.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "function_raise_not_super.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn function_ret_not_super() {
-    let source = resource_content(false, &["type", "definition"], "function_ret_not_super.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "function_ret_not_super.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn if_else_assign_non_nullable() {
-    let source = resource_content(false, &["type", "definition"], "if_else_assign_non_nullable.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "if_else_assign_non_nullable.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn assign_to_function_call() {
-    let source = resource_content(false, &["type", "definition"], "assign_to_function_call.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "assign_to_function_call.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn assign_to_inner_non_mut() {
-    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "assign_to_inner_non_mut.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn assign_to_inner_non_mut2() {
-    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut2.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "assign_to_inner_non_mut2.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn assign_to_inner_non_mut3() {
-    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut3.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "assign_to_inner_non_mut3.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -94,21 +126,31 @@ fn reassign_non_mut() {
 
 #[test]
 fn non_mutable_in_call_chain() {
-    let source =
-        resource_content(false, &["type", "definition"], "non_mutable_in_call_chain.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "non_mutable_in_call_chain.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn non_existent_type_annotation() {
-    let source = resource_content(false, &["type", "definition"], "non_existent_type_annotation.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "non_existent_type_annotation.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn raises_unmentioned_exception() {
-    let source =
-        resource_content(false, &["type", "definition"], "raises_unmentioned_exception.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "raises_unmentioned_exception.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -121,14 +163,22 @@ fn raises_non_exception() {
 #[test]
 #[ignore] // Ignore mutability for now
 fn reassign_non_mut_field() {
-    let source = resource_content(false, &["type", "definition"], "reassign_non_mut_field.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "reassign_non_mut_field.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 #[ignore] // Ignore tuples for now
 fn tuple_modify_inner_mut() {
-    let source = resource_content(false, &["type", "definition"], "tuple_modify_inner_mut.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "tuple_modify_inner_mut.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -140,7 +190,11 @@ fn tuple_modify_mut() {
 
 #[test]
 fn tuple_modify_mut_entire() {
-    let source = resource_content(false, &["type", "definition"], "tuple_modify_mut_entire.mamba");
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "tuple_modify_mut_entire.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

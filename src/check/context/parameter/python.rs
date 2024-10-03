@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use python_parser::ast::{Argument, Expression, Subscript};
 use python_parser::ast::Subscript::Simple;
+use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parameter::generic::GenericParameter;
@@ -17,18 +17,18 @@ impl From<&Vec<Argument>> for GenericParameters {
         args.iter().for_each(|arg| match &arg {
             Argument::Positional(arg) => match &arg {
                 Expression::Subscript(name, generics)
-                if &Expression::Name(String::from("Generic")) == name.deref() =>
-                    {
-                        for name in generics {
-                            if let Simple(Expression::Name(name)) = name {
-                                parameters.push(GenericParameter {
-                                    is_py_type: true,
-                                    name: StringName::from(python_to_concrete(name).as_str()),
-                                    parent: None,
-                                })
-                            }
+                    if &Expression::Name(String::from("Generic")) == name.deref() =>
+                {
+                    for name in generics {
+                        if let Simple(Expression::Name(name)) = name {
+                            parameters.push(GenericParameter {
+                                is_py_type: true,
+                                name: StringName::from(python_to_concrete(name).as_str()),
+                                parent: None,
+                            })
                         }
                     }
+                }
                 _ => {}
             },
             Argument::Starargs(_) => {}
@@ -46,7 +46,11 @@ impl From<&Vec<Subscript>> for GenericParameters {
         args.iter().for_each(|subscript| {
             if let Subscript::Simple(Expression::Name(name)) = subscript {
                 let name = StringName::from(python_to_concrete(name).as_str());
-                parameters.push(GenericParameter { is_py_type: true, name, parent: None })
+                parameters.push(GenericParameter {
+                    is_py_type: true,
+                    name,
+                    parent: None,
+                })
             }
         });
 

@@ -54,9 +54,15 @@ impl TryFrom<&[AST]> for Context {
     fn try_from(files: &[AST]) -> Result<Self, Self::Error> {
         let (classes, fields, functions) = generics(files)?;
         let mut context = Context::default();
-        classes.iter().for_each(|clss| { context.classes.insert(clss.clone()); });
-        fields.iter().for_each(|fld| { context.fields.insert(fld.clone()); });
-        functions.iter().for_each(|func| { context.functions.insert(func.clone()); });
+        classes.iter().for_each(|clss| {
+            context.classes.insert(clss.clone());
+        });
+        fields.iter().for_each(|fld| {
+            context.fields.insert(fld.clone());
+        });
+        functions.iter().for_each(|func| {
+            context.functions.insert(func.clone());
+        });
 
         context.into_with_primitives()?.into_with_std_lib()
     }
@@ -78,10 +84,10 @@ pub trait LookupField<In, Out> {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::context::{Context, LookupClass, LookupFunction};
     use crate::check::context::clss::GetFun;
-    use crate::check::name::{Name, Union};
+    use crate::check::context::{Context, LookupClass, LookupFunction};
     use crate::check::name::string_name::StringName;
+    use crate::check::name::{Name, Union};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
     use crate::parse::parse;
@@ -131,7 +137,9 @@ mod tests {
         let files = vec![];
         let context = Context::try_from(files.as_slice()).unwrap();
 
-        context.class(&StringName::from("Any"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("Any"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -140,11 +148,21 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
-        context.class(&StringName::from("Str"), Position::invisible()).unwrap();
-        context.class(&StringName::from("Bool"), Position::invisible()).unwrap();
-        context.class(&StringName::from("Float"), Position::invisible()).unwrap();
-        context.class(&StringName::from("Int"), Position::invisible()).unwrap();
-        context.class(&StringName::from("Complex"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("Str"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("Bool"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("Float"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("Int"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("Complex"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -153,14 +171,19 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
-        let int_class = context.class(&StringName::from("Int"), Position::invisible()).unwrap();
+        let int_class = context
+            .class(&StringName::from("Int"), Position::invisible())
+            .unwrap();
         let args = int_class.args;
 
         assert_eq!(args.len(), 2);
         assert_eq!(args[0].ty.clone().unwrap(), Name::from("Int"));
-        assert_eq!(args[1].ty.clone().unwrap(), Name::from("Int")
-            .union(&Name::from("Str"))
-            .union(&Name::from("Float")));
+        assert_eq!(
+            args[1].ty.clone().unwrap(),
+            Name::from("Int")
+                .union(&Name::from("Str"))
+                .union(&Name::from("Float"))
+        );
     }
 
     #[test]
@@ -169,12 +192,17 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
-        let int_fun = context.function(&StringName::from("Int"), Position::invisible()).unwrap();
+        let int_fun = context
+            .function(&StringName::from("Int"), Position::invisible())
+            .unwrap();
 
         assert_eq!(int_fun.arguments.len(), 1);
-        assert_eq!(int_fun.arguments[0].ty.clone().unwrap(), Name::from("Int")
-            .union(&Name::from("Str"))
-            .union(&Name::from("Float")));
+        assert_eq!(
+            int_fun.arguments[0].ty.clone().unwrap(),
+            Name::from("Int")
+                .union(&Name::from("Str"))
+                .union(&Name::from("Float"))
+        );
 
         assert_eq!(int_fun.ret_ty, Name::from("Int"))
     }
@@ -185,9 +213,15 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_std_lib().unwrap();
 
-        context.class(&StringName::from("Range"), Position::invisible()).unwrap();
-        context.class(&StringName::from("None"), Position::invisible()).unwrap();
-        context.class(&StringName::from("Exception"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("Range"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("None"), Position::invisible())
+            .unwrap();
+        context
+            .class(&StringName::from("Exception"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -195,7 +229,9 @@ mod tests {
         let file = parse("import IPv4Address").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
 
-        context.class(&StringName::from("IPv4Address"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("IPv4Address"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -203,7 +239,9 @@ mod tests {
         let file = parse("import IPv4Address as Other").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
 
-        context.class(&StringName::from("Other"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("Other"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -217,7 +255,9 @@ mod tests {
         let file = parse("from ipaddress import IPv4Address").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
 
-        context.class(&StringName::from("IPv4Address"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("IPv4Address"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -225,7 +265,9 @@ mod tests {
         let file = parse("from ipaddress import IPv4Address as Other").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
 
-        context.class(&StringName::from("Other"), Position::invisible()).unwrap();
+        context
+            .class(&StringName::from("Other"), Position::invisible())
+            .unwrap();
     }
 
     #[test]
@@ -233,7 +275,9 @@ mod tests {
         let file = parse("def f(b: (Int, Int))").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
 
-        let f = context.function(&StringName::from("f"), Position::invisible()).expect("function exists");
+        let f = context
+            .function(&StringName::from("f"), Position::invisible())
+            .expect("function exists");
         let arg = f.arguments.first().expect("first argument").clone();
         let arg_ty = arg.ty.expect("argument has type").clone();
 

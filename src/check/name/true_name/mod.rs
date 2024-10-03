@@ -4,10 +4,13 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 use std::iter::FromIterator;
 
-use crate::check::context::{clss, Context};
 use crate::check::context::clss::NONE;
-use crate::check::name::{Any, ColType, ContainsTemp, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, TupleCallable, Union};
+use crate::check::context::{clss, Context};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{
+    Any, ColType, ContainsTemp, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute,
+    TupleCallable, Union,
+};
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
@@ -26,7 +29,12 @@ pub trait IsTemp {
 }
 
 pub trait MatchTempName {
-    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>>;
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mapping: HashMap<Name, Name>,
+        pos: Position,
+    ) -> TypeResult<HashMap<Name, Name>>;
 }
 
 impl PartialOrd<Self> for TrueName {
@@ -56,7 +64,12 @@ impl Ord for TrueName {
 }
 
 impl Mutable for TrueName {
-    fn as_mutable(&self) -> Self { TrueName { is_mutable: true, ..self.clone() } }
+    fn as_mutable(&self) -> Self {
+        TrueName {
+            is_mutable: true,
+            ..self.clone()
+        }
+    }
 }
 
 impl ColType for TrueName {
@@ -68,13 +81,23 @@ impl ColType for TrueName {
 impl Display for TrueName {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let mutable = if self.is_mutable { "" } else { "fin " };
-        write!(f, "{}{}{}", mutable, self.variant, if self.is_nullable { "?" } else { "" })
+        write!(
+            f,
+            "{}{}{}",
+            mutable,
+            self.variant,
+            if self.is_nullable { "?" } else { "" }
+        )
     }
 }
 
 impl From<&StringName> for TrueName {
     fn from(name: &StringName) -> Self {
-        TrueName { is_nullable: false, is_mutable: true, variant: name.clone() }
+        TrueName {
+            is_nullable: false,
+            is_mutable: true,
+            variant: name.clone(),
+        }
     }
 }
 
@@ -109,31 +132,53 @@ impl Union<TrueName> for Name {
     fn union(&self, name: &TrueName) -> Self {
         let mut names = self.names.clone();
         names.insert(name.clone());
-        Name { names, ..self.clone() }
+        Name {
+            names,
+            ..self.clone()
+        }
     }
 }
 
 impl Empty for TrueName {
-    fn is_empty(&self) -> bool { self.variant.is_empty() }
-    fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
+    fn is_empty(&self) -> bool {
+        self.variant.is_empty()
+    }
+    fn empty() -> TrueName {
+        TrueName::from(&StringName::empty())
+    }
 }
 
 impl Nullable for TrueName {
-    fn is_nullable(&self) -> bool { self.is_nullable }
-    fn is_null(&self) -> bool { self.variant.name == NONE }
-    fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
+    fn is_nullable(&self) -> bool {
+        self.is_nullable
+    }
+    fn is_null(&self) -> bool {
+        self.variant.name == NONE
+    }
+    fn as_nullable(&self) -> Self {
+        TrueName {
+            is_nullable: true,
+            ..self.clone()
+        }
+    }
 }
 
 impl Substitute for TrueName {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<TrueName> {
-        Ok(TrueName { variant: self.variant.substitute(generics, pos)?, ..self.clone() })
+        Ok(TrueName {
+            variant: self.variant.substitute(generics, pos)?,
+            ..self.clone()
+        })
     }
 }
 
 impl From<&Vec<TrueName>> for Name {
     fn from(names: &Vec<TrueName>) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
-        Name { names, is_interchangeable: false }
+        Name {
+            names,
+            is_interchangeable: false,
+        }
     }
 }
 
@@ -150,18 +195,31 @@ impl ContainsTemp for TrueName {
 }
 
 impl MatchTempName for TrueName {
-    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mapping: HashMap<Name, Name>,
+        pos: Position,
+    ) -> TypeResult<HashMap<Name, Name>> {
         self.variant.temp_map(other, mapping, pos)
     }
 }
 
 impl TupleCallable<bool, Vec<Name>, Name> for TrueName {
     fn tuple(names: &[Name]) -> Self {
-        Self { is_nullable: false, is_mutable: true, variant: StringName::tuple(names) }
+        Self {
+            is_nullable: false,
+            is_mutable: true,
+            variant: StringName::tuple(names),
+        }
     }
 
     fn callable(args: &[Name], ret_ty: &Name) -> Self {
-        Self { is_nullable: false, is_mutable: true, variant: StringName::callable(args, ret_ty) }
+        Self {
+            is_nullable: false,
+            is_mutable: true,
+            variant: StringName::callable(args, ret_ty),
+        }
     }
 
     fn is_tuple(&self) -> bool {
@@ -191,15 +249,18 @@ impl TrueName {
     }
 
     pub fn trim(&self, ty: &str) -> Option<TrueName> {
-        self.variant.trim(ty).map(|variant| TrueName { variant, ..self.clone() })
+        self.variant.trim(ty).map(|variant| TrueName {
+            variant,
+            ..self.clone()
+        })
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, COMPLEX, INT, STRING};
-    use crate::check::name::{IsSuperSet, Nullable};
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::{IsSuperSet, Nullable};
     use crate::common::position::Position;
     use crate::Context;
 
@@ -209,7 +270,9 @@ mod test {
         let name_2 = TrueName::from("Str");
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -218,7 +281,9 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(!name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -227,7 +292,9 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(!name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -236,6 +303,8 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 }

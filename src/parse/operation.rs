@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -9,7 +9,10 @@ macro_rules! inner_bin_op {
     ($it:expr, $start:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
         $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg, $start)?;
-        let node = Node::$ast { left: $left, right: right.clone() };
+        let node = Node::$ast {
+            left: $left,
+            right: right.clone(),
+        };
         Ok(Box::from(AST::new($start.union(right.pos), node)))
     }};
 }
@@ -26,7 +29,9 @@ macro_rules! inner_bin_op {
 /// in not, is a, is not a
 /// 7. and, or, question or
 /// 8. postfix calls
-pub fn parse_expression(it: &mut LexIterator) -> ParseResult { parse_level_7(it) }
+pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
+    parse_level_7(it)
+}
 
 fn parse_level_7(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (7)")?;
@@ -42,7 +47,7 @@ fn parse_level_7(it: &mut LexIterator) -> ParseResult {
             Token::And => bin_op!(it, parse_level_7, And, arithmetic.clone(), "and"),
             Token::Or => bin_op!(it, parse_level_7, Or, arithmetic.clone(), "or"),
             Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -70,7 +75,7 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
             Token::IsA => bin_op!(it, parse_level_6, IsA, arithmetic.clone(), "is a"),
             Token::IsNA => bin_op!(it, parse_level_6, IsNA, arithmetic.clone(), "is not a"),
             Token::In => bin_op!(it, parse_level_6, In, arithmetic.clone(), "in"),
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -87,14 +92,28 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::BLShift =>
-                bin_op!(it, parse_level_5, BLShift, arithmetic.clone(), "bitwise left shift"),
-            Token::BRShift =>
-                bin_op!(it, parse_level_5, BRShift, arithmetic.clone(), "bitwise right shift"),
+            Token::BLShift => {
+                bin_op!(
+                    it,
+                    parse_level_5,
+                    BLShift,
+                    arithmetic.clone(),
+                    "bitwise left shift"
+                )
+            }
+            Token::BRShift => {
+                bin_op!(
+                    it,
+                    parse_level_5,
+                    BRShift,
+                    arithmetic.clone(),
+                    "bitwise right shift"
+                )
+            }
             Token::BAnd => bin_op!(it, parse_level_5, BAnd, arithmetic.clone(), "bitwise and"),
             Token::BOr => bin_op!(it, parse_level_5, BOr, arithmetic.clone(), "bitwise or"),
             Token::BXOr => bin_op!(it, parse_level_5, BXOr, arithmetic.clone(), "bitwise xor"),
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -113,7 +132,7 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::Add => bin_op!(it, parse_level_4, Add, arithmetic.clone(), "add"),
             Token::Sub => bin_op!(it, parse_level_4, Sub, arithmetic.clone(), "sub"),
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -137,12 +156,17 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
                 _ => {
                     let step = $it.parse_if(&Token::$node, &parse_expression, $msg, start)?;
                     (to.clone(), step.clone(), step.map_or(to.pos, |ast| ast.pos))
-                    }
+                }
             };
 
-            let node = Node::$node { from: arithmetic.clone(), to, inclusive: $incl, step };
+            let node = Node::$node {
+                from: arithmetic.clone(),
+                to,
+                inclusive: $incl,
+                step,
+            };
             Ok(Box::from(AST::new(start.union(end), node)))
-        }}
+        }};
     }
 
     it.peek(
@@ -155,7 +179,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::RangeIncl => match_range_slice!(it, RangeIncl, true, Range, "range"),
             Token::Slice => match_range_slice!(it, Slice, false, Slice, "range"),
             Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -166,7 +190,9 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             let factor = $it.parse(&$fun, $msg, start)?;
-            let node = Node::$ast { expr: factor.clone() };
+            let node = Node::$ast {
+                expr: factor.clone(),
+            };
             Ok(Box::from(AST::new(start.union(factor.pos), node)))
         }};
     }
@@ -180,7 +206,13 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
     } else if it.eat_if(&Token::Not).is_some() {
         un_op!(it, parse_expression, Not, Not, "not")
     } else if it.eat_if(&Token::BOneCmpl).is_some() {
-        un_op!(it, parse_expression, BOneCmpl, BOneCmpl, "bitwise ones compliment")
+        un_op!(
+            it,
+            parse_expression,
+            BOneCmpl,
+            BOneCmpl,
+            "bitwise ones compliment"
+        )
     } else {
         parse_level_1(it)
     }
@@ -201,10 +233,13 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
             Token::Question => {
                 it.eat(&Token::Question, "optional expression")?;
                 let right = it.parse(&parse_expression, "optional expression", lex.pos)?;
-                let node = Node::Question { left: arithmetic.clone(), right: right.clone() };
+                let node = Node::Question {
+                    left: arithmetic.clone(),
+                    right: right.clone(),
+                };
                 Ok(Box::from(AST::new(lex.pos.union(right.pos), node)))
             }
-            _ => Ok(arithmetic.clone())
+            _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
     )
@@ -214,15 +249,18 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
 mod test {
     use std::convert::From;
 
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::token::Token::*;
+    use crate::parse::{parse, parse_direct};
 
     macro_rules! verify_is_operation {
         ($op:ident, $ast:expr) => {{
             match &$ast.first().expect("script empty.").node {
                 Node::$op { left, right } => (left.clone(), right.clone()),
-                other => panic!("first element script was not op: {}, but was: {:?}", $op, other)
+                other => panic!(
+                    "first element script was not op: {}, but was: {:?}",
+                    $op, other
+                ),
             }
         }};
     }
@@ -231,7 +269,7 @@ mod test {
         ($op:ident, $ast:expr) => {{
             match &$ast.first().expect("script empty.").node {
                 Node::$op { expr } => expr.clone(),
-                _ => panic!("first element script was not tuple.")
+                _ => panic!("first element script was not tuple."),
             }
         }};
     }
@@ -242,8 +280,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Add, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("a") });
-        assert_eq!(right.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
     }
 
     #[test]
@@ -252,7 +300,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(AddU, ast);
-        assert_eq!(expr.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
     }
 
     #[test]
@@ -261,7 +314,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Sub, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
         assert_eq!(right.node, Node::Bool { lit: false });
     }
 
@@ -271,7 +329,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(SubU, ast);
-        assert_eq!(expr.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 
     #[test]
@@ -281,7 +344,12 @@ mod test {
 
         let (left, right) = verify_is_operation!(Mul, ast);
         assert_eq!(left.node, Node::Bool { lit: true });
-        assert_eq!(right.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
     }
 
     #[test]
@@ -290,8 +358,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Div, ast);
-        assert_eq!(left.node, Node::Real { lit: String::from("10.0") });
-        assert_eq!(right.node, Node::Id { lit: String::from("fgh") });
+        assert_eq!(
+            left.node,
+            Node::Real {
+                lit: String::from("10.0")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("fgh")
+            }
+        );
     }
 
     #[test]
@@ -300,8 +378,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(FDiv, ast);
-        assert_eq!(left.node, Node::Real { lit: String::from("10.0") });
-        assert_eq!(right.node, Node::Id { lit: String::from("fgh") });
+        assert_eq!(
+            left.node,
+            Node::Real {
+                lit: String::from("10.0")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("fgh")
+            }
+        );
     }
 
     #[test]
@@ -310,8 +398,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Pow, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("chopin") });
-        assert_eq!(right.node, Node::Id { lit: String::from("liszt") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("chopin")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("liszt")
+            }
+        );
     }
 
     #[test]
@@ -320,8 +418,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Mod, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("chopin") });
-        assert_eq!(right.node, Node::ENum { num: String::from("3"), exp: String::from("10") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("chopin")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::ENum {
+                num: String::from("3"),
+                exp: String::from("10")
+            }
+        );
     }
 
     #[test]
@@ -330,8 +439,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Is, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("p") });
-        assert_eq!(right.node, Node::Id { lit: String::from("q") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("p")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("q")
+            }
+        );
     }
 
     #[test]
@@ -340,8 +459,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(IsN, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("p") });
-        assert_eq!(right.node, Node::Id { lit: String::from("q") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("p")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("q")
+            }
+        );
     }
 
     #[test]
@@ -350,8 +479,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(IsA, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("lizard") });
-        assert_eq!(right.node, Node::Id { lit: String::from("animal") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("lizard")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("animal")
+            }
+        );
     }
 
     #[test]
@@ -360,8 +499,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(IsNA, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("i") });
-        assert_eq!(right.node, Node::Id { lit: String::from("natural") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("i")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("natural")
+            }
+        );
     }
 
     #[test]
@@ -370,8 +519,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Eq, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("i") });
-        assert_eq!(right.node, Node::Id { lit: String::from("s") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("i")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("s")
+            }
+        );
     }
 
     #[test]
@@ -380,8 +539,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Le, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Id { lit: String::from("two") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("two")
+            }
+        );
     }
 
     #[test]
@@ -390,8 +559,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Leq, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("two_hundred") });
-        assert_eq!(right.node, Node::Id { lit: String::from("three") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("two_hundred")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("three")
+            }
+        );
     }
 
     #[test]
@@ -400,8 +579,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Ge, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("r") });
-        assert_eq!(right.node, Node::Int { lit: String::from("10") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("r")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Int {
+                lit: String::from("10")
+            }
+        );
     }
 
     #[test]
@@ -410,8 +599,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Geq, ast);
-        assert_eq!(left.node, Node::Int { lit: String::from("4") });
-        assert_eq!(right.node, Node::Int { lit: String::from("10") });
+        assert_eq!(
+            left.node,
+            Node::Int {
+                lit: String::from("4")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Int {
+                lit: String::from("10")
+            }
+        );
     }
 
     #[test]
@@ -420,8 +619,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(In, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Id { lit: String::from("my_set") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("my_set")
+            }
+        );
     }
 
     #[test]
@@ -430,8 +639,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(And, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Id { lit: String::from("three") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("three")
+            }
+        );
     }
 
     #[test]
@@ -440,8 +659,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Or, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]
@@ -450,7 +680,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(Not, ast);
-        assert_eq!(expr.node, Node::Id { lit: String::from("some_cond") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("some_cond")
+            }
+        );
     }
 
     #[test]
@@ -459,7 +694,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(Sqrt, ast);
-        assert_eq!(expr.node, Node::Id { lit: String::from("some_num") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("some_num")
+            }
+        );
     }
 
     #[test]
@@ -468,8 +708,18 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BAnd, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Id { lit: String::from("three") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("three")
+            }
+        );
     }
 
     #[test]
@@ -478,8 +728,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BOr, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]
@@ -488,8 +749,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BXOr, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]
@@ -498,7 +770,13 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(BOneCmpl, ast);
-        assert_eq!(expr.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            expr.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]
@@ -507,8 +785,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BLShift, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]
@@ -517,8 +806,19 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BRShift, ast);
-        assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("one")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Str {
+                lit: String::from("asdf"),
+                expressions: vec![]
+            }
+        );
     }
 
     #[test]

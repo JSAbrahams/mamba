@@ -11,8 +11,8 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::python::INIT;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -138,9 +138,9 @@ mod test {
     use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
     use crate::check::context::clss::generic::GenericClass;
-    use crate::check::name::{Empty, Name};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::{Empty, Name};
 
     fn class_def(stmt: &Statement) -> Classdef {
         match &stmt {
@@ -166,7 +166,11 @@ mod test {
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.fields.len(), 2);
-        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
 
         let field = fields.next().expect("field");
         assert_eq!(field.name, String::from("a"));
@@ -222,7 +226,11 @@ mod test {
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.functions.len(), 1);
-        let function = generic_class.functions.iter().next().expect("function in class");
+        let function = generic_class
+            .functions
+            .iter()
+            .next()
+            .expect("function in class");
         assert_eq!(function.name, StringName::from("g"));
         assert_eq!(function.in_class, Some(StringName::from("MyClass")));
         assert!(function.is_py_type);
@@ -280,7 +288,11 @@ mod test {
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.parents.len(), 1);
-        let parent = generic_class.parents.iter().next().expect("parent in class");
+        let parent = generic_class
+            .parents
+            .iter()
+            .next()
+            .expect("parent in class");
         assert_eq!(parent.name, TrueName::from("P2"));
         assert!(parent.is_py_type);
     }

@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -13,7 +13,11 @@ pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::If => parse_if(it),
             Token::Match => parse_match(it),
-            _ => Err(Box::from(expected_one_of(&[Token::If, Token::Match], lex, "control flow expression")))
+            _ => Err(Box::from(expected_one_of(
+                &[Token::If, Token::Match],
+                lex,
+                "control flow expression",
+            ))),
         },
         &[Token::If, Token::Match],
         "control flow expression",
@@ -36,7 +40,11 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
         None
     };
 
-    let pos = if let Some(el) = &el { start.union(el.pos) } else { start.union(then.pos) };
+    let pos = if let Some(el) = &el {
+        start.union(el.pos)
+    } else {
+        start.union(then.pos)
+    };
     let node = Node::IfElse { cond, then, el };
 
     Ok(Box::from(AST::new(pos, node)))
@@ -73,7 +81,10 @@ fn parse_match_case(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", start)?;
 
-    let node = Node::Case { cond, body: body.clone() };
+    let node = Node::Case {
+        cond,
+        body: body.clone(),
+    };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
 }
 
@@ -82,7 +93,12 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
     let mutable = it.eat_if(&Token::Fin).is_none();
 
     let expr = it.parse(&parse_expression, "expression maybe type", start)?;
-    let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression maybe type", start)?;
+    let ty = it.parse_if(
+        &Token::DoublePoint,
+        &parse_type,
+        "expression maybe type",
+        start,
+    )?;
     let end = ty.clone().map_or(expr.pos, |t| t.pos);
 
     let node = Node::ExpressionType { expr, mutable, ty };
@@ -91,9 +107,9 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]
@@ -101,13 +117,29 @@ mod test {
         let source = String::from("if a then c else d");
         let statements = parse_direct(&source).unwrap();
 
-        let Node::IfElse { cond, then, el } = &statements.first().expect("script empty.").node else {
+        let Node::IfElse { cond, then, el } = &statements.first().expect("script empty.").node
+        else {
             panic!("first element script was not if.")
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
-        assert_eq!(then.node, Node::Id { lit: String::from("c") });
-        assert_eq!(el.as_ref().unwrap().node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            then.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
+        assert_eq!(
+            el.as_ref().unwrap().node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -119,27 +151,66 @@ mod test {
             panic!("first element script was not match.")
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
 
         assert_eq!(cases.len(), 2);
         let (cond1, expr1, cond2, expr2) = match (&cases[0], &cases[1]) {
             (
-                AST { node: Node::Case { cond: cond1, body: expr1 }, .. },
-                AST { node: Node::Case { cond: cond2, body: expr2 }, .. }
+                AST {
+                    node:
+                        Node::Case {
+                            cond: cond1,
+                            body: expr1,
+                        },
+                    ..
+                },
+                AST {
+                    node:
+                        Node::Case {
+                            cond: cond2,
+                            body: expr2,
+                        },
+                    ..
+                },
             ) => match (&cond1.node, &cond2.node) {
                 (
                     Node::ExpressionType { expr: cond1, .. },
-                    Node::ExpressionType { expr: cond2, .. }
+                    Node::ExpressionType { expr: cond2, .. },
                 ) => (cond1, expr1, cond2, expr2),
-                other => panic!("expected expression type: {:?}", other)
+                other => panic!("expected expression type: {:?}", other),
             },
-            _ => panic!("Cases incorrect.")
+            _ => panic!("Cases incorrect."),
         };
 
-        assert_eq!(cond1.node, Node::Id { lit: String::from("a") });
-        assert_eq!(expr1.node, Node::Id { lit: String::from("b") });
-        assert_eq!(cond2.node, Node::Id { lit: String::from("c") });
-        assert_eq!(expr2.node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            cond1.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            expr1.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
+        assert_eq!(
+            cond2.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
+        assert_eq!(
+            expr2.node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -151,12 +222,22 @@ mod test {
             panic!("Expected if, got {:?}", ast)
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
         let then = match &then.node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then)
+            _ => panic!("Expected then block, got {:?}", then),
         };
-        assert_eq!(then.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            then.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
 
         assert!(el.is_none());
         Ok(())
@@ -171,18 +252,33 @@ mod test {
             panic!("Expected if, got {:?}", ast)
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
         let then = match &then.node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then)
+            _ => panic!("Expected then block, got {:?}", then),
         };
-        assert_eq!(then.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            then.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
 
         let el = match el.clone().unwrap().node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then)
+            _ => panic!("Expected then block, got {:?}", then),
         };
-        assert_eq!(el.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            el.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
         Ok(())
     }
 

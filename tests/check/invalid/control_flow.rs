@@ -5,7 +5,11 @@ use crate::common::resource_content;
 
 #[test]
 fn access_match_arms_variable() {
-    let source = resource_content(false, &["type", "control_flow"], "access_match_arms_variable.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "access_match_arms_variable.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -23,7 +27,11 @@ fn for_non_iterable() {
 
 #[test]
 fn for_over_union_one_not_minus() {
-    let source = resource_content(false, &["type", "control_flow"], "for_over_union_one_not_minus.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "for_over_union_one_not_minus.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -53,6 +61,10 @@ fn or_float() {
 
 #[test]
 fn undefined_var_in_match_arm() {
-    let source = resource_content(false, &["type", "control_flow"], "undefined_var_in_match_arm.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "undefined_var_in_match_arm.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }

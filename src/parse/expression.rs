@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::call::parse_anon_fun;
 use crate::parse::call::parse_call;
 use crate::parse::collection::parse_collection;
@@ -43,7 +43,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Sub,
         Token::Undefined,
         Token::BOneCmpl,
-        Token::BSlash
+        Token::BSlash,
     ];
 
     let result = it.peek_or_err(
@@ -65,13 +65,19 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                     .collect::<Result<_, _>>()?;
                 let node = Node::Str {
                     lit: string.clone(),
-                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),
+                    expressions: expressions
+                        .iter()
+                        .map(|expr| expr.deref().clone())
+                        .collect(),
                 };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
-                let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
+                let node = Node::ENum {
+                    num: num.to_string(),
+                    exp: exp.to_string(),
+                };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
             Token::Undefined => {
@@ -118,7 +124,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)
             }
-            _ => Ok(Box::from(pre.clone()))
+            _ => Ok(Box::from(pre.clone())),
         },
         Ok(Box::from(pre.clone())),
     )
@@ -177,16 +183,32 @@ mod test {
         let reassignment = asts.first().expect("reassignment");
         let (first, second, third) = match &reassignment.node {
             Node::PropertyCall { instance, property } => match &property.node {
-                Node::PropertyCall { instance: inner, property } => {
-                    (instance.clone(), inner.clone(), property.clone())
-                }
+                Node::PropertyCall {
+                    instance: inner,
+                    property,
+                } => (instance.clone(), inner.clone(), property.clone()),
                 other => panic!("Expected property call, was {:?}", other),
             },
             other => panic!("Expected property call, was {:?}", other),
         };
 
-        assert_eq!(first.node, Node::Id { lit: String::from("a") });
-        assert_eq!(second.node, Node::Id { lit: String::from("b") });
-        assert_eq!(third.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            first.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            second.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
+        assert_eq!(
+            third.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
     }
 }

@@ -1,14 +1,14 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, expected, expected_one_of};
 use crate::parse::result::ParseResult;
-use crate::parse::ty::{parse_conditions, parse_id};
+use crate::parse::result::{custom, expected, expected_one_of};
 use crate::parse::ty::parse_type;
+use crate::parse::ty::{parse_conditions, parse_id};
 
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("class")?;
@@ -40,7 +40,11 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(Box::from(expected(&Token::Id(String::new()), &lex.clone(), "parents")))
+            _ => Err(Box::from(expected(
+                &Token::Id(String::new()),
+                &lex.clone(),
+                "parents",
+            ))),
         })?;
     }
 
@@ -51,7 +55,12 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
         (None, start)
     };
 
-    let node = Node::Class { ty, args, parents, body };
+    let node = Node::Class {
+        ty,
+        args,
+        parents,
+        body,
+    };
     Ok(Box::from(AST::new(pos, node)))
 }
 
@@ -80,11 +89,11 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                     Token::Real(String::new()),
                     Token::ENum(String::new(), String::new()),
                     Token::Bool(true),
-                    Token::Bool(false)
+                    Token::Bool(false),
                 ],
                 lex,
                 "parent arguments",
-            )))
+            ))),
         })?;
         it.eat(&Token::RRBrack, "parent arguments")?
     } else {
@@ -112,24 +121,40 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 let conditions = it.parse_vec(&parse_conditions, "conditional type", start)?;
                 let end = conditions.last().map_or(ty.pos, |cond| cond.pos);
 
-                let node = Node::TypeAlias { ty: ty.clone(), isa, conditions };
+                let node = Node::TypeAlias {
+                    ty: ty.clone(),
+                    isa,
+                    conditions,
+                };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
             _ if it.peek_if_followed_by(&Token::NL, &Token::Indent) => {
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type definition", start)?;
                 let isa = isa.clone();
-                let node = Node::TypeDef { ty: ty.clone(), isa, body: Some(body.clone()) };
+                let node = Node::TypeDef {
+                    ty: ty.clone(),
+                    isa,
+                    body: Some(body.clone()),
+                };
                 Ok(Box::from(AST::new(start.union(body.pos), node)))
             }
             _ => {
-                let node = Node::TypeDef { ty: ty.clone(), isa: isa.clone(), body: None };
+                let node = Node::TypeDef {
+                    ty: ty.clone(),
+                    isa: isa.clone(),
+                    body: None,
+                };
                 Ok(Box::from(AST::new(start.union(ty.pos), node)))
             }
         },
         {
             let isa = isa.clone();
-            let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
+            let node = Node::TypeDef {
+                ty: ty.clone(),
+                isa,
+                body: None,
+            };
             Ok(Box::from(AST::new(start.union(ty.pos), node)))
         },
     )
@@ -149,17 +174,29 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
-                _ => panic!("first element script was not list.")
+            Node::Block {
+                statements: modules,
+                ..
+            } => match &modules.first().expect("script empty.").node {
+                Node::Import {
+                    from,
+                    import,
+                    alias,
+                } => (from.clone(), import.clone(), alias.clone()),
+                _ => panic!("first element script was not list."),
             },
-            _ => panic!("ast was not script.")
+            _ => panic!("ast was not script."),
         };
 
         assert_eq!(from, None);
         assert_eq!(import.len(), 1);
         assert!(alias.is_empty());
-        assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            import[0].node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -168,18 +205,35 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not import: {:?}.", other)
+            Node::Block {
+                statements: modules,
+                ..
+            } => match &modules.first().expect("script empty.").node {
+                Node::Import {
+                    from,
+                    import,
+                    alias,
+                } => (from.clone(), import.clone(), alias.clone()),
+                other => panic!("first element script was not import: {:?}.", other),
             },
-            other => panic!("ast was not script: {:?}", other)
+            other => panic!("ast was not script: {:?}", other),
         };
 
         assert_eq!(from, None);
         assert_eq!(import.len(), 1);
         assert_eq!(alias.len(), 1);
-        assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
-        assert_eq!(alias[0].node, Node::Id { lit: String::from("e") });
+        assert_eq!(
+            import[0].node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
+        assert_eq!(
+            alias[0].node,
+            Node::Id {
+                lit: String::from("e")
+            }
+        );
     }
 
     #[test]
@@ -188,20 +242,52 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not from: {:?}.", other)
+            Node::Block {
+                statements: modules,
+                ..
+            } => match &modules.first().expect("script empty.").node {
+                Node::Import {
+                    from,
+                    import,
+                    alias,
+                } => (from.clone(), import.clone(), alias.clone()),
+                other => panic!("first element script was not from: {:?}.", other),
             },
-            other => panic!("ast was not script: {:?}", other)
+            other => panic!("ast was not script: {:?}", other),
         };
 
-        assert_eq!(from.unwrap().node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            from.unwrap().node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
         assert_eq!(import.len(), 2);
         assert_eq!(alias.len(), 2);
-        assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
-        assert_eq!(import[1].node, Node::Id { lit: String::from("f") });
-        assert_eq!(alias[0].node, Node::Id { lit: String::from("e") });
-        assert_eq!(alias[1].node, Node::Id { lit: String::from("g") });
+        assert_eq!(
+            import[0].node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
+        assert_eq!(
+            import[1].node,
+            Node::Id {
+                lit: String::from("f")
+            }
+        );
+        assert_eq!(
+            alias[0].node,
+            Node::Id {
+                lit: String::from("e")
+            }
+        );
+        assert_eq!(
+            alias[1].node,
+            Node::Id {
+                lit: String::from("g")
+            }
+        );
     }
 
     #[test]
@@ -210,20 +296,32 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (ty, args, parents, body) = match ast.node {
-            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Class { ty, args, parents, body } =>
-                    (ty.clone(), args.clone(), parents.clone(), body.clone()),
-                other => panic!("Was not class: {:?}.", other)
+            Node::Block {
+                statements: modules,
+                ..
+            } => match &modules.first().expect("script empty.").node {
+                Node::Class {
+                    ty,
+                    args,
+                    parents,
+                    body,
+                } => (ty.clone(), args.clone(), parents.clone(), body.clone()),
+                other => panic!("Was not class: {:?}.", other),
             },
-            other => panic!("Ast was not script: {:?}", other)
+            other => panic!("Ast was not script: {:?}", other),
         };
 
         match ty.node {
             Node::Type { id, generics } => {
-                assert_eq!(id.node, Node::Id { lit: String::from("MyErr1") });
+                assert_eq!(
+                    id.node,
+                    Node::Id {
+                        lit: String::from("MyErr1")
+                    }
+                );
                 assert_eq!(generics.len(), 0);
             }
-            _ => panic!("Expected type: {:?}", ty.node)
+            _ => panic!("Expected type: {:?}", ty.node),
         };
 
         assert_eq!(args.len(), 0);
@@ -235,16 +333,27 @@ mod test {
             Node::Parent { ty, args } => {
                 match &ty.node {
                     Node::Type { id, generics } => {
-                        assert_eq!(id.node, Node::Id { lit: String::from("Exception") });
+                        assert_eq!(
+                            id.node,
+                            Node::Id {
+                                lit: String::from("Exception")
+                            }
+                        );
                         assert_eq!(generics.len(), 0);
                     }
-                    _ => panic!("Expected type: {:?}", ty.node)
+                    _ => panic!("Expected type: {:?}", ty.node),
                 }
                 assert_eq!(args.len(), 1);
                 let arg = args.first().unwrap();
-                assert_eq!(arg.node, Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })
+                assert_eq!(
+                    arg.node,
+                    Node::Str {
+                        lit: String::from("Something went wrong"),
+                        expressions: vec![]
+                    }
+                )
             }
-            _ => panic!("Expected parent: {:?}", parent.node)
+            _ => panic!("Expected parent: {:?}", parent.node),
         }
     }
 

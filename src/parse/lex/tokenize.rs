@@ -29,7 +29,11 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(state.pos, None, "return carriage not followed by newline")),
+            _ => Err(LexErr::new(
+                state.pos,
+                None,
+                "return carriage not followed by newline",
+            )),
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -224,7 +228,11 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        c => Err(LexErr::new(state.pos, None, &format!("unrecognized character: {c}"))),
+        c => Err(LexErr::new(
+            state.pos,
+            None,
+            &format!("unrecognized character: {c}"),
+        )),
     }
 }
 
@@ -383,7 +391,10 @@ mod test {
         let tokens = tokenize(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
-        assert_eq!(tokens[0].token, Token::ENum(String::from("3"), String::from("4")));
+        assert_eq!(
+            tokens[0].token,
+            Token::ENum(String::from("3"), String::from("4"))
+        );
         Ok(())
     }
 
@@ -436,9 +447,19 @@ mod test {
             let tokens = tokenize(&source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
-            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(
+                tokens[0].token,
+                Token::Int(String::from("0")),
+                "(0): {}",
+                source
+            );
             assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {}", source);
-            assert_eq!(tokens[2].token, Token::Int(String::from("2")), "(2): {}", source);
+            assert_eq!(
+                tokens[2].token,
+                Token::Int(String::from("2")),
+                "(2): {}",
+                source
+            );
         }
 
         Ok(())
@@ -452,9 +473,19 @@ mod test {
             let tokens = tokenize(&source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
-            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(
+                tokens[0].token,
+                Token::Int(String::from("0")),
+                "(0): {}",
+                source
+            );
             assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
-            assert_eq!(tokens[2].token, Token::Int(String::from("2")), "(2): {}", source);
+            assert_eq!(
+                tokens[2].token,
+                Token::Int(String::from("2")),
+                "(2): {}",
+                source
+            );
         }
 
         Ok(())
@@ -468,10 +499,20 @@ mod test {
             let tokens = tokenize(&source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
-            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(
+                tokens[0].token,
+                Token::Int(String::from("0")),
+                "(0): {}",
+                source
+            );
             assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
             assert_eq!(tokens[2].token, Token::Point, "(.): {}", source);
-            assert_eq!(tokens[3].token, Token::Int(String::from("2")), "(2): {}", source);
+            assert_eq!(
+                tokens[3].token,
+                Token::Int(String::from("2")),
+                "(2): {}",
+                source
+            );
         }
 
         Ok(())

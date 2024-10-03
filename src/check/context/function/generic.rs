@@ -3,11 +3,11 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
@@ -37,7 +37,10 @@ impl PartialEq for GenericFunction {
 
 impl GenericFunction {
     pub fn pure(self, pure: bool) -> Self {
-        GenericFunction { pure: self.pure || pure, ..self }
+        GenericFunction {
+            pure: self.pure || pure,
+            ..self
+        }
     }
 
     pub fn in_class(
@@ -52,9 +55,16 @@ impl GenericFunction {
                 .into_iter()
                 .map(|arg| arg.in_class(clss))
                 .collect::<Result<_, _>>()?;
-            Ok(GenericFunction { in_class: clss.cloned(), arguments, ..self })
+            Ok(GenericFunction {
+                in_class: clss.cloned(),
+                arguments,
+                ..self
+            })
         } else {
-            Err(Vec::from(TypeErr::new(pos, &String::from("Function must be in class."))))
+            Err(Vec::from(TypeErr::new(
+                pos,
+                &String::from("Function must be in class."),
+            )))
         }
     }
 }
@@ -70,37 +80,42 @@ impl TryFrom<&AST> for GenericFunction {
     /// [FunDef](crate::parser::ast::Node::FunDef) variant of the [Node](crate::parser::ast::Node).
     fn try_from(ast: &AST) -> TypeResult<GenericFunction> {
         match &ast.node {
-            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } => {
-                Ok(GenericFunction {
-                    is_py_type: false,
-                    name: function_name(id.deref())?,
-                    pure: *pure,
-                    pos: ast.pos,
-                    arguments: {
-                        let args: Vec<GenericFunctionArg> = fun_args
-                            .iter()
-                            .map(GenericFunctionArg::try_from)
-                            .collect::<Result<_, _>>()?;
+            Node::FunDef {
+                pure,
+                id,
+                args: fun_args,
+                ret: ret_ty,
+                raises,
+                ..
+            } => Ok(GenericFunction {
+                is_py_type: false,
+                name: function_name(id.deref())?,
+                pure: *pure,
+                pos: ast.pos,
+                arguments: {
+                    let args: Vec<GenericFunctionArg> = fun_args
+                        .iter()
+                        .map(GenericFunctionArg::try_from)
+                        .collect::<Result<_, _>>()?;
 
-                        let mut has_default = false;
-                        for arg in args.clone() {
-                            if has_default && !arg.has_default {
-                                let msg = "Cannot have argument with default followed by argument with no default.";
-                                return Err(vec![TypeErr::new(arg.pos, msg)]);
-                            }
-                            has_default = arg.has_default;
+                    let mut has_default = false;
+                    for arg in args.clone() {
+                        if has_default && !arg.has_default {
+                            let msg = "Cannot have argument with default followed by argument with no default.";
+                            return Err(vec![TypeErr::new(arg.pos, msg)]);
                         }
+                        has_default = arg.has_default;
+                    }
 
-                        args
-                    },
-                    ret_ty: match ret_ty {
-                        Some(ty) => Some(Name::try_from(ty.as_ref())?),
-                        None => None,
-                    },
-                    in_class: None,
-                    raises: Name::try_from(raises)?,
-                })
-            }
+                    args
+                },
+                ret_ty: match ret_ty {
+                    Some(ty) => Some(Name::try_from(ty.as_ref())?),
+                    None => None,
+                },
+                in_class: None,
+                raises: Name::try_from(raises)?,
+            }),
             _ => Err(vec![TypeErr::new(ast.pos, "Expected function definition")]),
         }
     }
@@ -117,13 +132,13 @@ pub fn function_name(ast: &AST) -> TypeResult<StringName> {
 mod test {
     use std::convert::TryFrom;
 
-    use crate::{AST, TypeErr};
     use crate::check::context::function::generic::GenericFunction;
-    use crate::check::name::Name;
     use crate::check::name::string_name::StringName;
+    use crate::check::name::Name;
     use crate::common::position::Position;
     use crate::parse::ast::Node;
     use crate::parse::parse_direct;
+    use crate::{TypeErr, AST};
 
     #[test]
     fn from_non_fundef_node() {

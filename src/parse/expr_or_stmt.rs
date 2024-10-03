@@ -1,13 +1,13 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
-use crate::parse::statement::{is_start_statement, parse_reassignment};
 use crate::parse::statement::parse_statement;
+use crate::parse::statement::{is_start_statement, parse_reassignment};
 
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     let result = it.peek_or_err(
@@ -17,7 +17,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
                 it.parse(&parse_block, "expression or statement", lex.pos)
             }
             token if is_start_statement(token) => parse_statement(it),
-            _ => parse_expression(it)
+            _ => parse_expression(it),
         },
         &[],
         "expression or statement",
@@ -34,7 +34,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
             | Token::PowAssign
             | Token::BLShiftAssign
             | Token::BRShiftAssign => parse_reassignment(&result, it),
-            _ => Ok(result.clone())
+            _ => Ok(result.clone()),
         },
         Ok(result.clone()),
     )
@@ -48,16 +48,19 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
     let cases = it.parse_vec(&parse_match_cases, "handle", start)?;
     let end = cases.last().map_or(start, |stmt| stmt.pos);
 
-    let node = Node::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
+    let node = Node::Handle {
+        expr_or_stmt: Box::from(expr_or_stmt),
+        cases,
+    };
     Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::Node;
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::Node;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]
@@ -66,13 +69,27 @@ mod test {
         let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range.")
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            _ => panic!("first element script was not range."),
         };
 
-        assert_eq!(from.node, Node::Id { lit: String::from("hello") });
-        assert_eq!(to.node, Node::Id { lit: String::from("world") });
+        assert_eq!(
+            from.node,
+            Node::Id {
+                lit: String::from("hello")
+            }
+        );
+        assert_eq!(
+            to.node,
+            Node::Id {
+                lit: String::from("world")
+            }
+        );
         assert!(!inclusive);
         assert_eq!(step, None);
     }
@@ -83,15 +100,34 @@ mod test {
         let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range.")
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            _ => panic!("first element script was not range."),
         };
 
-        assert_eq!(from.node, Node::Id { lit: String::from("hello") });
-        assert_eq!(to.node, Node::Id { lit: String::from("world") });
+        assert_eq!(
+            from.node,
+            Node::Id {
+                lit: String::from("hello")
+            }
+        );
+        assert_eq!(
+            to.node,
+            Node::Id {
+                lit: String::from("world")
+            }
+        );
         assert!(!inclusive);
-        assert_eq!(step.unwrap().node, Node::Int { lit: String::from("2") });
+        assert_eq!(
+            step.unwrap().node,
+            Node::Int {
+                lit: String::from("2")
+            }
+        );
     }
 
     #[test]
@@ -100,13 +136,27 @@ mod test {
         let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range inclusive.")
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            _ => panic!("first element script was not range inclusive."),
         };
 
-        assert_eq!(from.node, Node::Id { lit: String::from("foo") });
-        assert_eq!(to.node, Node::Id { lit: String::from("bar") });
+        assert_eq!(
+            from.node,
+            Node::Id {
+                lit: String::from("foo")
+            }
+        );
+        assert_eq!(
+            to.node,
+            Node::Id {
+                lit: String::from("bar")
+            }
+        );
         assert!(inclusive);
         assert_eq!(step, None);
     }
@@ -121,11 +171,21 @@ mod test {
                 assert_eq!(*op, NodeOp::Assign);
                 (left.clone(), right.clone())
             }
-            _ => panic!("first element script was not reassign.")
+            _ => panic!("first element script was not reassign."),
         };
 
-        assert_eq!(left.node, Node::Id { lit: String::from("id") });
-        assert_eq!(right.node, Node::Id { lit: String::from("new_value") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("id")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: String::from("new_value")
+            }
+        );
     }
 
     #[test]
@@ -135,10 +195,15 @@ mod test {
 
         let expr = match &statements.first().expect("script empty.").node {
             Node::Return { expr } => expr.clone(),
-            _ => panic!("first element script was not reassign.")
+            _ => panic!("first element script was not reassign."),
         };
 
-        assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("some_value")
+            }
+        );
     }
 
     #[test]
@@ -148,10 +213,15 @@ mod test {
 
         let expr = match &statements.first().expect("script empty.").node {
             Node::Return { expr } => expr.clone(),
-            _ => panic!("first element script was not reassign.")
+            _ => panic!("first element script was not reassign."),
         };
 
-        assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("some_value")
+            }
+        );
     }
 
     #[test]
@@ -161,7 +231,7 @@ mod test {
 
         let lit = match &statements.first().expect("script empty.").node {
             Node::Int { lit } => lit.clone(),
-            _ => panic!("first element script was not reassign.")
+            _ => panic!("first element script was not reassign."),
         };
 
         assert_eq!(lit, String::from("10"));
@@ -191,18 +261,30 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
-            Node::Block { statements: modules, .. } => modules,
-            _ => panic!("ast was not file.")
+            Node::Block {
+                statements: modules,
+                ..
+            } => modules,
+            _ => panic!("ast was not file."),
         };
 
         assert_eq!(imports.len(), 1);
         let (from, import, alias) = match &imports[0].node {
-            Node::Import { from, import, alias } => (from, import, alias),
-            other => panic!("Expected import but was {:?}.", other)
+            Node::Import {
+                from,
+                import,
+                alias,
+            } => (from, import, alias),
+            other => panic!("Expected import but was {:?}.", other),
         };
 
         assert_eq!(*from, None);
-        assert_eq!(import[0].node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            import[0].node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
         assert_eq!(alias.len(), 0);
     }
 
@@ -212,23 +294,50 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
-            Node::Block { statements: modules, .. } => modules,
-            _ => panic!("ast was not file.")
+            Node::Block {
+                statements: modules,
+                ..
+            } => modules,
+            _ => panic!("ast was not file."),
         };
 
         assert_eq!(imports.len(), 1);
         let (from, import, alias) = match &imports[0].node {
-            Node::Import { from, import, alias } => (from, import, alias),
-            other => panic!("Expected import but was {:?}.", other)
+            Node::Import {
+                from,
+                import,
+                alias,
+            } => (from, import, alias),
+            other => panic!("Expected import but was {:?}.", other),
         };
 
         assert_eq!(*from, None);
         assert_eq!(import.len(), 2);
-        assert_eq!(import[0].node, Node::Id { lit: String::from("a") });
-        assert_eq!(import[1].node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            import[0].node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            import[1].node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
         assert_eq!(alias.len(), 2);
-        assert_eq!(alias[0].node, Node::Id { lit: String::from("c") });
-        assert_eq!(alias[1].node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            alias[0].node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
+        assert_eq!(
+            alias[1].node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -272,7 +381,6 @@ mod test {
         let source = String::from("?or");
         parse(&source).unwrap_err();
     }
-
 
     #[test]
     fn handle_verify() -> ParseResult<()> {

@@ -17,7 +17,11 @@ fn unhandled_exception() {
 
 #[test]
 fn using_old_resource_in_with() {
-    let source = resource_content(false, &["type", "error"], "using_old_resource_in_with.mamba");
+    let source = resource_content(
+        false,
+        &["type", "error"],
+        "using_old_resource_in_with.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -32,4 +36,3 @@ fn with_not_expression() {
     let source = resource_content(false, &["type", "error"], "with_not_expression.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
-

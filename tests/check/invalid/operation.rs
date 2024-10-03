@@ -47,6 +47,10 @@ fn string_minus() {
 
 #[test]
 fn undefined_field_fstring() {
-    let source = resource_content(false, &["type", "operation"], "undefined_field_fstring.mamba");
+    let source = resource_content(
+        false,
+        &["type", "operation"],
+        "undefined_field_fstring.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }

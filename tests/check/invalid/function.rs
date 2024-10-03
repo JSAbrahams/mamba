@@ -5,7 +5,11 @@ use crate::common::resource_content;
 
 #[test]
 fn outside_class_with_self() {
-    let source = resource_content(false, &["type", "function"], "outside_class_with_self.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "outside_class_with_self.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -23,13 +27,21 @@ fn no_enough_arg() {
 
 #[test]
 fn empty_return_outside_function() {
-    let source = resource_content(false, &["type", "function"], "empty_return_outside_function.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "empty_return_outside_function.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn no_enough_arg_with_default() {
-    let source = resource_content(false, &["type", "function"], "not_enough_arg_with_default.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "not_enough_arg_with_default.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -47,7 +59,11 @@ fn as_statement() {
 
 #[test]
 fn return_outside_function() {
-    let source = resource_content(false, &["type", "function"], "return_outside_function.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "return_outside_function.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -71,7 +87,11 @@ fn too_many_arg() {
 
 #[test]
 fn too_many_arg_with_default() {
-    let source = resource_content(false, &["type", "function"], "too_many_arg_with_default.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "too_many_arg_with_default.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -95,13 +115,21 @@ fn wrong_exception() {
 
 #[test]
 fn function_with_stmt_body() {
-    let source = resource_content(false, &["type", "function"], "function_with_stmt_body.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "function_with_stmt_body.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn function_with_stmt_body_ret() {
-    let source = resource_content(false, &["type", "function"], "function_with_stmt_body_ret.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "function_with_stmt_body_ret.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -125,13 +153,21 @@ fn return_if_else_none_el() {
 
 #[test]
 fn return_if_else_none_then() {
-    let source = resource_content(false, &["type", "function"], "return_if_else_none_then.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "return_if_else_none_then.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn return_if_else_undefined_explicit() {
-    let source = resource_content(false, &["type", "function"], "return_if_else_undefined_explicit.mamba");
+    let source = resource_content(
+        false,
+        &["type", "function"],
+        "return_if_else_undefined_explicit.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

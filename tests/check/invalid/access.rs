@@ -18,7 +18,11 @@ fn access_set() {
 #[test]
 #[ignore] // Cannot parse dictionaries yet
 fn access_string_dict_with_int() {
-    let source = resource_content(false, &["type", "access"], "access_string_dict_with_int.mamba");
+    let source = resource_content(
+        false,
+        &["type", "access"],
+        "access_string_dict_with_int.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

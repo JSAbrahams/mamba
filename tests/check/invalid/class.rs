@@ -11,7 +11,11 @@ fn reassign_non_existent() {
 
 #[test]
 fn assign_to_non_existent_self() {
-    let source = resource_content(false, &["type", "class"], "assign_to_non_existent_self.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "assign_to_non_existent_self.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -47,7 +51,11 @@ fn access_field_wrong_type() {
 
 #[test]
 fn access_function_wrong_type() {
-    let source = resource_content(false, &["type", "class"], "access_function_wrong_type.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "access_function_wrong_type.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -59,14 +67,21 @@ fn class_with_args_and_init() {
 
 #[test]
 fn assign_to_inner_inner_not_allowed() {
-    let source =
-        resource_content(false, &["type", "class"], "assign_to_inner_inner_not_allowed.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "assign_to_inner_inner_not_allowed.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn assign_to_inner_not_allowed() {
-    let source = resource_content(false, &["type", "class"], "assign_to_inner_not_allowed.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "assign_to_inner_not_allowed.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -91,7 +106,11 @@ fn no_generic_arg() {
 
 #[test]
 fn object_has_no_attribute_self() {
-    let source = resource_content(false, &["type", "class"], "object_has_no_attribute_self.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "object_has_no_attribute_self.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -103,13 +122,21 @@ fn one_tuple_not_assigned_to() {
 
 #[test]
 fn reassign_to_unassigned_class_var() {
-    let source = resource_content(false, &["type", "class"], "reassign_to_unassigned_class_var.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "reassign_to_unassigned_class_var.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn access_unassigned_class_var() {
-    let source = resource_content(false, &["type", "class"], "access_unassigned_class_var.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "access_unassigned_class_var.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -121,8 +148,11 @@ fn same_parent_twice() {
 
 #[test]
 fn top_level_class_not_assigned_to() {
-    let source =
-        resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
+    let source = resource_content(
+        false,
+        &["type", "class"],
+        "top_level_class_not_assigned_to.mamba",
+    );
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

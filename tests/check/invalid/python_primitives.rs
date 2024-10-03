@@ -20,5 +20,7 @@ pub fn non_existent_primitive() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_primitives().unwrap();
 
-    context.class(&StringName::from("nothing"), Position::invisible()).unwrap_err();
+    context
+        .class(&StringName::from("nothing"), Position::invisible())
+        .unwrap_err();
 }
