@@ -3,9 +3,9 @@ use itertools::Itertools;
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::check::context::clss::python::{ANY, CALLABLE, TUPLE, UNION};
-use crate::check::name::{Empty, Name, Nullable, Union};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
+use crate::check::name::{Empty, Name, Nullable, Union};
 use crate::generate::ast::node::Core;
 use crate::generate::convert::state::Imports;
 
@@ -41,19 +41,19 @@ impl ToPy for TrueName {
 impl ToPy for StringName {
     fn to_py(&self, imp: &mut Imports) -> Core {
         match self.name.as_str() {
-            clss::UNION => {
-                self.generics
-                    .iter()
-                    .sorted()
-                    .fold(Name::empty(), |acc, n| acc.union(n)).to_py(imp)
-            }
+            clss::UNION => self
+                .generics
+                .iter()
+                .sorted()
+                .fold(Name::empty(), |acc, n| acc.union(n))
+                .to_py(imp),
             clss::TUPLE => {
                 imp.add_from_import("typing", TUPLE);
                 core_type(TUPLE, &self.generics, imp)
             }
             clss::CALLABLE => {
                 imp.add_from_import("typing", CALLABLE);
-                let args = self.generics.get(0).cloned().unwrap_or_else(Name::empty);
+                let args = self.generics.first().cloned().unwrap_or_else(Name::empty);
                 let ret = self.generics.get(1).cloned().unwrap_or_else(Name::empty);
                 core_type(CALLABLE, &[args, ret], imp)
             }

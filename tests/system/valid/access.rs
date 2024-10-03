@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn simple_index() -> OutTestRet {
@@ -7,17 +7,32 @@ fn simple_index() -> OutTestRet {
 
 #[test]
 fn dictionary_access() -> OutTestRet {
-    test_directory(true, &["access"], &["access", "target"], "dictionary_access")
+    test_directory(
+        true,
+        &["access"],
+        &["access", "target"],
+        "dictionary_access",
+    )
 }
 
 #[test]
 fn simple_list_access() -> OutTestRet {
-    test_directory(true, &["access"], &["access", "target"], "simple_list_access")
+    test_directory(
+        true,
+        &["access"],
+        &["access", "target"],
+        "simple_list_access",
+    )
 }
 
 #[test]
 fn index_via_function() -> OutTestRet {
-    test_directory(true, &["access"], &["access", "target"], "index_via_function")
+    test_directory(
+        true,
+        &["access"],
+        &["access", "target"],
+        "index_via_function",
+    )
 }
 
 #[test]

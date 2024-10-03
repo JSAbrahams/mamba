@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
 use crate::check::name::Name;
@@ -16,6 +15,7 @@ use crate::generate::convert::range_slice::convert_range_slice;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::{ASTTy, Context};
 
 mod builder;
 mod call;
@@ -37,7 +37,11 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     let state = &state.must_assign_to(None, None).is_last_must_be_ret(false);
 
     let core = match &ast.node {
-        NodeTy::Import { from, import, alias } => Core::Import {
+        NodeTy::Import {
+            from,
+            import,
+            alias,
+        } => Core::Import {
             from: if let Some(from) = from {
                 Some(Box::from(convert_node(from, imp, state, ctx)?))
             } else {
@@ -64,24 +68,40 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Real { lit } => Core::Float { float: lit.clone() },
         NodeTy::ENum { num, exp } => Core::ENum {
             num: num.clone(),
-            exp: if exp.is_empty() { String::from("0") } else { exp.clone() },
+            exp: if exp.is_empty() {
+                String::from("0")
+            } else {
+                exp.clone()
+            },
         },
-        NodeTy::DocStr { lit } => Core::DocStr { string: lit.clone() },
-        NodeTy::Str { lit, expressions } if expressions.is_empty() => {
-            Core::Str { string: lit.clone() }
-        }
-        NodeTy::Str { lit, .. } => Core::FStr { string: lit.clone() },
+        NodeTy::DocStr { lit } => Core::DocStr {
+            string: lit.clone(),
+        },
+        NodeTy::Str { lit, expressions } if expressions.is_empty() => Core::Str {
+            string: lit.clone(),
+        },
+        NodeTy::Str { lit, .. } => Core::FStr {
+            string: lit.clone(),
+        },
 
         NodeTy::Undefined => Core::None,
-        NodeTy::ExpressionType { expr, .. } => convert_node(expr, imp, &state.expand_ty(true), ctx)?,
-        NodeTy::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
+        NodeTy::ExpressionType { expr, .. } => {
+            convert_node(expr, imp, &state.expand_ty(true), ctx)?
+        }
+        NodeTy::Id { lit } => Core::Id {
+            lit: concrete_to_python(lit),
+        },
         NodeTy::Bool { lit } => Core::Bool { boolean: *lit },
 
-        NodeTy::Tuple { elements } if state.tup_lit => {
-            Core::TupleLiteral { elements: convert_vec(elements, imp, state, ctx)? }
-        }
-        NodeTy::Tuple { elements } => Core::Tuple { elements: convert_vec(elements, imp, state, ctx)? },
-        NodeTy::List { elements } => Core::List { elements: convert_vec(elements, imp, state, ctx)? },
+        NodeTy::Tuple { elements } if state.tup_lit => Core::TupleLiteral {
+            elements: convert_vec(elements, imp, state, ctx)?,
+        },
+        NodeTy::Tuple { elements } => Core::Tuple {
+            elements: convert_vec(elements, imp, state, ctx)?,
+        },
+        NodeTy::List { elements } => Core::List {
+            elements: convert_vec(elements, imp, state, ctx)?,
+        },
         NodeTy::Dict { elements } => {
             let mut converted = vec![];
             for (from, to) in elements {
@@ -89,9 +109,13 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 let to = convert_node(to, imp, state, ctx)?;
                 converted.push((from, to));
             }
-            Core::Dictionary { elements: converted }
+            Core::Dictionary {
+                elements: converted,
+            }
         }
-        NodeTy::Set { elements } => Core::Set { elements: convert_vec(elements, imp, state, ctx)? },
+        NodeTy::Set { elements } => Core::Set {
+            elements: convert_vec(elements, imp, state, ctx)?,
+        },
         NodeTy::Index { item, range } => Core::Index {
             item: Box::from(convert_node(item, imp, state, ctx)?),
             range: Box::from(convert_node(range, imp, state, ctx)?),
@@ -101,17 +125,25 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::ListBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
         NodeTy::SetBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
 
-        NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
-        NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
-        NodeTy::Return { expr } => {
-            Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
+        NodeTy::ReturnEmpty => Core::Return {
+            expr: Box::from(Core::None),
+        },
+        NodeTy::Return { expr } if state.is_remove_last_ret => {
+            convert_node(expr, imp, &state.remove_ret(false), ctx)?
         }
+        NodeTy::Return { expr } => Core::Return {
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+        },
 
         NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &old_state, ctx)?,
         NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &old_state, ctx)?,
-        NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
+        NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => {
+            convert_cntrl_flow(ast, imp, state, ctx)?
+        }
 
-        NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
+        NodeTy::Not { expr } => Core::Not {
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+        },
         NodeTy::And { left, right } => Core::And {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -188,9 +220,9 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::BOneCmpl { expr } => {
-            Core::BOneCmpl { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
-        }
+        NodeTy::BOneCmpl { expr } => Core::BOneCmpl {
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+        },
         NodeTy::BLShift { left, right } => Core::BLShift {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -200,11 +232,17 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::AddU { expr } => Core::AddU { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
-        NodeTy::SubU { expr } => Core::SubU { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
+        NodeTy::AddU { expr } => Core::AddU {
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+        },
+        NodeTy::SubU { expr } => Core::SubU {
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+        },
         NodeTy::Sqrt { expr } => {
             imp.add_import("math");
-            Core::Sqrt { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
+            Core::Sqrt {
+                expr: Box::from(convert_node(expr, imp, state, ctx)?),
+            }
         }
 
         NodeTy::Le { left, right } => Core::Le {
@@ -224,7 +262,9 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::FunctionCall { .. } | NodeTy::PropertyCall { .. } => convert_call(ast, imp, state, ctx)?,
+        NodeTy::FunctionCall { .. } | NodeTy::PropertyCall { .. } => {
+            convert_call(ast, imp, state, ctx)?
+        }
         NodeTy::AnonFun { args, body } => Core::AnonFun {
             args: convert_vec(args, imp, &state.expand_ty(false), ctx)?,
             body: Box::from(convert_node(body, imp, state, ctx)?),
@@ -248,7 +288,11 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
         NodeTy::Condition { .. } => return Err(Box::from(UnimplementedErr::new(ast, "condition"))),
 
-        NodeTy::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
+        NodeTy::With {
+            resource,
+            alias: Some((alias, ..)),
+            expr,
+        } => Core::WithAs {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),
             alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
@@ -266,11 +310,15 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
     let core = if let Some((assign_to, name)) = must_assign_to {
         append_assign(&core, &assign_to, &name, imp)
-    } else { core };
+    } else {
+        core
+    };
 
     let core = if is_last_must_be_ret {
         append_ret(&core)
-    } else { core };
+    } else {
+        core
+    };
 
     Ok(core)
 }
@@ -280,12 +328,13 @@ fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut I
         Core::Block { ref statements } => match statements.last() {
             Some(last) => {
                 let last = append_assign(last, assign_to, name, imp);
-                let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                let (mut statements, idx): (Vec<Core>, usize) =
+                    (statements.clone(), statements.len() - 1);
                 statements[idx] = last;
                 Core::Block { statements }
             }
-            None => core.clone()
-        }
+            None => core.clone(),
+        },
         Core::IfElse { cond, then, el } => Core::IfElse {
             cond: cond.clone(),
             then: Box::from(append_assign(then, assign_to, name, imp)),
@@ -293,16 +342,26 @@ fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut I
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.iter().map(|c| append_assign(c, assign_to, name, imp)).collect(),
+            cases: cases
+                .iter()
+                .map(|c| append_assign(c, assign_to, name, imp))
+                .collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
             body: Box::from(append_assign(body, assign_to, name, imp)),
         },
-        Core::TryExcept { setup, attempt, except } => Core::TryExcept {
+        Core::TryExcept {
+            setup,
+            attempt,
+            except,
+        } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_assign(attempt, assign_to, name, imp)),
-            except: except.iter().map(|e| append_assign(e, assign_to, name, imp)).collect(),
+            except: except
+                .iter()
+                .map(|e| append_assign(e, assign_to, name, imp))
+                .collect(),
         },
         Core::ExceptId { id, class, body } => Core::ExceptId {
             id: id.clone(),
@@ -327,12 +386,17 @@ fn append_ret(core: &Core) -> Core {
         Core::Block { ref statements } => match statements.last() {
             Some(last) => {
                 let last = append_ret(last);
-                let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                let (mut statements, idx): (Vec<Core>, usize) =
+                    (statements.clone(), statements.len() - 1);
                 statements[idx] = last;
                 Core::Block { statements }
             }
-            None => Core::Block { statements: vec![Core::Return { expr: Box::from(Core::None) }] }
-        }
+            None => Core::Block {
+                statements: vec![Core::Return {
+                    expr: Box::from(Core::None),
+                }],
+            },
+        },
         Core::IfElse { cond, then, el } => Core::IfElse {
             cond: cond.clone(),
             then: Box::from(append_ret(then)),
@@ -346,7 +410,11 @@ fn append_ret(core: &Core) -> Core {
             expr: expr.clone(),
             body: Box::from(append_ret(body)),
         },
-        Core::TryExcept { setup, attempt, except } => Core::TryExcept {
+        Core::TryExcept {
+            setup,
+            attempt,
+            except,
+        } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
             except: except.iter().map(append_ret).collect(),
@@ -361,7 +429,9 @@ fn append_ret(core: &Core) -> Core {
             body: Box::from(append_ret(body)),
         },
         core if skip_return(core) => core.clone(),
-        _ => Core::Return { expr: Box::from(core.clone()) }
+        _ => Core::Return {
+            expr: Box::from(core.clone()),
+        },
     }
 }
 
@@ -375,16 +445,19 @@ fn skip_return(core: &Core) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::ASTTy;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
-    use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::AST;
+    use crate::ASTTy;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
-            AST { pos: Position::invisible(), node: $node }
+            AST {
+                pos: Position::invisible(),
+                node: $node,
+            }
         }};
     }
 
@@ -414,12 +487,19 @@ mod tests {
 
     #[test]
     fn return_verify() {
-        let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
+        let expr = to_pos!(Node::Str {
+            lit: String::from("a"),
+            expressions: vec![]
+        });
         let print_stmt = to_pos!(Node::Return { expr });
 
         assert_eq!(
             gen(&ASTTy::from(&print_stmt)).unwrap(),
-            Core::Return { expr: Box::from(Core::Str { string: String::from("a") }) }
+            Core::Return {
+                expr: Box::from(Core::Str {
+                    string: String::from("a")
+                })
+            }
         );
     }
 
@@ -428,7 +508,9 @@ mod tests {
         let print_stmt = to_pos!(Node::ReturnEmpty);
         assert_eq!(
             gen(&ASTTy::from(&print_stmt)).unwrap(),
-            Core::Return { expr: Box::from(Core::None) }
+            Core::Return {
+                expr: Box::from(Core::None)
+            }
         );
     }
 
@@ -436,39 +518,66 @@ mod tests {
     fn import_verify() {
         let _break = to_pos!(Node::Import {
             from: None,
-            import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-            alias: vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+            import: vec![to_pos_unboxed!(Node::Id {
+                lit: String::from("a")
+            })],
+            alias: vec![to_pos_unboxed!(Node::Id {
+                lit: String::from("b")
+            })]
         });
 
         assert_eq!(
             gen(&ASTTy::from(&_break)).unwrap(),
             Core::Import {
                 from: None,
-                import: vec![Core::Id { lit: String::from("a") }],
-                alias: vec![Core::Id { lit: String::from("b") }],
+                import: vec![Core::Id {
+                    lit: String::from("a")
+                }],
+                alias: vec![Core::Id {
+                    lit: String::from("b")
+                }],
             }
         );
     }
 
     macro_rules! verify {
         ($ast:ident) => {{
-            let left = Node::Id { lit: String::from("left") };
-            let right = Node::Id { lit: String::from("right") };
-            let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
+            let left = Node::Id {
+                lit: String::from("left"),
+            };
+            let right = Node::Id {
+                lit: String::from("right"),
+            };
+            let add_node = to_pos!(Node::$ast {
+                left: to_pos!(left),
+                right: to_pos!(right)
+            });
 
             let (left, right) = match gen(&ASTTy::from(&add_node)) {
                 Ok(Core::$ast { left, right }) => (left, right),
                 other => panic!("Expected binary operation but was {:?}", other),
             };
 
-            assert_eq!(*left, Core::Id { lit: String::from("left") });
-            assert_eq!(*right, Core::Id { lit: String::from("right") });
+            assert_eq!(
+                *left,
+                Core::Id {
+                    lit: String::from("left")
+                }
+            );
+            assert_eq!(
+                *right,
+                Core::Id {
+                    lit: String::from("right")
+                }
+            );
         }};
     }
 
     macro_rules! verify_unary {
         ($ast:ident) => {{
-            let expr = to_pos!(Node::Id { lit: String::from("expression") });
+            let expr = to_pos!(Node::Id {
+                lit: String::from("expression")
+            });
             let add_node = to_pos!(Node::$ast { expr });
 
             let expr_des = match gen(&ASTTy::from(&add_node)) {
@@ -476,7 +585,12 @@ mod tests {
                 other => panic!("Expected unary operation but was {:?}", other),
             };
 
-            assert_eq!(*expr_des, Core::Id { lit: String::from("expression") });
+            assert_eq!(
+                *expr_des,
+                Core::Id {
+                    lit: String::from("expression")
+                }
+            );
         }};
     }
 
@@ -522,7 +636,9 @@ mod tests {
 
     #[test]
     fn sqrt_verify() {
-        let expr = to_pos!(Node::Id { lit: String::from("expression") });
+        let expr = to_pos!(Node::Id {
+            lit: String::from("expression")
+        });
         let add_node = to_pos!(Node::Sqrt { expr });
 
         let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
@@ -534,13 +650,19 @@ mod tests {
             import,
             Core::Import {
                 from: None,
-                import: vec![Core::Id { lit: String::from("math") }],
+                import: vec![Core::Id {
+                    lit: String::from("math")
+                }],
                 alias: vec![],
             }
         );
         assert_eq!(
             expr_des,
-            Core::Sqrt { expr: Box::from(Core::Id { lit: String::from("expression") }) }
+            Core::Sqrt {
+                expr: Box::from(Core::Id {
+                    lit: String::from("expression")
+                })
+            }
         );
     }
 
@@ -592,8 +714,13 @@ mod tests {
     #[test]
     fn tuple_verify() {
         let elements = vec![
-            to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
-            to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
+            to_pos_unboxed!(Node::ENum {
+                num: String::from("a"),
+                exp: String::from("100")
+            }),
+            to_pos_unboxed!(Node::Real {
+                lit: String::from("3000.5")
+            }),
         ];
         let tuple = to_pos!(Node::Tuple { elements });
         let core = gen(&ASTTy::from(&tuple));
@@ -605,15 +732,25 @@ mod tests {
 
         assert_eq!(
             core_elements[0],
-            Core::ENum { num: String::from("a"), exp: String::from("100") }
+            Core::ENum {
+                num: String::from("a"),
+                exp: String::from("100")
+            }
         );
-        assert_eq!(core_elements[1], Core::Float { float: String::from("3000.5") });
+        assert_eq!(
+            core_elements[1],
+            Core::Float {
+                float: String::from("3000.5")
+            }
+        );
     }
 
     #[test]
     fn set_verify() {
         let elements = vec![
-            to_pos_unboxed!(Node::Id { lit: String::from("a") }),
+            to_pos_unboxed!(Node::Id {
+                lit: String::from("a")
+            }),
             to_pos_unboxed!(Node::Bool { lit: true }),
         ];
         let set = to_pos!(Node::Set { elements });
@@ -624,15 +761,25 @@ mod tests {
             other => panic!("Expected set but got {:?}", other),
         };
 
-        assert_eq!(core_elements[0], Core::Id { lit: String::from("a") });
+        assert_eq!(
+            core_elements[0],
+            Core::Id {
+                lit: String::from("a")
+            }
+        );
         assert_eq!(core_elements[1], Core::Bool { boolean: true });
     }
 
     #[test]
     fn list_verify() {
         let elements = vec![
-            to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
-            to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
+            to_pos_unboxed!(Node::ENum {
+                num: String::from("a"),
+                exp: String::from("100")
+            }),
+            to_pos_unboxed!(Node::Real {
+                lit: String::from("3000.5")
+            }),
         ];
         let tuple = to_pos!(Node::List { elements });
         let core = gen(&ASTTy::from(&tuple));
@@ -644,14 +791,24 @@ mod tests {
 
         assert_eq!(
             core_elements[0],
-            Core::ENum { num: String::from("a"), exp: String::from("100") }
+            Core::ENum {
+                num: String::from("a"),
+                exp: String::from("100")
+            }
         );
-        assert_eq!(core_elements[1], Core::Float { float: String::from("3000.5") });
+        assert_eq!(
+            core_elements[1],
+            Core::Float {
+                float: String::from("3000.5")
+            }
+        );
     }
 
     #[test]
     fn set_builder_verify() {
-        let item = to_pos!(Node::Id { lit: String::from("a") });
+        let item = to_pos!(Node::Id {
+            lit: String::from("a")
+        });
         let conditions = vec![];
         let list_builder = to_pos!(Node::SetBuilder { item, conditions });
 
@@ -661,7 +818,9 @@ mod tests {
 
     #[test]
     fn list_builder_verify() {
-        let item = to_pos!(Node::Id { lit: String::from("a") });
+        let item = to_pos!(Node::Id {
+            lit: String::from("a")
+        });
         let conditions = vec![];
         let list_builder = to_pos!(Node::ListBuilder { item, conditions });
 
@@ -671,80 +830,184 @@ mod tests {
 
     #[test]
     fn with_verify() {
-        let resource = to_pos!(Node::Id { lit: String::from("my_resource") });
-        let alias = Some((to_pos!(Node::Id { lit: String::from("other") }), false, None));
-        let expr = to_pos!(Node::Int { lit: String::from("9") });
-        let with = to_pos!(Node::With { resource, alias, expr });
+        let resource = to_pos!(Node::Id {
+            lit: String::from("my_resource")
+        });
+        let alias = Some((
+            to_pos!(Node::Id {
+                lit: String::from("other")
+            }),
+            false,
+            None,
+        ));
+        let expr = to_pos!(Node::Int {
+            lit: String::from("9")
+        });
+        let with = to_pos!(Node::With {
+            resource,
+            alias,
+            expr
+        });
 
-        let Ok(Core::WithAs { resource, alias, expr }) = gen(&ASTTy::from(&with)) else {
+        let Ok(Core::WithAs {
+            resource,
+            alias,
+            expr,
+        }) = gen(&ASTTy::from(&with))
+        else {
             panic!("Expected with as but was {:?}", gen(&ASTTy::from(&with)))
         };
 
-        assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
-        assert_eq!(*alias, Core::Id { lit: String::from("other") });
-        assert_eq!(*expr, Core::Int { int: String::from("9") });
+        assert_eq!(
+            *resource,
+            Core::Id {
+                lit: String::from("my_resource")
+            }
+        );
+        assert_eq!(
+            *alias,
+            Core::Id {
+                lit: String::from("other")
+            }
+        );
+        assert_eq!(
+            *expr,
+            Core::Int {
+                int: String::from("9")
+            }
+        );
     }
 
     #[test]
     fn with_no_as_verify() {
-        let resource = to_pos!(Node::Id { lit: String::from("other") });
-        let expr = to_pos!(Node::Int { lit: String::from("2341") });
-        let with = to_pos!(Node::With { resource, alias: None, expr });
+        let resource = to_pos!(Node::Id {
+            lit: String::from("other")
+        });
+        let expr = to_pos!(Node::Int {
+            lit: String::from("2341")
+        });
+        let with = to_pos!(Node::With {
+            resource,
+            alias: None,
+            expr
+        });
 
         let (resource, expr) = match gen(&ASTTy::from(&with)) {
             Ok(Core::With { resource, expr }) => (resource, expr),
             other => panic!("Expected with but was {:?}", other),
         };
 
-        assert_eq!(*resource, Core::Id { lit: String::from("other") });
-        assert_eq!(*expr, Core::Int { int: String::from("2341") });
+        assert_eq!(
+            *resource,
+            Core::Id {
+                lit: String::from("other")
+            }
+        );
+        assert_eq!(
+            *expr,
+            Core::Int {
+                int: String::from("2341")
+            }
+        );
     }
 
     #[test]
     fn handle_empty_verify() {
-        let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
-        let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
+        let expr_or_stmt = to_pos!(Node::Id {
+            lit: String::from("my_fun")
+        });
+        let handle = to_pos!(Node::Handle {
+            expr_or_stmt,
+            cases: vec![]
+        });
 
         let (setup, _try, except) = match gen(&ASTTy::from(&handle)) {
-            Ok(Core::TryExcept { setup, attempt, except }) => {
-                (setup.clone(), attempt.clone(), except.clone())
-            }
+            Ok(Core::TryExcept {
+                setup,
+                attempt,
+                except,
+            }) => (setup.clone(), attempt.clone(), except.clone()),
             other => panic!("Expected try except but was {:?}", other),
         };
 
         assert_eq!(setup, None);
-        assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
+        assert_eq!(
+            *_try,
+            Core::Id {
+                lit: String::from("my_fun")
+            }
+        );
         assert!(except.is_empty());
     }
 
     #[test]
     fn handle_verify() {
-        let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
+        let expr_or_stmt = to_pos!(Node::Id {
+            lit: String::from("my_fun")
+        });
         let cond = to_pos!(Node::ExpressionType {
-            expr: to_pos!(Node::Id { lit: String::from("err") }),
+            expr: to_pos!(Node::Id {
+                lit: String::from("err")
+            }),
             mutable: false,
             ty: Some(to_pos!(Node::Type {
-                id: to_pos!(Node::Id { lit: String::from("my_type") }),
+                id: to_pos!(Node::Id {
+                    lit: String::from("my_type")
+                }),
                 generics: vec![]
             }))
         });
-        let body = to_pos!(Node::Int { lit: String::from("9999") });
+        let body = to_pos!(Node::Int {
+            lit: String::from("9999")
+        });
         let case = to_pos_unboxed!(Node::Case { cond, body });
-        let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
+        let handle = to_pos!(Node::Handle {
+            expr_or_stmt,
+            cases: vec![case]
+        });
 
-        let Ok(Core::TryExcept { setup, attempt, except }) = gen(&ASTTy::from(&handle)) else {
-            panic!("Expected try except but was {:?}", gen(&ASTTy::from(&handle)))
+        let Ok(Core::TryExcept {
+            setup,
+            attempt,
+            except,
+        }) = gen(&ASTTy::from(&handle))
+        else {
+            panic!(
+                "Expected try except but was {:?}",
+                gen(&ASTTy::from(&handle))
+            )
         };
 
         assert_eq!(setup, None);
-        assert_eq!(*attempt, Core::Id { lit: String::from("my_fun") });
+        assert_eq!(
+            *attempt,
+            Core::Id {
+                lit: String::from("my_fun")
+            }
+        );
         assert_eq!(except.len(), 1);
         let Core::ExceptId { id, class, body } = &except[0] else {
             panic!("Expected except case but was {:?}", except[0])
         };
 
-        assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
-        assert_eq!(*class, Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }));
-        assert_eq!(*body, Box::from(Core::Int { int: String::from("9999") }));
+        assert_eq!(
+            *id,
+            Box::from(Core::Id {
+                lit: String::from("err")
+            })
+        );
+        assert_eq!(
+            *class,
+            Box::from(Core::Type {
+                lit: String::from("my_type"),
+                generics: vec![]
+            })
+        );
+        assert_eq!(
+            *body,
+            Box::from(Core::Int {
+                int: String::from("9999")
+            })
+        );
     }
 }

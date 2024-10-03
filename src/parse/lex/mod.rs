@@ -30,7 +30,11 @@ pub fn tokenize(input: &str) -> LexResult {
     }
     tokens.append(&mut state.flush_indents());
     tokens.push(Lex::new(
-        if let Some(lex) = tokens.last() { lex.pos.end.offset_pos(1) } else { CaretPos::start() },
+        if let Some(lex) = tokens.last() {
+            lex.pos.end.offset_pos(1)
+        } else {
+            CaretPos::start()
+        },
         Token::Eof,
     ));
 

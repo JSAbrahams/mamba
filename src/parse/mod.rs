@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::lex::tokenize;
@@ -32,7 +32,12 @@ impl FromStr for AST {
 
     fn from_str(input: &str) -> ParseResult<AST> {
         let tokens: Vec<Lex> = tokenize(input)
-            .map(|tokens| tokens.into_iter().filter(|t| !matches!(t.token, Token::Comment(_))).collect())
+            .map(|tokens| {
+                tokens
+                    .into_iter()
+                    .filter(|t| !matches!(t.token, Token::Comment(_)))
+                    .collect()
+            })
             .map_err(ParseErr::from)?;
 
         let mut iterator = LexIterator::new(tokens.iter().peekable());
@@ -43,8 +48,12 @@ impl FromStr for AST {
             }
         }
 
-        let start = statements.first().map_or_else(Position::invisible, |stmt| stmt.pos);
-        let end = statements.last().map_or_else(Position::invisible, |stmt| stmt.pos);
+        let start = statements
+            .first()
+            .map_or_else(Position::invisible, |stmt| stmt.pos);
+        let end = statements
+            .last()
+            .map_or_else(Position::invisible, |stmt| stmt.pos);
 
         Ok(AST::new(start.union(end), Node::Block { statements }))
     }

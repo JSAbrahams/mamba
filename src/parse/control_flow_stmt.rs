@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -25,7 +25,7 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
                 &[Token::While, Token::For, Token::Break, Token::Continue],
                 lex,
                 "control flow statement",
-            )))
+            ))),
         },
         &[Token::While, Token::For, Token::Break, Token::Continue],
         "control flow statement",
@@ -39,7 +39,10 @@ fn parse_while(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Do, "while")?;
     let body = it.parse(&parse_expr_or_stmt, "while statement", start)?;
 
-    let node = Node::While { cond, body: body.clone() };
+    let node = Node::While {
+        cond,
+        body: body.clone(),
+    };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
 }
 
@@ -52,13 +55,17 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Do, "for statement")?;
     let body = it.parse(&parse_expr_or_stmt, "for statement", start)?;
 
-    let node = Node::For { expr, col, body: body.clone() };
+    let node = Node::For {
+        expr,
+        col,
+        body: body.clone(),
+    };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
@@ -70,12 +77,27 @@ mod test {
 
         let (expr, collection, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not for.")
+            _ => panic!("first element script was not for."),
         };
 
-        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
-        assert_eq!(collection.node, Node::Id { lit: String::from("c") });
-        assert_eq!(body.node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            collection.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -85,21 +107,51 @@ mod test {
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not foreach.")
+            _ => panic!("first element script was not foreach."),
         };
 
         match col.node {
-            Node::Range { from, to, inclusive, step } => {
-                assert_eq!(from.node, Node::Id { lit: String::from("c") });
-                assert_eq!(to.node, Node::Id { lit: String::from("d") });
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => {
+                assert_eq!(
+                    from.node,
+                    Node::Id {
+                        lit: String::from("c")
+                    }
+                );
+                assert_eq!(
+                    to.node,
+                    Node::Id {
+                        lit: String::from("d")
+                    }
+                );
                 assert!(!inclusive);
-                assert_eq!(step.clone().unwrap().node, Node::Id { lit: String::from("e") });
+                assert_eq!(
+                    step.clone().unwrap().node,
+                    Node::Id {
+                        lit: String::from("e")
+                    }
+                );
             }
-            _ => panic!("Expected range")
+            _ => panic!("Expected range"),
         }
 
-        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
-        assert_eq!(body.node, Node::Id { lit: String::from("f") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("f")
+            }
+        );
     }
 
     #[test]
@@ -109,21 +161,46 @@ mod test {
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not foreach.")
+            _ => panic!("first element script was not foreach."),
         };
 
         match col.node {
-            Node::Range { from, to, inclusive, step } => {
-                assert_eq!(from.node, Node::Id { lit: String::from("c") });
-                assert_eq!(to.node, Node::Id { lit: String::from("d") });
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => {
+                assert_eq!(
+                    from.node,
+                    Node::Id {
+                        lit: String::from("c")
+                    }
+                );
+                assert_eq!(
+                    to.node,
+                    Node::Id {
+                        lit: String::from("d")
+                    }
+                );
                 assert!(inclusive);
                 assert_eq!(step, None);
             }
-            _ => panic!("Expected range")
+            _ => panic!("Expected range"),
         }
 
-        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
-        assert_eq!(body.node, Node::Id { lit: String::from("f") });
+        assert_eq!(
+            expr.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("f")
+            }
+        );
     }
 
     #[test]
@@ -133,11 +210,21 @@ mod test {
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
             Node::IfElse { cond, then, el } => (cond, then, el),
-            _ => panic!("first element script was not if.")
+            _ => panic!("first element script was not if."),
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
-        assert_eq!(then.node, Node::Id { lit: String::from("c") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            then.node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
         assert_eq!(el.is_none(), true);
     }
 
@@ -148,20 +235,35 @@ mod test {
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
             Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
-            _ => panic!("first element script was not if.")
+            _ => panic!("first element script was not if."),
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
         assert_eq!(el.is_none(), true);
 
         let block = match then.node {
             Node::Block { statements } => statements,
-            other => panic!("then of if was not block, was: {:?}", other)
+            other => panic!("then of if was not block, was: {:?}", other),
         };
 
         assert_eq!(block.len(), 2);
-        assert_eq!(block[0].node, Node::Id { lit: String::from("c") });
-        assert_eq!(block[1].node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            block[0].node,
+            Node::Id {
+                lit: String::from("c")
+            }
+        );
+        assert_eq!(
+            block[1].node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]
@@ -171,11 +273,21 @@ mod test {
 
         let (cond, body) = match &statements.first().expect("script empty.").node {
             Node::While { cond, body } => (cond.clone(), body.clone()),
-            _ => panic!("first element script was not while.")
+            _ => panic!("first element script was not while."),
         };
 
-        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
-        assert_eq!(body.node, Node::Id { lit: String::from("d") });
+        assert_eq!(
+            cond.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            body.node,
+            Node::Id {
+                lit: String::from("d")
+            }
+        );
     }
 
     #[test]

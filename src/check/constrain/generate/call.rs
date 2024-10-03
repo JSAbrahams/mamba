@@ -6,24 +6,24 @@ use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::operation::gen_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
-use crate::check::context::{arg, Context, function, LookupClass, LookupFunction};
-use crate::check::context::arg::FunctionArg;
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::arg::python::SELF;
+use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::python::GET_ITEM;
+use crate::check::context::{arg, function, Context, LookupClass, LookupFunction};
 use crate::check::ident::{IdentiCall, Identifier};
-use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
 use crate::parse::ast::node_op::NodeOp;
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_call(
     ast: &AST,
@@ -47,7 +47,12 @@ pub fn gen_call(
                     })
                     .fold(env.clone(), |env, self_var| env.assigned_to(&self_var));
 
-                constr.add("reassign", &Expected::from(left), &Expected::from(right), env);
+                constr.add(
+                    "reassign",
+                    &Expected::from(left),
+                    &Expected::from(right),
+                    env,
+                );
                 generate(right, &env_assigned_to, ctx, constr)?;
                 generate(left, &env_assigned_to, ctx, constr)?;
                 Ok(env_assigned_to)
@@ -65,7 +70,12 @@ pub fn gen_call(
                     .for_each(|cons| constr.add_constr(&cons, env));
 
                 let name = Name::empty();
-                constr.add("print", &Expected::new(ast.pos, &Type { name }), &Expected::from(ast), env);
+                constr.add(
+                    "print",
+                    &Expected::new(ast.pos, &Type { name }),
+                    &Expected::from(ast),
+                    env,
+                );
                 env.clone()
             } else if let Some(functions) = env.get_var(&f_name.name, &constr.var_mapping) {
                 if !f_name.generics.is_empty() {
@@ -76,7 +86,13 @@ pub fn gen_call(
                 for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos, |a| a.pos);
                     let args = args.iter().map(Expected::from).collect();
-                    let right = Expected::new(last_pos, &Function { name: f_name.clone(), args });
+                    let right = Expected::new(
+                        last_pos,
+                        &Function {
+                            name: f_name.clone(),
+                            args,
+                        },
+                    );
                     constr.add("function call", &right, &fun_exp, env);
                 }
                 env.clone()
@@ -92,18 +108,25 @@ pub fn gen_call(
                 env.clone()
             })
         }
-        Node::PropertyCall { instance, property } => {
-            property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
-        }
-        Node::Index { item, range } => {
-            gen_magic(GET_ITEM, ast, item, range, env, ctx, constr)
-        }
+        Node::PropertyCall { instance, property } => property_call(
+            &mut vec![instance.deref().clone()],
+            property,
+            env,
+            ctx,
+            constr,
+        ),
+        Node::Index { item, range } => gen_magic(GET_ITEM, ast, item, range, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
     }
 }
 
-fn check_iden_mut(id: &Identifier, env: &Environment, constr: &mut ConstrBuilder, pos: Position) -> TypeResult<()> {
+fn check_iden_mut(
+    id: &Identifier,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) -> TypeResult<()> {
     let errors: Vec<String> = id
         .fields(pos)?
         .iter()
@@ -115,7 +138,7 @@ fn check_iden_mut(id: &Identifier, env: &Environment, constr: &mut ConstrBuilder
                 .collect(),
             _ if !f_mut => vec![format!("Cannot change mutability of '{var}' in reassign")],
             _ if var == SELF && env.class.is_some() => vec![],
-            _ => vec![format!("Cannot reassign to undefined '{var}'")]
+            _ => vec![format!("Cannot reassign to undefined '{var}'")],
         })
         .collect();
 
@@ -138,11 +161,16 @@ fn call_parameters(
     let args = if let Some(self_arg) = self_arg {
         let mut new_args = vec![(self_ast.pos, self_arg.clone())];
         new_args.append(
-            &mut args.iter().map(|arg| (arg.pos, Expression { ast: arg.clone() })).collect(),
+            &mut args
+                .iter()
+                .map(|arg| (arg.pos, Expression { ast: arg.clone() }))
+                .collect(),
         );
         new_args
     } else {
-        args.iter().map(|arg| (arg.pos, Expression { ast: arg.clone() })).collect()
+        args.iter()
+            .map(|arg| (arg.pos, Expression { ast: arg.clone() }))
+            .collect()
     };
 
     for either_or_both in possible.iter().zip_longest(args.iter()) {
@@ -154,7 +182,12 @@ fn call_parameters(
 
                 let arg_exp = Expected::new(*pos, arg);
                 let name = Name::from(&ctx.class(ty, *pos)?);
-                constr.add("call parameters", &Expected::new(*pos, &Type { name }), &arg_exp, env)
+                constr.add(
+                    "call parameters",
+                    &Expected::new(*pos, &Type { name }),
+                    &arg_exp,
+                    env,
+                )
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(self_ast.pos.end, self_ast.pos.end);
@@ -176,12 +209,18 @@ fn property_call(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    let last_inst = instance
-        .last()
-        .ok_or_else(|| vec![TypeErr::new(property.pos, "Internal error in property call")])?;
+    let last_inst = instance.last().ok_or_else(|| {
+        vec![TypeErr::new(
+            property.pos,
+            "Internal error in property call",
+        )]
+    })?;
 
     let access = match &property.node {
-        Node::PropertyCall { instance: inner, property } => {
+        Node::PropertyCall {
+            instance: inner,
+            property,
+        } => {
             property_call(instance, inner, env, ctx, constr)?;
             instance.push(*inner.clone());
             return property_call(instance, property, env, ctx, constr);
@@ -198,8 +237,15 @@ fn property_call(
         }
         Node::FunctionCall { name, args } => {
             gen_vec(args, env, false, ctx, constr)?;
-            let args = vec![last_inst.clone()].iter().chain(args).map(Expected::from).collect();
-            let function = Function { name: StringName::try_from(name)?, args };
+            let args = [last_inst.clone()]
+                .iter()
+                .chain(args)
+                .map(Expected::from)
+                .collect();
+            let function = Function {
+                name: StringName::try_from(name)?,
+                args,
+            };
             Expected::new(property.pos, &function)
         }
 
@@ -228,7 +274,10 @@ fn property_call(
     let msg = format!("access property of {entity}");
     let access = Expected::new(
         ast_without_access.pos.union(access.pos),
-        &Access { entity, name: Box::new(access) },
+        &Access {
+            entity,
+            name: Box::new(access),
+        },
     );
     constr.add(&msg, &access, &entire_call_as_ast, env);
 
@@ -284,13 +333,34 @@ fn reassign_op(
     let right = Box::from(AST::new(
         ast.pos,
         match op {
-            NodeOp::Add => Node::Add { left: left.clone(), right },
-            NodeOp::Sub => Node::Sub { left: left.clone(), right },
-            NodeOp::Mul => Node::Mul { left: left.clone(), right },
-            NodeOp::Div => Node::Div { left: left.clone(), right },
-            NodeOp::Pow => Node::Pow { left: left.clone(), right },
-            NodeOp::BLShift => Node::BLShift { left: left.clone(), right },
-            NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
+            NodeOp::Add => Node::Add {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::Sub => Node::Sub {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::Mul => Node::Mul {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::Div => Node::Div {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::Pow => Node::Pow {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::BLShift => Node::BLShift {
+                left: left.clone(),
+                right,
+            },
+            NodeOp::BRShift => Node::BRShift {
+                left: left.clone(),
+                right,
+            },
             other => {
                 let msg = format!("Cannot reassign using operator '{other}'");
                 return Err(vec![TypeErr::new(ast.pos, &msg)]);
@@ -300,7 +370,11 @@ fn reassign_op(
 
     generate(&right, env, ctx, constr)?;
 
-    let node = Node::Reassign { left, right, op: NodeOp::Assign };
+    let node = Node::Reassign {
+        left,
+        right,
+        op: NodeOp::Assign,
+    };
     let simple_assign_ast = AST::new(ast.pos, node);
     generate(&simple_assign_ast, env, ctx, constr)?;
 

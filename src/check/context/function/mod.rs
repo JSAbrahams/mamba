@@ -6,13 +6,13 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::context::{arg, Context, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::{Empty, IsSuperSet, Substitute};
-use crate::check::name::Name;
+use crate::check::context::{arg, Context, LookupFunction};
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
+use crate::check::name::{Empty, IsSuperSet, Substitute};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -21,9 +21,9 @@ pub const PRINT: &str = "print";
 
 pub const SQRT: &str = "sqrt";
 
-pub mod union;
 pub mod generic;
 pub mod python;
+pub mod union;
 
 /// A Function, which may either be top-level, or optionally within a class.
 ///
@@ -77,14 +77,22 @@ impl PartialEq for Function {
 
 impl Display for Function {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let ret =
-            if self.ret_ty.is_empty() { String::new() } else { format!(" -> {}", self.ret_ty) };
+        let ret = if self.ret_ty.is_empty() {
+            String::new()
+        } else {
+            format!(" -> {}", self.ret_ty)
+        };
         let raises = if self.raises.is_empty() {
             String::new()
         } else {
             format!(" raises [{}]", &self.raises)
         };
-        write!(f, "{: >8} : ({}){ret}{raises}", self.name, comma_delm(&self.arguments))
+        write!(
+            f,
+            "{: >8} : ({}){ret}{raises}",
+            self.name,
+            comma_delm(&self.arguments)
+        )
     }
 }
 
@@ -92,7 +100,7 @@ impl TryFrom<(&GenericFunction, &HashMap<Name, Name>, Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<Name, Name>, Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<Name, Name>, Position),
     ) -> Result<Self, Self::Error> {
         let arguments: Vec<FunctionArg> = fun
             .arguments
@@ -118,26 +126,21 @@ impl TryFrom<(&GenericFunction, &HashMap<Name, Name>, Position)> for Function {
             raises: fun.raises.substitute(generics, pos)?,
             in_class: match &fun.in_class {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),
-                None => None
+                None => None,
             },
             ret_ty: match &fun.ret_ty {
                 Some(ty) => ty.substitute(generics, pos)?,
-                None => Name::empty()
+                None => Name::empty(),
             },
         })
     }
 }
 
 impl Function {
-    pub fn args_compatible(
-        &self,
-        args: &[Name],
-        ctx: &Context,
-        pos: Position,
-    ) -> TypeResult<()> {
+    pub fn args_compatible(&self, args: &[Name], ctx: &Context, pos: Position) -> TypeResult<()> {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
-                EitherOrBoth::Both(fun_param, arg) =>
+                EitherOrBoth::Both(fun_param, arg) => {
                     if let Some(arg_ty) = &fun_param.ty {
                         if !arg_ty.is_superset_of(arg, ctx, pos)? {
                             let msg = format!(
@@ -148,12 +151,14 @@ impl Function {
                     } else {
                         let msg = format!("Type of function parameter {fun_param} unknown.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
-                    },
-                EitherOrBoth::Left(fun_param) =>
+                    }
+                }
+                EitherOrBoth::Left(fun_param) => {
                     if !fun_param.has_default {
                         let msg = format!("Expected an argument for {fun_param}.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
-                    },
+                    }
+                }
                 EitherOrBoth::Right(_) => {
                     let msg = format!(
                         "{} arguments given to {self}\nExpected at most {} arguments.",

@@ -6,8 +6,8 @@ use std::process::Command;
 use itertools::{EitherOrBoth, Itertools};
 use python_parser::ast::Statement;
 
-use mamba::{Arguments, transpile_dir};
 use mamba::common::delimit::newline_delimited;
+use mamba::{transpile_dir, Arguments};
 
 use crate::common::{
     delete_dir, python_src_to_stmts, resource_content, resource_content_path,
@@ -41,7 +41,13 @@ fn test_directory(valid: bool, input: &[&str], output: &[&str], file_name: &str)
     test_directory_args(valid, input, output, file_name, &args)
 }
 
-fn test_directory_args(valid: bool, input: &[&str], _: &[&str], file_name: &str, args: &Arguments) -> OutTestRet {
+fn test_directory_args(
+    valid: bool,
+    input: &[&str],
+    _: &[&str],
+    file_name: &str,
+    args: &Arguments,
+) -> OutTestRet {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
 
@@ -53,7 +59,11 @@ fn test_directory_args(valid: bool, input: &[&str], _: &[&str], file_name: &str,
     let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
     let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
 
-    let longest_line = out_src.lines().max_by(|l1, l2| l1.len().cmp(&l2.len())).unwrap_or("").len();
+    let longest_line = out_src
+        .lines()
+        .max_by(|l1, l2| l1.len().cmp(&l2.len()))
+        .unwrap_or("")
+        .len();
     let min_line = 25;
     let out_line_len = max(min_line, longest_line);
 
@@ -100,14 +110,23 @@ fn fallable(
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
-    transpile_dir(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path), arguments)
-        .map_err(|errs| OutTestErr(errs))?;
+    transpile_dir(
+        &current_dir,
+        Some(&format!("{}.mamba", file_name)),
+        Some(output_path),
+        arguments,
+    )
+    .map_err(|errs| OutTestErr(errs))?;
 
     // Check that reference check is proper Python file
     let cmd1 = Command::new(PYTHON)
         .arg("-m")
         .arg("py_compile")
-        .arg(&resource_path(valid, input, &format!("{}_check.py", file_name)))
+        .arg(&resource_path(
+            valid,
+            input,
+            &format!("{}_check.py", file_name),
+        ))
         .output()
         .expect("Could not run Python command.");
 

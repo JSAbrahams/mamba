@@ -27,40 +27,66 @@ pub struct Environment {
 impl Environment {
     /// Specify that we are in a class
     pub fn in_class(&self, class_name: &StringName) -> Environment {
-        Environment { class: Some(class_name.clone()), ..self.clone() }
+        Environment {
+            class: Some(class_name.clone()),
+            ..self.clone()
+        }
     }
 
     pub fn in_fun(&self, in_fun: bool) -> Environment {
-        Environment { in_fun, ..self.clone() }
+        Environment {
+            in_fun,
+            ..self.clone()
+        }
     }
 
     /// Sets environment into define mode.
     ///
     /// Causes all identifiers to be treated as definitions.
     pub fn is_def_mode(&self, is_def_mode: bool) -> Environment {
-        Environment { is_def_mode, ..self.clone() }
+        Environment {
+            is_def_mode,
+            ..self.clone()
+        }
     }
 
     pub fn is_destruct_mode(&self, is_destruct_mode: bool) -> Self {
-        Environment { is_destruct_mode, ..self.clone() }
+        Environment {
+            is_destruct_mode,
+            ..self.clone()
+        }
     }
 
     pub fn is_expr(&self, is_expr: bool) -> Environment {
-        Environment { is_expr, ..self.clone() }
+        Environment {
+            is_expr,
+            ..self.clone()
+        }
     }
 
     pub fn override_mapping(&self, var: &str, mapping: usize) -> Self {
         let mut var_mapping = self.var_mapping.clone();
         var_mapping.insert(String::from(var), mapping);
-        Environment { var_mapping, ..self.clone() }
+        Environment {
+            var_mapping,
+            ..self.clone()
+        }
     }
 
     /// Insert a variable.
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected, var_mapping: &VarMapping) -> Environment {
-        let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
+    pub fn insert_var(
+        &self,
+        mutable: bool,
+        var: &str,
+        expect: &Expected,
+        var_mapping: &VarMapping,
+    ) -> Environment {
+        let expected_set = vec![(mutable, expect.clone())]
+            .into_iter()
+            .collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
         let offset = if let Some(offset) = self.var_mapping.get(var) {
@@ -77,7 +103,11 @@ impl Environment {
         let mapped_var = format_var_map(var, &offset);
         trace!("Inserted {var} in environment: {var} => {mapped_var} ({expect})");
         vars.insert(mapped_var, expected_set);
-        Environment { vars, var_mapping: var_mappings, ..self.clone() }
+        Environment {
+            vars,
+            var_mapping: var_mappings,
+            ..self.clone()
+        }
     }
 
     /// Insert raises which are properly handled.
@@ -85,17 +115,26 @@ impl Environment {
     /// Appends to current set.
     pub fn raises_caught(&self, raises: &HashSet<TrueName>) -> Environment {
         let raises_caught = self.raises_caught.union(raises).cloned().collect();
-        Environment { raises_caught, ..self.clone() }
+        Environment {
+            raises_caught,
+            ..self.clone()
+        }
     }
 
     /// Specify that we are in a loop.
     pub fn in_loop(&self) -> Environment {
-        Environment { in_loop: true, ..self.clone() }
+        Environment {
+            in_loop: true,
+            ..self.clone()
+        }
     }
 
     /// Specify the return type of function body.
     pub fn return_type(&self, return_type: &Expected) -> Environment {
-        Environment { return_type: Some(return_type.clone()), ..self.clone() }
+        Environment {
+            return_type: Some(return_type.clone()),
+            ..self.clone()
+        }
     }
 
     /// Gets a variable.
@@ -109,7 +148,11 @@ impl Environment {
     /// If not found, use variable directly in lookup.
     ///
     /// Return true variable [TrueName], whether it's mutable and it's expected value.
-    pub fn get_var(&self, var: &str, var_mapping: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
+    pub fn get_var(
+        &self,
+        var: &str,
+        var_mapping: &VarMapping,
+    ) -> Option<HashSet<(bool, Expected)>> {
         let var_name = if let Some(offset) = self.var_mapping.get(var) {
             format_var_map(var, offset)
         } else if let Some(offset) = var_mapping.get(var) {
@@ -124,12 +167,18 @@ impl Environment {
     pub fn remove_var(&self, var: &str) -> Self {
         let mut vars = self.vars.clone();
         vars.remove(var);
-        Environment { vars, ..self.clone() }
+        Environment {
+            vars,
+            ..self.clone()
+        }
     }
 
     /// Denote a set of variables which should be assigned to at some point.
     pub fn with_unassigned(&self, unassigned: HashSet<String>) -> Environment {
-        Environment { unassigned, ..self.clone() }
+        Environment {
+            unassigned,
+            ..self.clone()
+        }
     }
 
     /// Denote that a variable was assigned to by removing it from the set of variables which
@@ -139,19 +188,28 @@ impl Environment {
     pub fn assigned_to(&self, var: &String) -> Environment {
         let mut unassigned = self.unassigned.clone();
         unassigned.remove(var);
-        Environment { unassigned, ..self.clone() }
+        Environment {
+            unassigned,
+            ..self.clone()
+        }
     }
 
     /// Union with unassigned of other.
     pub fn union(&self, other: &Environment) -> Environment {
         let unassigned = self.unassigned.union(&other.unassigned);
-        Environment { unassigned: unassigned.cloned().collect(), ..self.clone() }
+        Environment {
+            unassigned: unassigned.cloned().collect(),
+            ..self.clone()
+        }
     }
 
     /// Intersection with unassigned of other.
     pub fn intersection(&self, other: &Environment) -> Environment {
         let unassigned = self.unassigned.intersection(&other.unassigned);
-        Environment { unassigned: unassigned.cloned().collect(), ..self.clone() }
+        Environment {
+            unassigned: unassigned.cloned().collect(),
+            ..self.clone()
+        }
     }
 }
 

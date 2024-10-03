@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::common::result::{an_or_a, Cause, format_err, WithCause, WithSource};
+use crate::common::result::{an_or_a, format_err, Cause, WithCause, WithSource};
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
@@ -39,7 +39,11 @@ impl WithCause for ParseErr {
 
 impl WithSource for ParseErr {
     fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
-        ParseErr { source: source.clone(), path: path.clone(), ..self }
+        ParseErr {
+            source: source.clone(),
+            path: path.clone(),
+            ..self
+        }
     }
 }
 
@@ -62,7 +66,13 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
         an_or_a(parsing),
         actual.token
     );
-    ParseErr { pos: actual.pos, msg, source: None, path: None, causes: vec![] }
+    ParseErr {
+        pos: actual.pos,
+        msg,
+        source: None,
+        path: None,
+        causes: vec![],
+    }
 }
 
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
@@ -72,11 +82,23 @@ pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
         an_or_a(parsing),
         actual.token
     );
-    ParseErr { pos: actual.pos, msg, source: None, path: None, causes: vec![] }
+    ParseErr {
+        pos: actual.pos,
+        msg,
+        source: None,
+        path: None,
+        causes: vec![],
+    }
 }
 
 pub fn custom(msg: &str, position: Position) -> ParseErr {
-    ParseErr { pos: position, msg: title_case(msg), source: None, path: None, causes: vec![] }
+    ParseErr {
+        pos: position,
+        msg: title_case(msg),
+        source: None,
+        path: None,
+        causes: vec![],
+    }
 }
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
@@ -93,7 +115,10 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
                 comma_delm(tokens),
                 an_or_a(parsing),
             ),
-            _ => format!("Expected a token while parsing {}{parsing}", an_or_a(parsing)),
+            _ => format!(
+                "Expected a token while parsing {}{parsing}",
+                an_or_a(parsing)
+            ),
         },
         source: None,
         path: None,
@@ -111,7 +136,17 @@ fn title_case(s: &str) -> String {
 
 impl Display for ParseErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let causes = &self.causes[0..min(max(self.causes.len() as i32 - 1, 0) as usize, SYNTAX_ERR_MAX_DEPTH)];
-        format_err(f, &self.msg, &self.path, Some(self.pos), &self.source, causes)
+        let causes = &self.causes[0..min(
+            max(self.causes.len() as i32 - 1, 0) as usize,
+            SYNTAX_ERR_MAX_DEPTH,
+        )];
+        format_err(
+            f,
+            &self.msg,
+            &self.path,
+            Some(self.pos),
+            &self.source,
+            causes,
+        )
     }
 }
