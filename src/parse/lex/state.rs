@@ -14,7 +14,13 @@ pub struct State {
 impl State {
     pub fn new() -> State {
         let pos = CaretPos::new(1, 1);
-        State { newlines: vec![], cur_indent: 1, line_indent: 1, token_this_line: false, pos }
+        State {
+            newlines: vec![],
+            cur_indent: 1,
+            line_indent: 1,
+            token_this_line: false,
+            pos,
+        }
     }
 
     pub fn flush_indents(&mut self) -> Vec<Lex> {
@@ -56,9 +62,13 @@ impl State {
         self.cur_indent = self.line_indent;
         self.pos = self.pos.offset_pos(token.clone().width());
         if let Token::Str(_str, _) = &token {
-            self.pos = self.pos.offset_line((_str.lines().count() as i32 - 1) as usize);
+            self.pos = self
+                .pos
+                .offset_line((_str.lines().count() as i32 - 1) as usize);
         } else if let Token::DocStr(_str) = &token {
-            self.pos = self.pos.offset_line((_str.lines().count() as i32 - 1) as usize);
+            self.pos = self
+                .pos
+                .offset_line((_str.lines().count() as i32 - 1) as usize);
         }
 
         res

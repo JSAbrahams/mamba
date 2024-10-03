@@ -21,9 +21,10 @@ pub fn read_source(source_path: &Path) -> Result<String, String> {
 
 pub fn write_source(source: &str, out_path: &Path) -> Result<usize, String> {
     match out_path.parent() {
-        Some(parent) => fs::create_dir_all(parent)
-            .map_err(|e| format!("{}: {}", e, parent.display()))?,
-        None => return Err(format!("No parent directory: {}", out_path.display()))
+        Some(parent) => {
+            fs::create_dir_all(parent).map_err(|e| format!("{}: {}", e, parent.display()))?
+        }
+        None => return Err(format!("No parent directory: {}", out_path.display())),
     };
 
     // LF instead of CRLF line endings
@@ -31,6 +32,7 @@ pub fn write_source(source: &str, out_path: &Path) -> Result<usize, String> {
     OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(out_path)
         .map_err(|e| format!("{}: {}", e, out_path.display()))?
         .write(source.as_ref())
@@ -49,8 +51,8 @@ pub fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
 
     let pattern_path = in_path.to_owned().join("**").join("*.mamba");
     let pattern = pattern_path.as_os_str().to_string_lossy();
-    let glob = glob(pattern.as_ref())
-        .map_err(|e| format!("Unable to recursively find files: {e}"))?;
+    let glob =
+        glob(pattern.as_ref()).map_err(|e| format!("Unable to recursively find files: {e}"))?;
 
     let mut relative_paths = vec![];
     for absolute_result in glob {

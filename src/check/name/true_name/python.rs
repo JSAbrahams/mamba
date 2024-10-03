@@ -3,8 +3,8 @@ use std::ops::Deref;
 use python_parser::ast::{Expression, SetItem, Subscript};
 
 use crate::check::context::clss::python::{python_to_concrete, UNION};
-use crate::check::name::{Empty, Name, TupleCallable};
 use crate::check::name::true_name::TrueName;
+use crate::check::name::{Empty, Name, TupleCallable};
 
 impl From<&Expression> for TrueName {
     fn from(value: &Expression) -> TrueName {
@@ -13,14 +13,14 @@ impl From<&Expression> for TrueName {
             Expression::TupleLiteral(items) => {
                 let expressions = items.iter().filter_map(|setitem| match setitem {
                     SetItem::Star(_) => None,
-                    SetItem::Unique(expr) => Some(expr)
+                    SetItem::Unique(expr) => Some(expr),
                 });
                 TrueName::tuple(expressions.map(Name::from).collect::<Vec<_>>().as_slice())
             }
             Expression::Subscript(id, exprs) => {
                 let lit = match &id.deref() {
                     Expression::Name(name) => name.clone(),
-                    _ => return TrueName::empty()
+                    _ => return TrueName::empty(),
                 };
 
                 // Union not expected
@@ -32,7 +32,7 @@ impl From<&Expression> for TrueName {
                     TrueName::new(&python_to_concrete(&lit), &generics)
                 }
             }
-            _ => TrueName::empty()
+            _ => TrueName::empty(),
         }
     }
 }
@@ -40,6 +40,6 @@ impl From<&Expression> for TrueName {
 pub fn to_ty_name(sub_script: &Subscript) -> TrueName {
     match sub_script {
         Subscript::Simple(expr) => TrueName::from(expr),
-        _ => TrueName::empty()
+        _ => TrueName::empty(),
     }
 }

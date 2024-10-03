@@ -8,7 +8,7 @@ pub const SELF: &str = "self";
 
 impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFunctionArg {
     fn from(
-        (name, ty, default): (&String, &Option<Expression>, &Option<Expression>)
+        (name, ty, default): (&String, &Option<Expression>, &Option<Expression>),
     ) -> GenericFunctionArg {
         GenericFunctionArg {
             is_py_type: true,

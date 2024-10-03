@@ -4,7 +4,7 @@ use std::hash::Hash;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct GenericParent {

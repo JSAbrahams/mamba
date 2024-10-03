@@ -43,7 +43,8 @@ pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {
                 .map(|ast| check(ast, &ctx))
                 .partition(Result::is_ok);
 
-            let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
+            let type_errs: Vec<Vec<TypeErr>> =
+                type_errs.into_iter().map(Result::unwrap_err).collect();
             if !type_errs.is_empty() {
                 Err(type_errs.into_iter().flatten().collect())
             } else {
@@ -83,7 +84,10 @@ mod tests {
             panic!()
         };
 
-        let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
+        let NodeTy::VariableDef {
+            expr: Some(expr), ..
+        } = &statements[0].node
+        else {
             panic!("Expected variabledef: {:?}", statements[0].node)
         };
 
@@ -101,10 +105,16 @@ mod tests {
             panic!()
         };
 
-        let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
+        let NodeTy::VariableDef {
+            expr: Some(expr), ..
+        } = &statements[0].node
+        else {
             panic!("Expected variabledef: {:?}", statements[0].node)
         };
 
-        assert_eq!(expr.ty, Some(Name::from("Int").union(&Name::from("String"))));
+        assert_eq!(
+            expr.ty,
+            Some(Name::from("Int").union(&Name::from("String")))
+        );
     }
 }

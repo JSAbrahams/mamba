@@ -5,25 +5,41 @@ use crate::common::resource_content;
 
 #[test]
 fn access_match_arms_variable() {
-    let source = resource_content(false, &["type", "control_flow"], "access_match_arms_variable.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "access_match_arms_variable.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
 fn class_field_assigned_to_only_one_arm_match() {
-    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_one_arm_match.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "class_field_assigned_to_only_one_arm_match.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
 fn class_field_assigned_to_only_then() {
-    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_then.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "class_field_assigned_to_only_then.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
 fn class_field_assigned_to_only_else() {
-    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_else.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "class_field_assigned_to_only_else.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
@@ -41,7 +57,11 @@ fn for_non_iterable() {
 
 #[test]
 fn for_over_union_one_not_minus() {
-    let source = resource_content(false, &["type", "control_flow"], "for_over_union_one_not_minus.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "for_over_union_one_not_minus.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
@@ -71,18 +91,30 @@ fn or_float() {
 
 #[test]
 fn undefined_var_in_match_arm() {
-    let source = resource_content(false, &["type", "control_flow"], "undefined_var_in_match_arm.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "undefined_var_in_match_arm.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
 fn variable_defined_in_then() {
-    let source = resource_content(false, &["type", "control_flow"], "variable_defined_in_then.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "variable_defined_in_then.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
 fn variable_defined_in_else() {
-    let source = resource_content(false, &["type", "control_flow"], "variable_defined_in_else.mamba");
+    let source = resource_content(
+        false,
+        &["type", "control_flow"],
+        "variable_defined_in_else.mamba",
+    );
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }

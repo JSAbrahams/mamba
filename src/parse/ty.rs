@@ -1,12 +1,12 @@
 use std::ops::Deref;
 
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, expected_one_of};
 use crate::parse::result::ParseResult;
+use crate::parse::result::{custom, expected_one_of};
 
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
@@ -35,7 +35,7 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 &[Token::_Self, Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier",
-            )))
+            ))),
         },
         &[Token::_Self, Token::Id(String::new())],
         "identifier",
@@ -87,7 +87,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
                 &lex.clone(),
                 "type",
-            )))
+            ))),
         },
         &[Token::Id(String::new()), Token::LRBrack],
         "type",
@@ -95,7 +95,10 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
 
     let ty = if it.peek_if(&|lex| lex.token == Token::Question) {
         it.eat(&Token::Question, "optional type")?;
-        Box::from(AST { pos: ty.pos, node: Node::QuestionOp { expr: ty } })
+        Box::from(AST {
+            pos: ty.pos,
+            node: Node::QuestionOp { expr: ty },
+        })
     } else {
         ty
     };
@@ -106,10 +109,13 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
             let ret_ty = it.parse(&parse_type, "type", start)?;
             let args = match &ty.node {
                 Node::TypeTup { types } => types.clone(),
-                _ => vec![ty.deref().clone()]
+                _ => vec![ty.deref().clone()],
             };
 
-            let node = Node::TypeFun { args, ret_ty: ret_ty.clone() };
+            let node = Node::TypeFun {
+                args,
+                ret_ty: ret_ty.clone(),
+            };
             Ok(Box::from(AST::new(start.union(ret_ty.pos), node)))
         },
         "function type",
@@ -118,7 +124,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
 
     match res {
         Some(ast) => Ok(ast),
-        None => Ok(ty)
+        None => Ok(ty),
     }
 }
 
@@ -188,7 +194,10 @@ pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression no type")?;
     let expr = it.parse(&parse_id, "expression no type", start)?;
     if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
-        Err(Box::from(custom("Type annotation not allowed here", annotation_pos)))
+        Err(Box::from(custom(
+            "Type annotation not allowed here",
+            annotation_pos,
+        )))
     } else {
         Ok(expr)
     }

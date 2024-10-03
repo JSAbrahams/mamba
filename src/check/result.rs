@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
-use crate::common::result::{Cause, format_err, WithCause, WithSource};
+use crate::common::result::{format_err, Cause, WithCause, WithSource};
 
 pub type TypeResult<T = ASTTy> = Result<T, Vec<TypeErr>>;
 
@@ -59,27 +59,53 @@ impl TypeErr {
     /// New TypeErr with message at given position
     pub fn new(position: Position, msg: &str) -> TypeErr {
         let pos = Some(position);
-        TypeErr { pos, msg: String::from(msg), path: None, source: None, causes: vec![] }
+        TypeErr {
+            pos,
+            msg: String::from(msg),
+            path: None,
+            source: None,
+            causes: vec![],
+        }
     }
 
     /// New TypeErr with message at random position
     pub fn new_no_pos(msg: &str) -> TypeErr {
-        TypeErr { pos: None, msg: String::from(msg), path: None, source: None, causes: vec![] }
+        TypeErr {
+            pos: None,
+            msg: String::from(msg),
+            path: None,
+            source: None,
+            causes: vec![],
+        }
     }
 
     pub fn append_msg(&self, msg: &str) -> Self {
-        TypeErr { msg: format!("{} {msg}", self.msg), ..self.clone() }
+        TypeErr {
+            msg: format!("{} {msg}", self.msg),
+            ..self.clone()
+        }
     }
 }
 
 impl WithSource for TypeErr {
     fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
-        TypeErr { source: source.clone(), path: path.clone(), ..self }
+        TypeErr {
+            source: source.clone(),
+            path: path.clone(),
+            ..self
+        }
     }
 }
 
 impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        format_err(f, &self.msg, &self.path, self.pos, &self.source, &self.causes)
+        format_err(
+            f,
+            &self.msg,
+            &self.path,
+            self.pos,
+            &self.source,
+            &self.causes,
+        )
     }
 }
