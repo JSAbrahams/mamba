@@ -11,7 +11,7 @@ use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::{FunctionArg, SELF};
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::context::function::STR;
+use crate::check::context::function::python::STR;
 use crate::check::name::{Empty, Mutable, Name, TupleCallable};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -125,7 +125,7 @@ fn field_access(
     for entity_name in &entity_name.names {
         let field = ctx.class(entity_name, accessed.pos)
             .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?
-            .field(name, ctx, accessed.pos)
+            .field(name, accessed.pos)
             .map_err(|errs| access_field_cause(&errs, other, entity_name, name, msg))?;
 
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
@@ -158,7 +158,7 @@ fn function_access(
     for entity_name in &entity_name.names {
         let class = ctx.class(entity_name, accessed.pos)
             .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?;
-        let fun = class.fun(name, ctx, accessed.pos)
+        let fun = class.fun(name, accessed.pos)
             .map_err(|errs| access_fun_cause(&errs, other, entity_name, name, args, msg))?;
 
         let fun_ty_exp = Expected::new(accessed.pos, &Type { name: fun.ret_ty.clone() });
@@ -208,11 +208,11 @@ fn unify_fun_arg(
                             constr.push_constr(&stringy);
                         }
                     } else {
-                        let msg = format!("function argument: {}", ctx_f_arg.name);
+                        let msg = format!("function arg in {name}: {}", ctx_f_arg.name);
                         constr.push(&msg, &ctx_arg_ty, &expected);
                     }
                 } else {
-                    let msg = format!("function argument: {}", ctx_f_arg.name);
+                    let msg = format!("function arg in {name}: {}", ctx_f_arg.name);
                     constr.push(&msg, &ctx_arg_ty, &expected);
                 }
 

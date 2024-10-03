@@ -34,6 +34,8 @@ Mamba is like Python, but with a few key features:
 - A distinction between mutability and immutability
 - Pure functions, or, functions without side effects
 
+See [docs](/docs/) for a more extensive overview of the langauge philosophy.
+
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
 files.
 Mamba code should therefore be interoperable with Python code.

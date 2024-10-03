@@ -3,8 +3,9 @@ name = "mamba"
 version = "0.3.6"
 authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which converts Mamba files to Python 3 files"
-edition = "2018"
+edition = "2021"
 license-file = "LICENSE"
+rust-version = "1.76.0"
 
 readme = "README.md"
 repository = "https://github.com/JSAbrahams/mamba"

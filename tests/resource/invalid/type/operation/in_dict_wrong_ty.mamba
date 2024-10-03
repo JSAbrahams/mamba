@@ -1,0 +1,3 @@
+def x := { True => "T", False => "F" }
+
+2 in x

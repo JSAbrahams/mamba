@@ -32,6 +32,11 @@ fn greater_than_other_int() -> OutTestRet {
 }
 
 #[test]
+fn in_set_is_bool() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "in_set_is_bool")
+}
+
+#[test]
 fn multiply_other_int() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "multiply_other_int")
 }

@@ -40,13 +40,13 @@ impl ColType for StringName {
     fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, pos) {
             let fun_name = StringName::from(function::python::ITER);
-            if let Ok(fun) = clss.fun(&fun_name, ctx, pos) {
+            if let Ok(fun) = clss.fun(&fun_name, pos) {
                 let iter_name = fun.ret_ty;
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
                     let next_name = StringName::from(function::python::NEXT);
 
                     let ret_name = iter_class.iter()
-                        .map(|c| c.fun(&next_name, ctx, pos))
+                        .map(|c| c.fun(&next_name, pos))
                         .map(|f| f.map(|f| f.ret_ty))
                         .collect::<TypeResult<Vec<Name>>>()?
                         .iter()

@@ -1,7 +1,6 @@
 use python_parser::ast::Funcdef;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
@@ -27,6 +26,7 @@ pub const STR: &str = "__str__";
 pub const TRUTHY: &str = "__bool__";
 pub const NEXT: &str = "__next__";
 pub const ITER: &str = "__iter__";
+pub const CONTAINS: &str = "__contains__";
 
 pub const SUPER: &str = "super";
 
@@ -36,7 +36,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name: StringName::from(convert_name(&func_def.name).as_str()),
+            name: StringName::from(func_def.name.as_str()),
             pure: false,
             pos: Position::invisible(),
             arguments: func_def
@@ -49,29 +49,6 @@ impl From<&Funcdef> for GenericFunction {
             in_class: None,
             ret_ty: func_def.return_type.as_ref().map(Name::from),
         }
-    }
-}
-
-fn convert_name(name: &str) -> String {
-    match name {
-        INIT => String::from(function::INIT),
-
-        ADD => String::from(function::ADD),
-        DIV => String::from(function::DIV),
-        EQ => String::from(function::EQ),
-        FDIV => String::from(function::FDIV),
-        GE => String::from(function::GE),
-        GEQ => String::from(function::GEQ),
-        LE => String::from(function::LE),
-        LEQ => String::from(function::LEQ),
-        MOD => String::from(function::MOD),
-        MUL => String::from(function::MUL),
-        POW => String::from(function::POW),
-        SUB => String::from(function::SUB),
-
-        TRUTHY => String::from(function::TRUTHY),
-
-        other => String::from(other),
     }
 }
 

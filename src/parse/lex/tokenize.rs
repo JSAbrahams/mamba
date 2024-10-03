@@ -255,7 +255,6 @@ fn as_op_or_id(string: String) -> Token {
         "forward" => Token::Forward,
         "self" => Token::_Self,
         "vararg" => Token::Vararg,
-        "init" => Token::Init,
 
         "def" => Token::Def,
         "fin" => Token::Fin,

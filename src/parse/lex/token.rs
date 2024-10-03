@@ -33,7 +33,6 @@ pub enum Token {
     Pure,
     IsA,
     IsNA,
-    Init,
 
     As,
     Import,
@@ -157,7 +156,6 @@ impl Token {
             Token::Pure => 4,
             Token::IsA => 3,
             Token::IsNA => 5,
-            Token::Init => 4,
             Token::As => 2,
             Token::Import => 6,
             Token::Forward => 7,
@@ -248,7 +246,6 @@ impl fmt::Display for Token {
             Token::Class => String::from("class"),
             Token::IsA => String::from("is_a"),
             Token::IsNA => String::from("isn_t_a"),
-            Token::Init => String::from("init"),
 
             Token::As => String::from("as"),
             Token::Import => String::from("import"),

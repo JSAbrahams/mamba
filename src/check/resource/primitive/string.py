@@ -10,6 +10,8 @@ class str:
 
     def __eq__(self, other: str) -> bool: pass
 
+    def __ne__(self, other: str) -> bool: pass
+
     def __iter__(self) -> str_iterator: pass
 
     def __getitem__(self, item: int) -> str: pass
