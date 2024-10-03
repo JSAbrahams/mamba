@@ -237,7 +237,7 @@ fn property_call(
         }
         Node::FunctionCall { name, args } => {
             gen_vec(args, env, false, ctx, constr)?;
-            let args = vec![last_inst.clone()]
+            let args = [last_inst.clone()]
                 .iter()
                 .chain(args)
                 .map(Expected::from)

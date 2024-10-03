@@ -164,17 +164,16 @@ impl From<&HashSet<Class>> for Name {
     }
 }
 
-impl PartialOrd<Self> for Name {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let self_vec = self.names.iter().sorted();
-        let other_vec = other.names.iter().sorted();
-        self_vec.partial_cmp(other_vec)
-    }
-}
-
 impl Ord for Name {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+        let self_vec = self.names.iter().sorted();
+        let other_vec = other.names.iter().sorted();
+        self_vec.cmp(other_vec)
+    }
+}
+impl PartialOrd<Self> for Name {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -489,14 +488,11 @@ impl Name {
         mapping: NameMap,
         pos: Position,
     ) -> TypeResult<NameMap> {
-        self.names.iter().fold(Ok(mapping), |acc, s_n| {
-            other.names.iter().fold(acc, |acc, o_n| {
-                if let Ok(acc) = acc {
-                    s_n.temp_map(&o_n.variant, acc, pos)
-                } else {
-                    acc
-                }
-            })
+        self.names.iter().try_fold(mapping, |acc, s_n| {
+            other
+                .names
+                .iter()
+                .try_fold(acc, |acc, o_n| s_n.temp_map(&o_n.variant, acc, pos))
         })
     }
 

@@ -10,6 +10,7 @@ use crate::generate::GenArguments;
 pub struct State {
     pub interface: bool,
 
+    #[allow(dead_code)]
     pub tup: usize,
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,

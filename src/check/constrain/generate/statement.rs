@@ -82,11 +82,7 @@ pub fn check_raises_caught(
             .filter(|raise_name| {
                 !if let Ok(raise_class) = ctx.class(*raise_name, pos) {
                     env.raises_caught.iter().any(|env_raise| {
-                        if let Ok(result) = raise_class.has_parent(env_raise, ctx, pos) {
-                            result
-                        } else {
-                            false
-                        }
+                        raise_class.has_parent(env_raise, ctx, pos).unwrap_or_default()
                     })
                 } else {
                     false
