@@ -194,7 +194,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     fn args(&self, pos: Position) -> TypeResult<Vec<Name>> {
         if self.name == CALLABLE {
             if self.generics.len() == 2 {
-                let args = self.generics.get(0).expect("Unreachable");
+                let args = self.generics.first().expect("Unreachable");
                 if let Some(first) = args.names.iter().next() {
                     Ok(first.variant.generics.clone())
                 } else {

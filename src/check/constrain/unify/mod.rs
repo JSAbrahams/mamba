@@ -35,7 +35,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
                 ctx,
                 constraints.len(),
             )
-            .map_err(|e| {
+            .inspect_err(|e| {
                 trace!(
                     "[error unifying set {}\\{}:{}]",
                     count - 1,
@@ -44,8 +44,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
                         let pos = e.pos.map_or_else(String::new, |pos| format!(" at {pos}: "));
                         format!("{pos}{}", e.msg)
                     }))
-                );
-                e
+                )
             })
         })
         .partition(Result::is_ok);

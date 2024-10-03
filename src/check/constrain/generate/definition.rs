@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ops::Deref;
 
 use itertools::enumerate;
 
@@ -221,7 +220,7 @@ pub fn id_from_var(
     }
 
     let mut env = env.clone();
-    let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
+    let identifier = Identifier::try_from(var)?.as_mutable(mutable);
     match (ty, expr) {
         (Some(ty), Some(expr)) => {
             let mut names = vec![];

@@ -37,29 +37,28 @@ pub trait MatchTempName {
     ) -> TypeResult<HashMap<Name, Name>>;
 }
 
-impl PartialOrd<Self> for TrueName {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+impl Ord for TrueName {
+    fn cmp(&self, other: &Self) -> Ordering {
         if self.variant == other.variant {
             if self.is_nullable == other.is_nullable {
-                self.is_mutable.partial_cmp(&other.is_mutable)
+                self.is_mutable.cmp(&other.is_mutable)
             } else {
-                self.is_nullable.partial_cmp(&other.is_nullable)
+                self.is_nullable.cmp(&other.is_nullable)
             }
         } else {
-            self.variant.partial_cmp(&other.variant)
+            self.variant.cmp(&other.variant)
         }
+    }
+}
+impl PartialOrd<Self> for TrueName {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
 impl Any for TrueName {
     fn any() -> Self {
         TrueName::from(clss::ANY)
-    }
-}
-
-impl Ord for TrueName {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
     }
 }
 
@@ -113,7 +112,7 @@ impl IsSuperSet<TrueName> for TrueName {
     /// If self is nullable, then super of other iff:
     /// - Other is null.
     /// - Or, variant is supertype of other's variant. (Other may or may not be nullable.)
-    /// If self is not nullable, then super of other iff:
+    ///   If self is not nullable, then super of other iff:
     /// - Other is not nullable.
     /// - And, variant is supertype of other's variant.
     fn is_superset_of(&self, other: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {

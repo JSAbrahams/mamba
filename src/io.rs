@@ -32,6 +32,7 @@ pub fn write_source(source: &str, out_path: &Path) -> Result<usize, String> {
     OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(out_path)
         .map_err(|e| format!("{}: {}", e, out_path.display()))?
         .write(source.as_ref())

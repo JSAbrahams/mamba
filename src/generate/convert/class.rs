@@ -183,7 +183,6 @@ fn extract_class(
 
     let body_stmts: Vec<Core> = body_name_stmts
         .values()
-        .into_iter()
         .sorted_by_key(|(pos, _)| *pos)
         .map(|(_, stmt)| stmt.clone())
         .collect();

@@ -53,7 +53,7 @@ impl ToPy for StringName {
             }
             clss::CALLABLE => {
                 imp.add_from_import("typing", CALLABLE);
-                let args = self.generics.get(0).cloned().unwrap_or_else(Name::empty);
+                let args = self.generics.first().cloned().unwrap_or_else(Name::empty);
                 let ret = self.generics.get(1).cloned().unwrap_or_else(Name::empty);
                 core_type(CALLABLE, &[args, ret], imp)
             }
