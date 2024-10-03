@@ -10,6 +10,7 @@ use crate::generate::GenArguments;
 pub struct State {
     pub interface: bool,
 
+    #[allow(dead_code)]
     pub tup: usize,
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,
@@ -63,7 +64,9 @@ impl State {
         State { is_remove_last_ret: remove_ret, ..self.clone() }
     }
 
-    pub fn is_last_must_be_ret(&self, last_return: bool) -> State { State { is_last_must_be_ret: last_return, ..self.clone() } }
+    pub fn is_last_must_be_ret(&self, last_return: bool) -> State {
+        State { is_last_must_be_ret: last_return, ..self.clone() }
+    }
 
     pub fn def_as_fun_arg(&self, def_as_fun_arg: bool) -> State {
         State { def_as_fun_arg, ..self.clone() }

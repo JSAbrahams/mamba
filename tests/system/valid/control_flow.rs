@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn assign_if() -> OutTestRet {
@@ -27,7 +27,12 @@ fn handle_in_if() -> OutTestRet {
 
 #[test]
 fn for_over_collection_of_tuple() -> OutTestRet {
-    test_directory(true, &["control_flow"], &["control_flow", "target"], "for_over_collection_of_tuple")
+    test_directory(
+        true,
+        &["control_flow"],
+        &["control_flow", "target"],
+        "for_over_collection_of_tuple",
+    )
 }
 
 #[test]
@@ -64,7 +69,12 @@ fn if_two_types() -> OutTestRet {
 
 #[test]
 fn match_dont_remove_shadowed() -> OutTestRet {
-    test_directory(true, &["control_flow"], &["control_flow", "target"], "match_dont_remove_shadowed")
+    test_directory(
+        true,
+        &["control_flow"],
+        &["control_flow", "target"],
+        "match_dont_remove_shadowed",
+    )
 }
 
 #[test]

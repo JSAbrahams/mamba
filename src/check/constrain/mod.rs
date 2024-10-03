@@ -29,7 +29,9 @@ mod tests {
     fn if_stmt_no_type() {
         let src = "if True then 10 else 20";
         let ast = parse(src).unwrap();
-        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
+        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap())
+            .unwrap()
+            .pos_to_name;
 
         let pos_bool = Position::new(CaretPos::new(1, 4), CaretPos::new(1, 8));
         // is interchangeable since call to __bool__() in Bool
@@ -47,7 +49,9 @@ mod tests {
     fn it_stmt_as_expression() {
         let src = "def a := if True then 10 else 20";
         let ast = parse(src).unwrap();
-        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
+        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap())
+            .unwrap()
+            .pos_to_name;
 
         let pos_20 = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 33));
         assert_eq!(finished[&pos_20], Name::from("Int"));
@@ -70,7 +74,9 @@ mod tests {
     fn it_stmt_as_expression_none() {
         let src = "def a := if True then 10 else None";
         let ast = parse(src).unwrap();
-        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
+        let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap())
+            .unwrap()
+            .pos_to_name;
 
         let pos_none = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 35));
         assert_eq!(finished[&pos_none], Name::from("None"));

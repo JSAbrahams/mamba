@@ -8,7 +8,9 @@ pub struct DocString {
 }
 
 impl DocString {
-    pub fn new() -> DocString { DocString { front: None, middle: None, back: None } }
+    pub fn new() -> DocString {
+        DocString { front: None, middle: None, back: None }
+    }
 
     fn add(&mut self, lex: &Lex) {
         self.front = self.middle.clone();
@@ -17,8 +19,12 @@ impl DocString {
     }
 
     fn get(&mut self) -> Vec<Lex> {
-        if let (Some(front), Some(middle), Some(back)) = (self.front.clone(), self.middle.clone(), self.back.clone()) {
-            if let (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) = (front.token, middle.token, back.token) {
+        if let (Some(front), Some(middle), Some(back)) =
+            (self.front.clone(), self.middle.clone(), self.back.clone())
+        {
+            if let (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) =
+                (front.token, middle.token, back.token)
+            {
                 if f_str.is_empty()
                     && b_str.is_empty()
                     && front.pos.end.pos == middle.pos.start.pos

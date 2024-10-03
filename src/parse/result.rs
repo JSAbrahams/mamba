@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::common::result::{an_or_a, Cause, format_err, WithCause, WithSource};
+use crate::common::result::{an_or_a, format_err, Cause, WithCause, WithSource};
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
@@ -111,7 +111,8 @@ fn title_case(s: &str) -> String {
 
 impl Display for ParseErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let causes = &self.causes[0..min(max(self.causes.len() as i32 - 1, 0) as usize, SYNTAX_ERR_MAX_DEPTH)];
+        let causes = &self.causes
+            [0..min(max(self.causes.len() as i32 - 1, 0) as usize, SYNTAX_ERR_MAX_DEPTH)];
         format_err(f, &self.msg, &self.path, Some(self.pos), &self.source, causes)
     }
 }

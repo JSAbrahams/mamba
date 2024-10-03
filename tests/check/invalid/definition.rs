@@ -27,7 +27,8 @@ fn body_is_stmt() {
 
 #[test]
 fn function_ret_in_class_not_super() {
-    let source = resource_content(false, &["type", "definition"], "function_ret_in_class_not_super.mamba");
+    let source =
+        resource_content(false, &["type", "definition"], "function_ret_in_class_not_super.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -45,7 +46,8 @@ fn function_ret_not_super() {
 
 #[test]
 fn if_else_assign_non_nullable() {
-    let source = resource_content(false, &["type", "definition"], "if_else_assign_non_nullable.mamba");
+    let source =
+        resource_content(false, &["type", "definition"], "if_else_assign_non_nullable.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -101,7 +103,8 @@ fn non_mutable_in_call_chain() {
 
 #[test]
 fn non_existent_type_annotation() {
-    let source = resource_content(false, &["type", "definition"], "non_existent_type_annotation.mamba");
+    let source =
+        resource_content(false, &["type", "definition"], "non_existent_type_annotation.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

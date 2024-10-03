@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::LookupField;
-use crate::check::name::{Empty, Name, Substitute};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Empty, Name, Substitute};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::Context;
@@ -51,7 +51,7 @@ impl TryFrom<(&GenericField, &HashMap<Name, Name>, Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<Name, Name>, Position)
+        (field, generics, pos): (&GenericField, &HashMap<Name, Name>, Position),
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,
@@ -59,11 +59,11 @@ impl TryFrom<(&GenericField, &HashMap<Name, Name>, Position)> for Field {
             mutable: field.mutable,
             in_class: match &field.in_class {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),
-                None => None
+                None => None,
             },
             ty: match &field.ty {
                 Some(ty) => ty.substitute(generics, pos)?,
-                None => Name::empty()
+                None => Name::empty(),
             },
             assigned_to: field.assigned_to,
         })

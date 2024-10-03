@@ -1,9 +1,9 @@
-use crate::{Context, PipelineArguments};
 use crate::check::ast::ASTTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
+use crate::{Context, PipelineArguments};
 
 mod convert;
 
@@ -81,10 +81,10 @@ pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments, ctx: &Context) -> 
         Core::Block { statements } => {
             Ok(Core::Block { statements: import.imports().into_iter().chain(statements).collect() })
         }
-        other if !import.is_empty() => {
-            Ok(Core::Block { statements: import.imports().into_iter().chain(vec![other]).collect() })
-        }
-        other => Ok(other)
+        other if !import.is_empty() => Ok(Core::Block {
+            statements: import.imports().into_iter().chain(vec![other]).collect(),
+        }),
+        other => Ok(other),
     }
 }
 

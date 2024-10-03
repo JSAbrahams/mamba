@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
-use crate::common::result::{Cause, format_err, WithCause, WithSource};
+use crate::common::result::{format_err, Cause, WithCause, WithSource};
 
 pub type TypeResult<T = ASTTy> = Result<T, Vec<TypeErr>>;
 

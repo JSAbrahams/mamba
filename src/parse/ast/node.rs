@@ -1,7 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 
 use crate::common::delimit::comma_delm;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 use crate::parse::lex::token::Token;
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
@@ -30,11 +30,13 @@ impl Display for Node {
         let name = match &self {
             Node::Import { .. } => String::from("import"),
             Node::Class { .. } => String::from("class"),
-            Node::Generic { id, isa } => if let Some(isa) = isa {
-                format!("{}: {}", id.node, isa.node)
-            } else {
-                format!("{}", id.node)
-            },
+            Node::Generic { id, isa } => {
+                if let Some(isa) = isa {
+                    format!("{}: {}", id.node, isa.node)
+                } else {
+                    format!("{}", id.node)
+                }
+            }
             Node::Parent { .. } => String::from("parent"),
             Node::Reassign { .. } => String::from("reassign"),
             Node::VariableDef { .. } => String::from("variable definition"),
@@ -55,31 +57,46 @@ impl Display for Node {
             Node::TypeAlias { .. } => String::from("type alias"),
             Node::TypeTup { .. } => String::from("type tuple"),
             Node::TypeUnion { .. } => String::from("type union"),
-            Node::Type { id, generics } => if generics.is_empty() {
-                format!("{}", id.node)
-            } else {
-                format!("{}[{}]", id.node, comma_delm(generics.iter().map(|e| e.node.clone())))
-            },
+            Node::Type { id, generics } => {
+                if generics.is_empty() {
+                    format!("{}", id.node)
+                } else {
+                    format!("{}[{}]", id.node, comma_delm(generics.iter().map(|e| e.node.clone())))
+                }
+            }
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
             Node::Dict { elements } => {
-                format!("{{{}}}", comma_delm(elements.iter().map(|(from, to)| {
-                    format!("{} => {}", from.node, to.node)
-                })))
+                format!(
+                    "{{{}}}",
+                    comma_delm(
+                        elements
+                            .iter()
+                            .map(|(from, to)| { format!("{} => {}", from.node, to.node) })
+                    )
+                )
             }
             Node::DictBuilder { .. } => String::from("dictionary builder"),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
             Node::SetBuilder { item, conditions } => {
-                format!("{{ {} | {} }}", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+                format!(
+                    "{{ {} | {} }}",
+                    item.node,
+                    comma_delm(conditions.iter().map(|e| e.node.clone()))
+                )
             }
             Node::List { elements } => {
                 format!("[{}]", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
             Node::ListBuilder { item, conditions } => {
-                format!("[ {} | {} ]", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+                format!(
+                    "[ {} | {} ]",
+                    item.node,
+                    comma_delm(conditions.iter().map(|e| e.node.clone()))
+                )
             }
             Node::Tuple { elements } => {
                 format!("({})", comma_delm(elements.iter().map(|e| e.node.clone())))
@@ -136,7 +153,7 @@ impl Display for Node {
             Node::Undefined => format!("{}", Token::Undefined),
             Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
-            Node::QuestionOp { .. } => String::from("unsafe operator")
+            Node::QuestionOp { .. } => String::from("unsafe operator"),
         };
 
         write!(f, "{name}")
@@ -749,8 +766,8 @@ impl Node {
 #[cfg(test)]
 mod test {
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::{AST, Node};
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::{Node, AST};
 
     macro_rules! map_ne {
         ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
@@ -1102,7 +1119,8 @@ mod test {
 
     #[test]
     fn collection_same_value() {
-        let item = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
+        let item =
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
 
         two_ast!(Node::Set { elements: vec![*item.clone()] });
         two_ast!(Node::List { elements: vec![*item.clone()] });
@@ -1132,7 +1150,8 @@ mod test {
 
     #[test]
     fn binary_op_same_value() {
-        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
+        let left =
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
         let right =
             Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("lkjh") }));
 
@@ -1298,7 +1317,7 @@ mod test {
             inclusive: false,
             step: None,
         }
-            .is_expression());
+        .is_expression());
         assert!(Node::Real { lit: String::from("6.7") }.is_expression());
         assert!(Node::Int { lit: String::from("3") }.is_expression());
         assert!(Node::ENum { num: String::from("4"), exp: String::from("4") }.is_expression());
@@ -1314,7 +1333,8 @@ mod test {
 
     #[test]
     fn operator_is_expression() {
-        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("left") }));
+        let left =
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("left") }));
         let right =
             Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("right") }));
 
@@ -1352,7 +1372,8 @@ mod test {
 
     #[test]
     fn is_operator() {
-        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
+        let left =
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
         let right =
             Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("lkjh") }));
 

@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
@@ -44,7 +44,11 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let node = Node::FunctionCall { name: Box::from(pre.clone()), args };
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
-            _ => Err(Box::from(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call"))),
+            _ => Err(Box::from(expected_one_of(
+                &[Token::Point, Token::LRBrack],
+                ast,
+                "function call",
+            ))),
         },
         &[Token::Point, Token::LRBrack],
         "function call",
@@ -64,9 +68,9 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::{AST, Node};
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::{Node, AST};
+    use crate::parse::{parse, parse_direct};
 
     #[test]
     fn op_assign() {
@@ -77,7 +81,7 @@ mod test {
             .iter()
             .map(|ast| match &ast.node {
                 Node::Reassign { op, .. } => op.clone(),
-                other => panic!("Expected reassign {:?}", other)
+                other => panic!("Expected reassign {:?}", other),
             })
             .collect();
 
@@ -133,7 +137,8 @@ mod test {
         let source = String::from("a(b, c)");
         let statements = parse_direct(&source).unwrap();
 
-        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node else {
+        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node
+        else {
             panic!("first element script was anon fun.")
         };
 

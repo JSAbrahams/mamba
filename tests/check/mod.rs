@@ -13,11 +13,13 @@ struct CheckTestErr(Vec<TypeErr>);
 type CheckTestRet = Result<(), CheckTestErr>;
 
 fn check_test(source: &String) -> CheckTestRet {
-    check_all(&[*parse(&source).unwrap()])
-        .map(|_| ())
-        .map_err(|errs| CheckTestErr(errs.into_iter().map(|err| {
-            err.with_source(&Some(source.clone()), &None)
-        }).collect::<Vec<TypeErr>>()))
+    check_all(&[*parse(&source).unwrap()]).map(|_| ()).map_err(|errs| {
+        CheckTestErr(
+            errs.into_iter()
+                .map(|err| err.with_source(&Some(source.clone()), &None))
+                .collect::<Vec<TypeErr>>(),
+        )
+    })
 }
 
 impl Debug for CheckTestErr {

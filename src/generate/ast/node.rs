@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
-use crate::ASTTy;
 use crate::check::context::function;
 use crate::generate::result::UnimplementedErr;
 use crate::parse::ast::node_op::NodeOp;
+use crate::ASTTy;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
@@ -114,7 +114,7 @@ impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
             NodeOp::BLShift => Ok(CoreOp::BLShiftAssign),
             NodeOp::BRShift => Ok(CoreOp::BRShiftAssign),
             NodeOp::Assign => Ok(CoreOp::Assign),
-            op => Err(UnimplementedErr::new(ast, &format!("Reassign with {op}")))
+            op => Err(UnimplementedErr::new(ast, &format!("Reassign with {op}"))),
         }
     }
 }
@@ -152,7 +152,7 @@ impl CoreFunOp {
             function::python::MOD => CoreFunOp::Mod,
             function::python::DIV => CoreFunOp::Div,
             function::python::FDIV => CoreFunOp::FDiv,
-            _ => return None
+            _ => return None,
         })
     }
 }

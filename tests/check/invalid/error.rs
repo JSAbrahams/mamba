@@ -32,4 +32,3 @@ fn with_not_expression() {
     let source = resource_content(false, &["type", "error"], "with_not_expression.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
-

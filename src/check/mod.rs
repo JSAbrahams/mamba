@@ -38,12 +38,11 @@ pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {
 
     match ctx {
         Ok(ctx) => {
-            let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
-                .iter()
-                .map(|ast| check(ast, &ctx))
-                .partition(Result::is_ok);
+            let (typed_ast, type_errs): (Vec<_>, Vec<_>) =
+                asts.iter().map(|ast| check(ast, &ctx)).partition(Result::is_ok);
 
-            let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
+            let type_errs: Vec<Vec<TypeErr>> =
+                type_errs.into_iter().map(Result::unwrap_err).collect();
             if !type_errs.is_empty() {
                 Err(type_errs.into_iter().flatten().collect())
             } else {
@@ -79,9 +78,7 @@ mod tests {
         let ast = parse(src).unwrap();
         let result = check_all(&[*ast]).unwrap();
 
-        let NodeTy::Block { statements } = &result[0].node else {
-            panic!()
-        };
+        let NodeTy::Block { statements } = &result[0].node else { panic!() };
 
         let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
             panic!("Expected variabledef: {:?}", statements[0].node)
@@ -97,9 +94,7 @@ mod tests {
         let ast = parse(src).unwrap();
         let result = check_all(&[*ast]).unwrap();
 
-        let NodeTy::Block { statements } = &result[0].node else {
-            panic!()
-        };
+        let NodeTy::Block { statements } = &result[0].node else { panic!() };
 
         let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
             panic!("Expected variabledef: {:?}", statements[0].node)

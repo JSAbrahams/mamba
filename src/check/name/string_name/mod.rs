@@ -6,11 +6,13 @@ use std::iter::FromIterator;
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 
-use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{CALLABLE, GetFun, HasParent, TUPLE, UNION};
-use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TEMP, TupleCallable, Union};
-use crate::check::name::Name;
+use crate::check::context::clss::{GetFun, HasParent, CALLABLE, TUPLE, UNION};
+use crate::check::context::{function, Context, LookupClass};
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
+use crate::check::name::Name;
+use crate::check::name::{
+    ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TupleCallable, Union, TEMP,
+};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -26,11 +28,16 @@ pub struct StringName {
 
 impl Display for StringName {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{}{}", self.name, if self.generics.is_empty() {
-            String::new()
-        } else {
-            format!("[{}]", comma_delm(&self.generics))
-        })
+        write!(
+            f,
+            "{}{}",
+            self.name,
+            if self.generics.is_empty() {
+                String::new()
+            } else {
+                format!("[{}]", comma_delm(&self.generics))
+            }
+        )
     }
 }
 
@@ -45,7 +52,8 @@ impl ColType for StringName {
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
                     let next_name = StringName::from(function::python::NEXT);
 
-                    let ret_name = iter_class.iter()
+                    let ret_name = iter_class
+                        .iter()
                         .map(|c| c.fun(&next_name, pos))
                         .map(|f| f.map(|f| f.ret_ty))
                         .collect::<TypeResult<Vec<Name>>>()?
@@ -54,7 +62,8 @@ impl ColType for StringName {
 
                     Ok(Some(ret_name))
                 } else {
-                    let msg = format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");
+                    let msg =
+                        format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");
                     Err(vec![TypeErr::new(pos, &msg)])
                 }
             } else {
@@ -176,7 +185,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     fn args(&self, pos: Position) -> TypeResult<Vec<Name>> {
         if self.name == CALLABLE {
             if self.generics.len() == 2 {
-                let args = self.generics.get(0).expect("Unreachable");
+                let args = self.generics.first().expect("Unreachable");
                 if let Some(first) = args.names.iter().next() {
                     Ok(first.variant.generics.clone())
                 } else {
@@ -204,7 +213,12 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
 }
 
 impl MatchTempName for StringName {
-    fn temp_map(&self, other: &StringName, mut mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mut mapping: NameMap,
+        pos: Position,
+    ) -> TypeResult<NameMap> {
         if self.name.starts_with(TEMP) {
             mapping.insert(Name::from(self.name.as_str()), Name::from(other));
         } else if self.name != other.name {
@@ -217,7 +231,10 @@ impl MatchTempName for StringName {
                     mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;
                 }
                 _ => {
-                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                    return Err(vec![TypeErr::new(
+                        pos,
+                        &format!("Cannot unify {self} and {other}"),
+                    )]);
                 }
             }
         }
@@ -235,7 +252,8 @@ impl StringName {
         if self.name == ty {
             None
         } else {
-            let generics: Vec<Name> = self.generics.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+            let generics: Vec<Name> =
+                self.generics.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
             Some(StringName::new(&self.name, generics.as_slice()))
         }
     }
@@ -246,7 +264,12 @@ impl StringName {
         Ok(mapping)
     }
 
-    pub(crate) fn match_name_helper(&self, other: &StringName, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
+    pub(crate) fn match_name_helper(
+        &self,
+        other: &StringName,
+        mapping: &mut NameMap,
+        pos: Position,
+    ) -> TypeResult<()> {
         mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
         for either in self.generics.iter().zip_longest(&other.generics) {
             match either {
@@ -254,7 +277,10 @@ impl StringName {
                     self_generic.match_name_helper(other_generic, mapping, pos)?;
                 }
                 _ => {
-                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                    return Err(vec![TypeErr::new(
+                        pos,
+                        &format!("Cannot unify {self} and {other}"),
+                    )]);
                 }
             }
         }
@@ -264,10 +290,10 @@ impl StringName {
 
 #[cfg(test)]
 mod test {
-    use crate::check::context::clss::{ANY, BOOL, HasParent, INT, STRING};
+    use crate::check::context::clss::{HasParent, ANY, BOOL, INT, STRING};
     use crate::check::context::LookupClass;
-    use crate::check::name::IsSuperSet;
     use crate::check::name::string_name::StringName;
+    use crate::check::name::IsSuperSet;
     use crate::common::position::Position;
     use crate::Context;
 

@@ -1,26 +1,25 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ops::Deref;
 
 use itertools::enumerate;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, LookupClass};
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::{Class, HasParent};
 use crate::check::context::field::Field;
 use crate::check::context::function::python::INIT;
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::ident::Identifier;
-use crate::check::name::{match_name, Name, Nullable, TupleCallable};
 use crate::check::name::true_name::TrueName;
+use crate::check::name::{match_name, Name, Nullable, TupleCallable};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
 use crate::parse::ast::Node::Id;
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_def(
     ast: &AST,
@@ -34,7 +33,11 @@ pub fn gen_def(
                 Id { lit } if *lit == INIT => {
                     if let Some(class) = &env.class {
                         let class = ctx.class(class, id.pos)?;
-                        let parents: Vec<Class> = class.parents.iter().map(|p| ctx.class(p, id.pos)).collect::<TypeResult<_>>()?;
+                        let parents: Vec<Class> = class
+                            .parents
+                            .iter()
+                            .map(|p| ctx.class(p, id.pos))
+                            .collect::<TypeResult<_>>()?;
 
                         let fields: Vec<&Field> = class
                             .fields
@@ -111,11 +114,13 @@ pub fn gen_def(
             Err(vec![TypeErr::new(ast.pos, "Function argument cannot be top level")])
         }
 
-        Node::VariableDef { mutable, var, ty, expr: expression, .. } => if let Some(ty) = ty {
-            let name = Name::try_from(ty)?;
-            id_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
-        } else {
-            id_from_var(var, &None, expression, *mutable, ctx, constr, env)
+        Node::VariableDef { mutable, var, ty, expr: expression, .. } => {
+            if let Some(ty) = ty {
+                let name = Name::try_from(ty)?;
+                id_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
+            } else {
+                id_from_var(var, &None, expression, *mutable, ctx, constr, env)
+            }
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected definition")]),
@@ -148,10 +153,12 @@ pub fn constrain_args(
                     } else {
                         Name::from(class_name)
                     });
-                    env_with_args = id_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
+                    env_with_args =
+                        id_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
                 } else {
                     let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
-                    env_with_args = id_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
+                    env_with_args =
+                        id_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
             }
             _ => {
@@ -178,7 +185,7 @@ pub fn id_from_var(
     }
 
     let mut env = env.clone();
-    let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
+    let identifier = Identifier::try_from(var)?.as_mutable(mutable);
     match (ty, expr) {
         (Some(ty), Some(expr)) => {
             let mut names = vec![];
@@ -231,8 +238,11 @@ pub fn id_from_var(
                             constr.add(&msg, &expr_ty, &expr_exp, &env);
                         }
                     } else {
-                        let msg = format!("Expected tuple of {} elements, was {}",
-                                          temp_names.len(), elements.len());
+                        let msg = format!(
+                            "Expected tuple of {} elements, was {}",
+                            temp_names.len(),
+                            elements.len()
+                        );
                         return Err(vec![TypeErr::new(expr.pos, &msg)]);
                     }
                 }
@@ -244,7 +254,12 @@ pub fn id_from_var(
                 panic!("cannot have empty identifier")
             };
 
-            constr.add("variable with only expression", &Expected::from(var), &Expected::from(expr), &env);
+            constr.add(
+                "variable with only expression",
+                &Expected::from(var),
+                &Expected::from(expr),
+                &env,
+            );
             constr.add("variable with only expression", &exp_expr, &Expected::from(expr), &env);
         }
         (None, None) => {

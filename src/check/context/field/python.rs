@@ -70,9 +70,9 @@ impl From<&Expression> for GenericFields {
                     .collect(),
                 _ => vec![],
             })
-                .iter()
-                .cloned()
-                .collect::<HashSet<_>>(),
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>(),
         }
     }
 }

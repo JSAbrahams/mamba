@@ -18,7 +18,12 @@ pub struct FunUnion {
 impl PartialEq for FunUnion {
     fn eq(&self, other: &Self) -> bool {
         self.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
-            == other.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
+            == other
+                .union
+                .clone()
+                .iter()
+                .sorted_by_key(|f| f.name.clone())
+                .collect::<Vec<&Function>>()
     }
 }
 

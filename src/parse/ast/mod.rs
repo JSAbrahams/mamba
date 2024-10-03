@@ -134,7 +134,7 @@ impl Node {
 #[cfg(test)]
 mod test {
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn simple_ast() {

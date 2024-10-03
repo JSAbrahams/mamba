@@ -103,7 +103,8 @@ fn one_tuple_not_assigned_to() {
 
 #[test]
 fn reassign_to_unassigned_class_var() {
-    let source = resource_content(false, &["type", "class"], "reassign_to_unassigned_class_var.mamba");
+    let source =
+        resource_content(false, &["type", "class"], "reassign_to_unassigned_class_var.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

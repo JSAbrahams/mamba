@@ -59,7 +59,13 @@ impl Environment {
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected, var_mapping: &VarMapping) -> Environment {
+    pub fn insert_var(
+        &self,
+        mutable: bool,
+        var: &str,
+        expect: &Expected,
+        var_mapping: &VarMapping,
+    ) -> Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
@@ -109,7 +115,11 @@ impl Environment {
     /// If not found, use variable directly in lookup.
     ///
     /// Return true variable [TrueName], whether it's mutable and it's expected value.
-    pub fn get_var(&self, var: &str, var_mapping: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
+    pub fn get_var(
+        &self,
+        var: &str,
+        var_mapping: &VarMapping,
+    ) -> Option<HashSet<(bool, Expected)>> {
         let var_name = if let Some(offset) = self.var_mapping.get(var) {
             format_var_map(var, offset)
         } else if let Some(offset) = var_mapping.get(var) {

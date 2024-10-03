@@ -14,8 +14,13 @@ pub type SubRes<T = Expected> = (bool, T);
 ///
 /// If identifier override detected, only substitute right hand side of
 /// unification before ceasing substitution.
-pub fn sub(constraints: &mut Constraints, new: &Expected, old: &Expected,
-           offset: usize, total: usize) -> Unified<()> {
+pub fn sub(
+    constraints: &mut Constraints,
+    new: &Expected,
+    old: &Expected,
+    offset: usize,
+    total: usize,
+) -> Unified<()> {
     let mut constraint_pos = offset;
     trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
 
@@ -78,10 +83,13 @@ fn sub_recursive(side: &str, inspected: &Expected, old: &Expected, new: &Expecte
 }
 
 /// Substitute all in vector, and also returns True if any substituted.
-fn sub_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expected]) -> SubRes<Vec<Expected>> {
-    let elements = elements
-        .iter()
-        .map(|e| sub_recursive(side, e, old, new));
+fn sub_vec(
+    side: &str,
+    old: &Expected,
+    new: &Expected,
+    elements: &[Expected],
+) -> SubRes<Vec<Expected>> {
+    let elements = elements.iter().map(|e| sub_recursive(side, e, old, new));
 
     (elements.clone().any(|(i, _)| i), elements.map(|(_, i)| i).collect())
 }

@@ -2,10 +2,10 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::ASTTy;
 use crate::common::position::Position;
 use crate::common::result::{format_err, WithSource};
 use crate::generate::ast::node::Core;
+use crate::ASTTy;
 
 pub type GenResult<T = Core> = Result<T, Box<UnimplementedErr>>;
 

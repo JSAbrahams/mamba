@@ -5,11 +5,11 @@ use std::ops::Deref;
 
 use crate::check::ident::Identifier;
 use crate::check::name::match_name;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericField {

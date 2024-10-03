@@ -4,10 +4,13 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 use std::iter::FromIterator;
 
-use crate::check::context::{clss, Context};
 use crate::check::context::clss::NONE;
-use crate::check::name::{Any, ColType, ContainsTemp, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, TupleCallable, Union};
+use crate::check::context::{clss, Context};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{
+    Any, ColType, ContainsTemp, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute,
+    TupleCallable, Union,
+};
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
@@ -26,20 +29,30 @@ pub trait IsTemp {
 }
 
 pub trait MatchTempName {
-    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>>;
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mapping: HashMap<Name, Name>,
+        pos: Position,
+    ) -> TypeResult<HashMap<Name, Name>>;
 }
 
-impl PartialOrd<Self> for TrueName {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+impl Ord for TrueName {
+    fn cmp(&self, other: &Self) -> Ordering {
         if self.variant == other.variant {
             if self.is_nullable == other.is_nullable {
-                self.is_mutable.partial_cmp(&other.is_mutable)
+                self.is_mutable.cmp(&other.is_mutable)
             } else {
-                self.is_nullable.partial_cmp(&other.is_nullable)
+                self.is_nullable.cmp(&other.is_nullable)
             }
         } else {
-            self.variant.partial_cmp(&other.variant)
+            self.variant.cmp(&other.variant)
         }
+    }
+}
+impl PartialOrd<Self> for TrueName {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -49,14 +62,10 @@ impl Any for TrueName {
     }
 }
 
-impl Ord for TrueName {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
-    }
-}
-
 impl Mutable for TrueName {
-    fn as_mutable(&self) -> Self { TrueName { is_mutable: true, ..self.clone() } }
+    fn as_mutable(&self) -> Self {
+        TrueName { is_mutable: true, ..self.clone() }
+    }
 }
 
 impl ColType for TrueName {
@@ -90,7 +99,7 @@ impl IsSuperSet<TrueName> for TrueName {
     /// If self is nullable, then super of other iff:
     /// - Other is null.
     /// - Or, variant is supertype of other's variant. (Other may or may not be nullable.)
-    /// If self is not nullable, then super of other iff:
+    ///   If self is not nullable, then super of other iff:
     /// - Other is not nullable.
     /// - And, variant is supertype of other's variant.
     fn is_superset_of(&self, other: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
@@ -114,14 +123,24 @@ impl Union<TrueName> for Name {
 }
 
 impl Empty for TrueName {
-    fn is_empty(&self) -> bool { self.variant.is_empty() }
-    fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
+    fn is_empty(&self) -> bool {
+        self.variant.is_empty()
+    }
+    fn empty() -> TrueName {
+        TrueName::from(&StringName::empty())
+    }
 }
 
 impl Nullable for TrueName {
-    fn is_nullable(&self) -> bool { self.is_nullable }
-    fn is_null(&self) -> bool { self.variant.name == NONE }
-    fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
+    fn is_nullable(&self) -> bool {
+        self.is_nullable
+    }
+    fn is_null(&self) -> bool {
+        self.variant.name == NONE
+    }
+    fn as_nullable(&self) -> Self {
+        TrueName { is_nullable: true, ..self.clone() }
+    }
 }
 
 impl Substitute for TrueName {
@@ -150,7 +169,12 @@ impl ContainsTemp for TrueName {
 }
 
 impl MatchTempName for TrueName {
-    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mapping: HashMap<Name, Name>,
+        pos: Position,
+    ) -> TypeResult<HashMap<Name, Name>> {
         self.variant.temp_map(other, mapping, pos)
     }
 }
@@ -198,8 +222,8 @@ impl TrueName {
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, COMPLEX, INT, STRING};
-    use crate::check::name::{IsSuperSet, Nullable};
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::{IsSuperSet, Nullable};
     use crate::common::position::Position;
     use crate::Context;
 

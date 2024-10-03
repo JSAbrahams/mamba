@@ -5,8 +5,8 @@ use crate::check::constrain::constraint::expected::Expect::{Access, Function, Ty
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::clss;
 use crate::check::context::function::python::{STR, TRUTHY};
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 
 pub mod builder;
 pub mod expected;
@@ -49,7 +49,9 @@ impl Constraint {
     }
 
     /// Flag constraint iff flagged is 0, else ignored.
-    fn flag(&self) -> Constraint { Constraint { is_flag: true, ..self.clone() } }
+    fn flag(&self) -> Constraint {
+        Constraint { is_flag: true, ..self.clone() }
+    }
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
         Self::access(msg, expected, &Name::from(clss::STRING), &StringName::from(STR))

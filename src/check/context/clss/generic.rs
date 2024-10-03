@@ -4,17 +4,17 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::{arg, clss};
 use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::python::{INIT, STR};
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::{Any, Empty, Name};
+use crate::check::context::{arg, clss};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Any, Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
@@ -296,7 +296,8 @@ fn get_fields_and_functions(
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
-                        let msg = format!("Class field '{}' was not assigned a type", generic_field.name);
+                        let msg =
+                            format!("Class field '{}' was not assigned a type", generic_field.name);
                         return Err(vec![TypeErr::new(generic_field.pos, &msg)]);
                     }
                 }
@@ -321,9 +322,9 @@ mod test {
     use itertools::Itertools;
 
     use crate::check::context::clss::generic::GenericClass;
-    use crate::check::name::Name;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::Name;
     use crate::parse::parse_direct;
     use crate::TypeErr;
 

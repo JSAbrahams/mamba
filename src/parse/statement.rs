@@ -1,6 +1,6 @@
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
 use crate::parse::ast::node_op::NodeOp;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
@@ -29,7 +29,15 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
             _ => Err(Box::from(expected_one_of(
-                &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
+                &[
+                    Token::Pass,
+                    Token::Raise,
+                    Token::Def,
+                    Token::With,
+                    Token::For,
+                    Token::While,
+                    Token::Ret,
+                ],
                 lex,
                 "statement",
             ))),
@@ -145,7 +153,9 @@ pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     if let Some(end) = it.eat_if(&Token::NL) {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start.union(end), node)));
-    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof) || it.peek_next().is_none() {
+    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof)
+        || it.peek_next().is_none()
+    {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start, node)));
     }
@@ -171,8 +181,8 @@ pub fn is_start_statement(tp: &Token) -> bool {
 #[cfg(test)]
 mod test {
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::Node;
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::Node;
     use crate::parse::parse_direct;
 
     #[test]

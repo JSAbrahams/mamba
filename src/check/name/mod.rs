@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -8,8 +8,8 @@ use std::iter::FromIterator;
 
 use itertools::Itertools;
 
-use crate::check::context::{clss, Context};
 use crate::check::context::clss::Class;
+use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
@@ -55,7 +55,9 @@ pub trait Mutable {
 }
 
 pub trait Substitute {
-    fn substitute(&self, generics: &NameMap, pos: Position) -> TypeResult<Self> where Self: Sized;
+    fn substitute(&self, generics: &NameMap, pos: Position) -> TypeResult<Self>
+    where
+        Self: Sized;
 }
 
 pub trait ColType {
@@ -95,8 +97,11 @@ pub fn match_name(
     name: &Name,
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
-    let unions: Vec<HashMap<String, (bool, Name)>> =
-        name.names.iter().map(|ty| match_type_direct(identifier, ty, pos)).collect::<Result<_, _>>()?;
+    let unions: Vec<HashMap<String, (bool, Name)>> = name
+        .names
+        .iter()
+        .map(|ty| match_type_direct(identifier, ty, pos))
+        .collect::<Result<_, _>>()?;
 
     let mut final_union: HashMap<String, (bool, Name)> = HashMap::new();
     for union in unions {
@@ -150,21 +155,23 @@ pub fn match_type_direct(
 
 impl From<&HashSet<Class>> for Name {
     fn from(classes: &HashSet<Class>) -> Self {
-        Name { names: classes.iter().map(|c| TrueName::from(&c.name)).collect(), is_interchangeable: false }
-    }
-}
-
-impl PartialOrd<Self> for Name {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let self_vec = self.names.iter().sorted();
-        let other_vec = other.names.iter().sorted();
-        self_vec.partial_cmp(other_vec)
+        Name {
+            names: classes.iter().map(|c| TrueName::from(&c.name)).collect(),
+            is_interchangeable: false,
+        }
     }
 }
 
 impl Ord for Name {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+        let self_vec = self.names.iter().sorted();
+        let other_vec = other.names.iter().sorted();
+        self_vec.cmp(other_vec)
+    }
+}
+impl PartialOrd<Self> for Name {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -179,10 +186,7 @@ impl Union<Name> for Name {
         let names: HashSet<TrueName> = self.names.union(&name.names).cloned().collect();
         Name {
             names: if names.iter().any(TrueName::is_null) && names.len() > 1 {
-                names.iter()
-                    .filter(|n| !n.is_null())
-                    .map(TrueName::as_nullable)
-                    .collect()
+                names.iter().filter(|n| !n.is_null()).map(TrueName::as_nullable).collect()
             } else {
                 names
             },
@@ -233,9 +237,7 @@ impl PartialEq for Name {
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.names.len().hash(state);
-        self.names.iter()
-            .sorted_by_key(|name| &name.variant)
-            .for_each(|n| n.hash(state))
+        self.names.iter().sorted_by_key(|name| &name.variant).for_each(|n| n.hash(state))
     }
 }
 
@@ -275,7 +277,8 @@ impl IsSuperSet<Name> for Name {
         let mut self_is_super_of = false;
         for name in &other.names {
             let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
-            let any_superset: Vec<_> = self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
+            let any_superset: Vec<_> =
+                self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
 
             if !other.is_interchangeable && any_superset.clone().iter().all(|b| !*b) {
                 return Ok(false); // not a single of self was super
@@ -372,9 +375,11 @@ impl Name {
         let names = if self.names.len() > 1 {
             self.names
                 .iter()
-                .filter(|n| self.names.iter().any(|o_n| {
-                    !o_n.is_superset_of(n, ctx, Position::invisible()).unwrap_or(true)
-                }))
+                .filter(|n| {
+                    self.names.iter().any(|o_n| {
+                        !o_n.is_superset_of(n, ctx, Position::invisible()).unwrap_or(true)
+                    })
+                })
                 .cloned()
                 .collect()
         } else {
@@ -416,15 +421,23 @@ impl Name {
         self.temp_map_with_mapping(other, HashMap::new(), pos)
     }
 
-    pub(crate) fn temp_map_with_mapping(&self, other: &Name, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
-        self.names.iter().fold(Ok(mapping), |acc, s_n| {
-            other.names.iter().fold(acc, |acc, o_n| if let Ok(acc) = acc {
-                s_n.temp_map(&o_n.variant, acc, pos)
-            } else { acc })
+    pub(crate) fn temp_map_with_mapping(
+        &self,
+        other: &Name,
+        mapping: NameMap,
+        pos: Position,
+    ) -> TypeResult<NameMap> {
+        self.names.iter().try_fold(mapping, |acc, s_n| {
+            other.names.iter().try_fold(acc, |acc, o_n| s_n.temp_map(&o_n.variant, acc, pos))
         })
     }
 
-    pub(crate) fn match_name_helper(&self, other: &Name, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
+    pub(crate) fn match_name_helper(
+        &self,
+        other: &Name,
+        mapping: &mut NameMap,
+        pos: Position,
+    ) -> TypeResult<()> {
         for name in &self.names {
             for other_name in &other.names {
                 name.variant.match_name_helper(&other_name.variant, mapping, pos)?;
@@ -438,12 +451,16 @@ impl Name {
 mod tests {
     use std::collections::HashSet;
 
+    use crate::check::context::clss::{
+        HasParent, BOOL, COLLECTION, FLOAT, INT, RANGE, SET, STRING, TUPLE,
+    };
     use crate::check::context::{clss, Context, LookupClass};
-    use crate::check::context::clss::{BOOL, COLLECTION, FLOAT, HasParent, INT, RANGE, SET, STRING, TUPLE};
     use crate::check::ident::Identifier;
-    use crate::check::name::{Any, ColType, Empty, IsSuperSet, match_name, Name, Nullable, TupleCallable, Union};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::{
+        match_name, Any, ColType, Empty, IsSuperSet, Name, Nullable, TupleCallable, Union,
+    };
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
 
@@ -555,7 +572,8 @@ mod tests {
 
     #[test]
     fn is_superset_any_only_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 =
+            Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -564,7 +582,8 @@ mod tests {
 
     #[test]
     fn is_superset_any_no_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 =
+            Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
         let union_2 = Name::from(RANGE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -582,7 +601,8 @@ mod tests {
 
     #[test]
     fn is_superset_any_nullable() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL).as_nullable(), TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL).as_nullable(), TrueName::from(INT)])
+            .is_interchangeable(true);
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -702,11 +722,7 @@ mod tests {
     #[test]
     fn test_tuple_not_equal_size() {
         let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
-        let name2 = Name::tuple(&[
-            Name::from("A1"),
-            Name::from("A2"),
-            Name::from("A2"),
-        ]);
+        let name2 = Name::tuple(&[Name::from("A1"), Name::from("A2"), Name::from("A2")]);
         assert_ne!(name1, name2)
     }
 
@@ -798,11 +814,7 @@ mod tests {
         let iden2 = Identifier::from((false, "abc2"));
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
-        let name = Name::tuple(&[
-            Name::from("A2"),
-            Name::from("A1"),
-            Name::from("A0"),
-        ]);
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1"), Name::from("A0")]);
 
         let matchings = match_name(&iden3, &name, Position::invisible());
         assert!(matchings.is_err());

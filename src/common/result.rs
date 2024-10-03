@@ -1,7 +1,7 @@
 use std::cmp::max;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::path::{MAIN_SEPARATOR, PathBuf};
+use std::path::{PathBuf, MAIN_SEPARATOR};
 
 use crate::common::position::Position;
 
@@ -30,7 +30,10 @@ pub trait WithCause {
     fn with_cause(self, msg: &str, pos: Position) -> Self;
 }
 
-pub fn an_or_a<D>(parsing: D) -> &'static str where D: Display {
+pub fn an_or_a<D>(parsing: D) -> &'static str
+where
+    D: Display,
+{
     let parsing = format!("{parsing}").to_ascii_lowercase();
 
     if let Some('s') = parsing.chars().last() {
@@ -41,25 +44,27 @@ pub fn an_or_a<D>(parsing: D) -> &'static str where D: Display {
 
     match parsing.chars().next() {
         Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an ",
-        _ => "a "
+        _ => "a ",
     }
 }
 
-
-pub fn format_err(f: &mut Formatter,
-                  msg: &str,
-                  path: &Option<PathBuf>,
-                  pos: Option<Position>,
-                  source: &Option<String>,
-                  causes: &[Cause]) -> fmt::Result {
+pub fn format_err(
+    f: &mut Formatter,
+    msg: &str,
+    path: &Option<PathBuf>,
+    pos: Option<Position>,
+    source: &Option<String>,
+    causes: &[Cause],
+) -> fmt::Result {
     let path = path.as_ref().map_or("<unknown>", |p| p.to_str().unwrap_or_default());
 
     if let Some(pos) = pos {
-        writeln!(f,
-                 "{msg}\n {RIGHT_ARROW} {}:{}:{}",
-                 path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
-                 pos.start.line,
-                 pos.start.pos,
+        writeln!(
+            f,
+            "{msg}\n {RIGHT_ARROW} {}:{}:{}",
+            path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
+            pos.start.line,
+            pos.start.pos,
         )?;
 
         format_location(f, 0, None, pos, source)
@@ -82,11 +87,13 @@ pub fn format_err(f: &mut Formatter,
     Ok(())
 }
 
-pub fn format_location(f: &mut Formatter,
-                       offset: usize,
-                       msg: Option<&str>,
-                       pos: Position,
-                       source: &Option<String>) -> fmt::Result {
+pub fn format_location(
+    f: &mut Formatter,
+    offset: usize,
+    msg: Option<&str>,
+    pos: Position,
+    source: &Option<String>,
+) -> fmt::Result {
     let offset_str = String::from_utf8(vec![b' '; OFFSET_WIDTH * offset]).unwrap();
 
     let msg = if let Some(msg) = msg {
@@ -99,27 +106,34 @@ pub fn format_location(f: &mut Formatter,
         return writeln!(f, "{msg}");
     }
 
-    let (before_def, line_def, after_def) = (String::new(), String::from("<unknown>\n"), String::from("\n"));
+    let (before_def, line_def, after_def) =
+        (String::new(), String::from("<unknown>\n"), String::from("\n"));
     let (source_before, source_line, source_after) = if let Some(source) = source {
         let before_line_pos = max(pos.start.line as i32 - 2, usize::MAX as i32) as usize;
         let line_pos = max(pos.start.line as i32 - 1, usize::MAX as i32) as usize;
         let after_line_pos = max(pos.start.line, usize::MAX);
 
         let lines = source.lines();
-        let before = lines.clone().nth(before_line_pos).map_or(before_def.clone(), |line| if line.is_empty() {
-            before_def
-        } else {
-            format!("{offset_str}{:4} | {line}\n", pos.start.line - 1)
+        let before = lines.clone().nth(before_line_pos).map_or(before_def.clone(), |line| {
+            if line.is_empty() {
+                before_def
+            } else {
+                format!("{offset_str}{:4} | {line}\n", pos.start.line - 1)
+            }
         });
-        let line = lines.clone().nth(line_pos).map_or(line_def.clone(), |line| if line.is_empty() {
-            line_def
-        } else {
-            format!("{offset_str}{:4} | {line}\n", pos.start.line)
+        let line = lines.clone().nth(line_pos).map_or(line_def.clone(), |line| {
+            if line.is_empty() {
+                line_def
+            } else {
+                format!("{offset_str}{:4} | {line}\n", pos.start.line)
+            }
         });
-        let after = lines.clone().nth(after_line_pos).map_or(after_def.clone(), |line| if line.is_empty() {
-            after_def
-        } else {
-            format!("\n{offset_str}{:4} | {line}\n", pos.start.line + 1)
+        let after = lines.clone().nth(after_line_pos).map_or(after_def.clone(), |line| {
+            if line.is_empty() {
+                after_def
+            } else {
+                format!("\n{offset_str}{:4} | {line}\n", pos.start.line + 1)
+            }
         });
 
         (before, line, after)
@@ -127,9 +141,10 @@ pub fn format_location(f: &mut Formatter,
         (before_def, line_def, after_def)
     };
 
-    write!(f,
-           "{msg}{source_before}{source_line}       {}{}{source_after}",
-           String::from_utf8(vec![b' '; offset * OFFSET_WIDTH + pos.start.pos - 1]).unwrap(),
-           String::from_utf8(vec![b'^'; pos.get_width()]).unwrap(),
+    write!(
+        f,
+        "{msg}{source_before}{source_line}       {}{}{source_after}",
+        String::from_utf8(vec![b' '; offset * OFFSET_WIDTH + pos.start.pos - 1]).unwrap(),
+        String::from_utf8(vec![b'^'; pos.get_width()]).unwrap(),
     )
 }

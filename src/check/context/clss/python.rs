@@ -11,8 +11,8 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::python::INIT;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -138,9 +138,9 @@ mod test {
     use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
     use crate::check::context::clss::generic::GenericClass;
-    use crate::check::name::{Empty, Name};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
+    use crate::check::name::{Empty, Name};
 
     fn class_def(stmt: &Statement) -> Classdef {
         match &stmt {
@@ -250,11 +250,8 @@ mod test {
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.parents.len(), 2);
-        let mut iter = generic_class
-            .parents
-            .iter()
-            .sorted_by_key(|p| p.name.variant.clone())
-            .into_iter();
+        let mut iter =
+            generic_class.parents.iter().sorted_by_key(|p| p.name.variant.clone()).into_iter();
 
         let parent2 = iter.next().expect("parent in class");
         assert_eq!(parent2.name, TrueName::from("P2"));

@@ -1,6 +1,6 @@
 use crate::common::position::Position;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -18,7 +18,7 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
                 "collection",
-            )))
+            ))),
         },
         &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
         "collection",
@@ -72,12 +72,21 @@ fn parse_dict(it: &mut LexIterator, first: &(AST, AST), start: Position) -> Pars
     if it.eat_if(&Token::Ver).is_some() {
         let conditions = it.parse_vec(&parse_expressions, "dictionary builder", start)?;
         let end = it.eat(&Token::RCBrack, "dictionary builder")?;
-        let node = Node::DictBuilder { from: Box::from(first.clone().0), to: Box::from(first.1.clone()), conditions };
+        let node = Node::DictBuilder {
+            from: Box::from(first.clone().0),
+            to: Box::from(first.1.clone()),
+            conditions,
+        };
         return Ok(Box::from(AST::new(start.union(end), node)));
     }
 
     let mut elements = vec![first.clone()];
-    elements.append(&mut it.parse_vec_if(&Token::Comma, &parse_dict_entries, "dictionary", start)?);
+    elements.append(&mut it.parse_vec_if(
+        &Token::Comma,
+        &parse_dict_entries,
+        "dictionary",
+        start,
+    )?);
     let end = it.eat(&Token::RCBrack, "dictionary")?;
 
     let node = Node::Dict { elements };
@@ -141,9 +150,9 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]
@@ -199,7 +208,9 @@ mod test {
         let source = String::from("{a | c, d}");
         let statements = parse_direct(&source).unwrap();
 
-        let Node::SetBuilder { item, conditions } = &statements.first().expect("script empty.").node else {
+        let Node::SetBuilder { item, conditions } =
+            &statements.first().expect("script empty.").node
+        else {
             panic!("first element script was not set builder.")
         };
 
@@ -227,7 +238,9 @@ mod test {
     fn list_builder_verify() {
         let source = String::from("[a | c, d]");
         let statements = parse_direct(&source).unwrap();
-        let Node::ListBuilder { item, conditions } = &statements.first().expect("script empty.").node else {
+        let Node::ListBuilder { item, conditions } =
+            &statements.first().expect("script empty.").node
+        else {
             panic!("first element script was not list builder.")
         };
 

@@ -6,24 +6,24 @@ use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::operation::gen_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
-use crate::check::context::{arg, Context, function, LookupClass, LookupFunction};
-use crate::check::context::arg::FunctionArg;
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::arg::python::SELF;
+use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::python::GET_ITEM;
+use crate::check::context::{arg, function, Context, LookupClass, LookupFunction};
 use crate::check::ident::{IdentiCall, Identifier};
-use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
 use crate::parse::ast::node_op::NodeOp;
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_call(
     ast: &AST,
@@ -65,7 +65,12 @@ pub fn gen_call(
                     .for_each(|cons| constr.add_constr(&cons, env));
 
                 let name = Name::empty();
-                constr.add("print", &Expected::new(ast.pos, &Type { name }), &Expected::from(ast), env);
+                constr.add(
+                    "print",
+                    &Expected::new(ast.pos, &Type { name }),
+                    &Expected::from(ast),
+                    env,
+                );
                 env.clone()
             } else if let Some(functions) = env.get_var(&f_name.name, &constr.var_mapping) {
                 if !f_name.generics.is_empty() {
@@ -95,15 +100,18 @@ pub fn gen_call(
         Node::PropertyCall { instance, property } => {
             property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
         }
-        Node::Index { item, range } => {
-            gen_magic(GET_ITEM, ast, item, range, env, ctx, constr)
-        }
+        Node::Index { item, range } => gen_magic(GET_ITEM, ast, item, range, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
     }
 }
 
-fn check_iden_mut(id: &Identifier, env: &Environment, constr: &mut ConstrBuilder, pos: Position) -> TypeResult<()> {
+fn check_iden_mut(
+    id: &Identifier,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) -> TypeResult<()> {
     let errors: Vec<String> = id
         .fields(pos)?
         .iter()
@@ -115,7 +123,7 @@ fn check_iden_mut(id: &Identifier, env: &Environment, constr: &mut ConstrBuilder
                 .collect(),
             _ if !f_mut => vec![format!("Cannot change mutability of '{var}' in reassign")],
             _ if var == SELF && env.class.is_some() => vec![],
-            _ => vec![format!("Cannot reassign to undefined '{var}'")]
+            _ => vec![format!("Cannot reassign to undefined '{var}'")],
         })
         .collect();
 
@@ -198,7 +206,7 @@ fn property_call(
         }
         Node::FunctionCall { name, args } => {
             gen_vec(args, env, false, ctx, constr)?;
-            let args = vec![last_inst.clone()].iter().chain(args).map(Expected::from).collect();
+            let args = [last_inst.clone()].iter().chain(args).map(Expected::from).collect();
             let function = Function { name: StringName::try_from(name)?, args };
             Expected::new(property.pos, &function)
         }

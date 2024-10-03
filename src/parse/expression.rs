@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::call::parse_anon_fun;
 use crate::parse::call::parse_call;
 use crate::parse::collection::parse_collection;
@@ -43,7 +43,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Sub,
         Token::Undefined,
         Token::BOneCmpl,
-        Token::BSlash
+        Token::BSlash,
     ];
 
     let result = it.peek_or_err(
@@ -118,7 +118,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)
             }
-            _ => Ok(Box::from(pre.clone()))
+            _ => Ok(Box::from(pre.clone())),
         },
         Ok(Box::from(pre.clone())),
     )

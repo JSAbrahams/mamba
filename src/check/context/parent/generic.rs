@@ -4,7 +4,7 @@ use std::hash::Hash;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct GenericParent {
@@ -18,11 +18,9 @@ impl TryFrom<&AST> for GenericParent {
 
     fn try_from(ast: &AST) -> TypeResult<GenericParent> {
         match &ast.node {
-            Node::Parent { ty, .. } => Ok(GenericParent {
-                is_py_type: false,
-                name: TrueName::try_from(ty)?,
-                pos: ast.pos,
-            }),
+            Node::Parent { ty, .. } => {
+                Ok(GenericParent { is_py_type: false, name: TrueName::try_from(ty)?, pos: ast.pos })
+            }
             _ => {
                 let msg = format!("Expected parent, was {}", ast.node);
                 Err(vec![TypeErr::new(ast.pos, &msg)])

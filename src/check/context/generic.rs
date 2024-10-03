@@ -8,7 +8,7 @@ use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{AST, Node, OptAST};
+use crate::parse::ast::{Node, OptAST, AST};
 
 pub fn generics(
     files: &[AST],
@@ -33,10 +33,11 @@ pub fn generics(
                                 fields.insert(ty.clone());
                             });
                         }
-                        Node::Import { from, import, alias } =>
+                        Node::Import { from, import, alias } => {
                             from_import(from, import, alias)?.into_iter().for_each(|t| {
                                 types.insert(t);
-                            }),
+                            })
+                        }
                         _ => {}
                     }
                 }
@@ -64,6 +65,8 @@ fn from_import(_from: &OptAST, import: &[AST], alias: &[AST]) -> TypeResult<Vec<
         }
     }
 
-    if !errs.is_empty() { return Err(errs); }
+    if !errs.is_empty() {
+        return Err(errs);
+    }
     Ok(classes)
 }

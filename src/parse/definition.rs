@@ -1,6 +1,6 @@
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
 use crate::parse::ast::node_op::NodeOp;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -104,7 +104,9 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
     let id = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => match (mutable, ty) {
             (_, None) => expr.clone(),
-            (_, Some(_)) => return Err(Box::from(custom("Function identifier cannot have type", expr.pos))),
+            (_, Some(_)) => {
+                return Err(Box::from(custom("Function identifier cannot have type", expr.pos)))
+            }
         },
         Node::Id { .. } => Box::from(id.clone()),
 
@@ -159,7 +161,10 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let (mutable, var, ty) = match &expression_type.node {
         Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
         _ => {
-            return Err(Box::from(custom("Expected expression type in function argument", expression_type.pos)));
+            return Err(Box::from(custom(
+                "Expected expression type in function argument",
+                expression_type.pos,
+            )));
         }
     };
     let default =
@@ -187,7 +192,12 @@ fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", id.pos)?;
     let (mutable, var, ty) = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
-        _ => return Err(Box::from(custom("Expected expression type in variable definition", id.pos))),
+        _ => {
+            return Err(Box::from(custom(
+                "Expected expression type in variable definition",
+                id.pos,
+            )))
+        }
     };
 
     let end = match (&expression, &forward.last()) {
@@ -207,9 +217,9 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     macro_rules! unwrap_func_definition {

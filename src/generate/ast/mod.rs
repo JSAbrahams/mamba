@@ -147,22 +147,34 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
         Core::DictComprehension { from, to, col, conds } => {
             let conds: Vec<String> = conds.iter().map(|cond| to_py(cond, ind)).collect();
-            format!("{{{}: {} for {} if {}}}", to_py(from, ind), to_py(to, ind), to_py(col, ind), custom_delimited(conds, " and ", ""))
+            format!(
+                "{{{}: {} for {} if {}}}",
+                to_py(from, ind),
+                to_py(to, ind),
+                to_py(col, ind),
+                custom_delimited(conds, " and ", "")
+            )
         }
         Core::Comprehension { expr, col, conds } if conds.is_empty() => {
             format!("{} for {}", to_py(expr, ind), to_py(col, ind))
         }
         Core::Comprehension { expr, col, conds } => {
             let conds: Vec<String> = conds.iter().map(|cond| to_py(cond, ind)).collect();
-            format!("{} for {} if {}", to_py(expr, ind), to_py(col, ind), custom_delimited(conds, " and ", ""))
+            format!(
+                "{} for {} if {}",
+                to_py(expr, ind),
+                to_py(col, ind),
+                custom_delimited(conds, " and ", "")
+            )
         }
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
         Core::TupleLiteral { elements } => comma_delimited(elements, ind),
         Core::Dictionary { elements } => {
-            let elements: Vec<String> = elements.iter().map(|(from, to)| {
-                format!("{}: {}", to_py(from, ind), to_py(to, ind))
-            }).collect();
+            let elements: Vec<String> = elements
+                .iter()
+                .map(|(from, to)| format!("{}: {}", to_py(from, ind), to_py(to, ind)))
+                .collect();
             format!("{{{}}}", comma_delm(elements))
         }
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),

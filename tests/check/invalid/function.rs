@@ -23,13 +23,15 @@ fn no_enough_arg() {
 
 #[test]
 fn empty_return_outside_function() {
-    let source = resource_content(false, &["type", "function"], "empty_return_outside_function.mamba");
+    let source =
+        resource_content(false, &["type", "function"], "empty_return_outside_function.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 fn no_enough_arg_with_default() {
-    let source = resource_content(false, &["type", "function"], "not_enough_arg_with_default.mamba");
+    let source =
+        resource_content(false, &["type", "function"], "not_enough_arg_with_default.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -101,7 +103,8 @@ fn function_with_stmt_body() {
 
 #[test]
 fn function_with_stmt_body_ret() {
-    let source = resource_content(false, &["type", "function"], "function_with_stmt_body_ret.mamba");
+    let source =
+        resource_content(false, &["type", "function"], "function_with_stmt_body_ret.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -131,7 +134,8 @@ fn return_if_else_none_then() {
 
 #[test]
 fn return_if_else_undefined_explicit() {
-    let source = resource_content(false, &["type", "function"], "return_if_else_undefined_explicit.mamba");
+    let source =
+        resource_content(false, &["type", "function"], "return_if_else_undefined_explicit.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

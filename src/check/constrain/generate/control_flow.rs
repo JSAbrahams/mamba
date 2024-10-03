@@ -1,15 +1,15 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::Context;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_flow(
     ast: &AST,
@@ -19,21 +19,24 @@ pub fn gen_flow(
 ) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
-            let (raises, errs): (Vec<Result<_, _>>, Vec<Result<_, _>>) = cases.iter().map(|c| match &c.node {
-                Node::Case { cond, .. } => {
-                    match &cond.node {
+            let (raises, errs): (Vec<Result<_, _>>, Vec<Result<_, _>>) = cases
+                .iter()
+                .map(|c| match &c.node {
+                    Node::Case { cond, .. } => match &cond.node {
                         Node::ExpressionType { ty: Some(ty), .. } => TrueName::try_from(ty)
                             .map_err(|errs| errs.first().expect("At least one").clone()),
                         other => {
                             let msg = format!("Expected type identifier, was {other}");
                             Err(TypeErr::new(cond.pos, &msg))
                         }
-                    }
-                }
-                other => Err(TypeErr::new(c.pos, &format!("Expected case, was {other}")))
-            }).partition(Result::is_ok);
+                    },
+                    other => Err(TypeErr::new(c.pos, &format!("Expected case, was {other}"))),
+                })
+                .partition(Result::is_ok);
 
-            if !errs.is_empty() { return Err(errs.into_iter().map(Result::unwrap_err).collect()); }
+            if !errs.is_empty() {
+                return Err(errs.into_iter().map(Result::unwrap_err).collect());
+            }
             let raises = raises.into_iter().map(Result::unwrap).collect();
 
             let raises_before = env.raises_caught.clone();
@@ -99,11 +102,18 @@ pub fn gen_flow(
         Node::Break | Node::Continue if env.in_loop => Ok(env.clone()),
         Node::Break | Node::Continue => Err(vec![TypeErr::new(ast.pos, "Cannot be outside loop")]),
 
-        _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")])
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")]),
     }
 }
 
-fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
+fn constrain_cases(
+    ast: &AST,
+    expr: &Option<AST>,
+    cases: &Vec<AST>,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder,
+) -> Constrained<()> {
     let is_define_mode = env.is_def_mode;
     constr.branch_point();
 
@@ -127,7 +137,7 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
                     constr.add("arm body and outer", &Expected::from(ast), &exp_body, env);
                 }
             }
-            _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
+            _ => return Err(vec![TypeErr::new(case.pos, "Expected case")]),
         }
     }
 

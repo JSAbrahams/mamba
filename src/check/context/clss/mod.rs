@@ -4,20 +4,20 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use itertools::{EitherOrBoth, enumerate, Itertools};
+use itertools::{enumerate, EitherOrBoth, Itertools};
 
-use crate::check::context::{Context, LookupClass};
-use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::function::Function;
+use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::function::Function;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::{Any, Empty, Name, Substitute};
+use crate::check::context::{Context, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
+use crate::check::name::{Any, Empty, Name, Substitute};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -84,9 +84,9 @@ impl HasParent<&StringName> for Class {
     fn has_parent(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         if self.name == *other || other.name.as_str() == ANY {
             return Ok(true);
-        } else if (self.name.name == TUPLE && (other.name == TUPLE || other.name == COLLECTION)) ||
-            (self.name.name == *other.name && self.name.generics.len() == other.generics.len()) {
-
+        } else if (self.name.name == TUPLE && (other.name == TUPLE || other.name == COLLECTION))
+            || (self.name.name == *other.name && self.name.generics.len() == other.generics.len())
+        {
             // Contender! check generics
             // Tuple check is necessary evil, no way to specify variable generics for tuples
             let mut all_generic_super = true;
@@ -95,7 +95,9 @@ impl HasParent<&StringName> for Class {
                     all_generic_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
                 }
             }
-            if all_generic_super { return Ok(all_generic_super); }
+            if all_generic_super {
+                return Ok(all_generic_super);
+            }
         }
 
         Ok(self
@@ -195,7 +197,8 @@ impl LookupClass<&StringName, Class> for Context {
             }
 
             let clss = Class::try_from((generic_class, &generics, pos))?;
-            let clss = clss.parents
+            let clss = clss
+                .parents
                 .iter()
                 .map(|p| self.class(p, pos))
                 .collect::<TypeResult<Vec<Class>>>()?
@@ -270,12 +273,18 @@ impl Class {
 
     /// Inherit all fields and functions from other, except those that are defined by self.
     pub fn inherit(&self, other: &Class) -> Class {
-        let other_fun: HashSet<Function> = other.functions.iter().filter(|f| {
-            self.functions.iter().all(|s_f| s_f.name.name != f.name.name)
-        }).cloned().collect();
-        let other_fields: HashSet<Field> = other.fields.iter().filter(|f| {
-            self.fields.iter().all(|s_f| s_f.name != f.name)
-        }).cloned().collect();
+        let other_fun: HashSet<Function> = other
+            .functions
+            .iter()
+            .filter(|f| self.functions.iter().all(|s_f| s_f.name.name != f.name.name))
+            .cloned()
+            .collect();
+        let other_fields: HashSet<Field> = other
+            .fields
+            .iter()
+            .filter(|f| self.fields.iter().all(|s_f| s_f.name != f.name))
+            .cloned()
+            .collect();
 
         Class {
             functions: self.functions.union(&other_fun).cloned().collect(),

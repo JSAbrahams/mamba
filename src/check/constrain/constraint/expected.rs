@@ -9,13 +9,13 @@ use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::MapExp;
 use crate::check::context::clss::NONE;
-use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Any, Name, Nullable};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::an_or_a;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -26,40 +26,47 @@ pub struct Expected {
 
 impl MapExp for Expected {
     fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self {
-        Expected::new(self.pos, &match &self.expect {
-            Expression { ast } => {
-                let ast = match &ast.node {
-                    Node::Block { statements } if statements.is_empty() => ast.clone(),
-                    Node::Block { statements } => statements.last().cloned().expect("unreachable"),
-                    _ => ast.clone(),
-                };
+        Expected::new(
+            self.pos,
+            &match &self.expect {
+                Expression { ast } => {
+                    let ast = match &ast.node {
+                        Node::Block { statements } if statements.is_empty() => ast.clone(),
+                        Node::Block { statements } => {
+                            statements.last().cloned().expect("unreachable")
+                        }
+                        _ => ast.clone(),
+                    };
 
-                Expression {
-                    ast: ast.map(&|node: &Node| if let Node::Id { lit } = node {
-                        let offset = if let Some(offset) = var_mapping.get(lit) {
-                            *offset
-                        } else if let Some(offset) = global_var_mapping.get(lit) {
-                            *offset
-                        } else {
-                            0_usize
-                        };
+                    Expression {
+                        ast: ast.map(&|node: &Node| {
+                            if let Node::Id { lit } = node {
+                                let offset = if let Some(offset) = var_mapping.get(lit) {
+                                    *offset
+                                } else if let Some(offset) = global_var_mapping.get(lit) {
+                                    *offset
+                                } else {
+                                    0_usize
+                                };
 
-                        Node::Id { lit: format_var_map(lit, &offset) }
-                    } else {
-                        node.clone()
-                    })
+                                Node::Id { lit: format_var_map(lit, &offset) }
+                            } else {
+                                node.clone()
+                            }
+                        }),
+                    }
                 }
-            }
-            Function { name, args } => Function {
-                name: name.clone(),
-                args: args.iter().map(|a| a.map_exp(var_mapping, global_var_mapping)).collect(),
+                Function { name, args } => Function {
+                    name: name.clone(),
+                    args: args.iter().map(|a| a.map_exp(var_mapping, global_var_mapping)).collect(),
+                },
+                Access { entity, name } => Access {
+                    entity: Box::from(entity.map_exp(var_mapping, global_var_mapping)),
+                    name: Box::from(name.map_exp(var_mapping, global_var_mapping)),
+                },
+                other => other.clone(),
             },
-            Access { entity, name } => Access {
-                entity: Box::from(entity.map_exp(var_mapping, global_var_mapping)),
-                name: Box::from(name.map_exp(var_mapping, global_var_mapping)),
-            },
-            other => other.clone()
-        })
+        )
     }
 }
 
@@ -83,7 +90,7 @@ impl Expected {
     pub fn ty(&self) -> TypeResult<Name> {
         match &self.expect {
             Type { name } => Ok(name.clone()),
-            _ => Err(vec![TypeErr::new(self.pos, &format!("Expected type, was {self}"))])
+            _ => Err(vec![TypeErr::new(self.pos, &format!("Expected type, was {self}"))]),
         }
     }
 }
@@ -121,7 +128,7 @@ impl Display for Expected {
             Type { name } if self.an_or_a && !name.is_temporary() => {
                 write!(f, "{}{}", an_or_a(name), name)
             }
-            _ => write!(f, "{}", self.expect)
+            _ => write!(f, "{}", self.expect),
         }
     }
 }
@@ -130,7 +137,9 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
             Expression { ast } => write!(f, "`{}`", ast.node),
-            Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
+            Access { entity, name } => {
+                write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false))
+            }
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "{}({})", name, comma_delm(args))
@@ -157,12 +166,12 @@ impl Expect {
             (Function { name: l, args: la }, Function { name: r, args: ra }) => {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
-                    if let EitherOrBoth::Both(left, right) = pair {
-                        left.expect.same_value(&right.expect)
-                    } else {
-                        false
-                    }
-                })
+                        if let EitherOrBoth::Both(left, right) = pair {
+                            left.expect.same_value(&right.expect)
+                        } else {
+                            false
+                        }
+                    })
             }
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
@@ -183,7 +192,7 @@ impl Expect {
 mod tests {
     use crate::check::constrain::constraint::expected::{Expect, Expected};
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
 
     #[test]
@@ -191,18 +200,23 @@ mod tests {
         let ast = parse_direct("Int(10)").unwrap();
         let expect = Expected::from(&ast[0]);
 
-        assert_eq!(expect.expect, Expect::Expression {
-            ast: AST::new(
-                Position::new(CaretPos::new(1, 1), CaretPos::new(1, 8)),
-                Node::FunctionCall {
-                    name: Box::new(AST::new(
-                        Position::new(CaretPos::new(1, 1), CaretPos::new(1, 4)),
-                        Node::Id { lit: String::from("Int") })),
-                    args: vec![AST::new(
-                        Position::new(CaretPos::new(1, 5), CaretPos::new(1, 7)),
-                        Node::Int { lit: String::from("10") })],
-                },
-            )
-        })
+        assert_eq!(
+            expect.expect,
+            Expect::Expression {
+                ast: AST::new(
+                    Position::new(CaretPos::new(1, 1), CaretPos::new(1, 8)),
+                    Node::FunctionCall {
+                        name: Box::new(AST::new(
+                            Position::new(CaretPos::new(1, 1), CaretPos::new(1, 4)),
+                            Node::Id { lit: String::from("Int") }
+                        )),
+                        args: vec![AST::new(
+                            Position::new(CaretPos::new(1, 5), CaretPos::new(1, 7)),
+                            Node::Int { lit: String::from("10") }
+                        )],
+                    },
+                )
+            }
+        )
     }
 }

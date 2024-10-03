@@ -2,15 +2,17 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::{Empty, Name};
 use crate::check::name::true_name::TrueName;
+use crate::check::name::{Empty, Name};
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 impl TryFrom<&Box<AST>> for Name {
     type Error = Vec<TypeErr>;
 
-    fn try_from(ast: &Box<AST>) -> Result<Self, Self::Error> { Name::try_from(ast.deref()) }
+    fn try_from(ast: &Box<AST>) -> Result<Self, Self::Error> {
+        Name::try_from(ast.deref())
+    }
 }
 
 impl TryFrom<&AST> for Name {

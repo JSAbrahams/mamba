@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -10,7 +10,7 @@ pub struct Constraints {
     pub pos: Position,
     pub msg: String,
 
-    pub(in super) constraints: VecDeque<Constraint>,
+    pub(super) constraints: VecDeque<Constraint>,
 }
 
 impl From<(Position, String, Vec<Constraint>)> for Constraints {
@@ -20,9 +20,13 @@ impl From<(Position, String, Vec<Constraint>)> for Constraints {
 }
 
 impl Constraints {
-    pub fn len(&self) -> usize { self.constraints.len() }
+    pub fn len(&self) -> usize {
+        self.constraints.len()
+    }
 
-    pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
+    pub fn pop_constr(&mut self) -> Option<Constraint> {
+        self.constraints.pop_front()
+    }
 
     /// Push constraint at front so that it will be analysed next.
     ///

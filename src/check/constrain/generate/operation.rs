@@ -1,21 +1,23 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{Context, LookupClass};
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
-use crate::check::context::function::python::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB};
 use crate::check::context::function::python::CONTAINS;
+use crate::check::context::function::python::{
+    ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB,
+};
 use crate::check::context::function::SQRT;
-use crate::check::name::Name;
+use crate::check::context::{Context, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_op(
     ast: &AST,
@@ -73,13 +75,19 @@ pub fn gen_op(
             let ty = Type { name: Name::from(FLOAT) };
             constr.add("square root", &Expected::from(ast), &Expected::new(ast.pos, &ty), env);
 
-            let access = Expected::new(expr.pos, &Access {
-                entity: Box::new(Expected::from(expr)),
-                name: Box::from(Expected::new(
-                    expr.pos,
-                    &Function { name: StringName::from(SQRT), args: vec![Expected::from(expr)] },
-                )),
-            });
+            let access = Expected::new(
+                expr.pos,
+                &Access {
+                    entity: Box::new(Expected::from(expr)),
+                    name: Box::from(Expected::new(
+                        expr.pos,
+                        &Function {
+                            name: StringName::from(SQRT),
+                            args: vec![Expected::from(expr)],
+                        },
+                    )),
+                },
+            );
 
             constr.add("square root", &Expected::from(ast), &access, env);
             generate(expr, env, ctx, constr)
@@ -111,16 +119,18 @@ pub fn gen_op(
             constr.add("and", &Expected::from(ast), &bool, env);
             bin_op(left, right, env, ctx, constr)
         }
-        Node::IsA { left, right } | Node::IsNA { left, right } => if let Node::Id { .. } = right.node {
-            let class_name = TrueName::try_from(right)?;
-            ctx.class(&class_name, right.pos)?;
+        Node::IsA { left, right } | Node::IsNA { left, right } => {
+            if let Node::Id { .. } = right.node {
+                let class_name = TrueName::try_from(right)?;
+                ctx.class(&class_name, right.pos)?;
 
-            generate(left, env, ctx, constr)?;
-            generate(right, &env.is_def_mode(true), ctx, constr)?;
-            Ok(env.clone())
-        } else {
-            let msg = format!("Expected identifier: '{}'", right.node);
-            Err(vec![TypeErr::new(ast.pos, &msg)])
+                generate(left, env, ctx, constr)?;
+                generate(right, &env.is_def_mode(true), ctx, constr)?;
+                Ok(env.clone())
+            } else {
+                let msg = format!("Expected identifier: '{}'", right.node);
+                Err(vec![TypeErr::new(ast.pos, &msg)])
+            }
         }
 
         Node::Not { expr } => {
@@ -169,13 +179,25 @@ pub fn gen_range(
 
     generate(from, env, ctx, constr)?;
     generate(to, env, ctx, constr)?;
-    if let Some(step) = step { generate(step, env, ctx, constr)?; }
+    if let Some(step) = step {
+        generate(step, env, ctx, constr)?;
+    }
     Ok(env.clone())
 }
 
-fn gen_primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
+fn gen_primitive(
+    ast: &AST,
+    ty: &str,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+) -> Constrained {
     let msg = format!("{ty} primitive");
-    constr.add(&msg, &Expected::from(ast), &Expected::new(ast.pos, &Type { name: Name::from(ty) }), env);
+    constr.add(
+        &msg,
+        &Expected::from(ast),
+        &Expected::new(ast.pos, &Type { name: Name::from(ty) }),
+        env,
+    );
     Ok(env.clone())
 }
 
@@ -189,21 +211,35 @@ pub fn gen_magic(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let res = gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)?;
-    constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right), env);
+    constr.add(
+        format!("{fun} operation").as_str(),
+        &Expected::from(ast),
+        &access(fun, left, right),
+        env,
+    );
     Ok(res)
 }
 
 fn access(fun: &str, left: &AST, right: &AST) -> Expected {
     let name = StringName::from(fun);
-    Expected::new(left.pos, &Access {
-        entity: Box::new(Expected::from(left)),
-        name: Box::new(Expected::new(
-            left.pos,
-            &Function { name, args: vec![Expected::from(left), Expected::from(right)] },
-        )),
-    })
+    Expected::new(
+        left.pos,
+        &Access {
+            entity: Box::new(Expected::from(left)),
+            name: Box::new(Expected::new(
+                left.pos,
+                &Function { name, args: vec![Expected::from(left), Expected::from(right)] },
+            )),
+        },
+    )
 }
 
-fn bin_op(left: &AST, right: &AST, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
+fn bin_op(
+    left: &AST,
+    right: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder,
+) -> Constrained {
     gen_vec(&[right.clone(), left.clone()], env, false, ctx, constr)
 }

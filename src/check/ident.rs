@@ -6,7 +6,7 @@ use std::ops::Deref;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Identifier {
@@ -169,7 +169,7 @@ mod tests {
     use crate::check::ident::{IdentiCall, Identifier};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn from_id() -> TypeResult<()> {
@@ -218,7 +218,10 @@ mod tests {
         let ast = AST::new(
             Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(
+                    Position::invisible(),
+                    Node::Id { lit: String::from("h") },
+                )),
                 mutable: false,
                 ty: None,
             },
@@ -234,7 +237,10 @@ mod tests {
         let ast = AST::new(
             Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(
+                    Position::invisible(),
+                    Node::Id { lit: String::from("h") },
+                )),
                 mutable: false,
                 ty: None,
             },

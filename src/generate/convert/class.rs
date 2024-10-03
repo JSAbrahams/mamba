@@ -3,10 +3,9 @@ use std::ops::Deref;
 
 use itertools::Itertools;
 
-use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
-use crate::check::context::{arg, function, LookupClass};
 use crate::check::context::clss::Class;
+use crate::check::context::{arg, function, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::common::position::Position;
 use crate::generate::ast::node::{Core, CoreOp};
@@ -15,6 +14,7 @@ use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::{ASTTy, Context};
 
 /// Desugar a class.
 ///
@@ -79,21 +79,24 @@ fn extract_class(
 ) -> GenResult {
     let body = body.clone().map(|body| convert_node(body.deref(), imp, state, ctx));
     let body = if let Some(body) = body { Some(body?) } else { None };
-    let mut body_name_stmts: HashMap<Core, (usize, Core)> =
-        match body {
-            Some(Core::Block { statements }) => statements,
-            Some(other) => vec![other],
-            None => vec![],
-        }.iter().enumerate().map(|(i, stmt)| {
-            // function two further to leave place for init
-            let (pos, key) = match stmt {
-                Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
-                Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{op}") }),
-                Core::VarDef { var, .. } => (i, var.deref().clone()),
-                _ => (i, Core::Id { lit: String::from("@") }),
-            };
-            (key, (pos, stmt.clone()))
-        }).collect();
+    let mut body_name_stmts: HashMap<Core, (usize, Core)> = match body {
+        Some(Core::Block { statements }) => statements,
+        Some(other) => vec![other],
+        None => vec![],
+    }
+    .iter()
+    .enumerate()
+    .map(|(i, stmt)| {
+        // function two further to leave place for init
+        let (pos, key) = match stmt {
+            Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
+            Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{op}") }),
+            Core::VarDef { var, .. } => (i, var.deref().clone()),
+            _ => (i, Core::Id { lit: String::from("@") }),
+        };
+        (key, (pos, stmt.clone()))
+    })
+    .collect();
 
     let args = convert_vec(args, imp, &state.def_as_fun_arg(true), ctx)?;
 
@@ -122,10 +125,10 @@ fn extract_class(
         .map(|parent| match parent.clone() {
             Core::FunctionCall { function, .. } => match *function {
                 Core::Type { lit, .. } => Ok(Core::Id { lit }),
-                other => panic!("Expected type in parent, was {}", other)
+                other => panic!("Expected type in parent, was {}", other),
             },
             Core::Type { .. } => Ok(parent.clone()),
-            other => panic!("Expected type in parent, was {}", other)
+            other => panic!("Expected type in parent, was {}", other),
         })
         .collect::<GenResult<Vec<Core>>>()?;
 
@@ -140,7 +143,6 @@ fn extract_class(
 
     let body_stmts: Vec<Core> = body_name_stmts
         .values()
-        .into_iter()
         .sorted_by_key(|(pos, _)| *pos)
         .map(|(_, stmt)| stmt.clone())
         .collect();
@@ -169,10 +171,11 @@ fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
 
 fn is_abstract(clss: &Option<Class>, ctx: &Context) -> bool {
     if let Some(clss) = clss {
-        !clss.concrete || clss.parents.iter().any(|parent| {
-            let clss = ctx.class(parent, Position::invisible()).ok();
-            has_abstract_parent(&clss, ctx)
-        })
+        !clss.concrete
+            || clss.parents.iter().any(|parent| {
+                let clss = ctx.class(parent, Position::invisible()).ok();
+                has_abstract_parent(&clss, ctx)
+            })
     } else {
         false
     }
@@ -272,7 +275,13 @@ fn init(
     let id = String::from(function::python::INIT);
     Ok(if !statements.is_empty() {
         let dec = vec![];
-        Some(Core::FunDef { dec, id, arg: args, ty: None, body: Box::new(Core::Block { statements }) })
+        Some(Core::FunDef {
+            dec,
+            id,
+            arg: args,
+            ty: None,
+            body: Box::new(Core::Block { statements }),
+        })
     } else {
         None
     })
@@ -280,11 +289,11 @@ fn init(
 
 #[cfg(test)]
 mod tests {
-    use crate::ASTTy;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
+    use crate::ASTTy;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{

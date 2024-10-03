@@ -1,49 +1,68 @@
-use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::{ASTTy, Context};
 
-pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
+pub fn convert_cntrl_flow(
+    ast: &ASTTy,
+    imp: &mut Imports,
+    state: &State,
+    ctx: &Context,
+) -> GenResult {
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => {
-            let cond = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?);
+            let cond = Box::from(convert_node(
+                cond,
+                imp,
+                &state.is_last_must_be_ret(false).must_assign_to(None, None),
+                ctx,
+            )?);
 
             match el {
-                Some(el) => if ast.ty.is_some() && is_valid_in_ternary(then, el) {
-                    let state = state
-                        .is_last_must_be_ret(false)
-                        .remove_ret(true)
-                        .must_assign_to(None, None);
+                Some(el) => {
+                    if ast.ty.is_some() && is_valid_in_ternary(then, el) {
+                        let state = state
+                            .is_last_must_be_ret(false)
+                            .remove_ret(true)
+                            .must_assign_to(None, None);
 
-                    Core::Ternary {
-                        cond,
-                        then: Box::from(convert_node(then, imp, &state, ctx)?),
-                        el: Box::from(convert_node(el, imp, &state, ctx)?),
-                    }
-                } else {
-                    Core::IfElse {
-                        cond,
-                        then: Box::from(convert_node(then, imp, state, ctx)?),
-                        el: Box::from(convert_node(el, imp, state, ctx)?),
+                        Core::Ternary {
+                            cond,
+                            then: Box::from(convert_node(then, imp, &state, ctx)?),
+                            el: Box::from(convert_node(el, imp, &state, ctx)?),
+                        }
+                    } else {
+                        Core::IfElse {
+                            cond,
+                            then: Box::from(convert_node(then, imp, state, ctx)?),
+                            el: Box::from(convert_node(el, imp, state, ctx)?),
+                        }
                     }
                 }
-                None => Core::If {
-                    cond,
-                    then: Box::from(convert_node(then, imp, state, ctx)?),
-                },
+                None => Core::If { cond, then: Box::from(convert_node(then, imp, state, ctx)?) },
             }
         }
         NodeTy::Match { cond, cases: match_cases } => {
-            let expr = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?);
+            let expr = Box::from(convert_node(
+                cond,
+                imp,
+                &state.is_last_must_be_ret(false).must_assign_to(None, None),
+                ctx,
+            )?);
 
             let mut cases = vec![];
             for case in match_cases {
                 if let NodeTy::Case { cond, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         cases.push(Core::Case {
-                            expr: Box::from(convert_node(expr.as_ref(), imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?),
+                            expr: Box::from(convert_node(
+                                expr.as_ref(),
+                                imp,
+                                &state.is_last_must_be_ret(false).must_assign_to(None, None),
+                                ctx,
+                            )?),
                             body: Box::from(convert_node(body.as_ref(), imp, state, ctx)?),
                         })
                     }
@@ -71,18 +90,18 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
 }
 
 fn is_valid_in_ternary(then: &ASTTy, el: &ASTTy) -> bool {
-    !matches!(then.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
-        && !matches!(el.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
+    !matches!(then.node, NodeTy::Block { .. } | NodeTy::Raise { .. })
+        && !matches!(el.node, NodeTy::Block { .. } | NodeTy::Raise { .. })
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ASTTy;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
-    use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::AST;
+    use crate::ASTTy;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{

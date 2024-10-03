@@ -1,6 +1,6 @@
 use mamba::Arguments;
 
-use crate::system::{OutTestRet, test_directory, test_directory_args};
+use crate::system::{test_directory, test_directory_args, OutTestRet};
 
 #[test]
 fn collection_type() -> OutTestRet {
@@ -14,7 +14,12 @@ fn infer_collection_type() -> OutTestRet {
 
 #[test]
 fn infer_collection_type_for_fun() -> OutTestRet {
-    test_directory(true, &["collection"], &["collection", "target"], "infer_collection_type_for_fun")
+    test_directory(
+        true,
+        &["collection"],
+        &["collection", "target"],
+        "infer_collection_type_for_fun",
+    )
 }
 
 #[test]

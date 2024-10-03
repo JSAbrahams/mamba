@@ -29,7 +29,9 @@ impl LexErr {
 impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let source_line = match &self.source {
-            Some(source) if self.pos.line > 0 => source.lines().nth(self.pos.line - 1).unwrap_or("<unknown>"),
+            Some(source) if self.pos.line > 0 => {
+                source.lines().nth(self.pos.line - 1).unwrap_or("<unknown>")
+            }
             _ => "<unknown>",
         };
 
@@ -43,8 +45,7 @@ impl Display for LexErr {
             self.pos.line,
             source_line,
             String::from_utf8(vec![b' '; self.pos.pos]).unwrap(),
-            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width)])
-                .unwrap()
+            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width)]).unwrap()
         )
     }
 }

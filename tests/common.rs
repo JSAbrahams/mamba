@@ -15,10 +15,12 @@ pub fn resource_content_path(path: &str) -> Result<String, Vec<String>> {
             let mut content = String::new();
             match path.read_to_string(&mut content) {
                 Ok(_) => Ok(content),
-                Err(err) => Err(vec![format!("Error while reading file contents: {err}.")])
+                Err(err) => Err(vec![format!("Error while reading file contents: {err}.")]),
             }
         }
-        Err(err) => Err(vec![format!("Error while opening file {path} while reading resource contents: {err}.")]),
+        Err(err) => Err(vec![format!(
+            "Error while opening file {path} while reading resource contents: {err}."
+        )]),
     }
 }
 
@@ -42,13 +44,12 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
     }
 
     if !source_path.exists() {
-        create_dir(&source_path).expect(format!("Path not found: {}",
-                                                source_path.as_path().display()).as_str());
+        create_dir(&source_path)
+            .expect(format!("Path not found: {}", source_path.as_path().display()).as_str());
     }
 
     let source_path = tempdir_in(source_path.clone())
-        .expect(format!("Could not create temp dir: {}",
-                        source_path.display()).as_str());
+        .expect(format!("Could not create temp dir: {}", source_path.display()).as_str());
     let source = source_path.path();
 
     if file.is_empty() {
@@ -74,8 +75,8 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     }
 
     if !source_path.exists() {
-        create_dir(&source_path).expect(format!("Path not found: {}",
-                                                source_path.as_path().display()).as_str());
+        create_dir(&source_path)
+            .expect(format!("Path not found: {}", source_path.as_path().display()).as_str());
     }
 
     source_path = source_path.join(file);
@@ -90,7 +91,7 @@ pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Erro
     } else {
         match fs::remove_dir_all(path) {
             Ok(_) => Ok(()),
-            Err(err) => panic!("[{}] {}", err, path.display())
+            Err(err) => panic!("[{}] {}", err, path.display()),
         }
     }
 }

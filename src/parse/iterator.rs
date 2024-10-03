@@ -16,7 +16,9 @@ pub struct LexIterator<'a> {
 }
 
 impl<'a> LexIterator<'a> {
-    pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator { LexIterator { it } }
+    pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator {
+        LexIterator { it }
+    }
 
     pub fn peek_if(&mut self, fun: &dyn Fn(&Lex) -> bool) -> bool {
         if let Some(tp) = self.it.peek() {
@@ -37,8 +39,15 @@ impl<'a> LexIterator<'a> {
             let second_token = lex.token.clone();
 
             match (&first_token, &second_token) {
-                (Some(first_token), second_token) if Token::same_type(first_token, token) && Token::same_type(second_token, final_token) => { return true; }
-                _ if second_token != token.clone() => { break; }
+                (Some(first_token), second_token)
+                    if Token::same_type(first_token, token)
+                        && Token::same_type(second_token, final_token) =>
+                {
+                    return true;
+                }
+                _ if second_token != token.clone() => {
+                    break;
+                }
                 _ => {}
             }
 
@@ -52,7 +61,7 @@ impl<'a> LexIterator<'a> {
         match self.it.next() {
             Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(*pos),
             Some(lex) => Err(Box::from(expected(token, lex, err_msg))),
-            None => Err(Box::from(eof_expected_one_of(&[token.clone()], err_msg)))
+            None => Err(Box::from(eof_expected_one_of(&[token.clone()], err_msg))),
         }
     }
 
@@ -61,7 +70,7 @@ impl<'a> LexIterator<'a> {
             if Token::same_type(actual, token) {
                 return match self.eat(token, "") {
                     Ok(pos) => Some(pos),
-                    Err(_) => None
+                    Err(_) => None,
                 };
             }
         }
@@ -109,7 +118,7 @@ impl<'a> LexIterator<'a> {
                 self.eat(token, err_msg)?;
                 Ok(Some(self.parse(parse_fun, err_msg, start)?))
             }
-            _ => Ok(None)
+            _ => Ok(None),
         }
     }
 
@@ -125,7 +134,7 @@ impl<'a> LexIterator<'a> {
                 self.eat(token, err_msg)?;
                 Ok(self.parse_vec(parse_fun, err_msg, start)?)
             }
-            _ => Ok(vec![])
+            _ => Ok(vec![]),
         }
     }
 
@@ -137,7 +146,7 @@ impl<'a> LexIterator<'a> {
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => Err(Box::from(eof_expected_one_of(eof_expected, eof_err_msg))),
-            Some(lex) => match_fun(self, lex)
+            Some(lex) => match_fun(self, lex),
         }
     }
 
@@ -148,7 +157,7 @@ impl<'a> LexIterator<'a> {
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => default,
-            Some(lex) => match_fun(self, &lex.clone())
+            Some(lex) => match_fun(self, &lex.clone()),
         }
     }
 
@@ -195,7 +204,7 @@ impl<'a> LexIterator<'a> {
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
             Some(Lex { pos, .. }) => Ok(*pos),
-            None => Err(Box::from(eof_expected_one_of(&[], &format!("start of a {msg}"))))
+            None => Err(Box::from(eof_expected_one_of(&[], &format!("start of a {msg}")))),
         }
     }
 }
@@ -221,7 +230,6 @@ mod tests {
         assert_eq!(it.peek_if_followed_by(&Token::Eq, &Token::Eq), false);
         assert_eq!(it.peek_if_followed_by(&Token::Not, &Token::Not), false);
     }
-
 
     #[test]
     fn test_peek_followed_by_leaves_iter_unmodified() {

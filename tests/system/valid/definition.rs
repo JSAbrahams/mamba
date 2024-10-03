@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn long_f_string() -> OutTestRet {
@@ -12,7 +12,12 @@ fn assign_tuples() -> OutTestRet {
 
 #[test]
 fn assign_to_nullable_in_function() -> OutTestRet {
-    test_directory(true, &["definition"], &["definition", "target"], "assign_to_nullable_in_function")
+    test_directory(
+        true,
+        &["definition"],
+        &["definition", "target"],
+        "assign_to_nullable_in_function",
+    )
 }
 
 #[test]
@@ -23,7 +28,12 @@ fn assign_with_if() -> OutTestRet {
 #[test]
 #[ignore] // annotating output reveals bug in check stage
 fn assign_with_if_different_types() -> OutTestRet {
-    test_directory(true, &["definition"], &["definition", "target"], "assign_with_if_different_types")
+    test_directory(
+        true,
+        &["definition"],
+        &["definition", "target"],
+        "assign_with_if_different_types",
+    )
 }
 
 #[test]
@@ -33,12 +43,22 @@ fn assign_with_match() -> OutTestRet {
 
 #[test]
 fn assign_with_match_different_types() -> OutTestRet {
-    test_directory(true, &["definition"], &["definition", "target"], "assign_with_match_different_types")
+    test_directory(
+        true,
+        &["definition"],
+        &["definition", "target"],
+        "assign_with_match_different_types",
+    )
 }
 
 #[test]
 fn assign_with_match_type_annotation() -> OutTestRet {
-    test_directory(true, &["definition"], &["definition", "target"], "assign_with_match_type_annotation")
+    test_directory(
+        true,
+        &["definition"],
+        &["definition", "target"],
+        "assign_with_match_type_annotation",
+    )
 }
 
 #[test]

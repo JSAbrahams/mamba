@@ -3,11 +3,11 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
@@ -117,13 +117,13 @@ pub fn function_name(ast: &AST) -> TypeResult<StringName> {
 mod test {
     use std::convert::TryFrom;
 
-    use crate::{AST, TypeErr};
     use crate::check::context::function::generic::GenericFunction;
-    use crate::check::name::Name;
     use crate::check::name::string_name::StringName;
+    use crate::check::name::Name;
     use crate::common::position::Position;
     use crate::parse::ast::Node;
     use crate::parse::parse_direct;
+    use crate::{TypeErr, AST};
 
     #[test]
     fn from_non_fundef_node() {
