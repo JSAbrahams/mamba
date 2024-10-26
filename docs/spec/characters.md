@@ -6,9 +6,9 @@
 
 The following is a list of characters in the language
 
-### Brackets
+## Brackets
 
-Keyword | Use 
+Keyword | Use
 ---|---
 `(` | Denote start of tuple elements or function arguments
 `)` | Denote end of tuple elements or function arguments
@@ -17,9 +17,15 @@ Keyword | Use
 `[` | Denote start of list, or opening bracket of generics of a class
 `]` | Denote end of list, or closing bracket of generics of a class
 
-### Mathematical Operators
+## Type
 
-Keyword | Use 
+Keyword | Use
+---|---
+`?` | Denote optional type
+
+## Mathematical Operators
+
+Keyword | Use
 ---|---
 `*` | Multiply operator
 `^` | Power operator
@@ -27,20 +33,20 @@ Keyword | Use
 `+` | Plus operator
 `/` | Division operator
 
-### Boolean Operators
+## Boolean Operators
 
-Keyword | Use 
+Keyword | Use
 ---|---
 `>`  | Greater than operator
 `>=` | Greater than or equal to operator
 `<`  | Less than operator
 `<=` | Less than or equal to operator
 `=`  | Structurally equal
-`/=` | Structurally not equal
+`!=` | Structurally not equal
 
-### Assignment and Functions
+## Assignment and Functions
 
-Keyword | Use 
+Keyword | Use
 ---|---
 `:=` | Assign to definition
 `->` | Used in signature of method or signature
@@ -50,22 +56,37 @@ Keyword | Use
 `,`  | Separates arguments in collections or function or method signatures
 `_`  | Anonymous value
 
-### Context Dependent
+## Reassignment Operations
 
-Keyword | Use 
+Keyword | Use
+---|---
+`+=`  | Add value to variable and assign to variable
+`-=`  | Subtract value from variable and assign to variable
+`*=`  | Multiply value with variable and assign to variable
+`/=`  | Divide variable by value and assign to variable
+`^=`  | Raise variable by value and assign to variable
+`>>=` | Binary shift variable to the right by value
+`<<=` | Binary shift variable to the left by value
+
+## Context Dependent
+
+Keyword | Use
 ---|---
 `E` | If nested between two integer, or an integer and a real, denotes e-number
+'\|' | Within set and list builder notation "such that"
 
-### Other Operators
+## Other Operators
 
-Keyword | Use 
+Keyword | Use
 ---|---
-`..`  | Exclusive range
+`..`  | Exclusive range, or range step
 `..=` | Inclusive range
+`::`  | Exclusive slice, or slice step
+`::=` | Inclusive slice
 
-### Comments
+## Comments
 
-Keyword | Use 
+Keyword | Use
 ---|---
 `#`  | Start of a comment
 `##` | Start and end of comment block
