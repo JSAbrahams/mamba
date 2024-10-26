@@ -60,7 +60,6 @@ pub enum Token {
     ENum(String, String),
     Str(String, Vec<Vec<Lex>>),
     DocStr(String),
-    Bool(bool),
 
     Range,
     RangeIncl,
@@ -130,7 +129,6 @@ pub enum Token {
     Handle,
 
     Pass,
-    Undefined,
     Comment(String),
 
     Eof,
@@ -146,7 +144,6 @@ impl Token {
             (Token::Id(_), Token::Id(_)) => true,
             (Token::Real(_), Token::Real(_)) => true,
             (Token::Int(_), Token::Int(_)) => true,
-            (Token::Bool(_), Token::Bool(_)) => true,
             (Token::Str(..), Token::Str(..)) => true,
             (Token::DocStr(_), Token::DocStr(_)) => true,
             (Token::ENum(..), Token::ENum(..)) => true,
@@ -191,13 +188,6 @@ impl fmt::Display for Token {
             Token::ENum(base, exp) => write!(f, "{base}E{exp}"),
             Token::Str(string, _) => write!(f, "\"{string}\""),
             Token::DocStr(docstr) => write!(f, "##{docstr}"),
-            Token::Bool(b) => {
-                if b {
-                    write!(f, "True")
-                } else {
-                    write!(f, "False")
-                }
-            }
 
             Token::Range => write!(f, ".."),
             Token::RangeIncl => write!(f, "..="),
@@ -267,7 +257,6 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
-            Token::Undefined => write!(f, "undefined"),
             Token::Comment(comment) => write!(f, "#{comment}"),
 
             Token::Eof => write!(f, ""),

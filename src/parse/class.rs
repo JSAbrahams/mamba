@@ -88,8 +88,6 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                     Token::Int(String::new()),
                     Token::Real(String::new()),
                     Token::ENum(String::new(), String::new()),
-                    Token::Bool(true),
-                    Token::Bool(false),
                 ],
                 lex,
                 "parent arguments",

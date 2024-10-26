@@ -101,12 +101,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     
-    literal          ::= number | boolean | string | "None"
+    literal          ::= number | string | "None"
     number           ::= real | integer | e-notation
     real             ::= integer "." integer | "." integer | integer "."
     integer          ::= { digit }
     e-notation       ::= ( integer | real ) "E" [ "-" ] integer
-    boolean          ::= "True" | "False"
     string           ::= """ { character } """
     
     newline-block    ::= newline block | expr-or-stmt

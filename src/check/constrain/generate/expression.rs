@@ -2,9 +2,12 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::definition::{constrain_args, id_from_var};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::operation::gen_primitive;
 use crate::check::constrain::generate::{generate, Constrained};
+use crate::check::context::clss::BOOL;
 use crate::check::context::Context;
 use crate::check::name::Name;
 use crate::check::result::TypeErr;
@@ -61,7 +64,17 @@ fn match_id(
 ) -> Constrained {
     match &ast.node {
         Node::Id { lit } => {
-            if env.is_def_mode {
+            // TODO use pre-defined "Undefined", "True" and "False" in context
+            if lit.as_str() == "None" {
+                constr.add_constr(
+                    &Constraint::undefined("undefined", &Expected::from(ast)),
+                    env,
+                );
+                Ok(env.clone())
+            } else if lit.as_str() == "True" || lit.as_str() == "False" {
+                constr.add_constr(&Constraint::truthy("bool", &Expected::from(ast)), env);
+                gen_primitive(ast, BOOL, env, constr)
+            } else if env.is_def_mode {
                 let ty = if let Some(ty) = ty {
                     Some(Name::try_from(ty)?)
                 } else {
