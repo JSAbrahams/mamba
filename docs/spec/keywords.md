@@ -21,7 +21,6 @@ Keyword | Use
 `type`  | When constructing an interface (abstract base class) or type alias
 `class` | Denote a class
 `isa`   | Check whether an object is instance of a class
-`isnta` | Check whether an object is not instance of a class
 `when`  | Conditional types
 
 ## Classes and Utils
@@ -49,7 +48,6 @@ Keyword | Use
 `and`   | And operator
 `or`    | Or operator
 `is`    | Check whether an instance is another instance
-`isnt`  | Check whether an instance is not another instance
 
 ## Binary operators
 

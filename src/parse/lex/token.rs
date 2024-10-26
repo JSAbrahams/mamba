@@ -32,12 +32,10 @@ pub enum Token {
     Class,
     Pure,
     IsA,
-    IsNA,
 
     As,
     Import,
     Forward,
-    _Self,
 
     Point,
     Comma,
@@ -92,7 +90,6 @@ pub enum Token {
 
     Eq,
     Is,
-    IsN,
     Neq,
     And,
     Or,
@@ -165,13 +162,11 @@ impl fmt::Display for Token {
             Token::Pure => write!(f, "pure"),
             Token::Type => write!(f, "type"),
             Token::Class => write!(f, "class"),
-            Token::IsA => write!(f, "is_a"),
-            Token::IsNA => write!(f, "isn_t_a"),
+            Token::IsA => write!(f, "isa"),
 
             Token::As => write!(f, "as"),
             Token::Import => write!(f, "import"),
             Token::Forward => write!(f, "forward"),
-            Token::_Self => write!(f, "self"),
 
             Token::Point => write!(f, "."),
             Token::Comma => write!(f, ","),
@@ -180,7 +175,7 @@ impl fmt::Display for Token {
             Token::BSlash => write!(f, "\\"),
 
             Token::Fin => write!(f, "fin"),
-            Token::Assign => write!(f, "="),
+            Token::Assign => write!(f, ":="),
             Token::AddAssign => write!(f, "+="),
             Token::SubAssign => write!(f, "-="),
             Token::MulAssign => write!(f, "*="),
@@ -194,9 +189,15 @@ impl fmt::Display for Token {
             Token::Real(real) => write!(f, "{real}"),
             Token::Int(int) => write!(f, "{int}"),
             Token::ENum(base, exp) => write!(f, "{base}E{exp}"),
-            Token::Str(string, _) => write!(f, "{string}"),
-            Token::DocStr(docstr) => write!(f, "{docstr}"),
-            Token::Bool(b) => write!(f, "{b}"),
+            Token::Str(string, _) => write!(f, "\"{string}\""),
+            Token::DocStr(docstr) => write!(f, "##{docstr}"),
+            Token::Bool(b) => {
+                if b {
+                    write!(f, "True")
+                } else {
+                    write!(f, "False")
+                }
+            }
 
             Token::Range => write!(f, ".."),
             Token::RangeIncl => write!(f, "..="),
@@ -224,10 +225,9 @@ impl fmt::Display for Token {
             Token::Le => write!(f, "<"),
             Token::Leq => write!(f, "<="),
 
-            Token::Eq => write!(f, "eq"),
+            Token::Eq => write!(f, "="),
             Token::Is => write!(f, "is"),
-            Token::IsN => write!(f, "isn_t"),
-            Token::Neq => write!(f, "neq"),
+            Token::Neq => write!(f, "!="),
             Token::And => write!(f, "and"),
             Token::Or => write!(f, "or"),
             Token::Not => write!(f, "not"),
@@ -268,7 +268,7 @@ impl fmt::Display for Token {
 
             Token::Pass => write!(f, "pass"),
             Token::Undefined => write!(f, "undefined"),
-            Token::Comment(comment) => write!(f, "# {comment}"),
+            Token::Comment(comment) => write!(f, "#{comment}"),
 
             Token::Eof => write!(f, ""),
         }

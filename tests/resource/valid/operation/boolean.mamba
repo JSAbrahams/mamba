@@ -16,6 +16,4 @@ def i := True
 def j := False
 
 c is d
-e isnt f
 g isa Exception
-i isnta Exception
