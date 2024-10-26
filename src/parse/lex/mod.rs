@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn comparison() {
-        let source = String::from("< > <= >= = != is isnt i");
+        let source = String::from("< > <= >= = != is i");
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens,
@@ -204,15 +204,11 @@ mod tests {
                     token: Token::Is,
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 19), CaretPos::new(1, 23)),
-                    token: Token::IsN,
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 24), CaretPos::new(1, 25)),
+                    pos: Position::new(CaretPos::new(1, 19), CaretPos::new(1, 20)),
                     token: Token::Id(String::from("i")),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 26), CaretPos::new(1, 26)),
+                    pos: Position::new(CaretPos::new(1, 21), CaretPos::new(1, 21)),
                     token: Token::Eof,
                 },
             ]

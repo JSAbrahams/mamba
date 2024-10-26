@@ -11,10 +11,6 @@ use crate::parse::result::{custom, expected_one_of};
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
         &|it, lex| match &lex.token {
-            Token::_Self => {
-                let end = it.eat(&Token::_Self, "identifier")?;
-                Ok(Box::from(AST::new(end, Node::new_self())))
-            }
             Token::Id(id) => {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
                 Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
@@ -32,12 +28,12 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::_Self, Token::Id(String::new()), Token::LRBrack],
+                &[Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier",
             ))),
         },
-        &[Token::_Self, Token::Id(String::new())],
+        &[Token::Id(String::new())],
         "identifier",
     )
 }

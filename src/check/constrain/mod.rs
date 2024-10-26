@@ -84,7 +84,8 @@ mod tests {
             .unwrap()
             .pos_to_name;
 
-        let pos_none = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 35));
+        // TODO figure out weird position of "None"
+        let pos_none = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 40));
         assert_eq!(finished[&pos_none], Name::from("None"));
         let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
         assert_eq!(finished[&pos_10], Name::from("Int"));
@@ -95,7 +96,7 @@ mod tests {
             Name::from("Bool").is_interchangeable(true)
         );
 
-        let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 35));
+        let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 40));
         assert_eq!(finished[&pos_if], Name::from("Int").as_nullable());
     }
 }

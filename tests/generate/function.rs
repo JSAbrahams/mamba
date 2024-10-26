@@ -6,10 +6,10 @@ use crate::common::*;
 
 #[test]
 fn function_definitions() {
-    to_py!(resource_content(true, &["function"], "definition.mamba"));
+    let _ = to_py!(resource_content(true, &["function"], "definition.mamba"));
 }
 
 #[test]
 fn function_calling() {
-    to_py!(resource_content(true, &["function"], "calls.mamba"));
+    let _ = to_py!(resource_content(true, &["function"], "calls.mamba"));
 }

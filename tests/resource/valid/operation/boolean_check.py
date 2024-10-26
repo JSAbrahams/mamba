@@ -16,6 +16,4 @@ i: bool = True
 j: bool = False
 
 c is d
-e is not f
 isinstance(g, Exception)
-not isinstance(i, Exception)

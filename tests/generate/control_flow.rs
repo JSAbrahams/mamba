@@ -6,7 +6,7 @@ use crate::common::*;
 
 #[test]
 fn for_statements() {
-    to_py!(resource_content(
+    let _ = to_py!(resource_content(
         true,
         &["control_flow"],
         "for_statements.mamba"
@@ -15,12 +15,12 @@ fn for_statements() {
 
 #[test]
 fn if_stmt() {
-    to_py!(resource_content(true, &["control_flow"], "if.mamba"));
+    let _ = to_py!(resource_content(true, &["control_flow"], "if.mamba"));
 }
 
 #[test]
 fn match_stmt() {
-    to_py!(resource_content(
+    let _ = to_py!(resource_content(
         true,
         &["control_flow"],
         "match_stmt.mamba"
@@ -29,5 +29,5 @@ fn match_stmt() {
 
 #[test]
 fn while_stmt() {
-    to_py!(resource_content(true, &["control_flow"], "while.mamba"));
+    let _ = to_py!(resource_content(true, &["control_flow"], "while.mamba"));
 }

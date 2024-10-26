@@ -96,7 +96,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    instance-eq      ::= "is" | "isnt" | "isa" | "isnta"
+    instance-eq      ::= "is" | "isa"
     equality         ::= "=" | "!="
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
