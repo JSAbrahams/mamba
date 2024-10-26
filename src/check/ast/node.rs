@@ -447,6 +447,9 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::QuestionOp { expr } => NodeTy::QuestionOp {
                 expr: Box::from(ASTTy::from((expr, finished))),
             },
+            // TODO use context to check if id refers to context
+            Node::Id { lit } if lit.as_str() == "True" => NodeTy::Bool { lit: true },
+            Node::Id { lit } if lit.as_str() == "False" => NodeTy::Bool { lit: false },
             Node::Id { lit } => NodeTy::Id { lit: lit.clone() },
             Node::Slice {
                 from,
@@ -480,12 +483,10 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .collect(),
             },
             Node::DocStr { lit } => NodeTy::DocStr { lit: lit.clone() },
-            Node::Bool { lit } => NodeTy::Bool { lit: *lit },
             Node::Break => NodeTy::Break,
             Node::Continue => NodeTy::Continue,
             Node::ReturnEmpty => NodeTy::ReturnEmpty,
             Node::Underscore => NodeTy::Underscore,
-            Node::Undefined => NodeTy::Undefined,
             Node::Pass => NodeTy::Pass,
             _ => NodeTy::Empty,
         }

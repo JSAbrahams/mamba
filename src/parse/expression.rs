@@ -33,14 +33,11 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Real(String::new()),
         Token::Int(String::new()),
         Token::ENum(String::new(), String::new()),
-        Token::Bool(true),
-        Token::Bool(false),
         Token::Not,
         Token::Sqrt,
         Token::Add,
         Token::Id(String::new()),
         Token::Sub,
-        Token::Undefined,
         Token::BOneCmpl,
         Token::BSlash,
     ];
@@ -53,7 +50,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::Id(_) => parse_id(it),
             Token::Real(real) => literal!(it, real.to_string(), Real),
             Token::Int(int) => literal!(it, int.to_string(), Int),
-            Token::Bool(b) => literal!(it, *b, Bool),
             Token::Str(string, tokens) => {
                 let end = it.eat(&Token::Str(string.clone(), tokens.clone()), "factor")?;
 
@@ -77,10 +73,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                     exp: exp.to_string(),
                 };
                 Ok(Box::from(AST::new(start.union(end), node)))
-            }
-            Token::Undefined => {
-                let end = it.eat(&Token::Undefined, "factor")?;
-                Ok(Box::from(AST::new(start.union(end), Node::Undefined)))
             }
 
             Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl => {
@@ -154,9 +146,7 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
             | Token::Int(_)
             | Token::ENum(..)
             | Token::Str(..)
-            | Token::Bool(_)
             | Token::Not
-            | Token::Undefined
             | Token::Id(_)
     )
 }

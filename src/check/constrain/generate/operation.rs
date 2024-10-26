@@ -46,17 +46,6 @@ pub fn gen_op(
             }
             gen_primitive(ast, STRING, env, constr)
         }
-        Node::Bool { .. } => {
-            constr.add_constr(&Constraint::truthy("bool", &Expected::from(ast)), env);
-            gen_primitive(ast, BOOL, env, constr)
-        }
-        Node::Undefined => {
-            constr.add_constr(
-                &Constraint::undefined("undefined", &Expected::from(ast)),
-                env,
-            );
-            Ok(env.clone())
-        }
 
         Node::Add { left, right } => gen_magic(ADD, ast, left, right, env, ctx, constr),
         Node::Sub { left, right } => gen_magic(SUB, ast, left, right, env, ctx, constr),
@@ -258,7 +247,7 @@ pub fn gen_range(
     Ok(env.clone())
 }
 
-fn gen_primitive(
+pub fn gen_primitive(
     ast: &AST,
     ty: &str,
     env: &Environment,

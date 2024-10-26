@@ -139,7 +139,11 @@ impl TryFrom<&AST> for GenericFunctionArg {
                             if let Some(default) = default {
                                 Some(match &default.deref().node {
                                     Node::Str { .. } => Name::from(clss::python::STRING_PRIMITIVE),
-                                    Node::Bool { .. } => Name::from(clss::python::BOOL_PRIMITIVE),
+                                    Node::Id { lit }
+                                        if lit.as_str() == "True" || lit.as_str() == "False" =>
+                                    {
+                                        Name::from(clss::python::BOOL_PRIMITIVE)
+                                    }
                                     Node::Int { .. } => Name::from(clss::python::INT_PRIMITIVE),
                                     Node::Real { .. } => Name::from(clss::python::FLOAT_PRIMITIVE),
                                     Node::ENum { .. } => Name::from(clss::python::INT_PRIMITIVE),

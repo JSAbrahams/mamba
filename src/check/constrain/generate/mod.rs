@@ -75,7 +75,6 @@ pub fn generate(
         Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } | ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),
-        Bool { .. } => gen_op(ast, env, ctx, constr),
 
         In { .. } => gen_op(ast, env, ctx, constr),
         Add { .. } | Sub { .. } | Mul { .. } | Div { .. } => gen_op(ast, env, ctx, constr),
@@ -86,7 +85,6 @@ pub fn generate(
         Mod { .. } => gen_op(ast, env, ctx, constr),
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
         Sqrt { .. } => gen_op(ast, env, ctx, constr),
-        Undefined => gen_op(ast, env, ctx, constr),
 
         BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
         BAnd { .. } | BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
