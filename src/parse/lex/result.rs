@@ -57,7 +57,7 @@ impl Display for LexErr {
             self.pos.line,
             source_line,
             String::from_utf8(vec![b' '; self.pos.pos]).unwrap(),
-            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width)]).unwrap()
+            String::from_utf8(vec![b'^'; self.token.as_ref().map_or(1, |t| t.width())]).unwrap()
         )
     }
 }
