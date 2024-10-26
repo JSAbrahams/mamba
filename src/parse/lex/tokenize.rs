@@ -261,7 +261,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "import" => Token::Import,
         "forward" => Token::Forward,
-        "self" => Token::_Self,
         "vararg" => Token::Vararg,
 
         "def" => Token::Def,
@@ -271,8 +270,6 @@ fn as_op_or_id(string: String) -> Token {
         "not" => Token::Not,
         "is" => Token::Is,
         "isa" => Token::IsA,
-        "isnt" => Token::IsN,
-        "isnta" => Token::IsNA,
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
@@ -299,10 +296,6 @@ fn as_op_or_id(string: String) -> Token {
         "handle" => Token::Handle,
         "when" => Token::When,
 
-        "True" => Token::Bool(true),
-        "False" => Token::Bool(false),
-
-        "None" => Token::Undefined,
         "pass" => Token::Pass,
 
         _ => Token::Id(string),

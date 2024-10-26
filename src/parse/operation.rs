@@ -71,9 +71,7 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
             Token::Eq => bin_op!(it, parse_level_6, Eq, arithmetic.clone(), "equal"),
             Token::Neq => bin_op!(it, parse_level_6, Neq, arithmetic.clone(), "not equal"),
             Token::Is => bin_op!(it, parse_level_6, Is, arithmetic.clone(), "is"),
-            Token::IsN => bin_op!(it, parse_level_6, IsN, arithmetic.clone(), "is not"),
             Token::IsA => bin_op!(it, parse_level_6, IsA, arithmetic.clone(), "is a"),
-            Token::IsNA => bin_op!(it, parse_level_6, IsNA, arithmetic.clone(), "is not a"),
             Token::In => bin_op!(it, parse_level_6, In, arithmetic.clone(), "in"),
             _ => Ok(arithmetic.clone()),
         },
@@ -316,7 +314,7 @@ mod test {
                 lit: String::from("a")
             }
         );
-        assert_eq!(right.node, Node::Bool { lit: false });
+        assert_eq!(right.node, Node::Id { lit: "False".to_string() });
     }
 
     #[test]
@@ -339,7 +337,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Mul, ast);
-        assert_eq!(left.node, Node::Bool { lit: true });
+        assert_eq!(left.node, Node::Id { lit: "True".to_string() });
         assert_eq!(
             right.node,
             Node::Id {
@@ -450,26 +448,6 @@ mod test {
     }
 
     #[test]
-    fn isnt_verify() {
-        let source = String::from("p isnt q");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(IsN, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("p")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("q")
-            }
-        );
-    }
-
-    #[test]
     fn isa_verify() {
         let source = String::from("lizard isa animal");
         let ast = parse_direct(&source).unwrap();
@@ -485,26 +463,6 @@ mod test {
             right.node,
             Node::Id {
                 lit: String::from("animal")
-            }
-        );
-    }
-
-    #[test]
-    fn isnta_verify() {
-        let source = String::from("i isnta natural");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(IsNA, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("i")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("natural")
             }
         );
     }

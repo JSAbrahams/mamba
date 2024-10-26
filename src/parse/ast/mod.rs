@@ -205,9 +205,6 @@ pub enum Node {
     DocStr {
         lit: String,
     },
-    Bool {
-        lit: bool,
-    },
     Add {
         left: Box<AST>,
         right: Box<AST>,
@@ -352,7 +349,6 @@ pub enum Node {
     },
     ReturnEmpty,
     Underscore,
-    Undefined,
     Pass,
     Question {
         left: Box<AST>,

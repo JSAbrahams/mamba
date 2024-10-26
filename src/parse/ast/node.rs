@@ -123,7 +123,6 @@ impl Display for Node {
             Node::ENum { num, exp } => format!("{num}E{exp}"),
             Node::Str { lit, .. } => format!("\"{lit}\""),
             Node::DocStr { .. } => String::from("doc string"),
-            Node::Bool { .. } => String::from("boolean"),
             Node::Add { left, right } => format!("{} + {}", left.node, right.node),
             Node::AddU { .. } => String::from("addition unary"),
             Node::Sub { left, right } => format!("{} - {}", left.node, right.node),
@@ -163,7 +162,6 @@ impl Display for Node {
             Node::Continue => format!("{}", Token::Continue),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
             Node::Underscore => format!("{}", Token::Underscore),
-            Node::Undefined => format!("{}", Token::Undefined),
             Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
@@ -803,7 +801,6 @@ impl Node {
                 },
             ) => l == r && equal_vec(le, re),
             (Node::DocStr { .. }, Node::DocStr { .. }) => true,
-            (Node::Bool { lit: l }, Node::Bool { lit: r }) => l == r,
             (Node::AddU { expr: l }, Node::AddU { expr: r }) => l.same_value(r),
             (Node::SubU { expr: l }, Node::SubU { expr: r }) => l.same_value(r),
             (
@@ -1140,10 +1137,8 @@ impl Node {
             | Node::Int { .. }
             | Node::ENum { .. }
             | Node::Str { .. }
-            | Node::Bool { .. }
             | Node::Match { .. }
             | Node::Underscore
-            | Node::Undefined
             | Node::Question { .. }
             | Node::QuestionOp { .. } => true,
 
@@ -1257,7 +1252,6 @@ mod test {
         map_eq!(Node::Continue, Node::Continue, old, new);
         map_eq!(Node::ReturnEmpty, Node::ReturnEmpty, old, new);
         map_eq!(Node::Underscore, Node::Underscore, old, new);
-        map_eq!(Node::Undefined, Node::Undefined, old, new);
         map_eq!(Node::Pass, Node::Pass, old, new);
     }
 
@@ -1657,7 +1651,7 @@ mod test {
         two_ast!(Node::Int {
             lit: String::from("sdfdf")
         });
-        two_ast!(Node::Bool { lit: true });
+        two_ast!(Node::Id { lit: "True".to_string() });
         two_ast!(Node::ENum {
             num: String::from("werw"),
             exp: String::from("reter")
@@ -1939,7 +1933,6 @@ mod test {
         two_ast!(Node::Continue);
         two_ast!(Node::ReturnEmpty);
         two_ast!(Node::Underscore);
-        two_ast!(Node::Undefined);
         two_ast!(Node::Pass);
     }
 
@@ -2001,7 +1994,7 @@ mod test {
     #[test]
     fn if_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::invisible(), Node::Bool { lit: true })),
+            cond: Box::new(AST::new(Position::invisible(), Node::Id { lit: "True".to_string() })),
             then: Box::new(AST::new(Position::invisible(), Node::Pass)),
             el: None,
         };
@@ -2011,7 +2004,7 @@ mod test {
     #[test]
     fn if_else_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::invisible(), Node::Bool { lit: true })),
+            cond: Box::new(AST::new(Position::invisible(), Node::Id { lit: "True".to_string() })),
             then: Box::new(AST::new(Position::invisible(), Node::Pass)),
             el: Some(Box::new(AST::new(Position::invisible(), Node::Pass))),
         };
@@ -2085,14 +2078,13 @@ mod test {
             expressions: vec![*third.clone()]
         }
         .is_expression());
-        assert!(Node::Bool { lit: false }.is_expression());
+        assert!(Node::Id { lit: "False".to_string() }.is_expression());
         assert!(Node::Match {
             cond: first.clone(),
             cases: vec![*second.clone()]
         }
         .is_expression());
         assert!(Node::Underscore.is_expression());
-        assert!(Node::Undefined.is_expression());
         assert!(Node::Question {
             left: first.clone(),
             right: third.clone()
