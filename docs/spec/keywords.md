@@ -50,8 +50,6 @@ Keyword | Use
 `or`    | Or operator
 `is`    | Check whether an instance is another instance
 `isnt`  | Check whether an instance is not another instance
-`True`  | True value
-`False` | False value
 
 ## Binary operators
 
