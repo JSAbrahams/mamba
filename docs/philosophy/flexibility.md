@@ -58,4 +58,3 @@ Mamba aims to introduce mechanisms which ideally should make developers aware of
 Mamba also aims to introduce more explicit error handling mechanisms to the Python ecosystem.
 While these may be overkill for small scripts, for which Python is often used, it can save a lot of time in the long run for larger applications.
 More explicit handling or errors, much like null safety features, should ideally make the developer more aware of what might and might not go wrong in an application.
-

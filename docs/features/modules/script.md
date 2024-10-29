@@ -11,7 +11,7 @@ A script is the only type of module that can actually be run.
 A script may be accompanied by a set of functions.
 
 Below we have an example script:
-```
+
     from graph import Graph
     
     def first := 1
@@ -25,4 +25,3 @@ Below we have an example script:
     def distance <- Graph.calculate_distance(graph, first, last)
     
     print "distance travelled from [first] to [last] is [distance]."
-```
