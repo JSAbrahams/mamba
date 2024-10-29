@@ -1651,7 +1651,9 @@ mod test {
         two_ast!(Node::Int {
             lit: String::from("sdfdf")
         });
-        two_ast!(Node::Id { lit: "True".to_string() });
+        two_ast!(Node::Id {
+            lit: "True".to_string()
+        });
         two_ast!(Node::ENum {
             num: String::from("werw"),
             exp: String::from("reter")
@@ -1994,7 +1996,12 @@ mod test {
     #[test]
     fn if_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::invisible(), Node::Id { lit: "True".to_string() })),
+            cond: Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "True".to_string(),
+                },
+            )),
             then: Box::new(AST::new(Position::invisible(), Node::Pass)),
             el: None,
         };
@@ -2004,7 +2011,12 @@ mod test {
     #[test]
     fn if_else_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::invisible(), Node::Id { lit: "True".to_string() })),
+            cond: Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "True".to_string(),
+                },
+            )),
             then: Box::new(AST::new(Position::invisible(), Node::Pass)),
             el: Some(Box::new(AST::new(Position::invisible(), Node::Pass))),
         };
@@ -2078,7 +2090,10 @@ mod test {
             expressions: vec![*third.clone()]
         }
         .is_expression());
-        assert!(Node::Id { lit: "False".to_string() }.is_expression());
+        assert!(Node::Id {
+            lit: "False".to_string()
+        }
+        .is_expression());
         assert!(Node::Match {
             cond: first.clone(),
             cases: vec![*second.clone()]
