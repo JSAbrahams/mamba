@@ -417,7 +417,9 @@ mod tests {
 
     #[test]
     fn condition_verify() {
-        let cond = to_pos!(Node::Id { lit: "True".to_string() });
+        let cond = to_pos!(Node::Id {
+            lit: "True".to_string()
+        });
         let condition = to_pos!(Node::Condition { cond, el: None });
 
         let result = gen(&ASTTy::from(&condition));

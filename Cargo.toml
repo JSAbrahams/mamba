@@ -24,3 +24,6 @@ log = "0.4"
 loggerv = "0.7"
 ansi_term = "0.12.1"
 permutate = "0.3.2"
+
+[dev-dependencies]
+test-case = "3.3.1"

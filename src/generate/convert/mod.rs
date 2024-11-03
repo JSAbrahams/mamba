@@ -751,7 +751,9 @@ mod tests {
             to_pos_unboxed!(Node::Id {
                 lit: String::from("a")
             }),
-            to_pos_unboxed!(Node::Id { lit: "True".to_string() }),
+            to_pos_unboxed!(Node::Id {
+                lit: "True".to_string()
+            }),
         ];
         let set = to_pos!(Node::Set { elements });
         let core = gen(&ASTTy::from(&set));

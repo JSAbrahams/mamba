@@ -314,7 +314,12 @@ mod test {
                 lit: String::from("a")
             }
         );
-        assert_eq!(right.node, Node::Id { lit: "False".to_string() });
+        assert_eq!(
+            right.node,
+            Node::Id {
+                lit: "False".to_string()
+            }
+        );
     }
 
     #[test]
@@ -337,7 +342,12 @@ mod test {
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(Mul, ast);
-        assert_eq!(left.node, Node::Id { lit: "True".to_string() });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: "True".to_string()
+            }
+        );
         assert_eq!(
             right.node,
             Node::Id {
