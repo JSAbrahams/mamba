@@ -4,7 +4,7 @@
 
 # 1.1 Inspirations of the Language
 
-The following is a list of programming languages that inspired this one in one way or another. 
+The following is a list of programming languages that inspired this one in one way or another.
 This can either be certain constructs or keywords in the language, or the philosophy of the language as a whole.
 It should be noted that this is based on my personal experience with these languages.
 It may be that a certain feature of a certain language did inspire a certain feature of Mamba, but that does not mean that another language does not contain said feature, only that I encountered it there first.
@@ -19,13 +19,13 @@ Kotlin    | Ranges baked into the language. Type aliases. Covariance and Contrav
 Ada       | Custom data types (or type aliases) with ranges, which also partially inspired the type refinement system. Use of natural language over symbols, such as using `and` as opposed to `&&`.
 C++       | OOP concepts and operator overloading.
 C         | General programming concepts. Not so much a direct inspiration but more a general influence.
-Eiffel    | The design by contract philosophy and the `retry` keyword. Design by contract also inspired the type refinement system. 
+Eiffel    | The design by contract philosophy and the `retry` keyword. Design by contract also inspired the type refinement system.
 Haskell   | Pattern Matching. Immutability. Closeness of mapping with mathematical notation, for instance set constructor notation.
 Rust      | Error handling mechanisms and strict rules regarding mutability.
 Ruby      | Portions of the syntax of the language.
 Swift     | Elegant error handling mechanisms.
 Go        | Error handling mechanisms, which encourage error handling on site.
-MATLAB    | Small portions of the syntax. 
+MATLAB    | Small portions of the syntax.
 SmallTalk | OOP concepts, with a large emphasis on program state.
 JavaScript| Interchangeability of variables and functions, and a reliance on higher-order functions.
 Perl      | The `forward` keyword.

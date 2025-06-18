@@ -27,7 +27,7 @@ Here you can find both the informal description of the language feaures, and the
 
 #### [1.1 Inspirations of the Language](philosophy/inspiration.md)
 #### [1.2 Readability](philosophy/readability.md)
-#### [1.3 OOP and Imperative Versus Functional, or, Idealism versus Pragmatism](philosophy/oop_vs_functional.md)
+#### [1.3 Imperative Versus Functional](philosophy/imperative_vs_functional.md)
 #### [1.4 Flexibility](philosophy/flexibility.md)
 #### [1.5 Safety](philosophy/safety.md)
 
@@ -61,6 +61,6 @@ Here you can find both the informal description of the language feaures, and the
 
 #### [3.1 Grammar](spec/grammar.md)
 #### [3.2 Keywords](spec/keywords.md)
-#### [3.3 Special Characters and Symbols](spec/special_characters.md)
+#### [3.3 Special Characters and Symbols](spec/characters.md)
 
 ### [4 👥 Acknowledgements](acknowledgements.md)

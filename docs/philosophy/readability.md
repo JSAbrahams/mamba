@@ -6,12 +6,12 @@
 
 ## Syntax and Syntax Sugar
 
-One thing that can significantly hinder the readability of source code is syntax noise. 
+One thing that can significantly hinder the readability of source code is syntax noise.
 Therefore, I tried to limit the amount of symbols and keywords in the language.
 I believe that when reading a piece of code, one should be able to understand what is happening without being hindered by excessive syntax.
 
 One way to make code "look" more elegant, and ideally more readable, is through use of syntax sugar.
-This allows developers to, ideally, express their ideas in a more elegant manner. 
+This allows developers to, ideally, express their ideas in a more elegant manner.
 Syntax sugar however comes with its own set of problems, one of which is that it can introduce a new way of solving the same problem.
 We therefore aim to use syntax sugar sparingly, but still often enough so the language does not become overly verbose.
 A few examples are shown below:
@@ -28,12 +28,12 @@ A few examples are given below:
 - Use `and` instead of `&&`, i.e. `alice.is_online and bob.is_online` instead of `alice.is_online && bob.is_online`.
   We can even write `alice is_online and bob is_online`.
 - Use `or` instead of `||`, i.e.  `foo() or bar()` instead of `foo() || bar()`.
-- Use `not` instead of `!`, which can easily be missed when read. 
+- Use `not` instead of `!`, which can easily be missed when read.
   So we write `if not productive then drink_coffee()` instead of `if !productive then drink_coffee()`.
 - Use indentation to denote code blocks instead of `{` and `}`, just as in Python.
 
 Mamba also uses arrow notation to more clearly denote the flow of data:
-- `<-` is used to assign to variables. 
+- `<-` is used to assign to variables.
   It denotes data flowing from the expression on the right to the identifier on the left.
 - `->` is used within type definitions of functions and methods.
 - `=>` is used to denote the control flow of the application.
@@ -55,11 +55,11 @@ Without any knowledge of Mamba, the reader should ideally, when reading above, b
 
 - We are iterating over a set (or collection) of composers.
 - We are checking whether a composer has died.
-- If a composer has died, we print how long ago that was. 
+- If a composer has died, we print how long ago that was.
   Presumably today is a date.
 
 Notice how little program specific syntax there is:
- 
+
 - We use `[` ... `]` to insert variables into strings.
 - `if` and `else` are used for program flow, and `print` to print something to the screen.
   - Note how we use the postfix notation when calling `print`, so we don't need to wrap the whole string in brackets.

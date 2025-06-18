@@ -24,12 +24,12 @@ Over the years, multiple languages have tried to implement null safety, with the
   This is for instance the approach that Kotlin uses.
 
 For Mamba I opted to bake null safety into the language itself.
-`?` is appended to types that may be `undefined`. 
+`?` is appended to types that may be `undefined`.
 If this has not been appended, say in the signature of a method, this method may never return `undefined`.
 If the type checker can not ensure that this is the case (or it detects that this is indeed the case), then it will raise an error and the code will not compile.
 `?.` can be used to call a method of a expressions that may be null, and it means a method is only called if the expression is not `undefined`.
 
-```
+```mamba
 # g never returns undefined.
 # If we would try this we would get a type error.
 def g(x: Int): Int => if x > 2 then x + 2 else x - 2

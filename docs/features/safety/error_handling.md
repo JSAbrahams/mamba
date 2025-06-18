@@ -11,30 +11,24 @@ ideally, should be done in an explicit manner. However, at the same time, error 
 verbose as it might obfuscate the actual relevant parts of the codebase which perform the actual calculations. Thus, a
 balance must be reached.
 
-In some cases it may be that we might want to raise an error. Exception handling and `try` `catch` blocks are common in 
-modern languages. These constructs however have been shown to be somewhat troublesome:
+In some cases it may be that we might want to raise an error. Exception handling and `try` `catch` blocks are common in modern languages.
+These constructs however have been shown to be somewhat troublesome:
 
-- When several lines of code are wrapped in a try catch block, we do not know which expression or statement is the one 
-  which might throw an exception.
-- Certain languages don't require all exceptions to be part of the function or method signature. This means that a 
-  method call might result in an exception even if the source code does not reflect this. This means that the use of
-  said method either has to either: 
-    - Manually check that a method does indeed not throw an exception, which becomes exponentially more difficult when a
-      method calls other methods, and so forth. 
-    - Wrap all method calls in `try` `catch` blocks, which might often be unnecessarily and make the application 
-      unnecessarily verbose.
-    - Assume that the method will not throw an exception, which might be a source of bugs down the line and may result
-      in runtime errors.
+- When several lines of code are wrapped in a try catch block, we do not know which expression or statement is the one which might throw an exception.
+- Certain languages don't require all exceptions to be part of the function or method signature. This means that a method call might result in an exception even if the source code does not reflect this.
+  This means that the use of said method either has to either:
+  - Manually check that a method does indeed not throw an exception, which becomes exponentially more difficult when a method calls other methods, and so forth.
+  - Wrap all method calls in `try` `catch` blocks, which might often be unnecessarily and make the application  unnecessarily verbose.
+  - Assume that the method will not throw an exception, which might be a source of bugs down the line and may result in runtime errors.
 
-As such, we aim to address the above concerns by using a more explicit system of error handling outlined below. In 
-general we:
-    
+As such, we aim to address the above concerns by using a more explicit system of error handling outlined below.
+In general we:
+
 - Wish to handle errors where the occur in an explicit manner, or,
-- We explicitly state that an expression or statement (or function or method) might throw an error. This creates a 
-  visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from
-  without even having to compile the and run the code.
+- We explicitly state that an expression or statement (or function or method) might throw an error.
+  This creates a visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from without even having to compile the and run the code.
 
-### Raises, and Result
+## Raises, and Result
 
 Say we have the following error class:
 
@@ -55,10 +49,9 @@ We can also use the `Result` type to define a possible return type and error pai
     # We can also have a function that raises multiple types of errors
     def h (x: Int): Result[Int, [MyErr, OtherErr]] => if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
     
-The first way of writing is preferred, as this more clearly separates the return type and possible errors that may be 
-raised. However, using Result may be better in some other situations. For instance, it allows us to use the type alias 
-feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency. See
-"Types" for a more in-depth explanation. A trivial case would be:
+The first way of writing is preferred, as this more clearly separates the return type and possible errors that may be raised.
+However, using Result may be better in some other situations. For instance, it allows us to use the type alias feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency.
+See "Types" for a more in-depth explanation. A trivial case would be:
 
     type MyResult <- Result[Int, MyErr]
     
@@ -75,11 +68,11 @@ point, or we will get a type error:
     # type error! exception of type MyErr is can never be raised
     def no_err(x: Int): Int raise [MyErr] => x + 1
     
-### Handle    
-    
+## Handle
+
 We can also explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned
 value to determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
-    
+
     def l := g(9) + 1.5 handle when
         err: MyErr => println err
         
@@ -96,7 +89,7 @@ The above would desugar to the following:
 
     # here, l has type l?, as we don not know if an error occurred or not
     println "we don't know whether l is an Int or None"
- 
+
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
 
     def l := g(9) handle when

@@ -23,7 +23,7 @@ To demonstrate generics, we will use an incomplete implementation of a graph.
         def to_hash <- id
 
 Next we define a class `Graph`.
-```
+
     from "node" use Node
     
     # a generic is usually a type. It may be a class, but this has limited use as we cannot inherit from a class
@@ -31,10 +31,9 @@ Next we define a class `Graph`.
         def private mut nodes: Set[N] <- {}
         
         def addNode(node: N) => nodes add node
-```
 
 Now we write the main script.
-```
+
     from "graph" use Graph
     from "node" use MyNode, OtherNode
     
@@ -45,4 +44,3 @@ Now we write the main script.
     other_graph addNode OtherNode()
     
     graph addNode OtherNode() # type error! Expected MyNode but got OtherNode
-```

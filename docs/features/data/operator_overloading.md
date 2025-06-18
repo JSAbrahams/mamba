@@ -7,22 +7,24 @@
 # 2.2.3 Operator Overloading
 
 We can overload the following operators of the language:
--   `sqrt`
--   `+` and `-`
--   `*` and `/`
--   `^` and `mod`
--   `=` and `/=`
--   `<`, `<=`, `>`, and `>=`
+
+- `sqrt`
+- `+` and `-`
+- `*` and `/`
+- `^` and `mod`
+- `=` and `/=`
+- `<`, `<=`, `>`, and `>=`
 
 We cannot overload the following operators, as these are used to compare instances directly and not their properties.
--   `is` and `isnt`
--   `isa` and `isnta`
+
+- `is`
+- `isa`
 
 Overloading operators gives us the ability to more concisely work with more complex objects.
 To demonstrate the concept of operator overloading we will use the (incomplete) `Complex` class, which represent complex numbers.
 
 Say we define a stateless `Complex` as such:
-```
+
      stateless Complex(def real: Int, def imaginary: Int)     
          def + (other: Complex) => Complex(self real + other real, self imaginary + other imaginary)
          
@@ -34,10 +36,9 @@ Say we define a stateless `Complex` as such:
             Complex(real, imaginary)
          
          def to_string() => "[self real] + [self imaginary]i"
-```
 
 Now we can use the `Complex` as follows:
-```
+
     from complex use Complex
 
     def a := Complex(1, 2) # 1 + 2i
@@ -46,4 +47,3 @@ Now we can use the `Complex` as follows:
     # the `+` operator of Complex has been overloaded
     def c := a + b
     print c # prints 3 + 5i
-```

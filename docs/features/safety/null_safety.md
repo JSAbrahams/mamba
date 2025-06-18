@@ -6,13 +6,11 @@
 
 # 2.4.3 Null Safety
 
-We wish to be explicit about a function which may return nothing, as the user of the function might expect a 
-value.
-
+We wish to be explicit about a function which may return nothing, as the user of the function might expect a  value.
 For this we use the question mark symbol: `?`
 
 Take the following:
-    
+
     # type error! 'get' function might return nothing
     def my_function(set: Set[Int], str: String): Int => set get str 
 
@@ -21,8 +19,8 @@ the return type of the function nullable.
 
     def my_function(set: Set[String], str: String): String? => set get str
     
-Now when calling my function, I will either get an `Int` or a `undefined`. Because this is explicit, we know this at 
-compile time. To cal a function on the resulting value, we may use the `?and` operator.
+Now when calling my function, I will either get an `Int` or a `undefined`. Because this is explicit, we know this at compile time.
+To cal a function on the resulting value, we may use the `?and` operator.
 
     def set ofmut <- { "hello" }
     def str_1 <- "hello"
@@ -32,15 +30,15 @@ compile time. To cal a function on the resulting value, we may use the `?and` op
     my_function(set, str_1)?.push "easy"   # if you use a dot, it must come after the ?, which is part of the value
     
 If we try to call a function or access a definition of the function directly we get a type error:
-    
+
     # type error! called `push` on an object which might be undefined
     my_function(set, str_1) push "world" 
-   
-### Default values
-   
+
+## Default values
+
 In some situations, we want to have a default value. In such situations, we use the `?or` operator. Note that both sides
 of the operator must be of the same type.
-```
+
     def world <- my_function(set, "world") ?or "world"
     
     # here, world is of type String
@@ -48,7 +46,6 @@ of the operator must be of the same type.
     def other <- my_function(set, "other")
     
     # here, other is of type String?, as we do not know whehter it is a String or undefined
-``` 
 
 You can also return `undefined` in a function:
 
