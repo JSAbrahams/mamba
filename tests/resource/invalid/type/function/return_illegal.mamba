@@ -1,1 +1,1 @@
-def f(a: Int) => return a
+def f(a: Int) := return a

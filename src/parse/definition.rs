@@ -135,7 +135,7 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", start)?;
     let raises = it.parse_vec_if(&Token::Raise, &parse_raises, "raises", start)?;
-    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", start)?;
+    let body = it.parse_if(&Token::Assign, &parse_expr_or_stmt, "function body", start)?;
 
     let end = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => b.pos,
@@ -505,7 +505,7 @@ mod test {
 
     #[test]
     fn function_definition_verify() {
-        let source = String::from("def f(fin b: Something, vararg c) => d");
+        let source = String::from("def f(fin b: Something, vararg c) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
@@ -589,7 +589,7 @@ mod test {
 
     #[test]
     fn function_no_args_definition_verify() {
-        let source = String::from("def f() => d");
+        let source = String::from("def f() := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -616,7 +616,7 @@ mod test {
 
     #[test]
     fn function_pure_definition_verify() {
-        let source = String::from("def pure f() => d");
+        let source = String::from("def pure f() := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -643,7 +643,7 @@ mod test {
 
     #[test]
     fn function_definition_with_literal_verify() {
-        let source = String::from("def f(x, vararg b: Something) => d");
+        let source = String::from("def f(x, vararg b: Something) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 

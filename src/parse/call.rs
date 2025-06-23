@@ -12,13 +12,13 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::BSlash, "anonymous function")?;
 
     let mut args: Vec<AST> = vec![];
-    it.peek_while_not_token(&Token::BTo, &mut |it, _| {
+    it.peek_while_not_token(&Token::Assign, &mut |it, _| {
         args.push(*it.parse(&parse_fun_arg, "anonymous function", start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
 
-    it.eat(&Token::BTo, "anonymous function")?;
+    it.eat(&Token::Assign, "anonymous function")?;
 
     let body = it.parse(&parse_expression, "anonymous function", start)?;
     let node = Node::AnonFun {
@@ -103,7 +103,7 @@ mod test {
 
     #[test]
     fn anon_fun_no_args_verify() {
-        let source = String::from("\\ => c");
+        let source = String::from("\\ := c");
         let statements = parse_direct(&source).unwrap();
 
         let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {
@@ -121,7 +121,7 @@ mod test {
 
     #[test]
     fn anon_fun_verify() {
-        let source = String::from("\\a,b => c");
+        let source = String::from("\\a,b := c");
         let statements = parse_direct(&source).unwrap();
 
         let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {

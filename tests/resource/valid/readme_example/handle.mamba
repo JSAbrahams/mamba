@@ -3,7 +3,7 @@ class MyOtherErr(def message: Str): Exception
 
 def function_may_throw_err() -> Int raise [MyErr] => 10
 
-def g() =>
+def g() :=
     def a := function_may_throw_err() handle
         err: MyErr =>
             print("We have a problem: {err.message}.")

@@ -1,6 +1,6 @@
 class MyClass
     def a: Int := 20
-    def f(self, x: Int) -> Int =>
+    def f(self, x: Int) -> Int :=
         self.a := x
         def y := x + 230
         self.a + y

@@ -1,6 +1,6 @@
 class MyErr(def message: Str): Exception
 
-def function_may_throw_err() -> Int raise [MyErr] => 10
+def function_may_throw_err() -> Int raise [MyErr] := 10
 
 def a := function_may_throw_err() handle
     err: MyErr =>

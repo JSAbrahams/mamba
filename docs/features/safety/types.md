@@ -12,7 +12,7 @@ If the application were dynamically typed, we would constantly have to verify th
 Say I have a variable `beethoven`, can I assume that it is an instance of `Composer`?
 
     # how can I be sure that this function argument is a composer?
-    def my_function(composer) => composer.composer_method()
+    def my_function(composer) := composer.composer_method()
     
 There are of course ways to check this, such as using the `isinstance` method in Python, but this is rather tiresome.
 To this end, we use types.
@@ -23,7 +23,7 @@ A user defines a type `Composer`, which defines the behaviour of a composer:
     
 And then we define the `my_function` as such:
 
-    def my_function(composer: Composer) -> Int => composer.composer_method()
+    def my_function(composer: Composer) -> Int := composer.composer_method()
     
 Now, in the body of the function, we can rest easy knowing that the passed variable is indeed a composer.
 It is actually now impossible to pass another variable type to the function, as this is statically checked by the type checker.
@@ -85,9 +85,9 @@ And we may then elsewhere implement this `Server` interface:
     class MyServer: Server
         def private connected := false
         
-        def init() => ...
+        def init() := ...
         
-        def connect(ip: IpAddress) => ...
+        def connect(ip: IpAddress) := ...
         
         # You can only call this function if I am a connected server
         def send_message(self: ConnectedServer, message: String) -> String => ...
@@ -98,7 +98,7 @@ This is a rather trivial example, but it shows how we can explicitly name the di
 
 In some cases, for readability we might want to write a type alias. Say we have the following function:
 
-    def distance_remaning(covered: Int) -> Int => self total - covered
+    def distance_remaning(covered: Int) -> Int := self total - covered
     
 The above seems simple, but there are two issues:
 
@@ -123,7 +123,7 @@ This can also be used to enforce pre-conditions of a function or method when use
 
 Say we have a function:
 
-    def f (x: Int) -> Int => 
+    def f (x: Int) -> Int := 
         println("this number is even: {x}")
         x
     
@@ -133,7 +133,7 @@ There are several traditional approaches to solving this problem, both if which 
 
 Just return `x` if it is uneven and don't print anything using a simple `if`:
 
-    def f (x: Int) -> Int => 
+    def f (x: Int) -> Int := 
         if x mod 2 /= 0 return x
         print("this number is even: {x}")
         x

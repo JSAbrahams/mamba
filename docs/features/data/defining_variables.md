@@ -60,7 +60,7 @@ We can have default values:
 
     class MyClass
         def my_field := 5
-        def my_method(x: Int, y: Int <- 2) => self.my_field := x + y
+        def my_method(x: Int, y: Int <- 2) := self.my_field := x + y
 
 We can now call the method as such:
 

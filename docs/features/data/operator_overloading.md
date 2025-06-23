@@ -26,16 +26,16 @@ To demonstrate the concept of operator overloading we will use the (incomplete) 
 Say we define a stateless `Complex` as such:
 
      stateless Complex(def real: Int, def imaginary: Int)     
-         def + (other: Complex) => Complex(self real + other real, self imaginary + other imaginary)
+         def + (other: Complex) := Complex(self real + other real, self imaginary + other imaginary)
          
          # we can also overload an unary opeator
          # when overloading, the default return value is the type itself, in this case Complex
-         def sqrt () =>
+         def sqrt () :=
             real      := sqrt (self real ^ 2 + self imaginary ^ 2)
             imaginary := sqrt (2 * self real * self imaginary)
             Complex(real, imaginary)
          
-         def to_string() => "[self real] + [self imaginary]i"
+         def to_string() := "[self real] + [self imaginary]i"
 
 Now we can use the `Complex` as follows:
 

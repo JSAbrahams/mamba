@@ -310,7 +310,7 @@ mod test {
 
     #[test]
     fn function_with_ret() -> Result<(), LexErr> {
-        let source = "def f(x: Int) -> Int =>\n    return";
+        let source = "def f(x: Int) -> Int :=\n    return";
         let tokens = tokenize(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
@@ -323,7 +323,7 @@ mod test {
         assert_eq!(tokens[6].token, Token::RRBrack);
         assert_eq!(tokens[7].token, Token::To);
         assert_eq!(tokens[8].token, Token::Id(String::from("Int")));
-        assert_eq!(tokens[9].token, Token::BTo);
+        assert_eq!(tokens[9].token, Token::Assign);
         assert_eq!(tokens[10].token, Token::NL);
         assert_eq!(tokens[11].token, Token::Indent);
         assert_eq!(tokens[12].token, Token::Ret);

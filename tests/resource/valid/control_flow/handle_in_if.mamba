@@ -1,4 +1,4 @@
-def f() -> Int raise [Exception] => 10
+def f() -> Int raise [Exception] := 10
 
 def x:= if True then
     f() handle

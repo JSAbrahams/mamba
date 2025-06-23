@@ -7,7 +7,7 @@ def f(x: Int) -> Int raise [MyException1, MyException2] =>
         1 => raise MyException1()
         2 => raise MyException2()
 
-def g() -> Int =>
+def g() -> Int :=
     f(2) handle
         err: MyException1 => print("a")
 

@@ -1,1 +1,1 @@
-def f() -> Int => if True then None else 10
+def f() -> Int := if True then None else 10

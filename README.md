@@ -51,7 +51,7 @@ We highlight how functions work, how de define classes, how types and type refin
 We can write a simple script that computes the factorial of a value given by the user.
 
 ```mamba
-def factorial(x: Int) -> Int => match x
+def factorial(x: Int) -> Int := match x
     0 => 1
     n => n * factorial(n - 1)
 
@@ -69,7 +69,7 @@ This means that the compiler will check for us that factorial is only used with 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int => match x
+def factorial(x: Int) -> Int := match x
     0 => 1
     n =>
         def ans := 1
@@ -97,7 +97,7 @@ class MyServer(def ip_address: IPv4Address)
     def last_sent(fin self) -> Str raise [ServerError] =>
         self._last_message
 
-    def connect(self) =>
+    def connect(self) :=
         self.is_connected := True
         print(always_the_same_message)
 
@@ -107,7 +107,7 @@ class MyServer(def ip_address: IPv4Address)
         else
             raise ServerError("Not connected!")
 
-    def disconnect(self) => self.is_connected := False
+    def disconnect(self) := self.is_connected := False
 ```
 
 Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
@@ -147,17 +147,17 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str? := None
 
-    def last_sent(self) -> Str raise [ServerErr] => 
+    def last_sent(self) -> Str raise [ServerErr] :=
         if self.last_message != None then 
             self._last_message
         else
             raise ServerError("No last message!")
 
-    def connect(self: DisConnMyServer) => self.is_connected := True
+    def connect(self: DisConnMyServer) := self.is_connected := True
 
-    def send(self: ConnMyServer, message: Str) => self._last_message := message
+    def send(self: ConnMyServer, message: Str) := self._last_message := message
 
-    def disconnect(self: ConnMyServer) => self.is_connected := False
+    def disconnect(self: ConnMyServer) := self.is_connected := False
 ```
 
 Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
@@ -189,10 +189,10 @@ if my_server isa ConnectedMyServer then my_server.disconnect()
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 
 ```mamba
-type PosInt: Int when 
+type PosInt: Int when
     self >= 0 else "Must be greater than 0"
 
-def factorial(x: PosInt) -> PosInt => match x
+def factorial(x: PosInt) -> PosInt := match x
     0 => 1
     n => n * factorial(n - 1)
 ```
@@ -235,7 +235,7 @@ Immutable variables and pure functions make it easier to write declarative progr
 def fin taylor := 7
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) =>
+def pure sin(x: Int) :=
     def ans := x
     for i in 1 ..= taylor .. 2 do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
@@ -260,7 +260,7 @@ def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
 my_server.send(message) handle
-    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
+    err: ServerErr = print("Error while sending message: \"{message}\": {err}")
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
@@ -274,12 +274,12 @@ This also prevents us from wrapping large code blocks in a `try`, where it might
 This is shown below:
 
 ```mamba
-def g() =>
+def g() :=
     def a := function_may_throw_err() handle
-        err: MyErr =>
+        err: MyErr :=
             print("We have a problem: {err.message}.")
             return  # we return, halting execution
-        err: MyOtherErr =>
+        err: MyOtherErr :=
             print("We have another problem: {err.message}.")
             0  # ... or we assign default value 0 to a
 

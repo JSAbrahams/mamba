@@ -1,4 +1,4 @@
-def g() -> Int raise [Exception] =>
+def g() -> Int raise [Exception] :=
     raise Exception("A")
 
 def a := g() handle
