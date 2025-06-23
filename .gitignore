@@ -16,3 +16,6 @@ target
 # Python files
 *.pyc
 venv
+
+# Nushell history
+.config/nushell/history.txt

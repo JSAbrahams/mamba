@@ -71,3 +71,9 @@ To make sure you always run the githooks:
 ```sh
 git config core.hooksPath .githooks
 ```
+
+Alternatively, if you have nix (shell) installed, you can use the nix flake which sets up everything for you:
+
+```sh
+nix develop
+```
