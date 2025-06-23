@@ -1,6 +1,6 @@
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
-use crate::parse::definition::parse_fun_arg;
+use crate::parse::definition::parse_lambda_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -13,7 +13,7 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
 
     let mut args: Vec<AST> = vec![];
     it.peek_while_not_token(&Token::Assign, &mut |it, _| {
-        args.push(*it.parse(&parse_fun_arg, "anonymous function", start)?);
+        args.push(*it.parse(&parse_lambda_arg, "anonymous function", start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

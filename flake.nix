@@ -9,16 +9,22 @@ inputs = {
 outputs = { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs         = import nixpkgs { inherit system; };
+        rustPlatform = pkgs.rustPlatform;
     in {
         devShell = pkgs.mkShell {
             buildInputs = with pkgs; [
                 git               # Version control tool
-                rustup            # Rust toolchain manager
+                
+                rustc             # Rust compiler
+                cargo             # Rust package manager
                 cargo-nextest     # Fast, parallel test runner
                 cargo-sort        # Sorts Cargo.toml entries
+                
                 nushell           # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
                 starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
+
+                openssh           # SSH agent
             ];
 
             shellHook = ''

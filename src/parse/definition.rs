@@ -5,8 +5,8 @@ use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::custom;
 use crate::parse::result::ParseResult;
+use crate::parse::result::{custom, ParseErr};
 use crate::parse::ty::parse_expression_type;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
@@ -215,6 +215,41 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
         default,
     };
     Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+/// Lambda args cannot be assigned a default
+pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("function argument")?;
+    let vararg = it.eat_if(&Token::Vararg).is_some();
+
+    let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
+    let (mutable, var, ty) = match &expression_type.node {
+        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
+        _ => {
+            return Err(Box::from(custom(
+                "Expected expression type in function argument",
+                expression_type.pos,
+            )));
+        }
+    };
+
+    if let Some(lex) = it.peek_next() {
+        if lex.token == Token::Assign {
+            return Err(Box::new(custom(
+                "lambda function arguments cannot have defaults",
+                lex.pos,
+            )));
+        }
+    }
+
+    let node = Node::FunArg {
+        vararg,
+        mutable,
+        var,
+        ty,
+        default: None,
+    };
+    Ok(Box::from(AST::new(start.union(expression_type.pos), node)))
 }
 
 pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
