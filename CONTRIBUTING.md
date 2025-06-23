@@ -54,29 +54,14 @@ For all the below, every merge is preceded by a Pull Request.
 
 ## 🔨 Tooling
 
-Several tools are used to help maintain the quality of the codebase. These tools are used by the continuous integration
-tools to statically check submitted code. Therefore, to save time, it is a good idea to install these tools locally and
-run them before pushing your changes.
+Several tools are used to help maintain the quality of the codebase.
+These tools are used by the continuous integration tools to statically check submitted code.
+Therefore, to save time, it is a good idea to install these tools locally and run them before pushing your changes.
 
-### Rustfmt
+To get up and running, make sure:
 
-[Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the
-codebase.
+- You have git installed.
+- Ideally, you have Bash 4.0 or greater.
+- You have [rustup](https://www.rust-lang.org/tools/install) installed.
 
-- **To install** `rustup component add rustfmt --toolchain nightly`
-- **To run** `cargo +nightly fmt`
-
-The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
-
-*Note* The nightly build of `cargo` must be used (`rustup install nightly`).
-
-### Clippy
-
-[Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
-
-- **To install** `rustup component add clippy`
-- **To run** `cargo clippy`
-
-The configuration of `Clippy` can be found in `.clippy.toml`.
-
-*Note* The stable build of `cargo` must be used (`rustup install stable`).
+All other tooling is downloaded automatically, such as [cargo clippy](https://doc.rust-lang.org/clippy/usage.html) and [rustfmt](https://github.com/rust-lang/rustfmt).
