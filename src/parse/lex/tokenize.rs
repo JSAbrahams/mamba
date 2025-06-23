@@ -29,11 +29,11 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(
+            _ => Err(Box::new(LexErr::new(
                 state.pos,
                 None,
                 "return carriage not followed by newline",
-            )),
+            ))),
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -97,7 +97,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             Some('=') => next_and_create(it, state, Token::Neq),
             _ => {
                 let msg = String::from("'!' is not a valid character on its own");
-                Err(LexErr::new(state.pos, None, &msg))
+                Err(Box::from(LexErr::new(state.pos, None, &msg)))
             }
         },
         '?' => create(state, Token::Question),
@@ -228,11 +228,11 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        c => Err(LexErr::new(
+        c => Err(Box::new(LexErr::new(
             state.pos,
             None,
             &format!("unrecognized character: {c}"),
-        )),
+        ))),
     }
 }
 

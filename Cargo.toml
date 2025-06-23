@@ -5,7 +5,7 @@ authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which converts Mamba files to Python 3 files"
 edition = "2021"
 license-file = "LICENSE"
-rust-version = "1.76.0"
+rust-version = "1.87.0"
 
 readme = "README.md"
 repository = "https://github.com/JSAbrahams/mamba"
@@ -13,17 +13,17 @@ keywords = ["python", "transpiler", "compiler"]
 categories = ["parsing"]
 
 [dependencies]
-tempfile = "3.1.0"
+ansi_term = "0.12.1"
 assert_cmd = "0.10"
-python-parser = "0.1.0"
 clap = { version = "2.33", features = ["yaml"] }
-pathdiff = "0.1.0"
 glob = "0.3.0"
 itertools = "0.8.2"
 log = "0.4"
 loggerv = "0.7"
-ansi_term = "0.12.1"
+pathdiff = "0.1.0"
 permutate = "0.3.2"
+python-parser = "0.1.0"
+tempfile = "3.1.0"
 
 [dev-dependencies]
 test-case = "3.3.1"

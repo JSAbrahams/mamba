@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+. ./scripts/log.sh
+export LOG_LEVEL=4 # debug
+. ./.githooks/util
+
+log_info "Running pre-commit checks"
+
+set -euo pipefail
+
+for script in "$(dirname "$0")/pre-commit"*; do
+    if [ "$script" = "$0" ]; then
+        continue # dont run self
+    fi
+
+    "$script" $@
+done
+
+log_info "Pre-commit checks passed"

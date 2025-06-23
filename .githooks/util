@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+. ./scripts/log.sh
+
+log_trace "Loaded githook utils"
+
+# additionally to should_run, also checks if we even have this executable and if not print warning and return false
+which_bin() {
+    if [ -z "$(which "$1")" ]; then
+        log_warn "No '$1' present, not running"
+        return 1 # false
+    else
+        return 0 # true
+    fi
+}
+
+min_bash_version() {
+    min_version=$2
+
+    if [[ -z "${BASH_VERSINFO+set}" ]]; then
+        log_error "This script must be run under bash"
+    fi
+
+    major=${BASH_VERSINFO[0]}
+    _minor=${BASH_VERSINFO[1]}
+
+    if (( major < min_version )); then
+        log_warning "Detected Bash version $BASH_VERSION (requires bash >4.0)"
+    fi
+}
+
+contains_element() {
+    local needle="$1"
+    shift
+    local element
+    for element in "$@"; do
+        if [[ "$element" == "$needle" ]]; then
+        return 0
+        fi
+    done
+    return 1
+}

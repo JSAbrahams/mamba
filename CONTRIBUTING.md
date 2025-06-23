@@ -7,6 +7,42 @@ at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%2
 
 Please read our [code of conduct](/CODE_OF_CONDUCT.md) before contributing.
 
+## 🔨 Tooling
+
+Several tools are used to help maintain the quality of the codebase.
+These tools are used by the continuous integration tools to statically check submitted code.
+Therefore, to save time, it is a good idea to install these tools locally and run them before pushing your changes.
+
+To get up and running, make sure:
+
+- You have git installed.
+- Ideally, you have Bash 4.0 or greater.
+- You have [rustup](https://www.rust-lang.org/tools/install) installed.
+
+All other tooling is downloaded automatically, such as [cargo clippy](https://doc.rust-lang.org/clippy/usage.html) and [rustfmt](https://github.com/rust-lang/rustfmt).
+
+To make sure you always run the githooks:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Alternatively, if you have nix (shell) installed, you can use the nix flake which sets up everything for you:
+
+```sh
+nix develop
+```
+
+### Installing Nix
+
+Nix is distributed as a small installer script on nixos.org.
+Below are the recommended commands.
+If you are not running a Linux distro, this will probably not work for you.
+
+```sh
+sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
+```
+
 ## 📝 Procedures
 
 We standardise the process of creating issues and pull requests to make it easier to manage the project. Please adhere
@@ -51,32 +87,3 @@ For all the below, every merge is preceded by a Pull Request.
 - Once approved, the new feature branch is merged with master.
 - The new merged release is tagged, and a new release is published on GitHub and published
   to [Cargo](https://crates.io/crates/mamba).
-
-## 🔨 Tooling
-
-Several tools are used to help maintain the quality of the codebase. These tools are used by the continuous integration
-tools to statically check submitted code. Therefore, to save time, it is a good idea to install these tools locally and
-run them before pushing your changes.
-
-### Rustfmt
-
-[Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the
-codebase.
-
-- **To install** `rustup component add rustfmt --toolchain nightly`
-- **To run** `cargo +nightly fmt`
-
-The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
-
-*Note* The nightly build of `cargo` must be used (`rustup install nightly`).
-
-### Clippy
-
-[Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
-
-- **To install** `rustup component add clippy`
-- **To run** `cargo clippy`
-
-The configuration of `Clippy` can be found in `.clippy.toml`.
-
-*Note* The stable build of `cargo` must be used (`rustup install stable`).

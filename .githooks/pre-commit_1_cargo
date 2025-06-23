@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+. ./scripts/log.sh
+export LOG_LEVEL=4 # debug
+. ./.githooks/util
+
+# only run if Cargo.toml or any *.rs file is in the staged diff
+if ! git diff --cached --name-only --diff-filter=ACM \
+     | grep -Eq '\.(rs|toml)$'; then
+  log_trace "No Rust source or Cargo.toml changes detected, skipping cargo checks."
+  exit 0
+fi
+
+log_info "Running cargo fmt"
+cargo fmt --all -- --check
+if [ $? -ne 0 ]; then
+    log_error "cargo fmt failed. Please format your code before committing."
+    exit 1
+fi
+
+log_info "${INFO} Running cargo check tests"
+cargo check --tests --all
+if [ $? -ne 0 ]; then
+    log_error "cargo check --tests failed. Please fix your test compilation errors before committing."
+    exit 1
+fi
+cargo check --tests --all --release
+if [ $? -ne 0 ]; then
+    log_error "cargo check --tests failed. Please fix your test compilation errors before committing."
+    exit 1
+fi
+
+cargo sort
+if [ $? -ne 0 ]; then
+    log_error "Dependencies in $project_dir/Cargo.toml not in alphabetical order, please run \"cargo sort\" in $project_dir"
+    exit 1
+fi
+
+log_info "Running cargo clippy"
+cargo clippy -- -D warnings
+if [ $? -ne 0 ]; then
+    log_error "cargo clippy found issues. Please fix them before committing."
+    exit 1
+fi
+cargo clippy --all-features --release -- -D warnings
+if [ $? -ne 0 ]; then
+    log_error "cargo clippy found issues. Please fix them before committing."
+    exit 1
+fi
+
+log_info "Running cargo check benches"
+cargo check --benches --release
+if [ $? -ne 0 ]; then
+    log_error "cargo check --benches failed. Please fix your benchmarks before committing."
+    exit 1
+fi
+
+log_info "Running cargo check --benches --all-features"
+cargo check --benches --release --all-features 
+if [ $? -ne 0 ]; then
+    log_error "cargo check --benches failed. Please fix your benchmarks before committing."
+    exit 1
+fi

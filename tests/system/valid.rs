@@ -123,6 +123,10 @@ fn test_directory_valid(input_dir: &str, file_name: &str) -> crate::system::OutT
 }
 
 #[test_case::test_case("collection", "tuple", Arguments { annotate: false })]
-fn test_directory_valid_with_args(input_dir: &str, file_name: &str, args: Arguments) -> crate::system::OutTestRet {
+fn test_directory_valid_with_args(
+    input_dir: &str,
+    file_name: &str,
+    args: Arguments,
+) -> crate::system::OutTestRet {
     crate::system::test_directory_args(true, &[input_dir], &[input_dir, "target"], file_name, &args)
 }
