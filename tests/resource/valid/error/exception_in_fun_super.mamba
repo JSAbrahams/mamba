@@ -1,8 +1,8 @@
 class MyException(msg: Str): Exception(msg)
 
-def g() -> Int raise [MyException] :=
-    raise MyException("A")
+def g() -> Int ! MyException :=
+    ! MyException("A")
 
 def f(x: Int) -> Int :=
-    g() handle
+    g()
         err: Exception => x + 10

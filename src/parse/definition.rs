@@ -156,14 +156,19 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::LSBrack, "raises")?;
     let mut raises: Vec<AST> = Vec::new();
-    it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
+    if let Some(start) = it.eat_if(&Token::LCBrack) {
+        it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+            raises.push(*it.parse(&parse_type, "raises", start)?);
+            it.eat_if(&Token::Comma);
+            Ok(())
+        })?;
+        it.eat(&Token::RCBrack, "raises")?;
+    } else {
+        let start = it.start_pos("single raises")?;
         raises.push(*it.parse(&parse_type, "raises", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-    it.eat(&Token::RSBrack, "raises")?;
+    }
+
     Ok(raises)
 }
 

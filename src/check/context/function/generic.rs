@@ -148,7 +148,7 @@ mod test {
 
     #[test]
     fn from_fundef() -> Result<(), Vec<TypeErr>> {
-        let source = "def f(fin a: Int, b: String := \"a\") -> String raise [E] := pass";
+        let source = "def f(fin a: Int, b: String := \"a\") -> String ! E := pass";
         let ast = parse_direct(source)
             .expect("valid function syntax")
             .into_iter()
