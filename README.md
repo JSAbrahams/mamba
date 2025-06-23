@@ -41,6 +41,19 @@ files.
 Mamba code should therefore be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
+## Quickstart for developers
+
+To get started right away, if on a Linux machine:
+
+```sh
+# Install Nix, in case you do not have it
+sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
+# Start nix shell
+nix develop
+```
+
+To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## ⌨️ Code Examples
 
 Below are some code examples to showcase the features of Mamba.
