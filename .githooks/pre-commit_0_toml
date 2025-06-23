@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+. ./scripts/log.sh
+export LOG_LEVEL=4 # debug
+. ./.githooks/util
+
+if ! git diff --cached --name-only --diff-filter=ACM | grep -q '^Cargo\.toml$'; then
+    log_trace "No changes in Cargo.toml."
+    exit 0
+fi
+
+cargo sort
+if [ $? -ne 0 ]; then
+    log_error "Dependencies in $project_dir/Cargo.toml not in alphabetical order, please run \"cargo sort\" in $project_dir"
+    exit 1
+fi

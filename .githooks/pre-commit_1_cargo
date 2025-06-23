@@ -1,11 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./scripts/log.sh
 export LOG_LEVEL=4 # debug
 . ./.githooks/util
 
-if ! min_bash_version "readarray" 4; then
-    return
+# only run if Cargo.toml or any *.rs file is in the staged diff
+if ! git diff --cached --name-only --diff-filter=ACM \
+     | grep -Eq '\.(rs|toml)$'; then
+  log_trace "No Rust source or Cargo.toml changes detected, skipping cargo checks."
+  exit 0
 fi
 
 log_info "Running cargo fmt"

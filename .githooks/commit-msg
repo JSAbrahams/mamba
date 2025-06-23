@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . ./scripts/log.sh
 export LOG_LEVEL=4 # debug
