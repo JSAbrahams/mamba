@@ -25,7 +25,7 @@ _log() {
         esac
     done
 
-    printf "%b %s%s" "$level" "$message" "$newline"
+    printf "%b %s$newline" "$level" "$message"
 }
 
 # designed to be very permissive

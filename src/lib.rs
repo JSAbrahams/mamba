@@ -150,7 +150,7 @@ pub fn mamba_to_python(
     let strip_prefix = |p: PathBuf| {
         p.strip_prefix(source_dir)
             .map(|p| {
-                PathBuf::from(&source_dir.iter().last().unwrap_or_else(|| "".as_ref())).join(p)
+                PathBuf::from(&source_dir.iter().next_back().unwrap_or_else(|| "".as_ref())).join(p)
             })
             .unwrap_or(p)
     };

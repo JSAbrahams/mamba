@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./scripts/log
+. ./scripts/log.sh
 export LOG_LEVEL=4 # debug
 . ./.githooks/util
 

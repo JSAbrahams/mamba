@@ -84,7 +84,7 @@ pub fn format_err(
     let mut first = true;
     for cause in causes {
         let msg = cause.msg.as_str();
-        if first && pos.map_or(false, |pos| pos != cause.pos) {
+        if first && pos.is_some_and(|pos| pos != cause.pos) {
             format_location(f, 1, Some(msg), cause.pos, source)?;
         } else {
             let offset_str = String::from_utf8(vec![b' '; OFFSET_WIDTH]).unwrap();

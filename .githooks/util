@@ -1,9 +1,8 @@
 #!/bin/bash
 
-. ./.githooks/log
+. ./scripts/log.sh
 
 log_trace "Loaded githook utils"
-
 
 # additionally to should_run, also checks if we even have this executable and if not print warning and return false
 which_bin() {
@@ -28,4 +27,16 @@ min_bash_version() {
     if (( major < min_version )); then
         log_warning "Detected Bash version $BASH_VERSION (requires bash >4.0)"
     fi
+}
+
+contains_element() {
+    local needle="$1"
+    shift
+    local element
+    for element in "$@"; do
+        if [[ "$element" == "$needle" ]]; then
+        return 0
+        fi
+    done
+    return 1
 }

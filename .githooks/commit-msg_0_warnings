@@ -1,5 +1,5 @@
 
-. ./scripts/log
+. ./scripts/log.sh
 export LOG_LEVEL=4 # debug
 . ./.githooks/util
 
@@ -11,7 +11,7 @@ fi
 
 # require bash version 4 for 'mapfile'
 if which_bin aspell; then
-  jargon_list='./jargon.txt'
+  jargon_list=jargon.txt
   log_debug "Performing spellcheck, using custom whitelist '$jargon_list'"
   # aspell also has a --personal option to add a custom whitelist, but then the file must have metadata at the top which is ugly
   # instead, we just manually remove entries manually which are in this whitelist

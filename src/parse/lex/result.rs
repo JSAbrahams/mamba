@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::common::position::CaretPos;
 use crate::parse::lex::token::{Lex, Token};
 
-pub type LexResult<T = Vec<Lex>> = Result<T, LexErr>;
+pub type LexResult<T = Vec<Lex>> = Result<T, Box<LexErr>>;
 
 #[derive(Debug, Clone)]
 pub struct LexErr {
@@ -14,6 +14,12 @@ pub struct LexErr {
     pub msg: String,
     pub source: Option<String>,
     pub path: Option<PathBuf>,
+}
+
+impl From<Box<LexErr>> for LexErr {
+    fn from(value: Box<LexErr>) -> Self {
+        *value
+    }
 }
 
 impl LexErr {

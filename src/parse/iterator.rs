@@ -16,7 +16,7 @@ pub struct LexIterator<'a> {
 }
 
 impl<'a> LexIterator<'a> {
-    pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator {
+    pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator<'a> {
         LexIterator { it }
     }
 
@@ -68,10 +68,7 @@ impl<'a> LexIterator<'a> {
     pub fn eat_if(&mut self, token: &Token) -> Option<Position> {
         if let Some(Lex { token: actual, .. }) = self.it.peek() {
             if Token::same_type(actual, token) {
-                return match self.eat(token, "") {
-                    Ok(pos) => Some(pos),
-                    Err(_) => None,
-                };
+                return self.eat(token, "").ok();
             }
         }
         None

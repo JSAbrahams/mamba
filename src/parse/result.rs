@@ -47,6 +47,11 @@ impl WithSource for ParseErr {
     }
 }
 
+impl From<Box<LexErr>> for ParseErr {
+    fn from(value: Box<LexErr>) -> Self {
+        ParseErr::from(*value)
+    }
+}
 impl From<LexErr> for ParseErr {
     fn from(lex_err: LexErr) -> Self {
         ParseErr {

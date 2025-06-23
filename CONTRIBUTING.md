@@ -69,5 +69,5 @@ All other tooling is downloaded automatically, such as [cargo clippy](https://do
 To make sure you always run the githooks:
 
 ```sh
-git config --local include.path ../.gitconfig
+git config core.hooksPath .githooks
 ```

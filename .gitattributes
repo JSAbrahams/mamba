@@ -1,0 +1,2 @@
+# Git will always convert line endings to LF on checkout. 
+text eol=lf
