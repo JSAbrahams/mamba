@@ -39,7 +39,7 @@
             git      # Version control tool
             less     # Used under the hood by git
             more     # Nice to have next to 'less'
-
+            
             clang                    # C++ tooling
             llvmPackages.bintools    #
             llvmPackages_latest.llvm # LLVM build tools (also provides llvm-cov/llvm-profdata, see LLVM_COV below)

@@ -12,19 +12,23 @@ repository = "https://github.com/JSAbrahams/mamba"
 keywords = ["python", "transpiler", "compiler"]
 categories = ["parsing"]
 
+[features]
+default = ["machine-code"]
+machine-code = ["inkwell"]
+
 [dependencies]
-ansi_term = "0.12.1"
-assert_cmd = "0.10"
-clap = { version = "4.5.40", features = ["derive"] }
-glob = "0.3.0"
-itertools = "0.8.2"
-log = "0.4"
-loggerv = "0.7"
-pathdiff = "0.1.0"
-permutate = "0.3.2"
-python-parser = "0.1.0"
+ansi_term = "0.12.1"   # Colors in the terminal
+clap = { version = "4.5.40", features = ["derive"] } # Compiler frontend
+glob = "0.3.0"          # Make traversing directories (Mamba projects) easier
+inkwell = { version = "0.6.0", features = ["llvm18-1"], optional = true } # Relevant for generating machine code
+itertools = "0.8.2"     # Tools to make iterating over collections easier
+log = "0.4"             # Log frontend
+loggerv = "0.7"         # Logger which accepts -vvv flag
+pathdiff = "0.1.0"      # Traverse directories (Mamba projects)
+python-parser = "0.1.0" # Parse Python, both in tests and to generate Mamba IR
 
 [dev-dependencies]
-test-case = "3.3.1"
-# dependencies: test -> test util -> mamba
+assert_cmd = "0.10"     # Assert commands work
+tempfile = "3.1.0"      # Create temporary files for intermediate results
+test-case = "3.3.1"     # Parameterize tests
 tests_util = { path = "./tests_util" }
