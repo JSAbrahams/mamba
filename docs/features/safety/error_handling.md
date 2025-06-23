@@ -37,17 +37,17 @@ Say we have the following error class:
     
 And the following functions elsewhere (not within the error class):
 
-    def g (x: Int): Int raise [MyErr] => if x is 10 then MyErr("x was 10") else x
+    def g (x: Int): Int ! MyErr := if x is 10 then ! MyErr("x was 10") else x
     
     # We can also have a function that raises multiple types of errors
-    def h (x: Int): Int raise [MyErr, OtherErr] => if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    def h (x: Int): Int ! { MyErr, OtherErr } => if x > 10 then ! MyErr("bigger than 10") else OtherErr("or not")
     
 We can also use the `Result` type to define a possible return type and error pair:
 
-    def g (x: Int): Result[Int, MyErr] => if x is 10 then MyErr("x was 10") else x
+    def g (x: Int): Result[Int, MyErr] => if x is 10 then ! MyErr("x was 10") else x
     
     # We can also have a function that raises multiple types of errors
-    def h (x: Int): Result[Int, [MyErr, OtherErr]] => if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    def h (x: Int): Result[Int, [MyErr, OtherErr]] => if x > 10 then ! MyErr("bigger than 10") else OtherErr("or not")
     
 The first way of writing is preferred, as this more clearly separates the return type and possible errors that may be raised.
 However, using Result may be better in some other situations. For instance, it allows us to use the type alias feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency.
@@ -59,21 +59,21 @@ See "Types" for a more in-depth explanation. A trivial case would be:
     
 Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
 
-    def g (x: Int): Int raise [MyErr] => x
-    def g (0)                         => MyErr("x was 10")
+    def g (x: Int): Int ! [MyErr] => x
+    def g (0)                     => ! MyErr("x was 10")
     
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
 
     # type error! exception of type MyErr is can never be raised
-    def no_err(x: Int): Int raise [MyErr] => x + 1
+    def no_err(x: Int): Int ! [MyErr] => x + 1
     
 ## Handle
 
 We can also explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned
 value to determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
 
-    def l := g(9) + 1.5 handle when
+    def l := g(9) + 1.5
         err: MyErr => println err
         
     # here, l has type Int?, as we don not know if an error occurred or not
@@ -81,18 +81,17 @@ value to determine what to do. A good first step is to log the error. In this ca
     
 The above would desugar to the following:
 
-    def l := g(9) + 1.5 handle when
+    def l := g(9) + 1.5
         err: MyErr => 
             println err
             None
-        ok         => ok
 
     # here, l has type l?, as we don not know if an error occurred or not
     println "we don't know whether l is an Int or None"
 
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
 
-    def l := g(9) handle when
+    def l := g(9)
         err: MyErr =>
             println err
             return err
@@ -104,10 +103,10 @@ We may also return if we detect an error. In that case, the code after would onl
 We can, instead of returning, also assign a default value to l. This should be done with care however. Assigning
 to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
-    def l := g(9) handle when
+    def l := g(9)
         err: MyErr =>
             println err
             0  # this has type Int
      
      # now, even if an error is thrown, l is assigned an integer, so we know that l is an Int
-     println "[l] has type Int"
+     print("[l] has type Int")

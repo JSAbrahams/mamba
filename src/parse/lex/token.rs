@@ -253,7 +253,7 @@ impl fmt::Display for Token {
             Token::Question => write!(f, "?"),
 
             Token::Handle => write!(f, "handle"),
-            Token::Raise => write!(f, "raise"),
+            Token::Raise => write!(f, "!"),
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),

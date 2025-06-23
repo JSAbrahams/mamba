@@ -94,18 +94,18 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str  := "temp"
 
-    def last_sent(fin self) -> Str raise [ServerError] =>
+    def last_sent(fin self) -> Str ! ServerError =>
         self._last_message
 
     def connect(self) :=
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: Str) raise [ServerError] =>
+    def send(self, message: Str) ! ServerError =>
         if self.is_connected then
             self._last_message := message
         else
-            raise ServerError("Not connected!")
+            ! ServerError("Not connected!")
 
     def disconnect(self) := self.is_connected := False
 ```
@@ -126,7 +126,7 @@ if my_server.is_connected then http_server.send("Hello World!")
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
 print("last message sent before disconnect: \"{my_server.last_sent()}\".")
-my_server.disconnect()
+my_server.disconnect()!
 ```
 
 ### 🗃 Type refinement (🇻 0.4.1+)
@@ -147,11 +147,11 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str? := None
 
-    def last_sent(self) -> Str raise [ServerErr] :=
+    def last_sent(self) -> Str ! ServerErr :=
         if self.last_message != None then 
             self._last_message
         else
-            raise ServerError("No last message!")
+            ! ServerError("No last message!")
 
     def connect(self: DisConnMyServer) := self.is_connected := True
 
@@ -259,7 +259,7 @@ def fin some_ip := ipaddress.ip_address("151.101.193.140")
 def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
-my_server.send(message) handle
+my_server.send(message)
     err: ServerErr = print("Error while sending message: \"{message}\": {err}")
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
@@ -270,24 +270,30 @@ Here we showcase how we try to handle errors on-site instead of in a (large) `tr
 This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-`handle` can also be combined with an assign. In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
+This can also be combined with an assign. In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below:
 
 ```mamba
-def g() :=
-    def a := function_may_throw_err() handle
-        err: MyErr :=
-            print("We have a problem: {err.message}.")
-            return  # we return, halting execution
-        err: MyOtherErr :=
-            print("We have another problem: {err.message}.")
-            0  # ... or we assign default value 0 to a
+def a := function_may_throw_err()
+    err: MyErr :=
+        print("We have a problem: {err.message}.")
+        return  # we return, halting execution
+    err: MyOtherErr :=
+        print("We have another problem: {err.message}.")
+        0  # ... or we assign default value 0 to a
 
-    print("a has value {a}.")
+print("a has value {a}.")
 ```
 
-If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
-See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
+I we don't want to handle the exception cases here, we just append a `!` to a function.
+This means that this exception must be handeld further up the stack.
+
+```mamba
+def g() := function_may_throw_err()!
+
+# if `function_may_throw_err` returned an exception, we will never reach this point
+print("a has value {a}.")
+```
 
 ## 💻 The Command Line Interface
 

@@ -30,7 +30,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     block            ::= indent { expr-or-stmt } dedent
     
-    expr-or-stmt     ::= ( statement | expression ) [ handle ] [ comment ]
+    expr-or-stmt     ::= ( statement | expression ) [ comment ]
     statement        ::= control-flow-stmt
                       | definition
                       | reassignment
@@ -57,10 +57,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple
+    call             ::= expression [ ( "." | "?." ) ] id tuple [ handle ]
     
-    raise            ::= "raise" id { "," id }
-    handle           ::= "handle" newline match-cases
+    raise            ::= "!" id { "," id }
+    handle           ::= "!" | newline match-cases
     
     collection       ::= tuple | set | list | map
     tuple            ::= "(" { expression } ")"

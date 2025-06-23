@@ -95,10 +95,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         }
         '!' => match it.peek() {
             Some('=') => next_and_create(it, state, Token::Neq),
-            _ => {
-                let msg = String::from("'!' is not a valid character on its own");
-                Err(Box::from(LexErr::new(state.pos, None, &msg)))
-            }
+            _ => create(state, Token::Raise),
         },
         '?' => create(state, Token::Question),
         '0'..='9' => {
@@ -292,7 +289,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "in" => Token::In,
 
-        "raise" => Token::Raise,
         "handle" => Token::Handle,
         "when" => Token::When,
 
