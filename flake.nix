@@ -1,5 +1,5 @@
 {
-description = "A Nix flake providing a Rust dev environment with cargo-nextest, cargo-sort, rustup, zsh, and Oh My Zsh";
+description = "A Nix flake providing a Rust dev environment with rustup, cargo tooling, and nushell";
 
 inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -25,12 +25,12 @@ outputs = { self, nixpkgs, flake-utils, ... }:
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
 
-                # point Nu config dir our repo `.config` folder
-                export XDG_CONFIG_HOME="$(pwd)/.config"
-
                 # If not already in Nu Shell, switch to an interactive Nu session
                 if [ -z "$NU_VERSION" ]; then
-                    exec "${pkgs.nushell}/bin/nu" --login
+                    exec "${pkgs.nushell}/bin/nu" \
+                        --login \
+                        --config "$(pwd)/.config/nushell/config.nu" \
+                        --cwd "${PWD}"
                 fi
             '';
             };

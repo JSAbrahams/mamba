@@ -41,7 +41,7 @@ files.
 Mamba code should therefore be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
-## Quickstart for developers
+## 🧑‍💻 Quickstart for developers 👨‍💻
 
 To get started right away, if on a Linux machine:
 
@@ -302,7 +302,20 @@ I we don't want to handle the exception cases here, we just append a `!` to a fu
 This means that this exception must be handeld further up the stack.
 
 ```mamba
-def g() := function_may_throw_err()!
+def a := function_may_throw_err()!
+
+# if `function_may_throw_err` returned an exception, we will never reach this point
+print("a has value {a}.")
+```
+
+We can also mix and match, handling a subset of the exceptions.
+The type checker will keep track of what we handle locally and what is passed up the stack.
+
+```mamba
+def a := function_may_throw_err()!
+    err: MyErr :=
+        print("We have a problem: {err.message}.")
+        return  # we return, halting execution
 
 # if `function_may_throw_err` returned an exception, we will never reach this point
 print("a has value {a}.")
