@@ -5,8 +5,8 @@ use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
+use crate::parse::result::custom;
 use crate::parse::result::ParseResult;
-use crate::parse::result::{custom, ParseErr};
 use crate::parse::ty::parse_expression_type;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
@@ -177,7 +177,12 @@ pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let mut args = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
         args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);
-        it.eat_if(&Token::Comma);
+
+        if let Some(next) = it.peek_next() {
+            if next.token != Token::RRBrack {
+                it.eat(&Token::Comma, "function arguments must be comma separated")?;
+            }
+        }
         Ok(())
     })?;
 
@@ -187,7 +192,6 @@ pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function argument")?;
-    let vararg = it.eat_if(&Token::Vararg).is_some();
 
     let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
     let (mutable, var, ty) = match &expression_type.node {
@@ -208,7 +212,7 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
 
     let end = default.clone().map_or(expression_type.pos, |def| def.pos);
     let node = Node::FunArg {
-        vararg,
+        vararg: false,
         mutable,
         var,
         ty,
@@ -217,10 +221,9 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(end), node)))
 }
 
-/// Lambda args cannot be assigned a default
+/// Lambda args cannot be assigned a default, though whether we should even allow default arguments is debatable.
 pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function argument")?;
-    let vararg = it.eat_if(&Token::Vararg).is_some();
 
     let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
     let (mutable, var, ty) = match &expression_type.node {
@@ -233,17 +236,8 @@ pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
         }
     };
 
-    if let Some(lex) = it.peek_next() {
-        if lex.token == Token::Assign {
-            return Err(Box::new(custom(
-                "lambda function arguments cannot have defaults",
-                lex.pos,
-            )));
-        }
-    }
-
     let node = Node::FunArg {
-        vararg,
+        vararg: false,
         mutable,
         var,
         ty,
@@ -545,7 +539,7 @@ mod test {
 
     #[test]
     fn function_definition_verify() {
-        let source = String::from("def f(fin b: Something, vararg c) := d");
+        let source = String::from("def f(fin b: Something, c) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
@@ -587,8 +581,8 @@ mod test {
                     default: d2,
                 },
             ) => {
-                assert_eq!(v1.clone(), false);
-                assert_eq!(v2.clone(), true);
+                assert!(!v1.clone());
+                assert!(!v2.clone());
 
                 assert_eq!(
                     id1.node,
@@ -682,8 +676,14 @@ mod test {
     }
 
     #[test]
+    fn function_no_separator_args() {
+        let source = String::from("def f(x b: Something) := d");
+        parse_direct(&source).unwrap_err();
+    }
+
+    #[test]
     fn function_definition_with_literal_verify() {
-        let source = String::from("def f(x, vararg b: Something) := d");
+        let source = String::from("def f(x, b: Something) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -725,7 +725,7 @@ mod test {
                 },
             ) => {
                 assert!(!v1.clone());
-                assert!(v2.clone());
+                assert!(!v2.clone());
 
                 assert!(mut1.clone());
                 assert!(mut2.clone());

@@ -1,5 +1,6 @@
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::definition::parse_lambda_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
@@ -19,7 +20,6 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     })?;
 
     it.eat(&Token::Assign, "anonymous function")?;
-
     let body = it.parse(&parse_expression, "anonymous function", start)?;
     let node = Node::AnonFun {
         args,
@@ -29,7 +29,7 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    it.peek_or_err(
+    let res = it.peek_or_err(
         &|it, ast| match ast.token {
             Token::Point => {
                 it.eat(&Token::Point, "call")?;
@@ -58,7 +58,23 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
         },
         &[Token::Point, Token::LRBrack],
         "function call",
-    )
+    )?;
+
+    if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
+        it.eat(&Token::NL, "internal error in parsing call")?; // peek covers this
+
+        // parse handle cases if indentation block after
+        let cases = it.parse_vec(&parse_match_cases, "handle cases", res.pos)?;
+        let end = cases.last().map_or(res.pos, |stmt| stmt.pos);
+
+        let node = Node::Handle {
+            expr_or_stmt: res.clone(),
+            cases,
+        };
+        Ok(Box::from(AST::new(res.pos.union(end), node)))
+    } else {
+        Ok(res)
+    }
 }
 
 fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {

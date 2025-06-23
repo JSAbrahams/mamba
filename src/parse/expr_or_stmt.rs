@@ -1,7 +1,4 @@
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
-use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
@@ -25,7 +22,6 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::Handle => parse_handle(*result.clone(), it),
             Token::Assign
             | Token::AddAssign
             | Token::SubAssign
@@ -38,21 +34,6 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
         },
         Ok(result.clone()),
     )
-}
-
-pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("handle")?;
-    it.eat(&Token::Handle, "handle")?;
-    it.eat(&Token::NL, "handle")?;
-
-    let cases = it.parse_vec(&parse_match_cases, "handle", start)?;
-    let end = cases.last().map_or(start, |stmt| stmt.pos);
-
-    let node = Node::Handle {
-        expr_or_stmt: Box::from(expr_or_stmt),
-        cases,
-    };
-    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]

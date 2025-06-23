@@ -38,7 +38,6 @@ Keyword | Use
 `def`     | Denote definition
 `fin`     | Denote defined variable is immutable
 `pure`    | Denote function is pure
-`vararg`  | Denote variable argument
 
 ## Boolean operators
 
@@ -93,11 +92,3 @@ Keyword | Use
 ---|---
 `return`  | Return from a function or method
 `pass`    | Empty placeholder statement
-
-## Errors
-
-Keyword | Use
----|---
-`handle` | Denote handle cases
-`raise`  | Denote that an expression, statement, or function may raise an error
-`retry`  | Retry an expression from within handle case

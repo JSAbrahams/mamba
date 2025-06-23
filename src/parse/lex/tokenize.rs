@@ -258,7 +258,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "import" => Token::Import,
         "forward" => Token::Forward,
-        "vararg" => Token::Vararg,
 
         "def" => Token::Def,
         "fin" => Token::Fin,
@@ -288,10 +287,7 @@ fn as_op_or_id(string: String) -> Token {
         "with" => Token::With,
 
         "in" => Token::In,
-
-        "handle" => Token::Handle,
         "when" => Token::When,
-
         "pass" => Token::Pass,
 
         _ => Token::Id(string),

@@ -107,14 +107,14 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str  := "temp"
 
-    def last_sent(fin self) -> Str ! ServerError =>
+    def last_sent(fin self) -> Str ! ServerError :=
         self._last_message
 
     def connect(self) :=
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: Str) ! ServerError =>
+    def send(self, message: Str) ! ServerError :=
         if self.is_connected then
             self._last_message := message
         else

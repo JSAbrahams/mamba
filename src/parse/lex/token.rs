@@ -40,7 +40,6 @@ pub enum Token {
     Point,
     Comma,
     DoublePoint,
-    Vararg,
     BSlash,
 
     Id(String),
@@ -126,7 +125,6 @@ pub enum Token {
     With,
 
     Question,
-    Handle,
 
     Pass,
     Comment(String),
@@ -168,7 +166,6 @@ impl fmt::Display for Token {
             Token::Point => write!(f, "."),
             Token::Comma => write!(f, ","),
             Token::DoublePoint => write!(f, ":"),
-            Token::Vararg => write!(f, "vararg"),
             Token::BSlash => write!(f, "\\"),
 
             Token::Fin => write!(f, "fin"),
@@ -252,7 +249,6 @@ impl fmt::Display for Token {
 
             Token::Question => write!(f, "?"),
 
-            Token::Handle => write!(f, "handle"),
             Token::Raise => write!(f, "!"),
             Token::When => write!(f, "when"),
 
