@@ -8,16 +8,15 @@ log_info "Running commit-msg checks"
 
 msgfile="$1"
 
-# extract message contents
 export SUBJECT_LINE=$(head -n1 "$msgfile")
-# Read rest of the message (if any)
+
 export SECOND_LINE=$(cat $msgfile | sed -n '2p')
-export LINE_COUNT=$(cat $msgfile | wc -l)
 # This reads the file and cuts at the first 'diff --git' (and any later lines).
-# use tail to skip first 2 lines
-# additionally, drop and comment lines
+# use tail to skip first 2 lines, and drop comment lines
 export BODY=$(sed '/^diff --git/,$d' "$msgfile" | tail -n +2 | sed '/^#/d')
+
 export WORD_COUNT=$(echo "$SUBJECT_LINE" | wc -w)
+export LINE_COUNT=$(cat $msgfile | wc -l)
 
 export VALID_TYPES="doc test feat fix style refactor revert git chore perf build ci cd deploy security"
 

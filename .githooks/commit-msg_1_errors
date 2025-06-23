@@ -66,7 +66,7 @@ if (( LINE_COUNT > 1 )); then
 fi
 
 line_no=0
-found_too_long_body_line="false"
+found_too_long_body_line=1
 while IFS= read -r line; do
   # skip blank lines
   [[ -z "$line" ]] && { (( line_no++ )); continue; }
@@ -81,11 +81,11 @@ while IFS= read -r line; do
     log_error -n && printf "%s%b\n" "$prefix" "${ANSI_RED}${suffix}${ANSI_NC}"
     log_error
 
-    found_too_long_body_line="true"
+    found_too_long_body_line=0
   fi
   (( line_no++ ))
 done <<< "$BODY"
 
-if [ "$found_too_long_body_line" = "true" ]; then
+if $found_too_long_body_line; then
   exit 1
 fi

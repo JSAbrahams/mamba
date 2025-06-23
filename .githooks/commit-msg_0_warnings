@@ -5,40 +5,42 @@ export LOG_LEVEL=4 # debug
 
 log_trace "Running $0"
 
-if should_run spellcheck; then
-  # require bash version 4 for 'mapfile'
-  if should_run_exec aspell && min_bash_version aspell 4; then
-    jargon_list='.config/jargon.txt'
-    log_debug "Performing spellcheck, using custom whitelist '$jargon_list'"
-    # aspell also has a --personal option to add a custom whitelist, but then the file must have metadata at the top which is ugly
-    # instead, we just manually remove entries manually which are in this whitelist
-    misspelled=$(printf "%s\n" "$SUBJECT_LINE" | aspell --personal="$jargon_list" --lang=en_US list)
+if ! min_bash_version 4; then
+  log_warn "Cannot perform spellcheck"
+fi
 
-    mapfile -t uniq_misspelled < <(echo "$misspelled" | sort -u)
+# require bash version 4 for 'mapfile'
+if which_bin aspell; then
+  jargon_list='./jargon.txt'
+  log_debug "Performing spellcheck, using custom whitelist '$jargon_list'"
+  # aspell also has a --personal option to add a custom whitelist, but then the file must have metadata at the top which is ugly
+  # instead, we just manually remove entries manually which are in this whitelist
+  misspelled=$(printf "%s\n" "$SUBJECT_LINE" | aspell --personal="$jargon_list" --lang=en_US list)
 
-    # filter out words which are whitelisted
-    mapfile -t whitelist < "$jargon_list"
-    filtered_misspelled=()
-    for w in "${uniq_misspelled[@]}"; do
-      # If $w is NOT exactly in the whitelist, keep it
-      if ! contains_element "$w" "${whitelist[@]}"; then
-        filtered_misspelled+=("$w")
-      fi
-    done
+  mapfile -t uniq_misspelled < <(echo "$misspelled" | sort -u)
 
-    if [[ -n "$filtered_misspelled" ]]; then
-      log_warn -n "Subject line contains ${#filtered_misspelled[@]} unknown "
-      if [ "${#filtered_misspelled[@]}" -eq 1 ];  then
-        echo "word:"
-      else
-        echo "words:"
-      fi
-
-      for w in "${filtered_misspelled[@]}"; do
-        log_warn "- '$w'"
-      done
-      log_warn "hint: if you think this word is correctly spelled, consider adding it to '$jargon_list'"
+  # filter out words which are whitelisted
+  mapfile -t whitelist < "$jargon_list"
+  filtered_misspelled=()
+  for w in "${uniq_misspelled[@]}"; do
+    # If $w is NOT exactly in the whitelist, keep it
+    if ! contains_element "$w" "${whitelist[@]}"; then
+      filtered_misspelled+=("$w")
     fi
+  done
+
+  if [[ -n "$filtered_misspelled" ]]; then
+    log_warn -n "Subject line contains ${#filtered_misspelled[@]} unknown "
+    if [ "${#filtered_misspelled[@]}" -eq 1 ];  then
+      echo "word:"
+    else
+      echo "words:"
+    fi
+
+    for w in "${filtered_misspelled[@]}"; do
+      log_warn "- '$w'"
+    done
+    log_warn "hint: if you think this word is correctly spelled, consider adding it to '$jargon_list'"
   fi
 fi
 

@@ -4,8 +4,18 @@
 
 log_trace "Loaded githook utils"
 
+
+# additionally to should_run, also checks if we even have this executable and if not print warning and return false
+which_bin() {
+    if [ -z "$(which "$1")" ]; then
+        log_warn "No '$1' present, not running"
+        return 1 # false
+    else
+        return 0 # true
+    fi
+}
+
 min_bash_version() {
-    should_run=$1
     min_version=$2
 
     if [[ -z "${BASH_VERSINFO+set}" ]]; then
@@ -16,6 +26,6 @@ min_bash_version() {
     _minor=${BASH_VERSINFO[1]}
 
     if (( major < min_version )); then
-        log_warning "Detected Bash version $BASH_VERSION, cannot run '$should_run' check  (requires bash >4.0)"
+        log_warning "Detected Bash version $BASH_VERSION (requires bash >4.0)"
     fi
 }

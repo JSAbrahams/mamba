@@ -65,3 +65,9 @@ To get up and running, make sure:
 - You have [rustup](https://www.rust-lang.org/tools/install) installed.
 
 All other tooling is downloaded automatically, such as [cargo clippy](https://doc.rust-lang.org/clippy/usage.html) and [rustfmt](https://github.com/rust-lang/rustfmt).
+
+To make sure you always run the githooks:
+
+```sh
+git config --local include.path ../.gitconfig
+```
