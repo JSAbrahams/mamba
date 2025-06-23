@@ -1,0 +1,51 @@
+#!/bin/bash
+
+. ./scripts/log
+export LOG_LEVEL=4 # debug
+. ./.githooks/util
+
+log_info "Running commit-msg checks"
+
+msgfile="$1"
+
+# extract message contents
+export SUBJECT_LINE=$(head -n1 "$msgfile")
+# Read rest of the message (if any)
+export SECOND_LINE=$(cat $msgfile | sed -n '2p')
+export LINE_COUNT=$(cat $msgfile | wc -l)
+# This reads the file and cuts at the first 'diff --git' (and any later lines).
+# use tail to skip first 2 lines
+# additionally, drop and comment lines
+export BODY=$(sed '/^diff --git/,$d' "$msgfile" | tail -n +2 | sed '/^#/d')
+export WORD_COUNT=$(echo "$SUBJECT_LINE" | wc -w)
+
+export VALID_TYPES="doc test feat fix style refactor revert git chore perf build ci cd deploy security"
+
+print_help_msg() {
+  log_error "Please fix commit message and then commit again"
+  log_error "Valid commit message has a first line of the form '<type>: <short summary>', where"
+  log_error "- <type> is one of: ${VALID_TYPES// /, }"
+  log_error "- The entire first line of the commit message is less than 50 characters"
+  log_error "- The subject line does *not* end with a period"
+  log_error "Additionally, if there is a body"
+  log_error "- There must be a newline between the subject line (first line) and body"
+  log_error "- Each body line may be no more than 72 characters"
+}
+export -f print_help_msg
+
+set -euo pipefail
+
+if [[ "$SUBJECT_LINE" == "dropme"* || "$SUBJECT_LINE" == "fixup" || "$SUBJECT_LINE" == "[skip]"* ]]; then
+  log_warn "Commit message '$SUBJECT_LINE' is allowed but should be removed before merging with base branch."
+else
+  # do proper checks
+  for script in "$(dirname "$0")/commit-msg"*; do
+      if [ "$script" = "$0" ]; then
+          continue # dont run self
+      fi
+
+      "$script" $@
+  done
+fi
+
+log_info "Commit message check passed"

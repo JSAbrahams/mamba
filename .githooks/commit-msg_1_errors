@@ -1,0 +1,91 @@
+#!/bin/bash
+
+. ./scripts/log
+export LOG_LEVEL=4 # debug
+. ./.githooks/util
+
+log_trace "Running $0"
+
+if [ -z "$SUBJECT_LINE" ]; then
+  log_error "Commit message cannot be empty"
+  print_help_msg
+  exit 1
+fi
+
+if [[ "$SUBJECT_LINE" != *": "* ]]; then
+  log_error "Commit message has invalid format: '$SUBJECT_LINE'"
+  print_help_msg
+  exit 1
+fi
+
+type="${SUBJECT_LINE%%:*}"
+if ! grep -qx "$type" <(printf "%s\n" $VALID_TYPES); then
+  log_error "Commit message has invalid type: '$type'"
+  log_error "Allowed types are: $VALID_TYPES"
+  print_help_msg
+  exit 1
+fi
+
+summary="${SUBJECT_LINE#*: }"
+if [[ -z "$summary" ]]; then
+  log_error "Commit message missing summary"
+  log_error "The part after ":" must describe your change."
+  print_help_msg
+  exit 1
+fi
+
+len_SUBJECT_LINE=${#SUBJECT_LINE}
+if (( len_SUBJECT_LINE > 50 )); then
+  log_error "First line of commit message is too long: $len_SUBJECT_LINE characters (max 50)."
+
+  # print the part which is too long in red
+  prefix="${SUBJECT_LINE:0:50}" # everything before 50th place
+  suffix="${SUBJECT_LINE:50}"   # everything after 50th place
+  log_error "Message subject line, with excessive characters shown in red: "
+  log_error
+  log_error -n && printf "%s%b\n" "$prefix" "${ANSI_RED}${suffix}${ANSI_NC}"
+  log_error
+
+  print_help_msg
+  exit 1
+fi
+
+if [[ "$SUBJECT_LINE" == *."" ]]; then
+  log_error "Subject line should not end with a period: '$SUBJECT_LINE'"
+  print_help_msg
+  exit 1
+fi
+
+if (( LINE_COUNT > 1 )); then
+# If there's a body, ensure blank line separator
+  if [ -n "$SECOND_LINE" ]; then
+    log_error "Missing blank line between subject and body: '$SECOND_LINE'"
+    print_help_msg
+    exit 1
+  fi
+fi
+
+line_no=0
+found_too_long_body_line="false"
+while IFS= read -r line; do
+  # skip blank lines
+  [[ -z "$line" ]] && { (( line_no++ )); continue; }
+
+  len=${#line}
+  if (( len > 72 )); then
+    prefix="${line:0:72}" # everything before 72nd place
+    suffix="${line:72}"   # everything after 72nd place
+
+    log_error "Body line $line_no is too long: $len characters (max 72):"
+    log_error
+    log_error -n && printf "%s%b\n" "$prefix" "${ANSI_RED}${suffix}${ANSI_NC}"
+    log_error
+
+    found_too_long_body_line="true"
+  fi
+  (( line_no++ ))
+done <<< "$BODY"
+
+if [ "$found_too_long_body_line" = "true" ]; then
+  exit 1
+fi

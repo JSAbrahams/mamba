@@ -1,0 +1,13 @@
+#!/bin/bash
+
+. ./scripts/log
+export LOG_LEVEL=4 # debug
+
+log_trace "Running $0"
+
+branch_name="$(git rev-parse --abbrev-ref HEAD)"
+
+if ! [[ "$branch_name" =~ ^[a-zA-Z0-9/\-]+$ ]]; then
+  log_error "Invalid branch name '$branch_name'. Only letters, digits, '/', and '-' allowed."
+  exit 1
+fi
