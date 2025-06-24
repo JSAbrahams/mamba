@@ -37,9 +37,7 @@ Mamba also uses arrow notation to more clearly denote the flow of data:
   It denotes data flowing from the expression on the right to the identifier on the left.
 - `->` is used within type definitions of functions and methods.
 - `=>` is used to denote the control flow of the application.
-  This is used for two reasons:
-  - It more clearly differentiates data manipulation from application control flow.
-  - It avoid ambiguity in the grammar by differentiating anonymous functions from control flow in certain situations.
+  This is partially to more clearly differentiates data manipulation from application control flow.
 
 This, combined with (sparing) use of syntax sugar, should ideally make the language easier to read.
 Take for instance the following piece of code:

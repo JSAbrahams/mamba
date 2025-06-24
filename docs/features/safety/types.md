@@ -19,7 +19,7 @@ To this end, we use types.
 A user defines a type `Composer`, which defines the behaviour of a composer:
 
     class Composer
-        def composer_method(): Int => 10
+        def composer_method(): Int := 10
     
 And then we define the `my_function` as such:
 
@@ -57,7 +57,7 @@ Say we have the following:
 
 We now rewrite my_function so it only works for `DeadComposer`s:
 
-    def my_function(composer: DeadComposer): Int => today.year - composer.death.year
+    def my_function(composer: DeadComposer): Int := today.year - composer.death.year
     
 Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function. 
 To use such a function, we must explicitly cast a `Composer`:
@@ -90,7 +90,7 @@ And we may then elsewhere implement this `Server` interface:
         def connect(ip: IpAddress) := ...
         
         # You can only call this function if I am a connected server
-        def send_message(self: ConnectedServer, message: String) -> String => ...
+        def send_message(self: ConnectedServer, message: String) -> String := ...
 
 This is a rather trivial example, but it shows how we can explicitly name the different states of a server.
 
@@ -140,8 +140,8 @@ Just return `x` if it is uneven and don't print anything using a simple `if`:
     
 Raise and error if `x` is uneven:
 
-    def f (x: Int) -> Int raise Err => 
-        if x mod 2 /= 0 raise Err("Expected x to be even.")
+    def f (x: Int) -> Int ! Err := 
+        if x mod 2 /= 0 ! Err("Expected x to be even.")
         print("this number is even: {x}")
         x
     
@@ -172,7 +172,7 @@ a new class `EvenNum` which is a `Int`, and verifying that these properties hold
 We can now redefine the function as follows:
 
     # EvenNum has conditions, so we need to state that it may raise an error
-    def g (x: EvenNum) -> Int raise Err => 
+    def g (x: EvenNum) -> Int ! Err :=
         print("this number is even: {x}")
         x
     
@@ -210,21 +210,21 @@ is thrown if a condition does not hold:
 
 We can also use it as a sort of post-condition of the function. We ensure that the function returns an `EvenNum`:
 
-    def g (x: EvenNum): EvenNum raise Err => 
+    def g (x: EvenNum): EvenNum ! Err :=
         print("this number is even: {x}")
         def y := x + some_other_function(x)
         y as EvenNum
         
 Or:
 
-    def g (x: EvenNum): EvenNum raise Err => 
+    def g (x: EvenNum): EvenNum ! Err :=
         print("this number is even: [x]")
         def y: EvenNum := x + some_other_function(x)
         y
 
 We can even ensure that the function never returns an error:
 
-    def h (x: EvenNum): EvenNum => 
+    def h (x: EvenNum): EvenNum := 
         print("this number is even: {x}")
         def y := x + some_other_function(x)
         if y isa EvenNum then

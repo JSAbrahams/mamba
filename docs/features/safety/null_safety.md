@@ -12,12 +12,12 @@ For this we use the question mark symbol: `?`
 Take the following:
 
     # type error! 'get' function might return nothing
-    def my_function(set: Set[Int], str: String): Int => set get str 
+    def my_function(set: Set[Int], str: String): Int := set get str 
 
 The type checker is complaining that the `get` function from `Set` might return `undefined`. To circumvent this, we make
 the return type of the function nullable.
 
-    def my_function(set: Set[String], str: String): String? => set get str
+    def my_function(set: Set[String], str: String): String? := set get str
     
 Now when calling my function, I will either get an `Int` or a `undefined`. Because this is explicit, we know this at compile time.
 To cal a function on the resulting value, we may use the `?and` operator.
@@ -49,4 +49,4 @@ of the operator must be of the same type.
 
 You can also return `undefined` in a function:
 
-    def special_function(x: Int): Int? => if x > 10 then x else undefined
+    def special_function(x: Int): Int? := if x > 10 then x else undefined

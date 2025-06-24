@@ -50,7 +50,7 @@ Keyword | Use
 ---|---
 `:=` | Assign to definition
 `->` | Used in signature of method or signature
-`=>` | Denote the start of the body of a function or method
+`=>` | Denote the mapping in a match arm
 `:`  | Specify type of identifier
 `.`  | Precedes method call, or fractional digits of real number
 `,`  | Separates arguments in collections or function or method signatures

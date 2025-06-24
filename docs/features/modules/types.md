@@ -14,9 +14,9 @@ Only classes can implement types.
 Say I have a server, I could define the type as follows:
 
     type Server
-        def connect:            (mut Self, IPAddress) -> Boolean throws [ServerErr]
+        def connect:            (mut Self, IPAddress) -> Boolean ! ServerErr
         def last_sent_message:  (Self) -> String
-        def send_message:       (mut Self, String) -> Boolean    throws [ServerErr]
+        def send_message:       (mut Self, String) -> Boolean    ! ServerErr
         def disconnect:         (mut Self) -> Boolean
 
 This is akin to an abstract base class in Python, but more compact.
@@ -26,19 +26,19 @@ Now any class that implements `Server` must have these definitions.
         def connected        <- False
         def mut last_message <- None
 
-        def last_sent_message(self): String => self.last_message
+        def last_sent_message(self): String := self.last_message
 
-        def connect (mut self, ip_address: IPAddress) -> Boolean throws [ServerErr] =>
+        def connect (mut self, ip_address: IPAddress) -> Boolean ! ServerErr :=
             # perform some operations here
             self.connected := true
             True
 
-        def send_message(mut self, message: String) -> Boolean throws [ServerErr] =>
+        def send_message(mut self, message: String) -> Boolean ! ServerErr :=
             # perform some operations here
             self.last_message := message
             True
 
-        def disconnect(mut self) -> Boolean =>
+        def disconnect(mut self) -> Boolean :=
             # perform some operations here
             self.connected := false
             True

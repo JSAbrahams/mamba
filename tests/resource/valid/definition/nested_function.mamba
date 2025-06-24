@@ -2,7 +2,7 @@ class A
     def b: B
 
 class B
-    def my_c(self) -> C => C()
+    def my_c(self) -> C := C()
 
 class C
     def fin my_field: Int := 10
