@@ -1,8 +1,8 @@
 class Err1(msg: String): Exception(msg)
 class Err2(msg: String): Exception(msg)
 
-def f(x: Int) -> Int raise [Err1] =>
+def f(x: Int) -> Int ! Err1 :=
     if x = 0 then
         return x + 5
     else
-        raise Err2("Not zero")
+        ! Err2("Not zero")

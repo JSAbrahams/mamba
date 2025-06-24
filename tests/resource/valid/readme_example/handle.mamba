@@ -1,7 +1,7 @@
 class MyErr(def message: Str): Exception
 class MyOtherErr(def message: Str): Exception
 
-def function_may_throw_err() -> Int ! MyErr => 10
+def function_may_throw_err() -> Int ! MyErr := 10
 
 def g() :=
     def a := function_may_throw_err()

@@ -56,7 +56,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "_"
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
-    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" ] [ newline match-cases ]
     raise            ::= "!" id { "," id }
     
@@ -76,11 +75,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
                          [ "=>" ( expr-or-stmt | newline block ) ]
+
     fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
                          [ ":=" ( expr-or-stmt | newline block ) ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    fun-arg          ::= ( id-maybe-type | literal ) [ ":=" expression ]
+    fun-arg          ::= id-maybe-type [ ":=" expression ]
     forward          ::= "forward" id { "," id }
+    
+    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     
     operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
