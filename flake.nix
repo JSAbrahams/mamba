@@ -58,7 +58,6 @@ outputs = { self, nixpkgs, flake-utils, ... }:
             shellHook = ''
                 export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                 export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
-
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
 
@@ -66,6 +65,10 @@ outputs = { self, nixpkgs, flake-utils, ... }:
                 cargo install cargo-llvm-cov@0.6.16
 
                 if [ -z "$NU_VERSION" ]; then
+                    # export as absolute paths relative to project
+                    PWD="${toString ./.}"
+                    export STARSHIP_CONFIG="$PWD/.config/startship.toml"
+
                     exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
                 fi
             '';

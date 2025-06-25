@@ -25,7 +25,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         ']' => create(state, Token::RSBrack),
         '{' => create(state, Token::LCBrack),
         '}' => create(state, Token::RCBrack),
-        '|' => create(state, Token::Ver),
+        '|' => match it.peek() {
+            Some('|') => next_and_create(it, state, Token::BOr),
+            _ => create(state, Token::Ver),
+        },
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
@@ -95,7 +98,17 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         }
         '!' => match it.peek() {
             Some('=') => next_and_create(it, state, Token::Neq),
+            Some('!') => next_and_create(it, state, Token::BOneCmpl),
+            Some('|') => next_and_create(it, state, Token::BXOr),
             _ => create(state, Token::Raise),
+        },
+        '&' => match it.peek() {
+            Some('&') => next_and_create(it, state, Token::BAnd),
+            _ => Err(Box::new(LexErr::new(
+                state.pos,
+                None,
+                "Is this supposed to be a binary and operator?",
+            ))),
         },
         '?' => create(state, Token::Question),
         '0'..='9' => {
@@ -270,11 +283,6 @@ fn as_op_or_id(string: String) -> Token {
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "for" => Token::For,
-
-        "_and_" => Token::BAnd,
-        "_or_" => Token::BOr,
-        "_xor_" => Token::BXOr,
-        "_not_" => Token::BOneCmpl,
 
         "if" => Token::If,
         "else" => Token::Else,

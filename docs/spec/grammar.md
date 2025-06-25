@@ -84,7 +84,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     
-    operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
+    operation        ::= relation [ ( equality | instance-eq | boolean-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ ( multiclative | range | slice ) term ]
@@ -99,7 +99,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     instance-eq      ::= "is" | "isa"
     equality         ::= "=" | "!="
     comparison       ::= "<=" | ">=" | "<" | ">"
-    binary-logic     ::= "and" | "or"
+    boolean-logic    ::= "and" | "or"
     
     literal          ::= number | string | "None"
     number           ::= real | integer | e-notation

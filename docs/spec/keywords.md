@@ -48,17 +48,6 @@ Keyword | Use
 `or`    | Or operator
 `is`    | Check whether an instance is another instance
 
-## Binary operators
-
-Keyword | Use
----|---
-`_and_`   | And operator
-`_or_`    | Or operator
-`_xor_`   | Exclusive or operator
-`_not_`   | Negation operator
-`<<`      | Left shift
-`>>`      | Right shift
-
 ## Mathematical Operators
 
 Keyword | Use

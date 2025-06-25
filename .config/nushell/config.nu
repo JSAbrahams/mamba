@@ -1,5 +1,7 @@
 $env.config.show_banner = false
 
+$env.PROJECT_TARGET = ($env.PWD + "/target")
+
 # Aliases
 
 alias gc   = git commit
@@ -8,8 +10,8 @@ alias gp   = git push
 alias ga   = git add
 alias gl   = git log --oneline
 
-alias coverage-lcov = cargo llvm-cov nextest --lcov --summary-only --output-path ./target/cov.lcov
-alias coverage-json = cargo llvm-cov nextest --json --summary-only --output-path ./target/cov.json
+alias coverage-lcov = cargo llvm-cov nextest --lcov --summary-only --output-path ($env.PROJECT_TARGET + "/cov.lcov")
+alias coverage-json = cargo llvm-cov nextest --json --summary-only --output-path ($env.PROJECT_TARGET + "/cov.json")
 alias coverage      = coverage-json
 alias cov           = coverage
 
@@ -17,7 +19,6 @@ alias cov           = coverage
 
 # Tell Starship which shell to target
 $env.STARSHIP_SHELL = "nu"
-$env.STARSHIP_CONFIG = ".config/startship.toml"
 
 # Create a left-side prompt via Starship
 def create_left_prompt [] {

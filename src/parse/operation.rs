@@ -668,7 +668,7 @@ mod test {
 
     #[test]
     fn b_and_verify() {
-        let source = String::from("one _and_ three");
+        let source = String::from("one && three");
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BAnd, ast);
@@ -688,7 +688,7 @@ mod test {
 
     #[test]
     fn b_or_verify() {
-        let source = String::from("one _or_ \"asdf\"");
+        let source = String::from("one || \"asdf\"");
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BOr, ast);
@@ -709,7 +709,7 @@ mod test {
 
     #[test]
     fn b_xor_verify() {
-        let source = String::from("one _xor_ \"asdf\"");
+        let source = String::from("one !| \"asdf\"");
         let ast = parse_direct(&source).unwrap();
 
         let (left, right) = verify_is_operation!(BXOr, ast);
@@ -730,7 +730,7 @@ mod test {
 
     #[test]
     fn b_ones_complement_verify() {
-        let source = String::from("_not_ \"asdf\"");
+        let source = String::from("!! \"asdf\"");
         let ast = parse_direct(&source).unwrap();
 
         let expr = verify_is_un_operation!(BOneCmpl, ast);

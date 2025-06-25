@@ -8,7 +8,7 @@ The following is a list of characters in the language
 
 ## Brackets
 
-Keyword | Use
+Symbol | Use
 ---|---
 `(` | Denote start of tuple elements or function arguments
 `)` | Denote end of tuple elements or function arguments
@@ -19,13 +19,13 @@ Keyword | Use
 
 ## Type
 
-Keyword | Use
+Symbol | Use
 ---|---
 `?` | Denote optional type
 
 ## Mathematical Operators
 
-Keyword | Use
+Symbol | Use
 ---|---
 `*` | Multiply operator
 `^` | Power operator
@@ -35,7 +35,7 @@ Keyword | Use
 
 ## Boolean Operators
 
-Keyword | Use
+Symbol | Use
 ---|---
 `>`  | Greater than operator
 `>=` | Greater than or equal to operator
@@ -44,9 +44,20 @@ Keyword | Use
 `=`  | Structurally equal
 `!=` | Structurally not equal
 
+## Binary operators
+
+Symbol | Use
+---|---
+`&&`   | And operator
+`||`   | Or operator
+`!|`   | Exclusive or operator
+`!!`   | Negation operator
+`<<`   | Left shift
+`>>`   | Right shift
+
 ## Assignment and Functions
 
-Keyword | Use
+Symbol | Use
 ---|---
 `:=` | Assign to definition
 `->` | Used in signature of method or signature
@@ -58,7 +69,7 @@ Keyword | Use
 
 ## Reassignment Operations
 
-Keyword | Use
+Symbol | Use
 ---|---
 `+=`  | Add value to variable and assign to variable
 `-=`  | Subtract value from variable and assign to variable
@@ -70,14 +81,14 @@ Keyword | Use
 
 ## Context Dependent
 
-Keyword | Use
+Symbol | Use
 ---|---
 `E` | If nested between two integer, or an integer and a real, denotes e-number
 '\|' | Within set and list builder notation "such that"
 
 ## Other Operators
 
-Keyword | Use
+Symbol | Use
 ---|---
 `..`  | Exclusive range, or range step
 `..=` | Inclusive range
@@ -86,7 +97,7 @@ Keyword | Use
 
 ## Comments
 
-Keyword | Use
+Symbol | Use
 ---|---
 `#`  | Start of a comment
 `##` | Start and end of comment block
