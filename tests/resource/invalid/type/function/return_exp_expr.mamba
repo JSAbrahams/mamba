@@ -1,2 +1,2 @@
-def f(x: Int) -> Int =>
+def f(x: Int) -> Int :=
     return

@@ -32,10 +32,10 @@ If the type checker can not ensure that this is the case (or it detects that thi
 ```mamba
 # g never returns undefined.
 # If we would try this we would get a type error.
-def g(x: Int): Int => if x > 2 then x + 2 else x - 2
+def g(x: Int): Int := if x > 2 then x + 2 else x - 2
 
 # f may return undefined
-def f(x: Int): Int? => if x > 2 then x * 7 else undefined
+def f(x: Int): Int? := if x > 2 then x * 7 else undefined
 
 def x <- f(2)?.is_even() # is_even is called, and we get true
 def y <- f(3)?.is_even() # f(3) is undefined, so is_even() is never called and y is now also undefined

@@ -1,5 +1,7 @@
 $env.config.show_banner = false
 
+$env.PROJECT_TARGET = ($env.PWD + "/target")
+
 # Aliases
 
 alias gc   = git commit
@@ -7,6 +9,11 @@ alias gst  = git status
 alias gp   = git push
 alias ga   = git add
 alias gl   = git log --oneline
+
+alias coverage-lcov = cargo llvm-cov nextest --lcov --summary-only --output-path ($env.PROJECT_TARGET + "/cov.lcov")
+alias coverage-json = cargo llvm-cov nextest --json --summary-only --output-path ($env.PROJECT_TARGET + "/cov.json")
+alias coverage      = coverage-json
+alias cov           = coverage
 
 # Startship prompt
 
@@ -22,7 +29,6 @@ def create_left_prompt [] {
 $env.PROMPT_COMMAND       = { || create_left_prompt }
 $env.PROMPT_COMMAND_RIGHT = ""
 
-# Tweak the indicators (optional)
 $env.PROMPT_INDICATOR           = ""
 $env.PROMPT_INDICATOR_VI_INSERT = ": "
 $env.PROMPT_INDICATOR_VI_NORMAL = "〉"

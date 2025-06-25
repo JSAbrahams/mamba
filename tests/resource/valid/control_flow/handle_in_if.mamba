@@ -1,8 +1,8 @@
-def f() -> Int raise [Exception] => 10
+def f() -> Int ! Exception := 10
 
 def x:= if True then
-    f() handle
+    f()
         err: Exception => 3
 else
-    f() handle
+    f()
         err: Exception => 3

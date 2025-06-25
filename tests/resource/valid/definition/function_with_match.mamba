@@ -1,4 +1,4 @@
-def f(x: Int) -> Int =>
+def f(x: Int) -> Int :=
     match x
         2 => 3
         4 => 30

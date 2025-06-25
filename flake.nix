@@ -1,39 +1,78 @@
-    {
-    description = "A Nix flake providing a Rust dev environment with cargo-nextest, cargo-sort, rustup, zsh, and Oh My Zsh";
+# Slighty modified example of example flake at <https://nixos.wiki/wiki/Rust> to install Rust.
+# We opt for the variant where we outsource Rust toolchain management to rustup.
+# This is so that those who wish to develop without Nix (for any number of reasons) still benefit from Rustup.
 
-    inputs = {
-        nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-        flake-utils.url = "github:numtide/flake-utils";
-    };
+{
+description = "A Nix flake providing a Rust dev environment with rustup, cargo tooling, and nushell";
 
-    outputs = { self, nixpkgs, flake-utils, ... }:
-        flake-utils.lib.eachDefaultSystem (system:
-        let
-            pkgs = import nixpkgs { inherit system; };
-        in {
-            devShell = pkgs.mkShell {
-                buildInputs = with pkgs; [
-                    git               # Version control tool
-                    rustup            # Rust toolchain manager
-                    cargo-nextest     # Fast, parallel test runner
-                    cargo-sort        # Sorts Cargo.toml entries
-                    nushell           # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
-                    starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
+inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+};
+
+outputs = { self, nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+    let
+        pkgs = import nixpkgs { inherit system; };
+        # Read the rust toolchain config relative to the flake's root
+        overrides = (builtins.fromTOML (builtins.readFile (self + "/rust-toolchain.toml")));
+        libPath = with pkgs; lib.makeLibraryPath [
+          # load external libraries that you need in your rust project here
+        ];
+    in {
+        devShell = pkgs.mkShell {
+            buildInputs = with pkgs; [
+                git               # Version control tool
+                
+                clang                 # C++ tooling
+                llvmPackages.bintools #
+                rustup                # Manage rust toolchains
+
+                nushell           # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
+                starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
+                jq                # Commandline json processor
+
+                openssh           # SSH agent
+            ];
+
+            RUSTC_VERSION = overrides.toolchain.channel;
+            # https://github.com/rust-lang/rust-bindgen#environment-variables
+            LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ];
+            # Add precompiled library to rustc search path
+            RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
+                # add libraries here (e.g. pkgs.libvmi)
+            ]);
+            LD_LIBRARY_PATH = libPath;
+            # Add glibc, clang, glib, and other headers to bindgen search path
+            # Includes normal include path
+            BINDGEN_EXTRA_CLANG_ARGS =
+                # add dev libraries here (e.g. pkgs.libvmi.dev)
+                (builtins.map (a: "-I${a}/include") [ pkgs.glibc.dev ])
+                # Includes with special directory paths
+                ++ [
+                    "-I${pkgs.llvmPackages_latest.libclang.lib}/lib/clang/${pkgs.llvmPackages_latest.libclang.version}/include"
+                    "-I${pkgs.glib.dev}/include/glib-2.0"
+                    "-I${pkgs.glib.out}/lib/glib-2.0/include/"
                 ];
 
-                shellHook = ''
-                    # make sure to configure githooks path
-                    git config core.hooksPath .githooks
+            shellHook = ''
+                export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
+                export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
+                # make sure to configure githooks path
+                git config core.hooksPath .githooks
 
-                    # point Nu config dir our repo `.config` folder
-                    export XDG_CONFIG_HOME="$(pwd)/.config"
+                # for now we rely on cargo to install external tooling, in future we might put it in the above flake which may be more idiomatic
+                cargo install cargo-llvm-cov@0.6.16
 
-                    # If not already in Nu Shell, switch to an interactive Nu session
-                    if [ -z "$NU_VERSION" ]; then
-                        exec "${pkgs.nushell}/bin/nu" --login
-                    fi
-                '';
-                };
-            }
-        );
-    }
+                if [ -z "$NU_VERSION" ]; then
+                    # export as absolute paths relative to project
+                    PWD="${toString ./.}"
+                    export STARSHIP_CONFIG="$PWD/.config/startship.toml"
+
+                    exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
+                fi
+            '';
+            };
+        }
+    );
+}

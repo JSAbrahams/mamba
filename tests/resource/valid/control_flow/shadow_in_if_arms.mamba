@@ -1,7 +1,7 @@
 class MyClass1
-    def f1(self) => print("1")
+    def f1(self) := print("1")
 class MyClass2
-    def f2(self) => print("2")
+    def f2(self) := print("2")
 
 if True then
     def x := MyClass1()

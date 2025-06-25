@@ -41,6 +41,19 @@ files.
 Mamba code should therefore be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
+## 🧑‍💻 Quickstart for developers 👨‍💻
+
+To get started right away, if on a Linux machine:
+
+```sh
+# Install Nix, in case you do not have it
+sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
+# Start nix shell
+nix develop
+```
+
+To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## ⌨️ Code Examples
 
 Below are some code examples to showcase the features of Mamba.
@@ -51,7 +64,7 @@ We highlight how functions work, how de define classes, how types and type refin
 We can write a simple script that computes the factorial of a value given by the user.
 
 ```mamba
-def factorial(x: Int) -> Int => match x
+def factorial(x: Int) -> Int := match x
     0 => 1
     n => n * factorial(n - 1)
 
@@ -69,7 +82,7 @@ This means that the compiler will check for us that factorial is only used with 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int => match x
+def factorial(x: Int) -> Int := match x
     0 => 1
     n =>
         def ans := 1
@@ -94,20 +107,20 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str  := "temp"
 
-    def last_sent(fin self) -> Str raise [ServerError] =>
+    def last_sent(fin self) -> Str ! ServerError :=
         self._last_message
 
-    def connect(self) =>
+    def connect(self) :=
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: Str) raise [ServerError] =>
+    def send(self, message: Str) ! ServerError :=
         if self.is_connected then
             self._last_message := message
         else
-            raise ServerError("Not connected!")
+            ! ServerError("Not connected!")
 
-    def disconnect(self) => self.is_connected := False
+    def disconnect(self) := self.is_connected := False
 ```
 
 Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
@@ -126,7 +139,7 @@ if my_server.is_connected then http_server.send("Hello World!")
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
 print("last message sent before disconnect: \"{my_server.last_sent()}\".")
-my_server.disconnect()
+my_server.disconnect()!
 ```
 
 ### 🗃 Type refinement (🇻 0.4.1+)
@@ -147,17 +160,17 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def is_connected: Bool  := False
     def _last_message: Str? := None
 
-    def last_sent(self) -> Str raise [ServerErr] => 
+    def last_sent(self) -> Str ! ServerErr :=
         if self.last_message != None then 
             self._last_message
         else
-            raise ServerError("No last message!")
+            ! ServerError("No last message!")
 
-    def connect(self: DisConnMyServer) => self.is_connected := True
+    def connect(self: DisConnMyServer) := self.is_connected := True
 
-    def send(self: ConnMyServer, message: Str) => self._last_message := message
+    def send(self: ConnMyServer, message: Str) := self._last_message := message
 
-    def disconnect(self: ConnMyServer) => self.is_connected := False
+    def disconnect(self: ConnMyServer) := self.is_connected := False
 ```
 
 Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
@@ -189,10 +202,10 @@ if my_server isa ConnectedMyServer then my_server.disconnect()
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 
 ```mamba
-type PosInt: Int when 
+type PosInt: Int when
     self >= 0 else "Must be greater than 0"
 
-def factorial(x: PosInt) -> PosInt => match x
+def factorial(x: PosInt) -> PosInt := match x
     0 => 1
     n => n * factorial(n - 1)
 ```
@@ -235,7 +248,7 @@ Immutable variables and pure functions make it easier to write declarative progr
 def fin taylor := 7
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) =>
+def pure sin(x: Int) :=
     def ans := x
     for i in 1 ..= taylor .. 2 do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
@@ -259,8 +272,8 @@ def fin some_ip := ipaddress.ip_address("151.101.193.140")
 def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
-my_server.send(message) handle
-    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
+my_server.send(message)
+    err: ServerErr = print("Error while sending message: \"{message}\": {err}")
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
@@ -270,24 +283,43 @@ Here we showcase how we try to handle errors on-site instead of in a (large) `tr
 This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-`handle` can also be combined with an assign. In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
+This can also be combined with an assign. In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below:
 
 ```mamba
-def g() =>
-    def a := function_may_throw_err() handle
-        err: MyErr =>
-            print("We have a problem: {err.message}.")
-            return  # we return, halting execution
-        err: MyOtherErr =>
-            print("We have another problem: {err.message}.")
-            0  # ... or we assign default value 0 to a
+def a := function_may_throw_err()
+    err: MyErr :=
+        print("We have a problem: {err.message}.")
+        return  # we return, halting execution
+    err: MyOtherErr :=
+        print("We have another problem: {err.message}.")
+        0  # ... or we assign default value 0 to a
 
-    print("a has value {a}.")
+print("a has value {a}.")
 ```
 
-If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
-See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
+I we don't want to handle the exception cases here, we just append a `!` to a function.
+This means that this exception must be handeld further up the stack.
+
+```mamba
+def a := function_may_throw_err()!
+
+# if `function_may_throw_err` returned an exception, we will never reach this point
+print("a has value {a}.")
+```
+
+We can also mix and match, handling a subset of the exceptions.
+The type checker will keep track of what we handle locally and what is passed up the stack.
+
+```mamba
+def a := function_may_throw_err()!
+    err: MyErr :=
+        print("We have a problem: {err.message}.")
+        return  # we return, halting execution
+
+# if `function_may_throw_err` returned an exception, we will never reach this point
+print("a has value {a}.")
+```
 
 ## 💻 The Command Line Interface
 

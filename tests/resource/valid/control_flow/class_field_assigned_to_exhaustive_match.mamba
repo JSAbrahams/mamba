@@ -1,7 +1,7 @@
 class MyClass
     def x: Int
 
-    def __init__(self) =>
+    def __init__(self) :=
         match 10
             2 => self.x := 2
             3 => self.x := 3

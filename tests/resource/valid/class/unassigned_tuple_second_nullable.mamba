@@ -1,5 +1,5 @@
 class X
     def (y, z): (Int, Int?)
 
-    def __init__(self) =>
+    def __init__(self) :=
         self.y := 10

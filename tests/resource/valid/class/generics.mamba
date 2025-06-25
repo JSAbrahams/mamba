@@ -7,8 +7,8 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
     def fin z_modified: Str := "asdf"
     def other_field: Int := 10
 
-    def __init__(self, other_field: Int, z: Int) raise [Err1] =>
-        if z > 10 then raise Err1("Something is wrong!")
+    def __init__(self, other_field: Int, z: Int) ! Err1 :=
+        if z > 10 then ! Err1("Something is wrong!")
         self.z_modified := "fdsa"
 
         def (a, b) := (10, 20)
@@ -17,7 +17,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
 
         def my_bool := True
 
-        def a := self.error_function() handle
+        def a := self.error_function()
             err1: Err1 =>
                 print(err1)
                 -1
@@ -25,18 +25,18 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
                 print(err2)
                 -2
 
-    def error_function(self) -> Int raise [Err1, Err2] => 200
+    def error_function(self) -> Int ! { Err1, Err2 } := 200
 
-    def connect(self) => self.other_field := 200
+    def connect(self) := self.other_field := 200
 
-    def _fun_b(self) => print("this function is private!")
+    def _fun_b(self) := print("this function is private!")
 
-    def factorial(self, x: Int := 0) -> Int => x * self.factorial(x - 1)
-    def factorial_infinite(self, x: Int) -> Int => x * self.factorial(x)
+    def factorial(self, x: Int := 0) -> Int := x * self.factorial(x - 1)
+    def factorial_infinite(self, x: Int) -> Int := x * self.factorial(x)
 
-    def a(self) -> Int=> self.b(10)
-    def b(self, c: Int) -> Int => self.a()
-    def c(self, d: Int) -> Int => self.b(self.c(20))
+    def a(self) -> Int := self.b(10)
+    def b(self, c: Int) -> Int := self.a()
+    def c(self, d: Int) -> Int := self.b(self.c(20))
 
-    def some_higher_order(self, fun: Int -> Int) -> Int? => fun(10)
-    def fancy(self) -> Int? => self.some_higher_order(\x: Int => x * 2)
+    def some_higher_order(self, fun: Int -> Int) -> Int? := fun(10)
+    def fancy(self) -> Int? := self.some_higher_order(\x: Int := x * 2)

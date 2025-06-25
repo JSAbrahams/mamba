@@ -1,0 +1,59 @@
+format = """
+  $username$hostname\
+  🐍 $directory\
+  $git_branch$git_state\
+  $custom.line_coverage\
+  $git_status\
+  $cmd_duration\
+  $character
+"""
+
+[username]
+ssh_only = true
+disabled = false
+show_always = false # show even when user == $LOGNAME (i.e. non-root)
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = true
+disabled = false
+format = "@[$hostname ]($style) "
+
+[directory]
+truncation_length = 5
+
+[git_branch]
+symbol = "🌱 "
+[git_status]
+conflicted = "⚔️  ${count}"
+staged     = "✔️  ${count}"
+modified   = "✏️  ${count}"
+untracked  = "🆕  ${count}"
+
+# unused in prompt since rust-toolchain guarantees rust (toolchain) version
+[rust]
+format = "🦀 ${version}"
+style = "bold yellow"
+
+[character]
+success_symbol = '[➜](bold green)'
+
+[jobs]
+symbol = "🔧 "
+
+[cmd_duration]
+format = '⏱️ [$duration]($style) '  
+style = "bold yellow"
+
+[custom.line_coverage]
+description = "Line coverage percentage"
+when = 'test -f ($env.PROJECT_TARGET + "/cov.json")'
+# Extract the percentage from json report and pipe to printf to only print 2 decimal places
+# If file does not exist, jq will throw an error, but just forward this to /dev/null (so we 'just' print 0 percent if no coverage report) as a failsafe
+command = "jq -r '.data[0].totals.lines.percent' ($env.PROJECT_TARGET + '/cov.json') | xargs printf '%.2f%%'"
+# override in an attempt to get ugly '.line_coverage' out of prompt, but still there unfortunately
+prefix      = ""
+suffix      = ""
+symbol      = "🧪"
+format = '$symbol [$output]($style)'
+style = 'bold yellow'

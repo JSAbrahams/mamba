@@ -33,19 +33,19 @@ We can do the following:
         def connected        := False
         def mut last_message := None
 
-        def last_sent_message(self): String => self.last_message
+        def last_sent_message(self): String := self.last_message
 
-        def connect(self: DisconnectedHTTPServer, ip_address: IPAddress) -> Boolean raise [ServerErr] =>
+        def connect(self: DisconnectedHTTPServer, ip_address: IPAddress) -> Boolean raise [ServerErr] :=
             # perform some operations here
             self.connected := True
             True
 
-        def send_message(self: ConnectedHTTPServer, message: String) -> Boolean raise [ServerErr] =>
+        def send_message(self: ConnectedHTTPServer, message: String) -> Boolean raise [ServerErr] :=
             # perform some operations here
             self.last_message := message
             True
 
-        def is_disconnected(self: ConnectedHTTPServer) -> Boolean =>
+        def is_disconnected(self: ConnectedHTTPServer) -> Boolean :=
             # perform some operations here
             self.connected := false
             True

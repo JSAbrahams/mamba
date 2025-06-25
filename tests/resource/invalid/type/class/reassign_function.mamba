@@ -1,5 +1,5 @@
 class MyClass
-    def something() -> Int => 10
+    def something() -> Int := 10
 
 
 def my_class := MyClass()

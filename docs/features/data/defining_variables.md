@@ -32,11 +32,11 @@ If `x` has to be immutable.
 
 A function definition has the following structure:
 
-    def <string> ( { <expression> [ : <expression> ] } ) [ : <expression> ] => <expression or statement>
+    def <string> ( { <expression> [ : <expression> ] } ) [ : <expression> ] [ ! ( type | "{" type { "," type } "}") ] := <expression or statement>
 
 So for instance, we can define a function as follows:
 
-    def factorial(n: Int): Int =>
+    def factorial(n: Int): Int :=
         if   n = 0 then 1
         else n * self.factorial (n - 1) 
 
@@ -46,7 +46,7 @@ A few things to note:
 - It takes an argument `n`, which is a `Int`.
   As such, we write `n: Int`
 - The function returns an integer, which is why we end the definition with `: Int` before proceeding to the body of the function
-- The body of a function follows after the `=>`.
+- The body of a function follows after the `:=`.
   The body of a function can either be an expression or a statement.
 
 We must always include the types of the argument of a function.
@@ -60,7 +60,7 @@ We can have default values:
 
     class MyClass
         def my_field := 5
-        def my_method(x: Int, y: Int <- 2) => self.my_field := x + y
+        def my_method(x: Int, y: Int <- 2) := self.my_field := x + y
 
 We can now call the method as such:
 
@@ -73,13 +73,13 @@ We can assign default behaviour to a method or function.
 To demonstrate this, we will use a toy factorial example.
 You might first write it as such:
 
-    def factorial(n: Int): Int =>
+    def factorial(n: Int): Int :=
         if   n = 0 then 1
         else n * self.factorial(n - 1) 
 
 However, we could make this look much better with default behaviour.
 
-    def factorial (n: Int): Int => n * self.factorial (n - 1)  # for all other values of n, this function is called
-    def factorial (0): Int      => 1                           # if n is 0, then this function is called instead
+    def factorial (n: Int): Int := n * self.factorial (n - 1)  # for all other values of n, this function is called
+    def factorial (0): Int      := 1                           # if n is 0, then this function is called instead
 
 As long as a version exists of a function or method with arguments this is allowed.

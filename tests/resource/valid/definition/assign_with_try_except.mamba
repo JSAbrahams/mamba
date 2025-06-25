@@ -1,5 +1,5 @@
-def g() -> Int raise [Exception] =>
-    raise Exception("A")
+def g() -> Int ! Exception :=
+    ! Exception("A")
 
-def a := g() handle
+def a := g()
     err: Exception => 10

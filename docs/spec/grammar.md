@@ -30,7 +30,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     block            ::= indent { expr-or-stmt } dedent
     
-    expr-or-stmt     ::= ( statement | expression ) [ handle ] [ comment ]
+    expr-or-stmt     ::= ( statement | expression ) [ comment ]
     statement        ::= control-flow-stmt
                       | definition
                       | reassignment
@@ -56,11 +56,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "_"
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
-    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] "=>" expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple
-    
-    raise            ::= "raise" id { "," id }
-    handle           ::= "handle" newline match-cases
+    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" ] [ newline match-cases ]
+    raise            ::= "!" id { "," id }
     
     collection       ::= tuple | set | list | map
     tuple            ::= "(" { expression } ")"
@@ -77,14 +74,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
-                         [ "=>" ( expr-or-stmt | newline block ) ]
+                         [ ":=" ( expr-or-stmt | newline block ) ]
+
     fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
-                         [ "=>" ( expr-or-stmt | newline block ) ]
+                         [ ":=" ( expr-or-stmt | newline block ) ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    fun-arg          ::= [ "vararg" ] ( id-maybe-type | literal ) [ ":=" expression ]
+    fun-arg          ::= id-maybe-type [ ":=" expression ]
     forward          ::= "forward" id { "," id }
     
-    operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
+    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
+    
+    operation        ::= relation [ ( equality | instance-eq | boolean-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ ( multiclative | range | slice ) term ]
@@ -99,7 +99,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     instance-eq      ::= "is" | "isa"
     equality         ::= "=" | "!="
     comparison       ::= "<=" | ">=" | "<" | ">"
-    binary-logic     ::= "and" | "or"
+    boolean-logic    ::= "and" | "or"
     
     literal          ::= number | string | "None"
     number           ::= real | integer | e-notation

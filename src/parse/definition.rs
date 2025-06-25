@@ -135,7 +135,7 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", start)?;
     let raises = it.parse_vec_if(&Token::Raise, &parse_raises, "raises", start)?;
-    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", start)?;
+    let body = it.parse_if(&Token::Assign, &parse_expr_or_stmt, "function body", start)?;
 
     let end = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => b.pos,
@@ -156,14 +156,19 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::LSBrack, "raises")?;
     let mut raises: Vec<AST> = Vec::new();
-    it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
+    if let Some(start) = it.eat_if(&Token::LCBrack) {
+        it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+            raises.push(*it.parse(&parse_type, "raises", start)?);
+            it.eat_if(&Token::Comma);
+            Ok(())
+        })?;
+        it.eat(&Token::RCBrack, "raises")?;
+    } else {
+        let start = it.start_pos("single raises")?;
         raises.push(*it.parse(&parse_type, "raises", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-    it.eat(&Token::RSBrack, "raises")?;
+    }
+
     Ok(raises)
 }
 
@@ -172,7 +177,12 @@ pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let mut args = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
         args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);
-        it.eat_if(&Token::Comma);
+
+        if let Some(next) = it.peek_next() {
+            if next.token != Token::RRBrack {
+                it.eat(&Token::Comma, "function arguments must be comma separated")?;
+            }
+        }
         Ok(())
     })?;
 
@@ -182,7 +192,6 @@ pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function argument")?;
-    let vararg = it.eat_if(&Token::Vararg).is_some();
 
     let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
     let (mutable, var, ty) = match &expression_type.node {
@@ -203,13 +212,38 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
 
     let end = default.clone().map_or(expression_type.pos, |def| def.pos);
     let node = Node::FunArg {
-        vararg,
+        vararg: false,
         mutable,
         var,
         ty,
         default,
     };
     Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+/// Lambda args cannot be assigned a default, though whether we should even allow default arguments is debatable.
+pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("function argument")?;
+
+    let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
+    let (mutable, var, ty) = match &expression_type.node {
+        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
+        _ => {
+            return Err(Box::from(custom(
+                "Expected expression type in function argument",
+                expression_type.pos,
+            )));
+        }
+    };
+
+    let node = Node::FunArg {
+        vararg: false,
+        mutable,
+        var,
+        ty,
+        default: None,
+    };
+    Ok(Box::from(AST::new(start.union(expression_type.pos), node)))
 }
 
 pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
@@ -505,7 +539,7 @@ mod test {
 
     #[test]
     fn function_definition_verify() {
-        let source = String::from("def f(fin b: Something, vararg c) => d");
+        let source = String::from("def f(fin b: Something, c) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
@@ -547,8 +581,8 @@ mod test {
                     default: d2,
                 },
             ) => {
-                assert_eq!(v1.clone(), false);
-                assert_eq!(v2.clone(), true);
+                assert!(!v1.clone());
+                assert!(!v2.clone());
 
                 assert_eq!(
                     id1.node,
@@ -589,7 +623,7 @@ mod test {
 
     #[test]
     fn function_no_args_definition_verify() {
-        let source = String::from("def f() => d");
+        let source = String::from("def f() := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -616,7 +650,7 @@ mod test {
 
     #[test]
     fn function_pure_definition_verify() {
-        let source = String::from("def pure f() => d");
+        let source = String::from("def pure f() := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -642,8 +676,14 @@ mod test {
     }
 
     #[test]
+    fn function_no_separator_args() {
+        let source = String::from("def f(x b: Something) := d");
+        parse_direct(&source).unwrap_err();
+    }
+
+    #[test]
     fn function_definition_with_literal_verify() {
-        let source = String::from("def f(x, vararg b: Something) => d");
+        let source = String::from("def f(x, b: Something) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
@@ -685,7 +725,7 @@ mod test {
                 },
             ) => {
                 assert!(!v1.clone());
-                assert!(v2.clone());
+                assert!(!v2.clone());
 
                 assert!(mut1.clone());
                 assert!(mut2.clone());

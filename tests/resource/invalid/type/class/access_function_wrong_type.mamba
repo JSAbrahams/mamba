@@ -1,5 +1,5 @@
 class MyClass
-    def something(self) -> String => return "my string"
+    def something(self) -> String := return "my string"
 
 
 def my_class := MyClass()

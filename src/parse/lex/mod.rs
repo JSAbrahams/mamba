@@ -96,12 +96,6 @@ mod tests {
     }
 
     #[test]
-    fn exclamation_invalid() {
-        let source = String::from("!");
-        assert!(tokenize(&source).is_err());
-    }
-
-    #[test]
     fn assign_operations() {
         let source = String::from(":= += -= *= /= ^= >>= <<=");
         let tokens = tokenize(&source).unwrap();

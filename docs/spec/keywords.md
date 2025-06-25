@@ -38,7 +38,6 @@ Keyword | Use
 `def`     | Denote definition
 `fin`     | Denote defined variable is immutable
 `pure`    | Denote function is pure
-`vararg`  | Denote variable argument
 
 ## Boolean operators
 
@@ -48,17 +47,6 @@ Keyword | Use
 `and`   | And operator
 `or`    | Or operator
 `is`    | Check whether an instance is another instance
-
-## Binary operators
-
-Keyword | Use
----|---
-`_and_`   | And operator
-`_or_`    | Or operator
-`_xor_`   | Exclusive or operator
-`_not_`   | Negation operator
-`<<`      | Left shift
-`>>`      | Right shift
 
 ## Mathematical Operators
 
@@ -93,11 +81,3 @@ Keyword | Use
 ---|---
 `return`  | Return from a function or method
 `pass`    | Empty placeholder statement
-
-## Errors
-
-Keyword | Use
----|---
-`handle` | Denote handle cases
-`raise`  | Denote that an expression, statement, or function may raise an error
-`retry`  | Retry an expression from within handle case

@@ -30,7 +30,7 @@ Next we define a class `Graph`.
     class Graph[N: Node]
         def private mut nodes: Set[N] <- {}
         
-        def addNode(node: N) => nodes add node
+        def addNode(node: N) := nodes add node
 
 Now we write the main script.
 

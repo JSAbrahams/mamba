@@ -1,5 +1,5 @@
 class X
     def y: Int?
 
-    def __init__(self) =>
+    def __init__(self) :=
         print("No assignments here!")

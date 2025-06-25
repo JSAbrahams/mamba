@@ -25,7 +25,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         ']' => create(state, Token::RSBrack),
         '{' => create(state, Token::LCBrack),
         '}' => create(state, Token::RCBrack),
-        '|' => create(state, Token::Ver),
+        '|' => match it.peek() {
+            Some('|') => next_and_create(it, state, Token::BOr),
+            _ => create(state, Token::Ver),
+        },
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
@@ -95,10 +98,17 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         }
         '!' => match it.peek() {
             Some('=') => next_and_create(it, state, Token::Neq),
-            _ => {
-                let msg = String::from("'!' is not a valid character on its own");
-                Err(Box::from(LexErr::new(state.pos, None, &msg)))
-            }
+            Some('!') => next_and_create(it, state, Token::BOneCmpl),
+            Some('|') => next_and_create(it, state, Token::BXOr),
+            _ => create(state, Token::Raise),
+        },
+        '&' => match it.peek() {
+            Some('&') => next_and_create(it, state, Token::BAnd),
+            _ => Err(Box::new(LexErr::new(
+                state.pos,
+                None,
+                "Is this supposed to be a binary and operator?",
+            ))),
         },
         '?' => create(state, Token::Question),
         '0'..='9' => {
@@ -261,7 +271,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "import" => Token::Import,
         "forward" => Token::Forward,
-        "vararg" => Token::Vararg,
 
         "def" => Token::Def,
         "fin" => Token::Fin,
@@ -275,11 +284,6 @@ fn as_op_or_id(string: String) -> Token {
         "while" => Token::While,
         "for" => Token::For,
 
-        "_and_" => Token::BAnd,
-        "_or_" => Token::BOr,
-        "_xor_" => Token::BXOr,
-        "_not_" => Token::BOneCmpl,
-
         "if" => Token::If,
         "else" => Token::Else,
         "match" => Token::Match,
@@ -291,11 +295,7 @@ fn as_op_or_id(string: String) -> Token {
         "with" => Token::With,
 
         "in" => Token::In,
-
-        "raise" => Token::Raise,
-        "handle" => Token::Handle,
         "when" => Token::When,
-
         "pass" => Token::Pass,
 
         _ => Token::Id(string),
@@ -310,7 +310,7 @@ mod test {
 
     #[test]
     fn function_with_ret() -> Result<(), LexErr> {
-        let source = "def f(x: Int) -> Int =>\n    return";
+        let source = "def f(x: Int) -> Int :=\n    return";
         let tokens = tokenize(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
@@ -323,7 +323,7 @@ mod test {
         assert_eq!(tokens[6].token, Token::RRBrack);
         assert_eq!(tokens[7].token, Token::To);
         assert_eq!(tokens[8].token, Token::Id(String::from("Int")));
-        assert_eq!(tokens[9].token, Token::BTo);
+        assert_eq!(tokens[9].token, Token::Assign);
         assert_eq!(tokens[10].token, Token::NL);
         assert_eq!(tokens[11].token, Token::Indent);
         assert_eq!(tokens[12].token, Token::Ret);

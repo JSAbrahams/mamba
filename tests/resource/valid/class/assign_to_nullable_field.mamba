@@ -1,5 +1,5 @@
 class MyServer()
     def _message: Str? := None
 
-    def send(self, x: Str) =>
+    def send(self, x: Str) :=
         self._message := x

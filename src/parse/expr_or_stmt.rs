@@ -1,5 +1,4 @@
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
@@ -10,7 +9,7 @@ use crate::parse::statement::parse_statement;
 use crate::parse::statement::{is_start_statement, parse_reassignment};
 
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
-    let result = it.peek_or_err(
+    let expr_or_stmt = it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::NL => {
                 it.eat(&Token::NL, "expression or statement")?;
@@ -23,9 +22,25 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
         "expression or statement",
     )?;
 
+    // if expression/statement followed by newline and indent, we are dealing with a handle block
+    if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
+        it.eat(&Token::NL, "internal error in parsing call")?; // peek covers this
+
+        // parse handle cases if indentation block after
+        let cases = it.parse_vec(&parse_match_cases, "handle cases", expr_or_stmt.pos)?;
+        let end = cases.last().map_or(expr_or_stmt.pos, |stmt| stmt.pos);
+
+        return Ok(Box::from(AST::new(
+            expr_or_stmt.pos.union(end),
+            Node::Handle {
+                expr_or_stmt,
+                cases,
+            },
+        )));
+    }
+
     it.peek(
         &|it, lex| match lex.token {
-            Token::Handle => parse_handle(*result.clone(), it),
             Token::Assign
             | Token::AddAssign
             | Token::SubAssign
@@ -33,26 +48,11 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
             | Token::DivAssign
             | Token::PowAssign
             | Token::BLShiftAssign
-            | Token::BRShiftAssign => parse_reassignment(&result, it),
-            _ => Ok(result.clone()),
+            | Token::BRShiftAssign => parse_reassignment(&expr_or_stmt, it),
+            _ => Ok(expr_or_stmt.clone()),
         },
-        Ok(result.clone()),
+        Ok(expr_or_stmt.clone()),
     )
-}
-
-pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("handle")?;
-    it.eat(&Token::Handle, "handle")?;
-    it.eat(&Token::NL, "handle")?;
-
-    let cases = it.parse_vec(&parse_match_cases, "handle", start)?;
-    let end = cases.last().map_or(start, |stmt| stmt.pos);
-
-    let node = Node::Handle {
-        expr_or_stmt: Box::from(expr_or_stmt),
-        cases,
-    };
-    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]

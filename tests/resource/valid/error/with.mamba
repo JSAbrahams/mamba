@@ -1,4 +1,4 @@
-def do_something(x: Int) => print("hello world {x}")
+def do_something(x: Int) := print("hello world {x}")
 
 def my_resource := 10
 
