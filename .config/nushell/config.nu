@@ -8,6 +8,11 @@ alias gp   = git push
 alias ga   = git add
 alias gl   = git log --oneline
 
+alias coverage-lcov = cargo llvm-cov nextest --lcov --summary-only --output-path ./target/cov.lcov
+alias coverage-json = cargo llvm-cov nextest --json --summary-only --output-path ./target/cov.json
+alias coverage      = coverage-json
+alias cov           = coverage
+
 # Startship prompt
 
 # Tell Starship which shell to target

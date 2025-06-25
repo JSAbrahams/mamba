@@ -3,9 +3,10 @@ format = """
   $username$hostname \
   🐍  $directory\
   $git_branch$git_state\
+  $custom.line_coverage\
   $rust \
   $git_status\
-  $time\
+  $cmd_duration\
   $character
 """
 
@@ -40,8 +41,19 @@ success_symbol = '[➜](bold green)'
 [jobs]
 symbol = "🔧 "
 
-# Show durations ≥ 1s (in seconds), and display milliseconds for anything under 10s
 [cmd_duration]
-min_time = 1000       # only show if the last command took ≥ 1000ms
-format = '⏱ took $duration'  
-prefix = ""           # if you don’t want an extra space
+format = '⏱️ [$duration]($style) '  
+style = "bold yellow"
+
+[custom.line_coverage]
+description = "Line coverage percentage"
+when = 'test -f target/cov.json'
+# Extract the percentage from json report and pipe to printf to only print 2 decimal places
+# If file does not exist, jq will throw an error, but just forward this to /dev/null (so we 'just' print 0 percent if no coverage report) as a failsafe
+command = "jq -r '.data[0].totals.lines.percent' ./target/cov.json err> /dev/null | xargs printf '[🧪 %.2f%%]'"
+# override in an attempt to get ugly '.line_coverage' out of prompt, but still there unfortunately
+prefix      = ""
+suffix      = ""
+symbol      = ""
+format = "[$output]($style)"
+style = "bold yellow"

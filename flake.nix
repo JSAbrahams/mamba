@@ -27,9 +27,10 @@ outputs = { self, nixpkgs, flake-utils, ... }:
                 clang                 # C++ tooling
                 llvmPackages.bintools #
                 rustup                # Manage rust toolchains
-                
+
                 nushell           # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
                 starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
+                jq                # Commandline json processor
 
                 openssh           # SSH agent
             ];
@@ -60,6 +61,10 @@ outputs = { self, nixpkgs, flake-utils, ... }:
 
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
+
+                # for now we rely on cargo to install external tooling, in future we might put it in the above flake which may be more idiomatic
+                cargo install cargo-llvm-cov@0.6.16
+
                 if [ -z "$NU_VERSION" ]; then
                     exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
                 fi
