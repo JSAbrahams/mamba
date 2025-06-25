@@ -34,7 +34,10 @@ outputs = { self, nixpkgs, flake-utils, ... }:
                 starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
                 jq                # Commandline json processor
 
-                openssh           # SSH agent
+                vim
+                nano
+
+                openssh
             ];
 
             RUSTC_VERSION = overrides.toolchain.channel;
@@ -60,6 +63,7 @@ outputs = { self, nixpkgs, flake-utils, ... }:
             shellHook = ''
                 export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                 export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
+                
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
 

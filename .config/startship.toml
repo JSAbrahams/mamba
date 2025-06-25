@@ -4,11 +4,10 @@ $username$hostname \
 🐍 $directory \
 $git_branch$git_state \
 $custom.line_coverage \
-\n
 $git_status \
 $cmd_duration \
 $nix_shell \
-$character \
+\n$character \
 """
 
 [username]
@@ -37,10 +36,6 @@ untracked  = "🆕  ${count}"
 [rust]
 format = "🦀 ${version}"
 style = "bold yellow"
-
-[character]
-success_symbol = '[➜](bold green)'
-error_symbol = '[✗](bold red) '
 
 [jobs]
 symbol = "🔧 "

@@ -48,8 +48,8 @@ To get started right away, if on a Linux machine:
 ```sh
 # Install Nix, in case you do not have it
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
-# Start nix shell
-nix develop
+# Start nix shell, unsetting PATH to ensure that we don't inherit path from outer environment
+nix develop --unset PATH
 ```
 
 To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
