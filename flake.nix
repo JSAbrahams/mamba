@@ -61,7 +61,6 @@ outputs = { self, nixpkgs, flake-utils, ... }:
 
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
-                
                 if [ -z "$NU_VERSION" ]; then
                     exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
                 fi

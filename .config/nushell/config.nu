@@ -12,6 +12,7 @@ alias gl   = git log --oneline
 
 # Tell Starship which shell to target
 $env.STARSHIP_SHELL = "nu"
+$env.STARSHIP_CONFIG = ".config/startship.toml"
 
 # Create a left-side prompt via Starship
 def create_left_prompt [] {
@@ -22,7 +23,6 @@ def create_left_prompt [] {
 $env.PROMPT_COMMAND       = { || create_left_prompt }
 $env.PROMPT_COMMAND_RIGHT = ""
 
-# Tweak the indicators (optional)
 $env.PROMPT_INDICATOR           = ""
 $env.PROMPT_INDICATOR_VI_INSERT = ": "
 $env.PROMPT_INDICATOR_VI_NORMAL = "〉"

@@ -1,0 +1,47 @@
+add_newline = false
+format = """
+  $username$hostname \
+  🐍  $directory\
+  $git_branch$git_state\
+  $rust \
+  $git_status\
+  $time\
+  $character
+"""
+
+[username]
+disabled = false
+show_always = true # show even when user == $LOGNAME (i.e. non-root)
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = true
+disabled = false
+format = "@[$hostname]($style) "
+
+[directory]
+truncation_length = 0
+
+[git_branch]
+symbol = "🌱 "
+[git_status]
+conflicted = "⚔️  ${count}"
+staged     = "✔️  ${count}"
+modified   = "✏️  ${count}"
+untracked  = "🆕  ${count}"
+
+[rust]
+format = "🦀 ${version}"
+style = "bold yellow"
+
+[character]
+success_symbol = '[➜](bold green)'
+
+[jobs]
+symbol = "🔧 "
+
+# Show durations ≥ 1s (in seconds), and display milliseconds for anything under 10s
+[cmd_duration]
+min_time = 1000       # only show if the last command took ≥ 1000ms
+format = '⏱ took $duration'  
+prefix = ""           # if you don’t want an extra space
