@@ -10,44 +10,49 @@ inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 };
 
-outputs = { self, nixpkgs, flake-utils, ... }:
+outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
     let
-        pkgs = import nixpkgs { inherit system; };
-        # Read the rust toolchain config relative to the flake's root
+        pkgs = nixpkgs.legacyPackages.${system};
+        # Read the file relative to the flake's root
         overrides = (builtins.fromTOML (builtins.readFile (self + "/rust-toolchain.toml")));
         libPath = with pkgs; lib.makeLibraryPath [
           # load external libraries that you need in your rust project here
         ];
     in {
-        devShell = pkgs.mkShell {
+        devShells.default = pkgs.mkShell rec {
             pure = true;
             
+            nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = with pkgs; [
-                git               # Version control tool
+                git      # Version control tool
+                less     # Used under the hood by git
+                more     # Nice to have next to 'less'
                 
                 clang                 # C++ tooling
                 llvmPackages.bintools #
                 rustup                # Manage rust toolchains
 
-                nushell           # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
-                starship          # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
-                jq                # Commandline json processor
+                nushell  # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
+                starship # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
+                jq       # Commandline json processor
 
-                vim
-                nano
+                vim      # Text editor
+                nano     # Text editor
 
-                openssh
+                openssh  # SSH
             ];
 
             RUSTC_VERSION = overrides.toolchain.channel;
             # https://github.com/rust-lang/rust-bindgen#environment-variables
             LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ];
+            
             # Add precompiled library to rustc search path
             RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
                 # add libraries here (e.g. pkgs.libvmi)
             ]);
-            LD_LIBRARY_PATH = libPath;
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (buildInputs ++ nativeBuildInputs);
+
             # Add glibc, clang, glib, and other headers to bindgen search path
             # Includes normal include path
             BINDGEN_EXTRA_CLANG_ARGS =
@@ -72,9 +77,7 @@ outputs = { self, nixpkgs, flake-utils, ... }:
 
                 if [ -z "$NU_VERSION" ]; then
                     # export as absolute paths relative to project
-                    PWD="${toString ./.}"
-                    export STARSHIP_CONFIG="$PWD/.config/startship.toml"
-
+                    export STARSHIP_CONFIG="${toString ./.}/.config/startship.toml"
                     exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
                 fi
             '';
