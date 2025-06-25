@@ -3,3 +3,4 @@ dev
 devs
 env
 README
+rustup
