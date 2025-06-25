@@ -21,6 +21,8 @@ outputs = { self, nixpkgs, flake-utils, ... }:
         ];
     in {
         devShell = pkgs.mkShell {
+            pure = true;
+            
             buildInputs = with pkgs; [
                 git               # Version control tool
                 
