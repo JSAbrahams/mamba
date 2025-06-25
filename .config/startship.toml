@@ -1,11 +1,14 @@
+add_newline = false
 format = """
-  $username$hostname\
-  🐍 $directory\
-  $git_branch$git_state\
-  $custom.line_coverage\
-  $git_status\
-  $cmd_duration\
-  $character
+$username$hostname \
+🐍 $directory \
+$git_branch$git_state \
+$custom.line_coverage \
+\n
+$git_status \
+$cmd_duration \
+$nix_shell \
+$character \
 """
 
 [username]
@@ -17,7 +20,7 @@ format = "[$user]($style)"
 [hostname]
 ssh_only = true
 disabled = false
-format = "@[$hostname ]($style) "
+format = "@[$hostname]($style)"
 
 [directory]
 truncation_length = 5
@@ -37,12 +40,13 @@ style = "bold yellow"
 
 [character]
 success_symbol = '[➜](bold green)'
+error_symbol = '[✗](bold red) '
 
 [jobs]
 symbol = "🔧 "
 
 [cmd_duration]
-format = '⏱️ [$duration]($style) '  
+format = '⏱️ [$duration]($style)'  
 style = "bold yellow"
 
 [custom.line_coverage]
