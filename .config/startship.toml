@@ -4,7 +4,7 @@ $username$hostname \
 🐍 $directory \
 $git_branch$git_state \
 $custom.line_coverage \
-$git_status \
+$git_status\
 $cmd_duration \
 $nix_shell \
 \n$character \

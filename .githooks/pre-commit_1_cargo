@@ -6,7 +6,7 @@ export LOG_LEVEL=4 # debug
 
 # only run if Cargo.toml or any *.rs file is in the staged diff
 if ! git diff --cached --name-only --diff-filter=ACM \
-     | grep -Eq '\.(rs|toml)$'; then
+     | grep -Eq '\.(rs|Cargo.toml|Cargo.lock)$'; then
   log_trace "No Rust source or Cargo.toml changes detected, skipping cargo checks."
   exit 0
 fi
