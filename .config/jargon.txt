@@ -8,3 +8,4 @@ glibc
 llvm
 README
 rustup
+vscode
