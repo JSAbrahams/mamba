@@ -25,6 +25,8 @@ outputs = { self, nixpkgs, flake-utils }:
             
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = with pkgs; [
+                aspell   # Spell checker
+
                 git      # Version control tool
                 less     # Used under the hood by git
                 more     # Nice to have next to 'less'
