@@ -1,4 +1,5 @@
 config
+configs
 cov
 dev
 devs

@@ -65,8 +65,19 @@
 
             if [ -z "$NU_VERSION" ]; then
                 # export as absolute paths relative to project
-                export STARSHIP_CONFIG="${toString ./.}/.config/startship.toml"
-                exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
+                export WORKSPACE="${toString ./.}/"
+                export STARSHIP_CONFIG="$WORKSPACE/.config/startship.toml"
+
+                # first check for user-specific config
+                if [ -f "$(pwd)/.config/nushell/config.nu" ]; then
+                    exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.nu"
+
+                # else default to default version-controlled config
+                elif [ -f "$(pwd)/.config/nushell/config.example.nu" ]; then
+                    exec "${pkgs.nushell}/bin/nu" --login --config "$(pwd)/.config/nushell/config.example.nu"
+                else
+                    exec "${pkgs.nushell}/bin/nu" --login
+                fi
             fi
           '';
 

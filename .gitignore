@@ -19,3 +19,7 @@ venv
 
 # Nushell history
 .config/nushell/history.txt
+
+# CLI config files, allowing users to customize if they so choose
+.config/nushell/config.nu
+.config/starship.toml

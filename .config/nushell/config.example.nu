@@ -1,6 +1,6 @@
 $env.config.show_banner = false
 
-$env.PROJECT_TARGET = ($env.PWD + "/target")
+$env.PROJECT_TARGET = ($env.WORKSPACE + "/target")
 
 # Aliases
 
@@ -19,6 +19,12 @@ alias cov           = coverage
 
 # Tell Starship which shell to target
 $env.STARSHIP_SHELL = "nu"
+
+if (($env.WORKSPACE | path join ".config/starship.toml") | path exists) {
+  $env.STARSHIP_CONFIG = ($env.WORKSPACE | path join ".config/starship.toml")
+} else {
+  $env.STARSHIP_CONFIG = ($env.WORKSPACE | path join ".config/starship.example.toml")
+}
 
 # Create a left-side prompt via Starship
 def create_left_prompt [] {
