@@ -15,7 +15,7 @@ categories = ["parsing"]
 [dependencies]
 ansi_term = "0.12.1"
 assert_cmd = "0.10"
-clap = { version = "2.33", features = ["yaml"] }
+clap = { version = "4.5.40", features = ["derive"] }
 glob = "0.3.0"
 itertools = "0.8.2"
 log = "0.4"

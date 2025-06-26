@@ -22,6 +22,7 @@ pub mod check;
 pub mod generate;
 pub mod parse;
 
+pub mod cli;
 pub mod io;
 
 const TARGET: &str = "target";
