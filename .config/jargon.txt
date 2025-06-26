@@ -1,6 +1,8 @@
 config
+cov
 dev
 devs
 env
+llvm
 README
 rustup

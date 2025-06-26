@@ -75,7 +75,8 @@ outputs = { self, nixpkgs, flake-utils }:
                 git config core.hooksPath .githooks
 
                 # for now we rely on cargo to install external tooling, in future we might put it in the above flake which may be more idiomatic
-                cargo install cargo-llvm-cov@0.6.16
+                # quiet to avoid annoying warning that this is already installed (again, we committed to using the rustup toolchain)
+                cargo install cargo-llvm-cov@0.6.16 --quiet
 
                 if [ -z "$NU_VERSION" ]; then
                     # export as absolute paths relative to project
