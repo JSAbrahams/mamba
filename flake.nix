@@ -31,9 +31,9 @@ outputs = { self, nixpkgs, flake-utils }:
                 less     # Used under the hood by git
                 more     # Nice to have next to 'less'
                 
+                rustup                # Manage rust toolchains
                 clang                 # C++ tooling
                 llvmPackages.bintools #
-                rustup                # Manage rust toolchains
 
                 nushell  # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
                 starship # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
@@ -68,9 +68,10 @@ outputs = { self, nixpkgs, flake-utils }:
                 ];
 
             shellHook = ''
+                # point to correct cargo and rustup toolchain version
                 export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                 export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
-                
+
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
 

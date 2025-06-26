@@ -3,6 +3,7 @@ cov
 dev
 devs
 env
+glibc
 llvm
 README
 rustup
