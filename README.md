@@ -43,14 +43,23 @@ Functions written in Python can be called in Mamba and vice versa (from the gene
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-To get started right away, if on a Linux machine:
+To get started right away, if on a Linux machine and you wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.):
 
 ```sh
 # Install Nix, in case you do not have it
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
-# Start nix shell, unsetting PATH to ensure that we don't inherit path from outer environment
-nix develop --unset PATH
+# Start nix shell
+nix develop
 ```
+
+A more minimal setup, to just get started:
+
+```sh
+# Install rustup (if you don't have it already), which is the rust toolchain manager
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Alternatively, check out <https://www.rust-lang.org/tools/install>, e.g. if on a system with no `curl`.
 
 To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
 

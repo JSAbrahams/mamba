@@ -25,7 +25,9 @@ outputs = { self, nixpkgs, flake-utils }:
             
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = with pkgs; [
-                aspell   # Spell checker
+                aspell    # Spell checker
+                coreutils # Dircolors support (via coreutils)
+                direnv    # Direnv for environment switching
 
                 git      # Version control tool
                 less     # Used under the hood by git
@@ -71,6 +73,10 @@ outputs = { self, nixpkgs, flake-utils }:
                 # point to correct cargo and rustup toolchain version
                 export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                 export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
+
+                # coreutuils in path
+                # direnv: initialize auto-env loading for nushell
+                eval "$(direnv hook bash)"
 
                 # make sure to configure githooks path
                 git config core.hooksPath .githooks
