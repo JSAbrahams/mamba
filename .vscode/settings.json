@@ -1,0 +1,8 @@
+{
+  // We store lcov info not in top-level but in target, so that cargo clean also cleans this up
+  "coverage-gutters.coverageFiles": [
+    "${workspaceFolder}/target/lcov.info"
+  ],
+  "coverage-gutters.runOnSave": true,
+  "coverage-gutters.showCoverageOnLoad": true,
+}

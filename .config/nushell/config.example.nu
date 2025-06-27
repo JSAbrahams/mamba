@@ -10,10 +10,9 @@ alias gp   = git push
 alias ga   = git add
 alias gl   = git log --oneline
 
-alias coverage-lcov = cargo llvm-cov nextest --lcov --summary-only --output-path ($env.PROJECT_TARGET + "/cov.lcov")
-alias coverage-json = cargo llvm-cov nextest --json --summary-only --output-path ($env.PROJECT_TARGET + "/cov.json")
-alias coverage      = coverage-json
-alias cov           = coverage
+alias coverage-lcov = cargo llvm-cov nextest --locked --lcov --output-path ($env.PROJECT_TARGET + "/lcov.info")
+alias coverage-json = cargo llvm-cov nextest --locked --json --summary-only --output-path ($env.PROJECT_TARGET + "/cov.json")
+alias coverage-cli  = coverage-json
 
 # Startship prompt
 
