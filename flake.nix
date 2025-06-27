@@ -65,7 +65,7 @@
 
             if [ -z "$NU_VERSION" ]; then
                 # export as absolute paths relative to project
-                export WORKSPACE="${toString ./.}/"
+                export WORKSPACE="${toString ./.}"
                 export STARSHIP_CONFIG="$WORKSPACE/.config/startship.toml"
 
                 # first check for user-specific config
