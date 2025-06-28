@@ -38,3 +38,18 @@ $env.PROMPT_INDICATOR           = ""
 $env.PROMPT_INDICATOR_VI_INSERT = ": "
 $env.PROMPT_INDICATOR_VI_NORMAL = "〉"
 $env.PROMPT_MULTILINE_INDICATOR = "::: "
+
+# ssh agent
+
+def start-ssh-agent [] {
+  ^ssh-agent -c
+      | lines
+      | first 2
+      | parse "setenv {name} {value};"
+      | transpose -r
+      | into record
+      | load-env
+
+  # now prompt user for password
+  ssh-add
+} 

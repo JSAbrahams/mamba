@@ -5,6 +5,7 @@ dev
 devs
 env
 glibc
+nushell
 llvm
 README
 rustup
