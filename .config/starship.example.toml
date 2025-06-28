@@ -1,13 +1,12 @@
 add_newline = false
 format = """
-$username$hostname \
-🐍 $directory \
-$git_branch$git_state \
-$custom.line_coverage \
-$git_status\
-$cmd_duration \
+[┌─────────>](bold green) 🐍 $directory
+[│](bold green) \
+$username$hostname\
+$git_branch$git_state\
 $nix_shell$rust \
-\n$character \
+$custom.line_coverage$cmd_duration$git_status \
+\n[└─>](bold green) 
 """
 
 [username]
@@ -40,7 +39,7 @@ style = "bold yellow"
 symbol = "🔧 "
 
 [cmd_duration]
-format = '⏱️ [$duration]($style)'  
+format = '\[⏱️ [$duration]($style)\]'  
 style = "bold yellow"
 
 [custom.line_coverage]
@@ -51,5 +50,5 @@ when = 'test -f ($env.PROJECT_TARGET + "/cov.json")'
 command = "jq -r '.data[0].totals.lines.percent' ($env.PROJECT_TARGET + '/cov.json') | xargs printf '%.2f%%'"
 # override in an attempt to get ugly '.line_coverage' out of prompt, but still there unfortunately
 symbol      = "🧪"
-format = '$symbol [$output]($style)'
+format = '\[$symbol [$output]($style)\]'
 style = 'bold yellow'
