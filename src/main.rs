@@ -29,7 +29,7 @@ pub fn main() -> Result<(), String> {
         annotate: cli_input.annotate,
     };
 
-    info!("Mamba 🐍 {}", VERSION);
+    info!("Mamba 🐍 {VERSION}");
     let current_dir = std::env::current_dir().map_err(|err| {
         error!("Error while finding current directory: {err}");
         format!("Error while finding current directory: {err}")

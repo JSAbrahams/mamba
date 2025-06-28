@@ -198,7 +198,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
                 if let Some(first) = args.names.iter().next() {
                     Ok(first.variant.generics.clone())
                 } else {
-                    panic!("Malformed callable args: {}", self);
+                    panic!("Malformed callable args: {self}");
                 }
             } else {
                 Err(vec![TypeErr::new(

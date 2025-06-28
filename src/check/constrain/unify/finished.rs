@@ -59,7 +59,7 @@ impl Finished {
             });
 
         if self.pos_to_name.insert(pos, name.clone()).is_none() {
-            trace!("{} at {} has type: {}", exp, pos, name);
+            trace!("{exp} at {pos} has type: {name}");
         }
         Ok(())
     }

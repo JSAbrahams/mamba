@@ -1,3 +1,7 @@
+# Slighty modified example of example flake at <https://nixos.wiki/wiki/Rust> to install Rust.
+# We opt for the variant where we outsource Rust toolchain management to rustup.
+# This is so that those who wish to develop without Nix (for any number of reasons) still benefit from Rustup.
+
 {
   description = "Rust development environment";
 

@@ -147,7 +147,7 @@ pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 fn parse_condition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("condition")?;
     let cond = it.parse(&parse_expression, "condition", start)?;
-    let el = it.parse_if(&Token::Else, &parse_expression, "condition else", start)?;
+    let el = it.parse_if(&Token::Raise, &parse_expression, "condition else", start)?;
     let end = el.clone().map_or(cond.pos, |e| e.pos);
 
     let node = Node::Condition { cond, el };

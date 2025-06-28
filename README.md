@@ -43,12 +43,13 @@ Functions written in Python can be called in Mamba and vice versa (from the gene
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-To get started right away, if on a Linux machine and you wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.):
+To get started right away, if on a Linux machine and you wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.).
+Still work in progress (Nix flakes are difficult to get right):
 
 ```sh
 # Install Nix, in case you do not have it
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
-# Start nix shell
+# Start nix shell, with nushell and starship set up already
 nix develop
 ```
 
@@ -151,10 +152,15 @@ print("last message sent before disconnect: \"{my_server.last_sent()}\".")
 my_server.disconnect()!
 ```
 
-### 🗃 Type refinement (🇻 0.4.1+)
+### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
 
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
+We should not that this is a very experimental feature/thought.
+Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the comlexit of the language.
+Arguably, it might detract from the elegance of the type system as well;
+A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
+
 Lets expand our server example from above, and rewrite it slightly:
 
 ```mamba
@@ -211,24 +217,32 @@ if my_server isa ConnectedMyServer then my_server.disconnect()
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 
 ```mamba
+# we list the conditions below, which are a list of boolean expressions.
+# this first-class language feature desugars to an list of checks which are done at the call site.
+# we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
 type PosInt: Int when
-    self >= 0 else "Must be greater than 0"
+    self >= 0 ! NegativeError("Must be greater than 0")
 
 def factorial(x: PosInt) -> PosInt := match x
     0 => 1
     n => n * factorial(n - 1)
 ```
 
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int`
-or `Str`. During execution, a check is done to verify that the variable does conform to the requirements of the
-refined type. If it does not, an exception is raised.
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
+During execution, a check is done to verify that the variable does conform to the requirements of the refined type. 
+If it does not, an exception is raised.
 
 Type refinement allows us to do some additional things:
 
 - It allows us to further specify the domain or co-domain of a function
-- It allows us to explicitly name the possible states of an object. This means that we don't constantly have to check
-  that certain conditions hold. We can simply ask whether a given object is a certain state by checking whether it is a
-  certain type.
+- It allows us to explicitly name the possible states of an object. 
+  This means that we don't constantly have to check that certain conditions hold.
+  We can simply ask whether a given object is a certain state by checking whether it is a certain type.
+
+The goal of the compiler becomes:
+
+- Limit the amount of checks that need to be done
+- Detect when it becomes impossible to raise an exception, i.e. if it is impossible to break an invariant then we will never raise an exception.
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 
