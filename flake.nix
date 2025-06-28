@@ -28,7 +28,6 @@
             less     # Used under the hood by git
             more     # Nice to have next to 'less'
             
-            rustup                # Manage rust toolchains
             clang                 # C++ tooling
             llvmPackages.bintools #
 
@@ -54,10 +53,6 @@
           LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ];
           
           shellHook = ''
-            # point to correct cargo and rustup toolchain version
-            export PATH=''${CARGO_HOME:-~/.cargo}/bin:$PATH
-            export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
-
             # coreutuils in path
             # direnv: initialize auto-env loading for nushell
             eval "$(direnv hook bash)"
@@ -96,7 +91,6 @@
           
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (buildInputs ++ nativeBuildInputs);
 
-          
           # Add glibc, clang, glib, and other headers to bindgen search path
           BINDGEN_EXTRA_CLANG_ARGS =
           # Includes normal include path
