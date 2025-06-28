@@ -6,12 +6,11 @@ $git_branch$git_state \
 $custom.line_coverage \
 $git_status\
 $cmd_duration \
-$nix_shell \
+$nix_shell$rust \
 \n$character \
 """
 
 [username]
-ssh_only = true
 disabled = false
 show_always = false # show even when user == $LOGNAME (i.e. non-root)
 format = "[$user]($style)"
@@ -51,8 +50,6 @@ when = 'test -f ($env.PROJECT_TARGET + "/cov.json")'
 # If file does not exist, jq will throw an error, but just forward this to /dev/null (so we 'just' print 0 percent if no coverage report) as a failsafe
 command = "jq -r '.data[0].totals.lines.percent' ($env.PROJECT_TARGET + '/cov.json') | xargs printf '%.2f%%'"
 # override in an attempt to get ugly '.line_coverage' out of prompt, but still there unfortunately
-prefix      = ""
-suffix      = ""
 symbol      = "🧪"
 format = '$symbol [$output]($style)'
 style = 'bold yellow'
