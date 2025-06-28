@@ -18,12 +18,15 @@ mod tokenize;
 /// [Token](mamba::lexer::token::Token), in addition to line number and
 /// position. Note that line number and position are 1-indexed.
 ///
+/// - Newline characters '\r\n' are internally replaced with '\n' before tokenization.
+///
 /// Should never panic.
 #[allow(clippy::while_let_on_iterator)]
 pub fn tokenize(input: &str) -> LexResult {
     let mut tokens = Vec::new();
     let mut state = State::new();
 
+    let input = input.replace("\r\n", "\n");
     let mut it = input.chars().peekable();
     while let Some(c) = it.next() {
         tokens.append(&mut into_tokens(c, &mut it, &mut state)?);
