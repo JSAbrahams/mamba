@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::trace;
+
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::clss::COLLECTION;
 use crate::check::context::{Context, LookupClass};

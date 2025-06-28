@@ -1,5 +1,7 @@
 use std::convert::TryFrom;
 
+use log::trace;
+
 use crate::check::ast::ASTTy;
 use crate::check::constrain::constraints;
 use crate::check::context::Context;

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::trace;
+
 use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -107,7 +109,7 @@ fn sub_ty(
             ($left:expr, $new:expr) => {{
                 let pos = format!("({}={}) ", con.parent.pos, con.child.pos);
                 let side = if $left { "l" } else { "r" };
-                trace!(
+                log::trace!(
                     "{:width$} [subbed type {}\\{} {}]  {}  =>  {}",
                     pos,
                     constraint_pos,

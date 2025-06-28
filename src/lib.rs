@@ -1,12 +1,8 @@
-extern crate ansi_term;
-extern crate core;
-#[macro_use]
-extern crate log;
-extern crate loggerv;
-
 use std::convert::TryFrom;
 use std::fs::create_dir;
 use std::path::{Path, PathBuf};
+
+use log::{info, trace};
 
 use crate::check::ast::ASTTy;
 use crate::check::check;
