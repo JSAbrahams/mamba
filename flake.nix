@@ -32,6 +32,12 @@
             clang                 # C++ tooling
             llvmPackages.bintools #
 
+            rustc   # Start off with rust from nix store, reproducible start of rust toolchain
+                    # We keep rustup around for making it easy to switch channels
+            cargo
+            rustfmt
+            clippy
+
             nushell  # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
             starship # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
             jq       # Commandline json processor
