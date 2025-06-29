@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::LookupField;
@@ -25,17 +23,6 @@ pub struct Field {
     pub in_class: Option<StringName>,
     pub ty: Name,
     pub assigned_to: bool,
-}
-
-impl Display for Field {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let ty = if self.ty.is_empty() {
-            String::new()
-        } else {
-            format!(": {}", self.ty)
-        };
-        write!(f, "{}{ty}", &self.name)
-    }
 }
 
 impl LookupField<&str, Field> for Context {

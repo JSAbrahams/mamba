@@ -1,30 +1,11 @@
 use std::convert::TryFrom;
-use std::ops::Deref;
 
 use crate::check::ast::NodeTy;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Empty, Name};
 use crate::parse::ast::Node;
-use crate::{ASTTy, AST};
-
-impl From<(&Box<AST>, &Finished)> for NodeTy {
-    fn from((ast, finished): (&Box<AST>, &Finished)) -> Self {
-        NodeTy::from((ast.deref(), finished))
-    }
-}
-
-impl From<(&AST, &Finished)> for NodeTy {
-    fn from((ast, finished): (&AST, &Finished)) -> Self {
-        NodeTy::from((&ast.node, finished))
-    }
-}
-
-impl From<(&Box<Node>, &Finished)> for NodeTy {
-    fn from((node, finished): (&Box<Node>, &Finished)) -> Self {
-        NodeTy::from((node.deref(), finished))
-    }
-}
+use crate::ASTTy;
 
 impl From<(&Node, &Finished)> for NodeTy {
     fn from((node, finished): (&Node, &Finished)) -> Self {
