@@ -67,7 +67,7 @@
             # for now we rely on cargo to install external tooling, in future we might put it in the above flake which may be more idiomatic
             # quiet to avoid annoying warning that this is already installed (again, we committed to using the rustup toolchain)
             cargo install cargo-llvm-cov@0.6.16 --quiet
-
+            
             if [ -z "$NU_VERSION" ]; then
                 # workspace is where we called flake from
                 export WORKSPACE="$PWD"
