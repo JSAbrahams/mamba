@@ -1,0 +1,58 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+  release:
+    types: [ published ]
+
+env:
+  CARGO_TERM_COLOR: always
+  
+jobs:
+  coverage:
+    environment: development
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python: [ "3.10" ]
+        rust: [ "1.87.0" ]      
+
+    runs-on: ${{ matrix.os }}
+    name: via ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install llvm-tools-preview
+        run: rustup component add llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Generate LCOV report using default testrunner
+        run: |
+          cargo llvm-cov --lcov --output-path ./target/lcov.info \
+          --ignore-filename-regex '(^|/)tests?/.*|.*_tests\.rs$'
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/lcov.info
+          fail_ci_if_error: true
+          token: ${{ vars.CODECOV_TOKEN }}
+          slug: codecov/gh/JSAbrahams/mamba
+          
+      - name: Upload LCOV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-report
+          path: lcov.info
+          
+          

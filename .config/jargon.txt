@@ -1,3 +1,4 @@
+ci
 config
 configs
 cov
@@ -6,6 +7,7 @@ devs
 env
 glibc
 nushell
+lcov
 llvm
 README
 rustup
