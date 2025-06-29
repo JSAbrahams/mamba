@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use itertools::enumerate;
+use log::trace;
 
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;

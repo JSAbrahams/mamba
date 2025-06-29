@@ -1,13 +1,8 @@
-extern crate ansi_term;
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate log;
-extern crate loggerv;
-
-use clap::App;
+use clap::Parser;
 use itertools::Itertools;
+use log::{self, error, info};
 
+use mamba::cli::Cli;
 use mamba::{transpile_dir, Arguments};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -16,37 +11,42 @@ pub fn main() -> Result<(), String> {
     #[cfg(windows)]
     ansi_term::enable_ansi_support().unwrap();
 
-    let yaml = load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml).version(VERSION).get_matches();
-    let in_path = matches.value_of("input");
-    let out_path = matches.value_of("output");
+    // if error, then defer printing error to clap
+    let Ok(cli_input) = Cli::try_parse().map_err(|e| e.print()) else {
+        return Err(String::new());
+    };
 
     loggerv::Logger::new()
-        .verbosity(matches.occurrences_of("v"))
-        .level(matches.is_present("level"))
-        .line_numbers(matches.is_present("debug"))
-        .module_path(!matches.is_present("no-module-path"))
-        .colors(!matches.is_present("no-color"))
+        .verbosity(cli_input.v as u64)
+        .level(cli_input.level)
+        .line_numbers(cli_input.debug)
+        .module_path(!cli_input.no_module_path)
+        .colors(!cli_input.no_color)
         .init()
         .unwrap();
 
     let arguments = Arguments {
-        annotate: matches.is_present("annotate"),
+        annotate: cli_input.annotate,
     };
 
-    info!("Mamba 🐍 {}", VERSION);
+    info!("Mamba 🐍 {VERSION}");
     let current_dir = std::env::current_dir().map_err(|err| {
         error!("Error while finding current directory: {err}");
         format!("Error while finding current directory: {err}")
     })?;
 
-    transpile_dir(&current_dir, in_path, out_path, &arguments)
-        .map_err(|errors| {
-            errors.iter().unique().for_each(|msg| eprintln!("{msg}"));
-            match errors.first() {
-                Some(msg) => msg.clone(),
-                None => String::new(),
-            }
-        })
-        .map(|_| ())
+    transpile_dir(
+        &current_dir,
+        cli_input.input.as_deref(),
+        cli_input.output.as_deref(),
+        &arguments,
+    )
+    .map_err(|errors| {
+        errors.iter().unique().for_each(|msg| eprintln!("{msg}"));
+        match errors.first() {
+            Some(msg) => msg.clone(),
+            None => String::new(),
+        }
+    })
+    .map(|_| ())
 }

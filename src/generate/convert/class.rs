@@ -160,10 +160,10 @@ fn extract_class(
         .map(|parent| match parent.clone() {
             Core::FunctionCall { function, .. } => match *function {
                 Core::Type { lit, .. } => Ok(Core::Id { lit }),
-                other => panic!("Expected type in parent, was {}", other),
+                other => panic!("Expected type in parent, was {other}"),
             },
             Core::Type { .. } => Ok(parent.clone()),
-            other => panic!("Expected type in parent, was {}", other),
+            other => panic!("Expected type in parent, was {other}"),
         })
         .collect::<GenResult<Vec<Core>>>()?;
 

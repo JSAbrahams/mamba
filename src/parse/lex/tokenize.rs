@@ -30,14 +30,6 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             _ => create(state, Token::Ver),
         },
         '\n' => create(state, Token::NL),
-        '\r' => match it.next() {
-            Some('\n') => create(state, Token::NL),
-            _ => Err(Box::new(LexErr::new(
-                state.pos,
-                None,
-                "return carriage not followed by newline",
-            ))),
-        },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
                 (_, Some('=')) => next_and_create(it, state, Token::RangeIncl),

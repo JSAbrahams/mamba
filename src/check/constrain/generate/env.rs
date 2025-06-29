@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use log::trace;
+
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::name::string_name::StringName;

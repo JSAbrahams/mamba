@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::trace;
+
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::clss::COLLECTION;
 use crate::check::context::{Context, LookupClass};
@@ -57,7 +59,7 @@ impl Finished {
             });
 
         if self.pos_to_name.insert(pos, name.clone()).is_none() {
-            trace!("{} at {} has type: {}", exp, pos, name);
+            trace!("{exp} at {pos} has type: {name}");
         }
         Ok(())
     }

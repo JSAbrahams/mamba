@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "rust-lang.rust-analyzer",
+    "ryanluker.vscode-coverage-gutters",
+    "jnoortheen.nix-ide"
+  ]
+}

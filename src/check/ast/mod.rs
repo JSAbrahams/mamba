@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+use log::trace;
+
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::name::string_name::StringName;
 use crate::check::name::Name;

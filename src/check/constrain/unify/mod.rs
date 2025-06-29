@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use log::trace;
 
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::finished::Finished;

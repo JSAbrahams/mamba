@@ -1,6 +1,12 @@
 config
+configs
+cov
 dev
 devs
 env
+glibc
+nushell
+llvm
 README
 rustup
+vscode

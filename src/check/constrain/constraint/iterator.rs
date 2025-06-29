@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use log::trace;
+
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::result::{TypeErr, TypeResult};

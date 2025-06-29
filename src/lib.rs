@@ -1,12 +1,8 @@
-extern crate ansi_term;
-extern crate core;
-#[macro_use]
-extern crate log;
-extern crate loggerv;
-
 use std::convert::TryFrom;
 use std::fs::create_dir;
 use std::path::{Path, PathBuf};
+
+use log::{info, trace};
 
 use crate::check::ast::ASTTy;
 use crate::check::check;
@@ -22,6 +18,7 @@ pub mod check;
 pub mod generate;
 pub mod parse;
 
+pub mod cli;
 pub mod io;
 
 const TARGET: &str = "target";

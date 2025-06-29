@@ -1,0 +1,55 @@
+$env.config.show_banner = false
+
+$env.PROJECT_TARGET = ($env.WORKSPACE + "/target")
+
+# Aliases
+
+alias gc   = git commit
+alias gst  = git status
+alias gp   = git push
+alias ga   = git add
+alias gl   = git log --oneline
+
+alias coverage-lcov = cargo llvm-cov nextest --locked --lcov --output-path ($env.PROJECT_TARGET + "/lcov.info")
+alias coverage-json = cargo llvm-cov nextest --locked --json --summary-only --output-path ($env.PROJECT_TARGET + "/cov.json")
+alias coverage-cli  = coverage-json
+
+# Startship prompt
+
+# Tell Starship which shell to target
+$env.STARSHIP_SHELL = "nu"
+
+if (($env.WORKSPACE | path join ".config/starship.toml") | path exists) {
+  $env.STARSHIP_CONFIG = ($env.WORKSPACE | path join ".config/starship.toml")
+} else {
+  $env.STARSHIP_CONFIG = ($env.WORKSPACE | path join ".config/starship.example.toml")
+}
+
+# Create a left-side prompt via Starship
+def create_left_prompt [] {
+  starship prompt --cmd-duration $env.CMD_DURATION_MS --status=$env.LAST_EXIT_CODE
+}
+
+# Hook it into Nushell’s prompt
+$env.PROMPT_COMMAND       = { || create_left_prompt }
+$env.PROMPT_COMMAND_RIGHT = ""
+
+$env.PROMPT_INDICATOR           = ""
+$env.PROMPT_INDICATOR_VI_INSERT = ": "
+$env.PROMPT_INDICATOR_VI_NORMAL = "〉"
+$env.PROMPT_MULTILINE_INDICATOR = "::: "
+
+# ssh agent
+
+def start-ssh-agent [] {
+  ^ssh-agent -c
+      | lines
+      | first 2
+      | parse "setenv {name} {value};"
+      | transpose -r
+      | into record
+      | load-env
+
+  # now prompt user for password
+  ssh-add
+} 

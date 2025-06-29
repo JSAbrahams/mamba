@@ -1,3 +1,5 @@
+use log::trace;
+
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
@@ -39,7 +41,7 @@ pub fn sub(
             ($left:expr, $new:expr) => {{
                 let pos = format!("({}={}) ", constr.parent.pos, constr.child.pos);
                 let side = if $left { "l" } else { "r" };
-                trace!(
+                log::trace!(
                     "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
                     pos,
                     constraint_pos,

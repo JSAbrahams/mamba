@@ -1,3 +1,5 @@
+use log::trace;
+
 use crate::check::constrain::constraint::expected::Expect::{Access, Expression, Function, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
