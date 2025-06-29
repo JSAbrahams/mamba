@@ -49,3 +49,20 @@ jobs:
 
       - name: Run tests
         run: cargo test --package mamba
+
+      - name: Generate LCOV report
+        run: |
+          cargo llvm-cov --lcov --output-path ./target/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/lcov.info
+          fail_ci_if_error: true
+          
+      - name: Upload LCOV artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lcov-report
+          path: lcov.info
+          
