@@ -1,0 +1,8 @@
+class InnerClass[A]
+    def inner(a: A) -> A := a
+
+class OuterClass[B]
+    def inner_class: InnerClass[B]
+
+def outer_class := OuterClass()
+print(outer_class.inner_class.inner("hello world"))

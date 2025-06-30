@@ -1,0 +1,12 @@
+[package]
+name = "tests_util"
+authors = ["Joël Abrahams"]
+description = "Test and benchmark utilities"
+edition = "2021"
+
+[dependencies]
+# we must allow ourselves one circular dependency
+mamba = { path = ".." }
+python-parser = "0.1.0"
+itertools = "0.8.2"
+tempfile = "3.1.0"

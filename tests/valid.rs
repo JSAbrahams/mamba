@@ -1,4 +1,5 @@
 use mamba::Arguments;
+use tests_util::OutTestRet;
 
 #[test_case::test_case("access", "simple_index")]
 #[test_case::test_case("access", "dictionary_access")]
@@ -23,6 +24,7 @@ use mamba::Arguments;
 #[test_case::test_case("class", "parent")]
 #[test_case::test_case("class", "types")]
 #[test_case::test_case("class", "top_level_tuple")]
+#[test_case::test_case("class", "with_generics" => ignore["why is Outerclass undefined?"])]
 #[test_case::test_case("class", "top_level_unassigned_but_nullable")]
 #[test_case::test_case("class", "unassigned_tuple_second_nullable")]
 #[test_case::test_case("class", "var_from_outside_class")]
@@ -61,6 +63,14 @@ use mamba::Arguments;
 #[test_case::test_case("definition", "long_f_string")]
 #[test_case::test_case("definition", "assign_tuples")]
 #[test_case::test_case("definition", "assign_to_nullable_in_function")]
+#[test_case::test_case("definition", "all_mutable_in_call_chain")]
+#[test_case::test_case("definition", "nested_mut_field")]
+#[test_case::test_case("definition", "assign_to_inner_mut")]
+#[test_case::test_case("definition", "nested_function")]
+#[test_case::test_case("definition", "tuple_modify_mut")]
+#[test_case::test_case("definition", "tuple_modify_outer_mut")]
+#[test_case::test_case("definition", "f_strings")]
+#[test_case::test_case("definition", "collection_in_f_strings")]
 #[test_case::test_case("definition", "assign_with_if")]
 #[test_case::test_case("definition", "assign_with_if_different_types" => ignore["annotating output reveals bug in check stage"])]
 #[test_case::test_case("definition", "assign_with_match")]
@@ -76,7 +86,6 @@ use mamba::Arguments;
 #[test_case::test_case("definition", "function_with_match")]
 #[test_case::test_case("definition", "ternary")]
 #[test_case::test_case("definition", "function_ret_super")]
-#[test_case::test_case("definition", "tuple_modify_mut")]
 #[test_case::test_case("definition", "tuple_non_lit_modify_mut")]
 #[test_case::test_case("error", "handle")]
 #[test_case::test_case("error", "handle_only_id")]
@@ -96,6 +105,10 @@ use mamba::Arguments;
 #[test_case::test_case("function", "print_string")]
 #[test_case::test_case("function", "return_last_expression")]
 #[test_case::test_case("function", "ternary_function_call")]
+#[test_case::test_case("function", "exception_and_type")]
+#[test_case::test_case("function", "allowed_exception")]
+#[test_case::test_case("function", "call_mut_function")]
+#[test_case::test_case("function", "allowed_pass")]
 #[test_case::test_case("operation", "arithmetic")]
 #[test_case::test_case("operation", "assign_types")]
 #[test_case::test_case("operation", "assign_types_no_annotation" => ignore["See if we can modify type checker so it takes largest common"])]
@@ -118,15 +131,11 @@ use mamba::Arguments;
 #[test_case::test_case("readme_example", "server_class")]
 #[test_case::test_case("readme_example", "type_refinement" => ignore["mileston 0.6"])]
 #[test_case::test_case("readme_example", "use_server" => ignore["milestone 0.5"])]
-fn test_directory_valid(input_dir: &str, file_name: &str) -> crate::system::OutTestRet {
-    crate::system::test_directory(true, &[input_dir], &[input_dir, "target"], file_name)
+fn test_directory_valid(input_dir: &str, file_name: &str) -> OutTestRet {
+    tests_util::test_directory(true, &[input_dir], &[input_dir, "target"], file_name)
 }
 
 #[test_case::test_case("collection", "tuple", Arguments { annotate: false })]
-fn test_directory_valid_with_args(
-    input_dir: &str,
-    file_name: &str,
-    args: Arguments,
-) -> crate::system::OutTestRet {
-    crate::system::test_directory_args(true, &[input_dir], &[input_dir, "target"], file_name, &args)
+fn test_directory_valid_with_args(input_dir: &str, file_name: &str, args: Arguments) -> OutTestRet {
+    tests_util::test_directory_args(true, &[input_dir], &[input_dir, "target"], file_name, &args)
 }

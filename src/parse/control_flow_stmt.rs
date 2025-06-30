@@ -68,7 +68,7 @@ mod test {
     use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
-    use crate::test_util::resource_content;
+    use tests_util::resource_content;
 
     #[test]
     fn for_statement_verify() {

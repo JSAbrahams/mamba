@@ -3,16 +3,7 @@ use std::process::Command;
 use std::process::Stdio;
 
 use assert_cmd::prelude::*;
-
-use crate::common::resource_path;
-use crate::common::{delete_dir, resource_content_randomize};
-
-#[macro_use]
-mod common;
-
-mod check;
-mod generate;
-mod system;
+use tests_util::{delete_dir, resource_content_randomize, resource_path};
 
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {

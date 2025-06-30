@@ -163,7 +163,7 @@ mod test {
     use crate::common::result::WithSource;
     use crate::parse::ast::{Node, AST};
     use crate::parse::result::{ParseErr, ParseResult};
-    use crate::test_util::resource_content;
+    use tests_util::resource_content;
 
     #[test]
     fn import_verify() {
