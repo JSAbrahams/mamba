@@ -6,7 +6,7 @@ use mamba::check::name::string_name::StringName;
 use mamba::common::position::Position;
 use mamba::parse::ast::AST;
 
-use crate::common::resource_content;
+use tests_util::resource_content;
 
 #[test]
 fn float_and() {
