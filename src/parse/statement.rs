@@ -268,7 +268,7 @@ mod test {
         assert_eq!(asts.len(), 1);
         let reassignment = asts.first().expect("reassignment");
         let Node::Reassign { left, right, op } = &reassignment.node else {
-            panic!("Expected reassignment, was {:?}", reassignment)
+            panic!("Expected reassignment, was {reassignment:?}")
         };
 
         assert_eq!(
@@ -294,11 +294,11 @@ mod test {
         assert_eq!(asts.len(), 1);
         let reassignment = asts.first().expect("reassignment");
         let Node::Reassign { left, right, op } = &reassignment.node else {
-            panic!("Expected reassignment, was {:?}", reassignment)
+            panic!("Expected reassignment, was {reassignment:?}")
         };
 
         let Node::PropertyCall { instance, property } = &left.node else {
-            panic!("Expected propertycall, was {:?}", left)
+            panic!("Expected propertycall, was {left:?}")
         };
 
         assert_eq!(

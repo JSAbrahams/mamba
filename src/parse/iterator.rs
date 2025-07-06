@@ -239,7 +239,7 @@ mod tests {
     fn test_peek_followed_by_leaves_iter_unmodified() {
         let l1 = Lex::new(CaretPos::start().offset_pos(0), Token::Neq);
         let l2 = Lex::new(CaretPos::start().offset_pos(1), Token::Eq);
-        let lex = vec![l1, l2];
+        let lex = [l1, l2];
         let mut lex_iter = LexIterator::new(lex.iter().peekable());
 
         lex_iter.peek_if_followed_by(&Token::Neq, &Token::Eq);

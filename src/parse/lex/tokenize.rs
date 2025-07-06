@@ -435,15 +435,13 @@ mod test {
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}",
             );
-            assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {}", source);
+            assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {source}");
             assert_eq!(
                 tokens[2].token,
                 Token::Int(String::from("2")),
-                "(2): {}",
-                source
+                "(2): {source}",
             );
         }
 
@@ -451,7 +449,7 @@ mod test {
     }
 
     #[test]
-    fn range() -> Result<(), LexErr> {
+    fn range() -> Result<(), Box<LexErr>> {
         let sources = vec!["0 .. 2", "0.. 2", "0 ..2", "0..2"];
 
         for source in sources {
@@ -461,10 +459,9 @@ mod test {
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}"
             );
-            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {source}");
             assert_eq!(
                 tokens[2].token,
                 Token::Int(String::from("2")),
@@ -477,21 +474,20 @@ mod test {
     }
 
     #[test]
-    fn range_tripped_up() -> Result<(), LexErr> {
+    fn range_tripped_up() -> Result<(), Box<LexErr>> {
         let sources = vec!["0 ... 2", "0... 2", "0 ...2", "0...2"];
 
         for source in sources {
-            let tokens = tokenize(&source)
+            let tokens = tokenize(source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}"
             );
-            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
-            assert_eq!(tokens[2].token, Token::Point, "(.): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {source}");
+            assert_eq!(tokens[2].token, Token::Point, "(.): {source}");
             assert_eq!(
                 tokens[3].token,
                 Token::Int(String::from("2")),

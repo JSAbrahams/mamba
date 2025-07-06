@@ -269,11 +269,11 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
 pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(&resource_path);
     if !path.exists() {
-        panic!("{} does not exist", path.display())
+        Err(format!("{} does not exist", path.display()).into())
     } else {
         match fs::remove_dir_all(path) {
             Ok(_) => Ok(()),
-            Err(err) => panic!("[{}] {}", err, path.display()),
+            Err(err) => Err(format!("[{}] {}", err, path.display()).into()),
         }
     }
 }

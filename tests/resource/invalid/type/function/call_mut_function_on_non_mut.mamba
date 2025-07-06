@@ -1,8 +1,9 @@
 class MyClass
     def a: Int := 20
-    def f(mut self, x: Int) -> Int :=
+    def f(self, x: Int) -> Int :=
         self.a := x + 20
 
 
 def fin my_class := MyClass()
+# should not be allowed, self is fin!
 my_class.f(10)

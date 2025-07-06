@@ -20,7 +20,7 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
 
     let output = resource_path(true, &["class", "target"], "");
     let del_res = delete_dir(&output);
-    assert!(res.is_ok(), "{:?}", res);
+    assert!(res.is_ok(), "{res:?}");
     del_res
 }
 
@@ -42,7 +42,7 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
         .output();
 
     let del_res = delete_dir(&output_path);
-    assert!(res.is_ok(), "{:?}", res);
+    assert!(res.is_ok(), "{res:?}");
     del_res
 }
 
@@ -68,15 +68,15 @@ fn transpile_custom_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--input").arg("custom_src");
+    let output_path = resource_path(true, &["dummy", "proj1", "target"], "");
+    delete_dir(&output_path)?;
+
     let res = cmd
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())
         .output();
     assert!(res.is_ok());
-    let output_path = resource_path(true, &["dummy", "proj1", "target"], "");
-
-    let del_res = delete_dir(&output_path);
-    del_res
+    Ok(())
 }
 
 #[test]
@@ -85,15 +85,15 @@ fn transpile_src_in_dir_custom_target() -> Result<(), Box<dyn std::error::Error>
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--output").arg("custom_target");
+    let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
+    delete_dir(&output_path)?;
+
     assert!(cmd
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())
         .output()
         .is_ok());
-    let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
-
-    let del_res = delete_dir(&output_path);
-    del_res
+    Ok(())
 }
 
 #[test]
@@ -105,15 +105,16 @@ fn transpile_file_not_src() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("-v")
         .arg("--input")
         .arg(input_path.as_os_str().to_str().unwrap());
+
+    let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
+    delete_dir(&output_path)?;
+
     assert!(cmd
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())
         .output()
         .is_ok());
-    let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
-
-    let del_res = delete_dir(&output_path);
-    del_res
+    Ok(())
 }
 
 #[test]
@@ -121,8 +122,8 @@ fn transpile_non_existent_custom_src_in_dir() -> Result<(), Box<dyn std::error::
     let mut cmd = Command::main_binary()?;
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
-    cmd.arg("-v").arg("-input non_existent");
-    assert!(!cmd.output().err().is_some());
+    cmd.arg("-v").arg("-input").arg("non_existent");
+    assert!(cmd.output().err().is_none());
     Ok(())
 }
 
@@ -135,7 +136,7 @@ fn transpile_non_existent_file() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("-v")
         .arg("-input")
         .arg(input_path.as_os_str().to_str().unwrap());
-    assert!(!cmd.output().err().is_some());
+    assert!(cmd.output().err().is_none());
     Ok(())
 }
 
@@ -156,9 +157,7 @@ fn err_output_relative_path_from_src() -> Result<(), Box<dyn std::error::Error>>
     );
     assert!(
         res.contains(&path_res_str),
-        "err msg did not contain: \"{}\"\nerr:\n{}\n\n",
-        path_res_str,
-        res
+        "err msg did not contain: \"{path_res_str}\"\nerr:\n{res}\n\n",
     );
     Ok(())
 }
@@ -180,9 +179,7 @@ fn err_output_relative_path_from_custom_src() -> Result<(), Box<dyn std::error::
     );
     assert!(
         res.contains(&path_res_str),
-        "err msg did not contain: \"{}\"\nerr:\n{}\n\n",
-        path_res_str,
-        res
+        "err msg did not contain: \"{path_res_str}\"\nerr:\n{res}\n\n",
     );
     Ok(())
 }

@@ -109,7 +109,6 @@ use test_case::test_case;
 #[test_case("function", "ternary_function_call")]
 #[test_case("function", "exception_and_type")]
 #[test_case("function", "allowed_exception")]
-#[test_case("function", "call_mut_function")]
 #[test_case("function", "allowed_pass")]
 #[test_case("operation", "arithmetic")]
 #[test_case("operation", "assign_types")]

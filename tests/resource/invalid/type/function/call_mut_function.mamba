@@ -1,8 +1,9 @@
 class MyClass
     def a: Int := 20
-    def f(self, x: Int) -> Int :=
+    def f(fin self, x: Int) -> Int :=
+        # not allowed, self is fin!
         self.a := x + 20
 
 
-def my_class := MyClass()
+def fin my_class := MyClass()
 my_class.f(10)

@@ -22,3 +22,6 @@ venv
 # CLI config files, allowing users to customize if they so choose
 .config/nushell/config.nu
 .config/starship.toml
+
+# custom dirs
+tests/resource/valid/dummy/proj1/custom_target
