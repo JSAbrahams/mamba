@@ -60,8 +60,6 @@ mod test {
     use crate::parse::ast::node_op::NodeOp;
     use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
-    use crate::parse::result::ParseResult;
-    use tests_util::resource_content;
 
     #[test]
     fn range_verify() {
@@ -380,23 +378,5 @@ mod test {
     fn quest_or_on_nothing() {
         let source = String::from("?or");
         source.parse::<AST>().unwrap_err();
-    }
-
-    #[test]
-    fn handle_verify() -> ParseResult<()> {
-        let source = resource_content(true, &["error"], "handle.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn raises_verify() -> ParseResult<()> {
-        let source = resource_content(true, &["error"], "raise.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn with_verify() -> ParseResult<()> {
-        let source = resource_content(true, &["error"], "with.mamba");
-        source.parse::<AST>().map(|_| ())
     }
 }

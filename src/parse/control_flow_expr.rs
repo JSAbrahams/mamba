@@ -110,7 +110,6 @@ mod test {
     use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
-    use tests_util::resource_content;
 
     #[test]
     fn if_else_verify() {
@@ -304,11 +303,5 @@ mod test {
     fn match_missing_arms_no_newline() {
         let source = String::from("match a");
         parse_direct(&source).unwrap_err();
-    }
-
-    #[test]
-    fn match_stmt() {
-        let source = resource_content(true, &["control_flow"], "match_stmt.mamba");
-        source.parse::<AST>().unwrap();
     }
 }

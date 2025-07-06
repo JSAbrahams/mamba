@@ -1,0 +1,4 @@
+def x := {"one", 51}
+
+for item in x do
+    print(item + 2)

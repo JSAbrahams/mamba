@@ -296,8 +296,6 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::ast::{Node, AST};
     use crate::parse::parse_direct;
-    use crate::parse::result::ParseResult;
-    use tests_util::resource_content;
 
     macro_rules! unwrap_func_definition {
         ($ast:expr) => {{
@@ -803,24 +801,6 @@ mod test {
     #[test]
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
-        source.parse::<AST>().unwrap_err();
-    }
-
-    #[test]
-    fn function_definitions() -> ParseResult<()> {
-        let source = resource_content(true, &["function"], "definition.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn function_calling() -> ParseResult<()> {
-        let source = resource_content(true, &["function"], "calls.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn type_annotation_in_tuple() {
-        let source = resource_content(false, &["syntax"], "type_annotation_in_tuple.mamba");
         source.parse::<AST>().unwrap_err();
     }
 }

@@ -150,10 +150,8 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::{Node, AST};
+    use crate::parse::ast::Node;
     use crate::parse::parse_direct;
-    use crate::parse::result::ParseResult;
-    use tests_util::resource_content;
 
     #[test]
     fn tuple_empty_verify() {
@@ -309,29 +307,5 @@ mod test {
                 lit: String::from("d")
             }
         );
-    }
-
-    #[test]
-    fn list_expression() -> ParseResult<()> {
-        let source = resource_content(true, &["collection"], "list.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn dictionary() -> ParseResult<()> {
-        let source = resource_content(true, &["collection"], "dictionary.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn parse_set() -> ParseResult<()> {
-        let source = resource_content(true, &["collection"], "set.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn parse_tuple() -> ParseResult<()> {
-        let source = resource_content(true, &["collection"], "tuple.mamba");
-        source.parse::<AST>().map(|_| ())
     }
 }

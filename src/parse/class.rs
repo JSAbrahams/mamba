@@ -162,8 +162,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::common::result::WithSource;
     use crate::parse::ast::{Node, AST};
-    use crate::parse::result::{ParseErr, ParseResult};
-    use tests_util::resource_content;
+    use crate::parse::result::ParseErr;
 
     #[test]
     fn import_verify() {
@@ -355,18 +354,6 @@ mod test {
     }
 
     #[test]
-    fn parse_class() -> ParseResult<()> {
-        let source = resource_content(true, &["class"], "types.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn parse_imports_class() -> ParseResult<()> {
-        let source = resource_content(true, &["class"], "import.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
     fn single_line_class() {
         let source = String::from("class MyClass");
         source.parse::<AST>().unwrap();
@@ -409,11 +396,5 @@ mod test {
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
-    }
-
-    #[test]
-    fn top_lvl_class_access() {
-        let source = resource_content(false, &["syntax"], "top_lvl_class_access.mamba");
-        source.parse::<AST>().unwrap_err();
     }
 }

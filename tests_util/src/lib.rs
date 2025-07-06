@@ -76,6 +76,7 @@ pub fn test_directory_args(
         String::from_utf8(vec![b' '; out_line_len - sep_count + gap]).unwrap(),
         String::from_utf8(vec![b'-'; sep_count]).unwrap()
     );
+
     for line in out_src.lines().zip_longest(check_src.lines()) {
         match line {
             EitherOrBoth::Both(out, check) => {
@@ -95,7 +96,8 @@ pub fn test_directory_args(
             )),
         }
     }
-    assert_eq!(out_string, check_string, "{}", msg);
+
+    assert_eq!(out_string, check_string, "\n{}", msg);
     Ok(())
 }
 
@@ -138,7 +140,7 @@ pub fn fallable(
         .output()
         .expect("Could not run Python command.");
 
-    let check_src = resource_content(true, input, &format!("{}_check.py", file_name));
+    let check_src = resource_content(true, input, &format!("{}_check.py", file_name))?;
     // Replace CRLF with LF line endings
     let check_ast = python_src_to_stmts(&check_src.replace("\r\n", "\n"));
 
@@ -241,8 +243,8 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
     }
 }
 
-pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
-    resource_content_path(&resource_path(valid, subdirs, file)).unwrap()
+pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> Result<String, Vec<String>> {
+    resource_content_path(&resource_path(valid, subdirs, file))
 }
 
 pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
