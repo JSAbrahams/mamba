@@ -1204,7 +1204,7 @@ mod test {
             let ast = AST::new(Position::invisible(), $node);
             let ast2 = ast.map(&|node| {
                 if let Node::Id { lit } = node {
-                    if *lit == String::from($old) {
+                    if *lit == $old {
                         Node::Id {
                             lit: String::from($new),
                         }
@@ -1226,7 +1226,7 @@ mod test {
             let ast = AST::new(Position::invisible(), $node);
             let ast2 = ast.map(&|node| {
                 if let Node::Id { lit } = node {
-                    if *lit == String::from($old) {
+                    if *lit == $old {
                         Node::Id {
                             lit: String::from($new),
                         }

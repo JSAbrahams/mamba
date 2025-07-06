@@ -337,7 +337,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
-        assert_eq!(mutable, true);
+        assert!(mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -355,7 +355,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert_eq!(mutable, true);
+        assert!(mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -372,7 +372,7 @@ mod test {
                     lit: String::from("10")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
     }
 
@@ -382,7 +382,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert_eq!(mutable, false);
+        assert!(!mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -399,7 +399,7 @@ mod test {
                     lit: String::from("10")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
     }
 
@@ -409,7 +409,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert_eq!(mutable, true);
+        assert!(mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -426,7 +426,7 @@ mod test {
                     lit: String::from("10")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
     }
 
@@ -439,16 +439,16 @@ mod test {
         let type_id = match ty {
             Some(_type_pos) => match _type_pos.node {
                 Node::Type { id, generics: _ } => id,
-                other => panic!("Expected type but was: {:?}", other),
+                other => panic!("Expected type but was: {other:?}"),
             },
             None => panic!("Expected type but was none."),
         };
         let expr = match expression {
             Some(expr_pos) => expr_pos,
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         };
 
-        assert_eq!(mutable, true);
+        assert!(mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -559,7 +559,7 @@ mod test {
                     lit: String::from("d")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
 
         match (&fun_args[0].node, &fun_args[1].node) {
@@ -579,8 +579,8 @@ mod test {
                     default: d2,
                 },
             ) => {
-                assert!(!v1.clone());
-                assert!(!v2.clone());
+                assert!(!*v1);
+                assert!(!*v2);
 
                 assert_eq!(
                     id1.node,
@@ -608,14 +608,14 @@ mod test {
                         );
                         assert_eq!(generics.len(), 0);
                     }
-                    other => panic!("Expected type for first argument: {:?}", other),
+                    other => panic!("Expected type for first argument: {other:?}"),
                 }
                 assert_eq!(ty2.clone(), None);
 
                 assert_eq!(d1.clone(), None);
                 assert_eq!(d2.clone(), None);
             }
-            other => panic!("Expected two fun args: {:?}", other),
+            other => panic!("Expected two fun args: {other:?}"),
         }
     }
 
@@ -642,7 +642,7 @@ mod test {
                     lit: String::from("d")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
     }
 
@@ -669,7 +669,7 @@ mod test {
                     lit: String::from("d")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
     }
 
@@ -702,7 +702,7 @@ mod test {
                     lit: String::from("d")
                 }
             ),
-            other => panic!("Unexpected expression: {:?}", other),
+            other => panic!("Unexpected expression: {other:?}"),
         }
 
         match (&fun_args[0].node, &fun_args[1].node) {
@@ -722,11 +722,11 @@ mod test {
                     default: d2,
                 },
             ) => {
-                assert!(!v1.clone());
-                assert!(!v2.clone());
+                assert!(!*v1);
+                assert!(!*v2);
 
-                assert!(mut1.clone());
-                assert!(mut2.clone());
+                assert!(*mut1);
+                assert!(*mut2);
 
                 assert_eq!(
                     id1.node,
@@ -752,13 +752,13 @@ mod test {
                         );
                         assert_eq!(generics.len(), 0);
                     }
-                    other => panic!("Expected type for first argument: {:?}", other),
+                    other => panic!("Expected type for first argument: {other:?}"),
                 }
 
                 assert_eq!(d1.clone(), None);
                 assert_eq!(d2.clone(), None);
             }
-            other => panic!("Expected two fun args: {:?}", other),
+            other => panic!("Expected two fun args: {other:?}"),
         }
     }
 

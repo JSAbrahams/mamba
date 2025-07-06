@@ -174,9 +174,9 @@ mod test {
                     instance: inner,
                     property,
                 } => (instance.clone(), inner.clone(), property.clone()),
-                other => panic!("Expected property call, was {:?}", other),
+                other => panic!("Expected property call, was {other:?}"),
             },
-            other => panic!("Expected property call, was {:?}", other),
+            other => panic!("Expected property call, was {other:?}"),
         };
 
         assert_eq!(

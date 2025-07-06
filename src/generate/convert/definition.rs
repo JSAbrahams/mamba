@@ -200,7 +200,7 @@ mod test {
 
         let (left, right, op) = match gen(&ASTTy::from(&reassign)) {
             Ok(Core::Assign { left, right, op }) => (left, right, op),
-            other => panic!("Expected reassign but was {:?}", other),
+            other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
@@ -234,7 +234,7 @@ mod test {
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
-            other => panic!("Expected var def but got: {:?}.", other),
+            other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
@@ -268,7 +268,7 @@ mod test {
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
-            other => panic!("Expected var def but got: {:?}.", other),
+            other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
@@ -316,7 +316,7 @@ mod test {
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
-            other => panic!("Expected var def but got: {:?}.", other),
+            other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
@@ -359,7 +359,7 @@ mod test {
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
-            other => panic!("Expected var def but got: {:?}.", other),
+            other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
@@ -392,7 +392,7 @@ mod test {
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
-            other => panic!("Expected var def but got: {:?}.", other),
+            other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
@@ -447,7 +447,7 @@ mod test {
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
-            other => panic!("Expected fun def but got: {:?}.", other),
+            other => panic!("Expected fun def but got: {other:?}."),
         };
 
         assert_eq!(*id, String::from("fun"));
@@ -504,7 +504,7 @@ mod test {
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
-            other => panic!("Expected fun def but got: {:?}.", other),
+            other => panic!("Expected fun def but got: {other:?}."),
         };
 
         assert_eq!(*id, String::from("fun"));
@@ -550,7 +550,7 @@ mod test {
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
-            other => panic!("Expected fun def but got: {:?}.", other),
+            other => panic!("Expected fun def but got: {other:?}."),
         };
 
         assert_eq!(*id, String::from("fun"));
@@ -595,7 +595,7 @@ mod test {
 
         let (args, body) = match gen(&ASTTy::from(&anon_fun)) {
             Ok(Core::AnonFun { args, body }) => (args, body),
-            other => panic!("Expected anon fun but got: {:?}.", other),
+            other => panic!("Expected anon fun but got: {other:?}."),
         };
 
         assert_eq!(args.len(), 2);

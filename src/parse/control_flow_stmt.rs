@@ -223,7 +223,7 @@ mod test {
                 lit: String::from("c")
             }
         );
-        assert_eq!(el.is_none(), true);
+        assert!(el.is_none());
     }
 
     #[test]
@@ -242,11 +242,11 @@ mod test {
                 lit: String::from("a")
             }
         );
-        assert_eq!(el.is_none(), true);
+        assert!(el.is_none());
 
         let block = match then.node {
             Node::Block { statements } => statements,
-            other => panic!("then of if was not block, was: {:?}", other),
+            other => panic!("then of if was not block, was: {other:?}"),
         };
 
         assert_eq!(block.len(), 2);

@@ -72,7 +72,7 @@ mod test {
                 to,
                 inclusive,
                 step,
-            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            } => (from.clone(), to.clone(), *inclusive, step.clone()),
             _ => panic!("first element script was not range."),
         };
 
@@ -103,7 +103,7 @@ mod test {
                 to,
                 inclusive,
                 step,
-            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            } => (from.clone(), to.clone(), *inclusive, step.clone()),
             _ => panic!("first element script was not range."),
         };
 
@@ -139,7 +139,7 @@ mod test {
                 to,
                 inclusive,
                 step,
-            } => (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+            } => (from.clone(), to.clone(), *inclusive, step.clone()),
             _ => panic!("first element script was not range inclusive."),
         };
 
@@ -273,7 +273,7 @@ mod test {
                 import,
                 alias,
             } => (from, import, alias),
-            other => panic!("Expected import but was {:?}.", other),
+            other => panic!("Expected import but was {other:?}."),
         };
 
         assert_eq!(*from, None);
@@ -306,7 +306,7 @@ mod test {
                 import,
                 alias,
             } => (from, import, alias),
-            other => panic!("Expected import but was {:?}.", other),
+            other => panic!("Expected import but was {other:?}."),
         };
 
         assert_eq!(*from, None);

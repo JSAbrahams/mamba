@@ -643,7 +643,7 @@ mod tests {
 
         let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
             Ok(Core::Block { statements }) => (statements[0].clone(), statements[1].clone()),
-            other => panic!("Expected unary operation but was {:?}", other),
+            other => panic!("Expected unary operation but was {other:?}"),
         };
 
         assert_eq!(
@@ -727,7 +727,7 @@ mod tests {
 
         let core_elements = match core {
             Ok(Core::Tuple { elements }) => elements,
-            other => panic!("Expected tuple but got {:?}", other),
+            other => panic!("Expected tuple but got {other:?}"),
         };
 
         assert_eq!(
@@ -760,7 +760,7 @@ mod tests {
 
         let core_elements = match core {
             Ok(Core::Set { elements }) => elements,
-            other => panic!("Expected set but got {:?}", other),
+            other => panic!("Expected set but got {other:?}"),
         };
 
         assert_eq!(
@@ -788,7 +788,7 @@ mod tests {
 
         let core_elements = match core {
             Ok(Core::List { elements }) => elements,
-            other => panic!("Expected tuple but got {:?}", other),
+            other => panic!("Expected tuple but got {other:?}"),
         };
 
         assert_eq!(
@@ -896,7 +896,7 @@ mod tests {
 
         let (resource, expr) = match gen(&ASTTy::from(&with)) {
             Ok(Core::With { resource, expr }) => (resource, expr),
-            other => panic!("Expected with but was {:?}", other),
+            other => panic!("Expected with but was {other:?}"),
         };
 
         assert_eq!(
@@ -929,7 +929,7 @@ mod tests {
                 attempt,
                 except,
             }) => (setup.clone(), attempt.clone(), except.clone()),
-            other => panic!("Expected try except but was {:?}", other),
+            other => panic!("Expected try except but was {other:?}"),
         };
 
         assert_eq!(setup, None);

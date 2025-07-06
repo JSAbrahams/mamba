@@ -230,9 +230,9 @@ mod tests {
         assert!(it.peek_if_followed_by(&Token::Neq, &Token::Eq));
         assert!(it.peek_if_followed_by(&Token::Neq, &Token::Neq));
 
-        assert_eq!(it.peek_if_followed_by(&Token::Neq, &Token::Not), false);
-        assert_eq!(it.peek_if_followed_by(&Token::Eq, &Token::Eq), false);
-        assert_eq!(it.peek_if_followed_by(&Token::Not, &Token::Not), false);
+        assert!(!it.peek_if_followed_by(&Token::Neq, &Token::Not));
+        assert!(!it.peek_if_followed_by(&Token::Eq, &Token::Eq));
+        assert!(!it.peek_if_followed_by(&Token::Not, &Token::Not));
     }
 
     #[test]

@@ -86,7 +86,7 @@ mod test {
             .iter()
             .map(|ast| match &ast.node {
                 Node::Reassign { op, .. } => op.clone(),
-                other => panic!("Expected reassign {:?}", other),
+                other => panic!("Expected reassign {other:?}"),
             })
             .collect();
 
@@ -151,7 +151,7 @@ mod test {
                     ..
                 },
             ) => (id1.clone(), id2.clone()),
-            other => panic!("Id's of anon fun not expression type: {:?}", other),
+            other => panic!("Id's of anon fun not expression type: {other:?}"),
         };
 
         assert_eq!(
@@ -214,9 +214,9 @@ mod test {
         let (instance, name, args) = match &statements.first().expect("script empty.").node {
             Node::PropertyCall { instance, property } => match &property.node {
                 Node::FunctionCall { name, args } => (instance.clone(), name.clone(), args.clone()),
-                other => panic!("not function call in property call {:?}", other),
+                other => panic!("not function call in property call {other:?}"),
             },
-            other => panic!("first element script was property call {:?}", other),
+            other => panic!("first element script was property call {other:?}"),
         };
 
         assert_eq!(

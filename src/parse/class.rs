@@ -210,9 +210,9 @@ mod test {
                     import,
                     alias,
                 } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not import: {:?}.", other),
+                other => panic!("first element script was not import: {other:?}."),
             },
-            other => panic!("ast was not script: {:?}", other),
+            other => panic!("ast was not script: {other:?}"),
         };
 
         assert_eq!(from, None);
@@ -247,9 +247,9 @@ mod test {
                     import,
                     alias,
                 } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not from: {:?}.", other),
+                other => panic!("first element script was not from: {other:?}."),
             },
-            other => panic!("ast was not script: {:?}", other),
+            other => panic!("ast was not script: {other:?}"),
         };
 
         assert_eq!(
@@ -302,9 +302,9 @@ mod test {
                     parents,
                     body,
                 } => (ty.clone(), args.clone(), parents.clone(), body.clone()),
-                other => panic!("Was not class: {:?}.", other),
+                other => panic!("Was not class: {other:?}."),
             },
-            other => panic!("Ast was not script: {:?}", other),
+            other => panic!("Ast was not script: {other:?}"),
         };
 
         match ty.node {
@@ -372,29 +372,32 @@ mod test {
     }
 
     #[test]
-    fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
+    fn class_with_single_line_body_no_newline() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
     }
 
     #[test]
-    fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
+    fn class_with_single_line_body_newline() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
     }
 
     #[test]
-    fn class_with_body_class_right_after() -> Result<(), ParseErr> {
+    fn class_with_body_class_right_after() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
     }
 }

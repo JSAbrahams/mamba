@@ -181,7 +181,7 @@ mod test {
                     Node::ExpressionType { expr: cond1, .. },
                     Node::ExpressionType { expr: cond2, .. },
                 ) => (cond1, expr1, cond2, expr2),
-                other => panic!("expected expression type: {:?}", other),
+                other => panic!("expected expression type: {other:?}"),
             },
             _ => panic!("Cases incorrect."),
         };
@@ -218,7 +218,7 @@ mod test {
         let ast = parse_direct(&source)?;
 
         let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
-            panic!("Expected if, got {:?}", ast)
+            panic!("Expected if, got {ast:?}")
         };
 
         assert_eq!(
@@ -229,7 +229,7 @@ mod test {
         );
         let then = match &then.node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then),
+            _ => panic!("Expected then block, got {then:?}"),
         };
         assert_eq!(
             then.node,
@@ -248,7 +248,7 @@ mod test {
         let ast = parse_direct(&source)?;
 
         let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
-            panic!("Expected if, got {:?}", ast)
+            panic!("Expected if, got {ast:?}")
         };
 
         assert_eq!(
@@ -259,7 +259,7 @@ mod test {
         );
         let then = match &then.node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then),
+            _ => panic!("Expected then block, got {then:?}"),
         };
         assert_eq!(
             then.node,
@@ -270,7 +270,7 @@ mod test {
 
         let el = match el.clone().unwrap().node {
             Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {:?}", then),
+            _ => panic!("Expected then block, got {then:?}"),
         };
         assert_eq!(
             el.node,
