@@ -162,8 +162,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::common::result::WithSource;
     use crate::parse::ast::{Node, AST};
-    use crate::parse::result::{ParseErr, ParseResult};
-    use crate::test_util::resource_content;
+    use crate::parse::result::ParseErr;
 
     #[test]
     fn import_verify() {
@@ -211,9 +210,9 @@ mod test {
                     import,
                     alias,
                 } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not import: {:?}.", other),
+                other => panic!("first element script was not import: {other:?}."),
             },
-            other => panic!("ast was not script: {:?}", other),
+            other => panic!("ast was not script: {other:?}"),
         };
 
         assert_eq!(from, None);
@@ -248,9 +247,9 @@ mod test {
                     import,
                     alias,
                 } => (from.clone(), import.clone(), alias.clone()),
-                other => panic!("first element script was not from: {:?}.", other),
+                other => panic!("first element script was not from: {other:?}."),
             },
-            other => panic!("ast was not script: {:?}", other),
+            other => panic!("ast was not script: {other:?}"),
         };
 
         assert_eq!(
@@ -303,9 +302,9 @@ mod test {
                     parents,
                     body,
                 } => (ty.clone(), args.clone(), parents.clone(), body.clone()),
-                other => panic!("Was not class: {:?}.", other),
+                other => panic!("Was not class: {other:?}."),
             },
-            other => panic!("Ast was not script: {:?}", other),
+            other => panic!("Ast was not script: {other:?}"),
         };
 
         match ty.node {
@@ -355,18 +354,6 @@ mod test {
     }
 
     #[test]
-    fn parse_class() -> ParseResult<()> {
-        let source = resource_content(true, &["class"], "types.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn parse_imports_class() -> ParseResult<()> {
-        let source = resource_content(true, &["class"], "import.mamba");
-        source.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
     fn single_line_class() {
         let source = String::from("class MyClass");
         source.parse::<AST>().unwrap();
@@ -385,35 +372,32 @@ mod test {
     }
 
     #[test]
-    fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
+    fn class_with_single_line_body_no_newline() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
     }
 
     #[test]
-    fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
+    fn class_with_single_line_body_newline() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
     }
 
     #[test]
-    fn class_with_body_class_right_after() -> Result<(), ParseErr> {
+    fn class_with_body_class_right_after() -> Result<(), Box<ParseErr>> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
+            .map_err(Box::new)
             .map(|_| ())
-    }
-
-    #[test]
-    fn top_lvl_class_access() {
-        let source = resource_content(false, &["syntax"], "top_lvl_class_access.mamba");
-        source.parse::<AST>().unwrap_err();
     }
 }

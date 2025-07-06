@@ -16,12 +16,6 @@ pub struct LexErr {
     pub path: Option<PathBuf>,
 }
 
-impl From<Box<LexErr>> for LexErr {
-    fn from(value: Box<LexErr>) -> Self {
-        *value
-    }
-}
-
 impl LexErr {
     pub fn new(pos: CaretPos, token: Option<Token>, msg: &str) -> LexErr {
         LexErr {

@@ -85,11 +85,11 @@ impl Display for Function {
         let raises = if self.raises.is_empty() {
             String::new()
         } else {
-            format!(" raises [{}]", &self.raises)
+            format!(" ! {}", &self.raises)
         };
         write!(
             f,
-            "{: >8} : ({}){ret}{raises}",
+            "{}({}){ret}{raises}",
             self.name,
             comma_delm(&self.arguments)
         )

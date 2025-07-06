@@ -395,7 +395,7 @@ mod tests {
                 import,
                 alias,
             }) => (from.clone(), import.clone(), alias.clone()),
-            other => panic!("Expected import but got {:?}", other),
+            other => panic!("Expected import but got {other:?}"),
         };
 
         assert_eq!(*from.unwrap(), Core::Break);

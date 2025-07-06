@@ -23,7 +23,8 @@ loggerv = "0.7"
 pathdiff = "0.1.0"
 permutate = "0.3.2"
 python-parser = "0.1.0"
-tempfile = "3.1.0"
 
 [dev-dependencies]
 test-case = "3.3.1"
+# dependencies: test -> test util -> mamba
+tests_util = { path = "./tests_util" }

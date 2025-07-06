@@ -301,10 +301,10 @@ mod test {
     use crate::parse::lex::tokenize;
 
     #[test]
-    fn function_with_ret() -> Result<(), LexErr> {
+    fn function_with_ret() -> Result<(), Box<LexErr>> {
         let source = "def f(x: Int) -> Int :=\n    return";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Def);
         assert_eq!(tokens[1].token, Token::Id(String::from("f")));
@@ -325,10 +325,10 @@ mod test {
     }
 
     #[test]
-    fn class_with_body_class_right_after() -> Result<(), LexErr> {
+    fn class_with_body_class_right_after() -> Result<(), Box<LexErr>> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Class);
         assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
@@ -348,10 +348,10 @@ mod test {
     }
 
     #[test]
-    fn if_statement() -> Result<(), LexErr> {
+    fn if_statement() -> Result<(), Box<LexErr>> {
         let source = "if a then\n    b\nelse\n    c";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::If);
         assert_eq!(tokens[1].token, Token::Id(String::from("a")));
@@ -371,10 +371,10 @@ mod test {
     }
 
     #[test]
-    fn e_number() -> Result<(), LexErr> {
+    fn e_number() -> Result<(), Box<LexErr>> {
         let source = "3E4";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(
             tokens[0].token,
@@ -384,40 +384,40 @@ mod test {
     }
 
     #[test]
-    fn int() -> Result<(), LexErr> {
+    fn int() -> Result<(), Box<LexErr>> {
         let source = "0";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Int(String::from("0")));
         Ok(())
     }
 
     #[test]
-    fn real() -> Result<(), LexErr> {
+    fn real() -> Result<(), Box<LexErr>> {
         let source = "0.";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Real(String::from("0.")));
         Ok(())
     }
 
     #[test]
-    fn real2() -> Result<(), LexErr> {
+    fn real2() -> Result<(), Box<LexErr>> {
         let source = "0.0";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Real(String::from("0.0")));
         Ok(())
     }
 
     #[test]
-    fn real3() -> Result<(), LexErr> {
+    fn real3() -> Result<(), Box<LexErr>> {
         let source = "0.0.";
-        let tokens = tokenize(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Real(String::from("0.0")));
         assert_eq!(tokens[1].token, Token::Point);
@@ -425,25 +425,23 @@ mod test {
     }
 
     #[test]
-    fn range_incl() -> Result<(), LexErr> {
+    fn range_incl() -> Result<(), Box<LexErr>> {
         let sources = vec!["0 ..= 2", "0..= 2", "0 ..=2", "0..=2"];
 
         for source in sources {
-            let tokens = tokenize(&source)
+            let tokens = tokenize(source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}",
             );
-            assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {}", source);
+            assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {source}");
             assert_eq!(
                 tokens[2].token,
                 Token::Int(String::from("2")),
-                "(2): {}",
-                source
+                "(2): {source}",
             );
         }
 
@@ -451,25 +449,23 @@ mod test {
     }
 
     #[test]
-    fn range() -> Result<(), LexErr> {
+    fn range() -> Result<(), Box<LexErr>> {
         let sources = vec!["0 .. 2", "0.. 2", "0 ..2", "0..2"];
 
         for source in sources {
-            let tokens = tokenize(&source)
+            let tokens = tokenize(source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}"
             );
-            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {source}");
             assert_eq!(
                 tokens[2].token,
                 Token::Int(String::from("2")),
-                "(2): {}",
-                source
+                "(2): {source}"
             );
         }
 
@@ -477,26 +473,24 @@ mod test {
     }
 
     #[test]
-    fn range_tripped_up() -> Result<(), LexErr> {
+    fn range_tripped_up() -> Result<(), Box<LexErr>> {
         let sources = vec!["0 ... 2", "0... 2", "0 ...2", "0...2"];
 
         for source in sources {
-            let tokens = tokenize(&source)
+            let tokens = tokenize(source)
                 .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
             assert_eq!(
                 tokens[0].token,
                 Token::Int(String::from("0")),
-                "(0): {}",
-                source
+                "(0): {source}"
             );
-            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
-            assert_eq!(tokens[2].token, Token::Point, "(.): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {source}");
+            assert_eq!(tokens[2].token, Token::Point, "(.): {source}");
             assert_eq!(
                 tokens[3].token,
                 Token::Int(String::from("2")),
-                "(2): {}",
-                source
+                "(2): {source}"
             );
         }
 

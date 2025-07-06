@@ -140,7 +140,7 @@ mod tests {
 
         let (core_cond, core_then) = match gen(&ASTTy::from(&if_stmt)) {
             Ok(Core::If { cond, then }) => (cond, then),
-            other => panic!("Expected reassign but was {:?}", other),
+            other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
@@ -176,7 +176,7 @@ mod tests {
 
         let (core_cond, core_then, core_else) = match gen(&ASTTy::from(&if_stmt)) {
             Ok(Core::IfElse { cond, then, el }) => (cond, then, el),
-            other => panic!("Expected reassign but was {:?}", other),
+            other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
@@ -212,7 +212,7 @@ mod tests {
 
         let (core_cond, core_body) = match gen(&ASTTy::from(&while_stmt)) {
             Ok(Core::While { cond, body }) => (cond, body),
-            other => panic!("Expected reassign but was {:?}", other),
+            other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
@@ -245,7 +245,7 @@ mod tests {
 
         let (core_expr, core_col, core_body) = match gen(&ASTTy::from(&for_stmt)) {
             Ok(Core::For { expr, col, body }) => (expr, col, body),
-            other => panic!("Expected for but was {:?}", other),
+            other => panic!("Expected for but was {other:?}"),
         };
 
         assert_eq!(
@@ -293,7 +293,7 @@ mod tests {
                 );
                 (args[0].clone(), args[1].clone(), args[2].clone())
             }
-            other => panic!("Expected range but was {:?}", other),
+            other => panic!("Expected range but was {other:?}"),
         };
 
         assert_eq!(
@@ -341,7 +341,7 @@ mod tests {
                 );
                 (args[0].clone(), args[1].clone(), args[2].clone())
             }
-            other => panic!("Expected range but was {:?}", other),
+            other => panic!("Expected range but was {other:?}"),
         };
 
         assert_eq!(
@@ -397,7 +397,7 @@ mod tests {
                 );
                 (args[0].clone(), args[1].clone(), args[2].clone())
             }
-            other => panic!("Expected range but was {:?}", other),
+            other => panic!("Expected range but was {other:?}"),
         };
 
         assert_eq!(

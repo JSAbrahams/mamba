@@ -146,9 +146,9 @@ mod test {
         match &stmt {
             Statement::Compound(compound) => match compound.deref() {
                 CompoundStatement::Classdef(classdef) => classdef.clone(),
-                other => panic!("Not class def but {:?}", other),
+                other => panic!("Not class def but {other:?}"),
             },
-            other => panic!("Not compound statement but {:?}", other),
+            other => panic!("Not compound statement but {other:?}"),
         }
     }
 
@@ -156,10 +156,10 @@ mod test {
     fn from_py_fields() {
         let source = "class MyClass:\n    def __init__(self): pass\n    b: int = 10\n    a: int\n";
         let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(&first);
+        let class_def: Classdef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -169,8 +169,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("field");
         assert_eq!(field.name, String::from("a"));
@@ -193,10 +192,10 @@ mod test {
         let source =
             "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
         let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(&first);
+        let class_def: Classdef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -216,10 +215,10 @@ mod test {
         let source =
             "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
         let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(&first);
+        let class_def: Classdef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -238,7 +237,7 @@ mod test {
         assert_eq!(function.raises, Name::empty());
 
         assert_eq!(function.arguments.len(), 1);
-        let argument = function.arguments.iter().next().expect("function argument");
+        let argument = function.arguments.first().expect("function argument");
         assert_eq!(argument.name, String::from("x"));
         assert_eq!(argument.ty, Some(Name::from("Bool")));
         assert!(!argument.has_default);
@@ -248,10 +247,10 @@ mod test {
     fn from_py_parents() {
         let source = "class MyClass(ParentClass, P2):\n    pass\n";
         let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(&first);
+        let class_def: Classdef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -261,8 +260,7 @@ mod test {
         let mut iter = generic_class
             .parents
             .iter()
-            .sorted_by_key(|p| p.name.variant.clone())
-            .into_iter();
+            .sorted_by_key(|p| p.name.variant.clone());
 
         let parent2 = iter.next().expect("parent in class");
         assert_eq!(parent2.name, TrueName::from("P2"));
@@ -277,14 +275,14 @@ mod test {
     fn from_class_with_generic() {
         let source = "class MyClass(Generic[T], P2):\n    pass\n";
         let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(&first);
+        let class_def: Classdef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         let name = StringName::new("MyClass", &[Name::from("T")]);
-        assert_eq!(generic_class.name, StringName::from(name));
+        assert_eq!(generic_class.name, name);
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.parents.len(), 1);

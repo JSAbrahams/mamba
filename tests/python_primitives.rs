@@ -1,18 +1,8 @@
 use std::convert::TryFrom;
 
-use mamba::check::check_all;
 use mamba::check::context::{Context, LookupClass};
 use mamba::check::name::string_name::StringName;
 use mamba::common::position::Position;
-use mamba::parse::ast::AST;
-
-use crate::common::resource_content;
-
-#[test]
-fn float_and() {
-    let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
-    check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
-}
 
 #[test]
 pub fn non_existent_primitive() {

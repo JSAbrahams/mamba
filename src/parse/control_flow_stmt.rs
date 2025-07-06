@@ -65,10 +65,8 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::{Node, AST};
+    use crate::parse::ast::Node;
     use crate::parse::parse_direct;
-    use crate::parse::result::ParseResult;
-    use crate::test_util::resource_content;
 
     #[test]
     fn for_statement_verify() {
@@ -225,7 +223,7 @@ mod test {
                 lit: String::from("c")
             }
         );
-        assert_eq!(el.is_none(), true);
+        assert!(el.is_none());
     }
 
     #[test]
@@ -244,11 +242,11 @@ mod test {
                 lit: String::from("a")
             }
         );
-        assert_eq!(el.is_none(), true);
+        assert!(el.is_none());
 
         let block = match then.node {
             Node::Block { statements } => statements,
-            other => panic!("then of if was not block, was: {:?}", other),
+            other => panic!("then of if was not block, was: {other:?}"),
         };
 
         assert_eq!(block.len(), 2);
@@ -308,29 +306,5 @@ mod test {
     #[test]
     fn if_missing_body() {
         parse_direct(&String::from("if a then")).unwrap_err();
-    }
-
-    #[test]
-    fn while_statements() -> ParseResult<()> {
-        let src = resource_content(true, &["control_flow"], "while.mamba");
-        src.parse::<AST>().map(|_| ())
-    }
-
-    #[test]
-    fn assigns_and_while() {
-        let src = resource_content(false, &["syntax"], "assign_and_while.mamba");
-        src.parse::<AST>().unwrap_err();
-    }
-
-    #[test]
-    fn for_statements() {
-        let src = resource_content(true, &["control_flow"], "for_statements.mamba");
-        src.parse::<AST>().unwrap();
-    }
-
-    #[test]
-    fn if_stmt() {
-        let src = resource_content(true, &["control_flow"], "if.mamba");
-        src.parse::<AST>().unwrap();
     }
 }

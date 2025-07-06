@@ -319,7 +319,7 @@ mod tests {
 
         let (col, expr) = match &statements[1].node {
             NodeTy::For { col, expr, .. } => (col.clone(), expr.clone()),
-            other => panic!("Expected for: {:?}", other),
+            other => panic!("Expected for: {other:?}"),
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int")));

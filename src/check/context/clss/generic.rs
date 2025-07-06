@@ -396,8 +396,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "a");
@@ -444,8 +443,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -486,8 +484,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -528,8 +525,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -569,8 +565,7 @@ mod test {
         let mut fields = generic_class
             .fields
             .iter()
-            .sorted_by_key(|f| f.name.clone())
-            .into_iter();
+            .sorted_by_key(|f| f.name.clone());
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");

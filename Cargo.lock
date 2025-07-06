@@ -289,8 +289,8 @@ dependencies = [
  "pathdiff",
  "permutate",
  "python-parser",
- "tempfile",
  "test-case",
+ "tests_util",
 ]
 
 [[package]]
@@ -556,6 +556,16 @@ dependencies = [
  "quote",
  "syn",
  "test-case-core",
+]
+
+[[package]]
+name = "tests_util"
+version = "0.0.0"
+dependencies = [
+ "itertools",
+ "mamba",
+ "python-parser",
+ "tempfile",
 ]
 
 [[package]]
