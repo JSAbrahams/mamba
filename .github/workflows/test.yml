@@ -31,18 +31,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # Install Rust, build and check clippy warnings
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-          components: clippy, rustfmt
           override: true
-
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
 
       - name: Build
         run: cargo build

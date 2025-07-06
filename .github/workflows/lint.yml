@@ -1,0 +1,41 @@
+name: Lint
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+  release:
+    types: [ published ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    environment: development
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        rust: [ "1.87.0" ]
+
+    runs-on: ${{ matrix.os }}
+    name: via ${{ matrix.os }}, Rust v${{ matrix.rust }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Install Rust, build and check clippy warnings
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy, rustfmt
+          override: true
+
+      - name: Check code formatting
+        run: cargo fmt --all -- --check
+
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
