@@ -296,7 +296,7 @@ def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
 my_server.send(message)
-    err: ServerErr = print("Error while sending message: \"{message}\": {err}")
+    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
@@ -311,10 +311,10 @@ This is shown below:
 
 ```mamba
 def a := function_may_throw_err()
-    err: MyErr :=
+    err: MyErr =>
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
-    err: MyOtherErr :=
+    err: MyOtherErr =>
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
 
@@ -336,7 +336,7 @@ The type checker will keep track of what we handle locally and what is passed up
 
 ```mamba
 def a := function_may_throw_err()!
-    err: MyErr :=
+    err: MyErr =>
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
 
