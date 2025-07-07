@@ -1,7 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
 <p align="center">
-    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
+    <img src="image/logo.svg" style="height:200px;" alt="Mamba logo"/>
     <br/><br/>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/test.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/JSAbrahams/Mamba/test.yml?style=for-the-badge" alt="GitHub Workflow Status">
