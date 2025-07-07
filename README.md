@@ -1,7 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
 <p align="center">
-    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
+    <img src="image/logo.svg" style="height:200px;" alt="Mamba logo"/>
     <br/><br/>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/test.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/JSAbrahams/Mamba/test.yml?style=for-the-badge" alt="GitHub Workflow Status">
@@ -296,7 +296,7 @@ def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
 my_server.send(message)
-    err: ServerErr = print("Error while sending message: \"{message}\": {err}")
+    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
@@ -311,10 +311,10 @@ This is shown below:
 
 ```mamba
 def a := function_may_throw_err()
-    err: MyErr :=
+    err: MyErr =>
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
-    err: MyOtherErr :=
+    err: MyOtherErr =>
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
 
@@ -336,7 +336,7 @@ The type checker will keep track of what we handle locally and what is passed up
 
 ```mamba
 def a := function_may_throw_err()!
-    err: MyErr :=
+    err: MyErr =>
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
 
