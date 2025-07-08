@@ -74,9 +74,10 @@ We highlight how functions work, how de define classes, how types and type refin
 We can write a simple script that computes the factorial of a value given by the user.
 
 ```mamba
-def factorial(x: Int) -> Int := match x
+def factorial(x: Int) -> Int := match x {
     0 => 1
     n => n * factorial(n - 1)
+}
 
 def num := input("Compute factorial: ")
 if num.is_digit() then [
@@ -88,17 +89,23 @@ if num.is_digit() then [
 
 Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
 This means that the compiler will check for us that factorial is only used with integers as argument.
+Also note that:
+
+- Code blocks are denoted using `[` and `]` because this is a list of statements and expressions that gets executed _in order_.
+- For a match, each case is denoted using `{` and `}`, as this is a set of cases we match on.
+  You you can read `match x {}` , where we read this as "match `x` on this set of conditions in `{...}`", though we omit the "on" as to not introduce another keyword.
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int := match x
+def factorial(x: Int) -> Int := match x {
     0 => 1
     n => [
       def ans := 1
       for i in 1 ..= n do ans := ans * i
       ans
     ]
+}
 ```
 
 ### 🍡 Collections
@@ -238,9 +245,10 @@ def my_server   := MyServer(some_ip)
 http_server.connect()
 
 # We check the state
-if my_server isa ConnMyServer then
+if my_server isa ConnMyServer then [
     # http_server is a Connected Server if the above is true
     my_server.send("Hello World!")
+]
 
 print("last message sent before disconnect: \"{my_server.last_sent}\".")
 if my_server isa ConnectedMyServer then my_server.disconnect()
@@ -255,9 +263,10 @@ Type refinement also allows us to specify the domain and co-domain of a function
 type PosInt: Int when
     self >= 0 ! NegativeError("Must be greater than 0")
 
-def factorial(x: PosInt) -> PosInt := match x
+def factorial(x: PosInt) -> PosInt := match x {
     0 => 1
     n => n * factorial(n - 1)
+}
 ```
 
 In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
@@ -315,7 +324,10 @@ def pure sin(x: Int) -> Int := [
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
 Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
-The following is only a brief example.
+The following is an attempt mixing and matching `Result` monad (of languages like Rust and Scala),
+with a more first-class approach of exceptions is languages like Kotlin.
+This is a trade-off between elegancy of the type system versus first-class language features.
+Arguably it may be easier to just use Monads and get rid of this, but lets see how this goes in practice.
 
 We can modify the above script such that we don't check whether the server is connected or not.
 In that case, we must handle the case where `my_server` throws a `ServerErr`:
@@ -328,22 +340,38 @@ def fin some_ip := ipaddress.ip_address("151.101.193.140")
 def my_server   := MyServer(some_ip)
 
 def message := "Hello World!"
-my_server.send(message)
+my_server.send(message) ! {
     err: ServerErr => print("Error while sending message: \"{message}\": {err}")
+}
 
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
+`my_server.send(message) ! { ... }` is syntax sugar for
+
+```mamba
+match my_server.send(message) {
+    err: Exception(ServerErr) => print("Error while sending message: \"{message}\": {err}")
+}
+```
+
+So esentially, we add `!` as a way to shorthand match on exceptions.
+Again, recall that this is a tradeoff.
+Currently, we allow both notations, but this comes at the cost of there not being "one way" to handle exceptions.
+This can lead to similar problems like with Scala where we have multiple ways to do the same thing.
+
 In the above script, we will always print the error since we forgot to actually connect to the server.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
-This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
+This means that we don't need a `finally` block:
+We aim to deal with the error where it happens and then continue executing the remaining code.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-This can also be combined with an assign. In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
+This can also be combined with an assign.
+In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below:
 
 ```mamba
-def a := function_may_throw_err()
+def a: Int := function_may_throw_err() ! {
     err: MyErr => [
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
@@ -352,30 +380,40 @@ def a := function_may_throw_err()
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
     ]
+}
 
 print("a has value {a}.")
 ```
 
-I we don't want to handle the exception cases here, we just append a `!` to a function.
+We can also opt to not do any error handling, making this
+
+```
+def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
+```
+
+By extension, if we don't handle all cases, then the union becomes smaller, only when the union is empty is `a` an `Int`.
+The type of `a` is then result, and we are required to do error handling later.
+I we don't want to handle any of the exception cases here, we just append a `!` to a function.
 This means that this exception must be handeld further up the stack.
 
 ```mamba
-def a := function_may_throw_err()!
-
+def a := function_may_throw_err() !
 # if `function_may_throw_err` returned an exception, we will never reach this point
 print("a has value {a}.")
 ```
 
-We can also mix and match, handling a subset of the exceptions.
-The type checker will keep track of what we handle locally and what is passed up the stack.
+This also gives an alternative way to write the above example, where we only case about a subset of the exceptions here.
 
 ```mamba
-def a := function_may_throw_err()!
-    err: MyErr =>
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
+def a: Result[Int, MyErr] := function_may_throw_err() ! {
+    err: MyOtherErr => [
+        print("We have another problem: {err.message}.")
+        0  # ... or we assign default value 0 to a
+    ]
+}
 
-# if `function_may_throw_err` returned an exception, we will never reach this point
+a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised.
+
 print("a has value {a}.")
 ```
 

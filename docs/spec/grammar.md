@@ -112,7 +112,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     control-flow-expr::= if | match
     if               ::= "if" one-or-more-expr "then" code-block [ "else" code-block ]
     match            ::= "match" one-or-more-expr "with" newline match-cases
-    match-cases      ::= match-case | "[" match-case { newline match-case } "]"
+    match-cases      ::= match-case | "{" match-case { newline match-case } "}"
     match-case       ::= expression "=>" expr-or-stmt
     
     control-flow-stmt::= while | foreach | "break" | "continue"
