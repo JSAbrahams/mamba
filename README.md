@@ -34,12 +34,17 @@ Mamba is like Python, but with a few key features:
 - A distinction between mutability and immutability
 - Pure functions, or, functions without side effects
 
-See [docs](/docs/) for a more extensive overview of the langauge philosophy.
+See [docs](/docs/) for a more extensive overview of the language philosophy.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
 files.
 Mamba code should therefore be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
+
+The below README:
+
+- Gives a quickstart for developer
+- Give a short overview of most of the syntax and language features in quick succession, as well as the occasional reasoning behind them.
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
@@ -92,7 +97,7 @@ This means that the compiler will check for us that factorial is only used with 
 Also note that:
 
 - Code blocks are denoted using `[` and `]` because this is a list of statements and expressions that gets executed _in order_.
-- For a match, each case is denoted using `{` and `}`, as this is a set of cases we match on.
+- For a match expression or statement, each case is denoted using `{` and `}`, as this is a set of cases we match on.
   You you can read `match x {}` , where we read this as "match `x` on this set of conditions in `{...}`", though we omit the "on" as to not introduce another keyword.
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
@@ -111,7 +116,6 @@ def factorial(x: Int) -> Int := match x {
 ### 🍡 Collections
 
 In mamba sets, lists and maps are first class citizens, they are baked into the language.
-Unlike C-style languages, collection indexes are also a function.
 
 ```mamba
 # lists
@@ -134,6 +138,24 @@ def ef := { x => y - 2 | x in e, y = x.len() }
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(ab(2)) # prints '(2, "list")'
 print(ef(1)) # prints '1'
+```
+
+Unlike C-style languages (which is nearly the whole world at this point), we index lists using `<expression>(<expression>)`.
+The main reason for doing so is that we see collections, which can be indexed, as mappings.
+This mapping itself is another function!
+So, we perform a function call index to perform indexing, from which it follows that we use function call notation.
+
+Also good to note is that we consider a list simply a mapping where keys are the indexes of the list.
+I.e.
+
+```mamba
+def numbers := [32, 504, 59]
+```
+
+Is just shorthand for
+
+```mamba
+def numbers := { 0 => 32, 1 => 504, 2 => 59 }
 ```
 
 ### 📋 Types, Classes, and Mutability
@@ -169,6 +191,19 @@ class MyServer(def ip_address: IPv4Address) := [
 ```
 
 Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
+In general, the notation of a class is:
+
+`class MyClass(<one-or-more-constructor-args>) := [<one-or-more-expressions>]`
+
+Though the body is optional.
+As for constructor arguments:
+
+- If they are prefixed with `def`, then they are immediately accessible (e.g. `my_server.ip_address`).
+- If they are **not** prefixed with `def`, then they are only constructor arguments, and they are used in the body of the class only.
+  This means that they are a class-constant, meaning that they may be used in any part of the class (body, functions, methods), but they are invariant.
+
+See below type refinement for where we expan the example.
+
 We can then use `MyServer` as follows:
 
 ```mamba
@@ -206,9 +241,13 @@ type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: Str): Exception(message)
 
-class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
+class MyServer(self: DisConnMyServer, ip_address: IPv4Address) := [
     def is_connected: Bool  := False
     def _last_message: Str? := None
+    # this showcases that the constructor arguments from above, if they are not prefixed with 'def', we need to manually assign it here
+    # essentially, the constructor body are the top-level expressions and statements of a class.
+    # The above ip_address has become a class-constant.
+    def ip_address: IPv4Address := ip_address
 
     def last_sent(self) -> Str ! ServerErr :=
         if self.last_message != None then self._last_message
@@ -219,6 +258,17 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
     def send(self: ConnMyServer, message: Str) := self._last_message := message
 
     def disconnect(self: ConnMyServer) := self.is_connected := False
+
+    def change_ip(self, new_address: IPv4Address) := [
+        # notice that we access ip_address directly, not self.ip_address
+        print("When we first created this server, the address was {ip_address}")
+        print("In the meantime, our address is {self.ip_address}")
+        print("And now we will change our address to {new_address}")
+
+        self.ip_address := new_address
+        # The following would result in a compilation error, we cannot assign to constants! 
+        # ip_address := new_address
+    ]
 ]
 ```
 
