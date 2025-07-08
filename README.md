@@ -303,7 +303,7 @@ def fin taylor := 7
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) -> Int := [
     def ans := x
-    for i in 1 ..= taylor .. 2 do
+    for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ]
