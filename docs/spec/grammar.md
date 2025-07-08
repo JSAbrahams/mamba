@@ -46,7 +46,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-expr 
                       | code-block
                       | collection
-                      | index
                       | key-value
                       | operation
                       | anon-fun
@@ -66,7 +65,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     slice            ::= expression ( "::" | "::=" ) expression [ "::" expression ]
     range            ::= expression ( ".." | "..=" ) expression [ ".." expression ]
-    index            ::= expression "[" expression "]"
     
     definition       ::= "def" ( variable-def | fun-def | operator-def )
 

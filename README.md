@@ -101,6 +101,34 @@ def factorial(x: Int) -> Int := match x
     ]
 ```
 
+### 🍡 Collections
+
+In mamba sets, lists and maps are first class citizens, they are baked into the language.
+Unlike C-style languages, collection indexes are also a function.
+
+```mamba
+# lists
+def a := [0, 2, 51]
+def b := ["list", "of", "strings"]
+# lists of tuples, buidler syntax
+def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+
+# sets
+def c := { 10, 20 }
+def d := { 3 }
+# sets, builder syntax
+def cd := { x ^ y | x in c, y in d }
+
+# maps
+def e := { "do" => 1, "ree" => 2, "meee" => 3 }
+# maps, builder syntax
+def ef := { x => y - 2 | x in e, y = x.len() }
+
+# indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
+print(ab(2)) # prints '(2, "list")'
+print(ef(1)) # prints '1'
+```
+
 ### 📋 Types, Classes, and Mutability
 
 Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
@@ -273,7 +301,7 @@ Immutable variables and pure functions make it easier to write declarative progr
 def fin taylor := 7
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) := [
+def pure sin(x: Int) -> Int := [
     def ans := x
     for i in 1 ..= taylor .. 2 do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
