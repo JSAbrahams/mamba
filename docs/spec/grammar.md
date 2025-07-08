@@ -19,7 +19,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     condition        ::= expression [ "!" expression ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
-    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( code-block )
+    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( := code-block )
     generics         ::= "[" id { "," id } "]"
     
     id               ::= { character }

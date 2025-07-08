@@ -142,7 +142,7 @@ class ServerError(def message: Str): Exception(message)
 
 def fin always_the_same_message := "Connected!"
 
-class MyServer(def ip_address: IPv4Address)
+class MyServer(def ip_address: IPv4Address) := [
     def is_connected: Bool  := False
     def _last_message: Str  := "temp"
 
@@ -161,6 +161,7 @@ class MyServer(def ip_address: IPv4Address)
             ! ServerError("Not connected!")
 
     def disconnect(self) := self.is_connected := False
+]
 ```
 
 Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
@@ -201,7 +202,7 @@ type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: Str): Exception(message)
 
-class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
+class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
     def is_connected: Bool  := False
     def _last_message: Str? := None
 
@@ -216,6 +217,7 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def send(self: ConnMyServer, message: Str) := self._last_message := message
 
     def disconnect(self: ConnMyServer) := self.is_connected := False
+]
 ```
 
 Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
