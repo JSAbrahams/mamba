@@ -15,7 +15,9 @@ Symbol | Use
 `{` | Denote start of set, set constructor, or map
 `}` | Denote end of set, set constructor, or map
 `[` | Denote start of list, or opening bracket of generics of a class
+    | Also denotes the start of a list of statements and/or expressions
 `]` | Denote end of list, or closing bracket of generics of a class
+    | Also denotes the end of a list of statements and/or expressions
 
 ## Type
 

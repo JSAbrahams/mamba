@@ -79,10 +79,10 @@ def factorial(x: Int) -> Int := match x
     n => n * factorial(n - 1)
 
 def num := input("Compute factorial: ")
-if num.is_digit() then
+if num.is_digit() then [
     def result := factorial(Int(num))
     print("Factorial {num} is: {result}.")
-else
+] else
     print("Input was not an integer.")
 ```
 
@@ -94,10 +94,11 @@ _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic
 ```mamba
 def factorial(x: Int) -> Int := match x
     0 => 1
-    n =>
-        def ans := 1
-        for i in 1 ..= n do ans := ans * i
-        ans
+    n => [
+      def ans := 1
+      for i in 1 ..= n do ans := ans * i
+      ans
+    ]
 ```
 
 ### 📋 Types, Classes, and Mutability
@@ -120,9 +121,10 @@ class MyServer(def ip_address: IPv4Address)
     def last_sent(fin self) -> Str ! ServerError :=
         self._last_message
 
-    def connect(self) :=
+    def connect(self) := [
         self.is_connected := True
         print(always_the_same_message)
+    ]
 
     def send(self, message: Str) ! ServerError :=
         if self.is_connected then
@@ -271,11 +273,12 @@ Immutable variables and pure functions make it easier to write declarative progr
 def fin taylor := 7
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) :=
+def pure sin(x: Int) := [
     def ans := x
     for i in 1 ..= taylor .. 2 do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     ans
+]
 ```
 
 ### ⚠ Error handling
@@ -311,12 +314,14 @@ This is shown below:
 
 ```mamba
 def a := function_may_throw_err()
-    err: MyErr =>
+    err: MyErr => [
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
-    err: MyOtherErr =>
+    ]
+    err: MyOtherErr => [
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
+    ]
 
 print("a has value {a}.")
 ```

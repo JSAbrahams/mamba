@@ -11,15 +11,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 - ```{ ... }``` = zero or more
 
 ```ebnf
-    file             ::= block
+    file             ::= { expr-or-stmt }
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
-    type-def         ::= "type" type [ ":" type ] ( newline block | "when" [ conditions ] )
-    conditions       ::= ( newline indent { condition newline } dedent | condition )
+    type-def         ::= "type" type [ ":" type ] ( code-block | "when" [ conditions ] )
+    conditions       ::= "[" condition { newline condition } "]" | condition
     condition        ::= expression [ "!" expression ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
-    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( newline block )
+    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( code-block )
     generics         ::= "[" id { "," id } "]"
     
     id               ::= { character }
@@ -27,8 +27,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     type             ::= ( id [ generics ] | type-tuple ) [ "->" type ]
     type-tuple       ::= "(" [ type { "," type } ] ")"
-    
-    block            ::= indent { expr-or-stmt } dedent
     
     expr-or-stmt     ::= ( statement | expression ) [ comment ]
     statement        ::= control-flow-stmt
@@ -46,7 +44,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "return" [ expression ]
                       | expression "as" id 
                       | control-flow-expr 
-                      | newline block
+                      | code-block
                       | collection
                       | index
                       | key-value
@@ -74,10 +72,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
-                         [ ":=" ( expr-or-stmt | newline block ) ]
+                         [ ":=" ( expr-or-stmt | code-block ) ]
 
     fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
-                         [ ":=" ( expr-or-stmt | newline block ) ]
+                         [ ":=" ( expr-or-stmt | code-block ) ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= id-maybe-type [ ":=" expression ]
     forward          ::= "forward" id { "," id }
@@ -108,18 +106,20 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     e-notation       ::= ( integer | real ) "E" [ "-" ] integer
     string           ::= """ { character } """
     
-    newline-block    ::= newline block | expr-or-stmt
+    code-block       ::= "[" expr-or-statement "]" 
+                      | expr-or-stmt
+                      | "[" newline expr-or-statement { newline expr-or-statement } "]"
     one-or-more-expr ::= expression { "," expression }
     
     control-flow-expr::= if | match
-    if               ::= "if" one-or-more-expr "then" newline-block [ "else" newline-block ]
+    if               ::= "if" one-or-more-expr "then" code-block [ "else" code-block ]
     match            ::= "match" one-or-more-expr "with" newline match-cases
-    match-cases      ::= indent { match-case { newline } } dedent
+    match-cases      ::= match-case | "[" match-case { newline match-case } "]"
     match-case       ::= expression "=>" expr-or-stmt
     
     control-flow-stmt::= while | foreach | "break" | "continue"
-    while            ::= "while" one-or-more-expr "do" newline-block
-    foreach          ::= "for" one-or-more-expr "in" expression "do" newline-block
+    while            ::= "while" one-or-more-expr "do" code-block
+    foreach          ::= "for" one-or-more-expr "in" expression "do" code-block
     
     newline          ::= newline-char
     newline-char     ::= \n | \r\n
