@@ -15,7 +15,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
     type-def         ::= "type" type [ ":" type ] ( code-block | "when" [ conditions ] )
-    conditions       ::= "[" condition { newline condition } "]" | condition
+    conditions       ::= "{" condition { newline condition } "}" | condition
     condition        ::= expression [ "!" expression ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
     

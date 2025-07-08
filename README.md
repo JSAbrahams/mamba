@@ -101,9 +101,9 @@ _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic
 def factorial(x: Int) -> Int := match x {
     0 => 1
     n => [
-      def ans := 1
-      for i in 1 ..= n do ans := ans * i
-      ans
+        def ans := 1
+        for i in 1 ..= n do ans := ans * i
+        ans
     ]
 }
 ```
@@ -153,19 +153,16 @@ class MyServer(def ip_address: IPv4Address) := [
     def is_connected: Bool  := False
     def _last_message: Str  := "temp"
 
-    def last_sent(fin self) -> Str ! ServerError :=
-        self._last_message
+    def last_sent(fin self) -> Str ! ServerError := self._last_message
 
     def connect(self) := [
         self.is_connected := True
         print(always_the_same_message)
     ]
 
-    def send(self, message: Str) ! ServerError :=
-        if self.is_connected then
-            self._last_message := message
-        else
-            ! ServerError("Not connected!")
+    def send(self, message: Str) ! ServerError := 
+        if self.is_connected then self._last_message := message
+        else ! ServerError("Not connected!")
 
     def disconnect(self) := self.is_connected := False
 ]
@@ -214,10 +211,8 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
     def _last_message: Str? := None
 
     def last_sent(self) -> Str ! ServerErr :=
-        if self.last_message != None then 
-            self._last_message
-        else
-            ! ServerError("No last message!")
+        if self.last_message != None then self._last_message
+        else ! ServerError("No last message!")
 
     def connect(self: DisConnMyServer) := self.is_connected := True
 
@@ -260,8 +255,9 @@ Type refinement also allows us to specify the domain and co-domain of a function
 # we list the conditions below, which are a list of boolean expressions.
 # this first-class language feature desugars to an list of checks which are done at the call site.
 # we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
-type PosInt: Int when
+type PosInt: Int when {
     self >= 0 ! NegativeError("Must be greater than 0")
+}
 
 def factorial(x: PosInt) -> PosInt := match x {
     0 => 1
