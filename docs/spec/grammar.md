@@ -14,7 +14,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     file             ::= { expr-or-stmt }
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
-    type-def         ::= "type" type [ ":" type ] ( ":=" "{" code-block "}" | "when" [ conditions ] ) |
+    type-def         ::= "type" type ":" type ( ":=" "{" code-block "}" | "when" [ conditions ] )
+    trait-def        ::= "trait" type ( ":" type { "," type } ) ":=" ( expression-or-statement | "{" code-block "}" )
     conditions       ::= "{" expression { newline expression } "}" | expression
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
@@ -66,7 +67,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     slice            ::= expression ( "::" | "::=" ) expression
     range            ::= expression ( ".." | "..=" ) expression
     
-    definition       ::= "def" ( variable-def | fun-def | operator-def )
+    definition       ::= "def" ( variable-def | fun-def | operator-def ) | special-def
+    special-def      ::= type-def | trait-def | class-def
 
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 

@@ -18,10 +18,11 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`type`  | When constructing an interface (abstract base class) or type alias
-`class` | Denote a class
-`isa`   | Check whether an object is instance of a class
-`when`  | Conditional types
+`type`  | Denote start of type defintion or type alias
+`when`  | Conditionals of a type definition
+`class` | Denote start of class definition
+`trait` | Denote start of trait definition
+`isa`   | Check whether an object is instance of a class, or more generally type
 
 ## Classes and Utils
 

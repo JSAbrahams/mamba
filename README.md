@@ -266,42 +266,47 @@ class MyServer(IP_ADDRESS: IPv4Address) := {
 }
 ```
 
-Last, `type`s can also serve as interfaces Mamba.
+Last, we have `trait`s can also serve as interfaces Mamba.
 These are similar to interfaces in Java and Kotlin, and similar to traits in Rust.
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
 For instance, consider example with iterators (which briefly showcases language generics):
 
 ```mamba
-type Iterator[T] := {
+trait Iterator[T] := {
+    def has_next(self) -> Bool
     def next(self) -> T? # syntax sugar for Option[T]
-    ## Has next can be overriden, but has default implementation already
-    def has_next(self) -> bool := self.next() != None
 }
 
-class RangeIter(def start: Int, def end: Int)
-def Iterator[Int] for RangeIter := {
-    def current: Int := start
+class RangeIter(def _start: Int, def _end: Int) := {
+    def _current: Int := _start
+}
 
-    def next(self) -> Int? := 
-        if self.current >= self.stop then None
-        else [
-            def value := self.current
-            self.current := self.current + 1
-            value
-        ]
+def Iterator[Int] for RangeIter := {
+    def has_next(self) -> Bool := self._current < self._stop
+
+    def next(self) -> Int? := if self.has_next() then [
+        def value := self._current
+        self._current := self._current + 1
+        value
+    ] else None
 }
 ```
 
-⚠️ `type` thus denotes both traits and type refinement in the language when paired with the `when` keyword.
-The intention is that one would not need to mix and match these, but instead:
-
-- Prefer using a noun when defining a refinement, as this describes some (set of) properties of class and its instances.
-  The syntax here is `type <id> when <expression>` or `type <id> when { <one-or-more-expressions> }`
-- Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
-  The syntax here is `type <id> := { <one-or-more-definitions }` and we use it as `def <type> for <class>`
+Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
+The syntax here is `trait <id> := { <one-or-more-definitions }` and we use it as `def <trait> for <class>`.
 
 Lastly, like Rust, types (traits) can also be used as generics.
 This would allow, for instance, for defining say a `Hash` trait and enforcing for a hashmap that keys implement said type.
+We can also compose traits, which means that when we define the composite trait for a class we have to implement all definitions at once.
+The syntax is very similar to inheritance for classes:
+
+E.g.
+
+```mamba
+trait Ordered[T]: Equality, Comparable {
+    def less_than(self, other: T) -> Bool
+}
+```
 
 ### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
 
@@ -310,7 +315,7 @@ Having this as a first-class language feature and incorporating it into the gram
 Arguably, it might detract from the elegance of the type system as well;
 A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
 
-The general syntax is `type MyType [: OtherType] when <expression>`, where specifying `OtherType` is optional.
+The general syntax is `type MyType: MainType when <expression>`.
 The expression can be of any form (and size), but **must** evaluate to a boolean.
 
 ```mamba
@@ -435,6 +440,7 @@ It is similar to "design by contract", though it should hopefully also create a 
 Mamba has features to ensure that functions are pure, meaning that if `x = y`, for a pure function `f`, `f(x) = f(y)`.
 `=` is the equality operator in Mamba, which checks for structural equality and not whether this is the same object in memory (with the same address).
 This is inspired originally by pure functions in proof assistant tools.
+For use to be able to compare two instances, the instance must implement the `Equality` trait (which we showed above).
 
 By default, functions are not pure.
 When we mark a function `pure`, restrictions are enforced by the language:
