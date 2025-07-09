@@ -195,6 +195,8 @@ The reason for doing so is domain;
 Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
 This same philosophy will also influence later how we deal with equality checks between objects in the language and how we copy items in the language, where we favour a pure functional apporach similar to Haskell.
 
+### 📋 Types, Properties, and Classes
+
 Continuing on classes, in Mamba, like Python and Rust, each method in a class has an explicit `self` argument, which gives access to the state of this class instance.
 However, we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
 If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
@@ -208,7 +210,7 @@ class ServerError(def message: Str): Exception(message)
 
 def fin always_the_same_message := "Connected!"
 
-class MyServer(def ip_address: IPv4Address) := [
+class MyServer(def ip_address: IPv4Address) := {
     def is_connected: Bool  := False
     # We can use constructor arguments in the body of the class
     def _last_message: Str  := "my ip address when I was created was {ip_address}"
@@ -225,7 +227,7 @@ class MyServer(def ip_address: IPv4Address) := [
         else ! ServerError("Not connected!")
 
     def disconnect(self) := self.is_connected := False
-]
+}
 ```
 
 Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
@@ -247,7 +249,7 @@ We can change the relevant parts of the above example to use a class constant:
 ```mamba
 from ipaddress import IPv4Address
 
-class MyServer(IP_ADDRESS: IPv4Address) := [
+class MyServer(IP_ADDRESS: IPv4Address) := {
     # The above IP_ADDRESS is a constant defined within the context of this class
     # The intial value of ip_address is the value we passed to the constructor, but it may change
     def ip_address: IPv4Address := IP_ADDRESS
@@ -261,7 +263,7 @@ class MyServer(IP_ADDRESS: IPv4Address) := [
         # The following would result in a compilation error, we cannot assign to constants! 
         # IP_ADDRESS := new_address
     ]
-]
+}
 ```
 
 ### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
@@ -322,15 +324,23 @@ Lets expand our server example from above, and rewrite it slightly:
 
 ```mamba
 from ipaddress import IPv4Address
+import datetime
 
 type ConnMyServer: MyServer when self.is_connected
 type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: Str): Exception(message)
 
-class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
+class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := {
     def is_connected: Bool  := False
-    def _last_message: Str? := None
+    # we can nest blocks to enforce that certain statements are executed in order
+    [
+        def ip_addr: Str = "my address is {ip_address}"
+        def date: Str = "The current date is {datetime.datetime.now()}"
+
+        def _welcome_message: Str = "Welcome! {date}, {ip_addr}"
+        def _last_message: Str? := welcome_message
+    ]
 
     def last_sent(self) -> Str ! ServerErr :=
         if self.last_message != None then self._last_message
@@ -341,7 +351,7 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := [
     def send(self: ConnMyServer, message: Str) := self._last_message := message
 
     def disconnect(self: ConnMyServer) := self.is_connected := False
-]
+}
 ```
 
 Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
