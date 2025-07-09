@@ -489,7 +489,7 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
 1. We may only call total functions
 2. Within the _call tree_ of a function, all arguments to nodes in the tree must be _strictly decreasing_ compared to the first parent of a node which is equal to said node.
 3. Potentially non-terminating loops, which includes `while`, are not allowed
-4. For may only be called over collections which implement `SizedIterator`, which is also implemented by the built-in:
+4. For loops may only be called over collections which implement `SizedIterator`, which is also implemented by the built-in:
    - `RangeToInclusive` :  `..=b`
    - `RangeTo` : `..b`
    - `Range` : `a..b`
@@ -517,7 +517,52 @@ fibbonaci(x - 1) fibbonaci(x - 2)
 Thus, this function has the property of a final function, and we may thus mark it as `total` if we so choose.
 The reason why we above state "compared to the first parent of a node which is equal to said node." is that we can have situations where we call other total functions which have recursive calls to self.
 This allows us to call other recursive functions without having to strictly decrease the value of the input, but still enfroce that calls to self (and more generally recursive calls to the same function) again are strictly decreasing.
-This strictly decreasing property is likely difficult to prove, so we will limit this to a set of primtives at first.
+
+We provide the `StrictlyDecreases` trait so users can define if something is strictly decreasing.
+The compiler enforces that this is defined for each argument.
+However, this is ripe for abuse, so instead, we require that each argument implements the trait `Measure`.
+
+```mamba
+trait Measure {
+    # returns a value which must be ordered, i.e. Int
+    def const measure(self) -> ConstOrdered
+}
+
+trait def StrictlyDecreases: Measure {
+    # if we implement strictly decreasing, we must implement measure
+    # decreases has a non-overridable method which uses this measure
+    def fin const decreases(self, other: Self) -> self.measure() < other.measure()
+}
+```
+
+This avoids abuse of `decreases`.
+Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
+It is for instance defined for the built-in primtive `Int`.
+
+```mamba
+def Measure for Int {
+    # measure for int just returns self
+    def const measure(self) -> ConstOrdered := self
+}
+
+# This is an example for how we would define it for string.
+# We also show that implementing the StrictlyDecreases trait just results in us only havign to implement measure.
+def StrictlyDecreases for Str {
+    def const measure(self) -> ConstOrdered := self.len() 
+}
+```
+
+Both of the above return an `Int`, which is part of the library and implements the `ConstOrdered` trait:
+
+```mamba
+def ConstOrdered for Int {
+    def const less_than(self, other: Int) := self < other
+}
+```
+
+At compilation time, the compiler then runs this trait and verifies that this property holds.
+_Note: this means that we need to evaluate code during compilation time!_
+Only constant functions can be evaluated at compile time, see the section on constant functions below.
 
 In general:
 
@@ -528,6 +573,32 @@ One does not imply the other, so you need both keywords if you want to say a fun
 
 The intended use-case is a bit more niche, likely mostly functions in the standard library, to show that they halt on all possible inputs.
 But we can imagine that library writers might find these useful if they wish to be more thorough.
+
+### Constant functions (🇻 0.5+)
+
+The above also highlights constant functions in the language, which is a necessary evil.
+Evil because it does clash a bit with the more "math focussed" aspect of the language.
+Constant functions are functions which can be evaluated at compile time.
+These functions have two constraints:
+
+- These may not call non-constant functions (including total and pure functions).
+- A constant function is also pure.
+- A constant function is not enforced to be total, but it is recommended that it is!
+- We may well place additional constraints on constant functions in future.
+
+The most important use-case of constant functions is for the total functions above.
+A constant function is defined as `def const my_function(<args>) := ...`.
+
+Because the function `less_than` returns objects which implement the `ConstOrdered` trait, the `less_than` must necessarily also be a constant function:
+
+```mamba
+trait ConstOrdered[T] {
+    def const less_than(self, other: T) -> Bool
+}
+```
+
+We differentiate this from the `Ordered` trait so that we don't enforce everyone must implement `less_than` as a constant function, which is rarely necessary.
+
 
 ### ⚠ Error handling
 

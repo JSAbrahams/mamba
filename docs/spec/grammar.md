@@ -74,7 +74,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
                          [ ":=" ( expr-or-stmt | code-block ) ]
 
-    fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
+    fun-def          ::= ( [ "const" ] | [ "total" ] [ "pure" ] ) id fun-args [ "->" type ] [ raise ] 
                          [ ":=" ( expr-or-stmt | code-block ) ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= id-maybe-type [ ":=" expression ]
