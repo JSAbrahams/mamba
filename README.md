@@ -120,7 +120,7 @@ Logically, the `[...]` and `{...}` notation leads us nicely to collections in Ma
 ### 🍡 Collections
 
 In Mamba, sets, lists, and maps are first class citizens.
-They are baked into the language, including and its grammar.
+They are baked into the language, including its grammar.
 
 Lists make use of square brackets:
 
@@ -270,7 +270,54 @@ Mamba also has type refinement features to assign additional properties to types
 Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the comlexit of the language.
 Arguably, it might detract from the elegance of the type system as well;
 A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
-However, were we to implement this, our proposal would be as follows.
+
+The general syntax is `type MyType [: OtherType] when <expression>`, where specifying `OtherType` is optional.
+The expression can be of any form (and size), but **must** evaluate to a boolean.
+
+```mamba
+type SpecialInt: Int when self >= 0 and self <= 100 or self mod 2 = 0
+```
+
+We also introduce some syntax sugar again, where we can use `{` `}` to write each element of the conjunction on its own line.
+_Note on performance: In terms of correctness, the order of the conjunctions obviously doesn't matter, but those who care about performance should know they are evaluated in order, so best to have simple ones first._
+
+```mamba
+type SpecialInt: Int when {
+    self >= 0
+    self <= 100 or self mod 2 = 0
+}
+```
+
+Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
+
+```mamba
+# we list the conditions below, which are a list of boolean expressions.
+# this first-class language feature desugars to an list of checks which are done at the call site.
+# we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
+type PosInt: Int when self >= 0
+
+def factorial(x: PosInt) -> PosInt := match x {
+    0 => 1
+    n => n * factorial(n - 1)
+}
+```
+
+At the call site, one could do
+
+```mamba
+def x := -42 # some value
+
+# currently this is a compilation error, x is type Int
+# we cannot yet evaluate refined types at compile time, only runtime
+# factorial(x) # error: 'x' is type Int, but signature is factorial(PosInt)
+
+if x isa PosInt then
+    print(factorial(x))
+else
+    print("x must be positive")
+```
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
+
 Lets expand our server example from above, and rewrite it slightly:
 
 ```mamba
@@ -324,35 +371,11 @@ print("last message sent before disconnect: \"{my_server.last_sent}\".")
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
-Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
+Type refinement allows, in the context of object oriented programming, thus allows us to also explicitly name the possible states of an object. 
+This means that we don't constantly have to check that certain conditions hold.
+We can simply ask whether a given object is a certain state by checking whether it is a certain type.
 
-```mamba
-# we list the conditions below, which are a list of boolean expressions.
-# this first-class language feature desugars to an list of checks which are done at the call site.
-# we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
-type PosInt: Int when {
-    # The '!' is part of the error handling notation of Mamba, see below
-    self >= 0 ! NegativeError("Must be greater than 0")
-}
-
-def factorial(x: PosInt) -> PosInt := match x {
-    0 => 1
-    n => n * factorial(n - 1)
-}
-```
-
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
-During execution, a check is done to verify that the variable does conform to the requirements of the refined type. 
-If it does not, an exception is raised.
-
-Type refinement allows us to do some additional things:
-
-- It allows us to further specify the domain or co-domain of a function
-- It allows us to explicitly name the possible states of an object. 
-  This means that we don't constantly have to check that certain conditions hold.
-  We can simply ask whether a given object is a certain state by checking whether it is a certain type.
-
-The goal of the compiler becomes:
+In general, the goal of the compiler will become:
 
 - Limit the amount of checks that need to be done
 - Detect when it becomes impossible to raise an exception, i.e. if it is impossible to break an invariant then we will never raise an exception.
@@ -441,6 +464,8 @@ match my_server.send(message) {
 }
 ```
 
+The `{...}` after `!` is also not necessary if we only match on one exception.
+
 So esentially, we add `!` as a way to shorthand match on exceptions.
 Currently, we allow both notations, but this comes at the cost of there not being "one way" to handle exceptions.
 This can lead to similar problems like with Scala where we have multiple ways to do the same thing.
@@ -497,6 +522,24 @@ def a: Result[Int, MyErr] := function_may_throw_err() ! {
 a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised.
 
 print("a has value {a}.")
+```
+
+Finally, we also introduce the `recover` keyword.
+The intention is that instead of letting someone else up the stack perform cleanup, we can couple some of the cleanup at this site.
+For instance, de-allocation resources which we no longer need.
+This is similar to `drop` in Rust, though this applies only to errors/exceptions (as we generally speaking rely on garbage collection).
+This is also similar to `finally` in Python, though we don't always run this block, only when we encounter an error.
+
+The general syntax is `<expression-or-statement> recover <expression-or-statement>`
+So:
+
+```mamba
+def a: Result[Int, MyErr] := function_may_throw_err() ! {
+    err: MyOtherErr => print("We have a problem: {err.message}.")
+} recover [
+    print("cleaning up resource")
+    some_cleanup_function()
+]
 ```
 
 ## 💻 The Command Line Interface

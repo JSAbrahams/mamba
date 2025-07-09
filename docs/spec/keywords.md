@@ -59,10 +59,11 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`if`    | Denote start of if expression or statement
-`then`  | Denote start of then branch of if
-`else`  | Denote start of else branch of if
-`match` | Denote start of a match expression or statement
+`if`      | Denote start of if expression or statement
+`then`    | Denote start of then branch of if
+`else`    | Denote start of else branch of if
+`match`   | Denote start of a match expression or statement
+`recover` | Recover from error, for (partial) local error recovery
 
 ## Control Flow Statements
 

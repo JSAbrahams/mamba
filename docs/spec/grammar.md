@@ -15,8 +15,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
     type-def         ::= "type" type [ ":" type ] ( code-block | "when" [ conditions ] )
-    conditions       ::= "{" condition { newline condition } "}" | condition
-    condition        ::= expression [ "!" expression ]
+    conditions       ::= "{" expression { newline expression } "}" | expression
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
     class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( := code-block )
@@ -53,7 +52,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "_"
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" ] [ newline match-cases ]
+    call             ::= expression [ ( "." | "?." ) ] id tuple 
+                         [ "!" ( match-case | newline "{" match-cases "}" ) [ recover ( expr-or-stmt | "{" expr-or-statement { newline expr-or-statement } "}" ) ] ]
     raise            ::= "!" id { "," id }
     
     collection       ::= tuple | set | list | map
