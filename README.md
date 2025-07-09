@@ -175,7 +175,7 @@ We don't distinguish between a mapping and a function, because a function is (ge
 We also argue that the above mapping is a representation of some functino with a very small domain (only three items).
 Therefore, we index indexable collections (mappings and list) using the `collection(<expression>)` notation.
 
-### 📋 Types, Classes, and Mutability
+### 📋 Mutability
 
 We introduce first two concepts here, mutability and classes.
 Classes are similar to classes other object oriented language like Python, Kotlin and to an extent Rust.
@@ -265,6 +265,43 @@ class MyServer(IP_ADDRESS: IPv4Address) := {
     ]
 }
 ```
+
+Last, `type`s can also serve as interfaces Mamba.
+These are similar to interfaces in Java and Kotlin, and similar to traits in Rust.
+In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
+For instance, consider example with iterators (which briefly showcases language generics):
+
+```mamba
+type Iterator[T] := {
+    def next(self) -> T? # syntax sugar for Option[T]
+    ## Has next can be overriden, but has default implementation already
+    def has_next(self) -> bool := self.next() != None
+}
+
+class RangeIter(def start: Int, def end: Int)
+def Iterator[Int] for RangeIter := {
+    def current: Int := start
+
+    def next(self) -> Int? := 
+        if self.current >= self.stop then None
+        else [
+            def value := self.current
+            self.current := self.current + 1
+            value
+        ]
+}
+```
+
+⚠️ `type` thus denotes both traits and type refinement in the language when paired with the `when` keyword.
+The intention is that one would not need to mix and match these, but instead:
+
+- Prefer using a noun when defining a refinement, as this describes some (set of) properties of class and its instances.
+  The syntax here is `type <id> when <expression>` or `type <id> when { <one-or-more-expressions> }`
+- Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
+  The syntax here is `type <id> := { <one-or-more-definitions }` and we use it as `def <type> for <class>`
+
+Lastly, like Rust, types (traits) can also be used as generics.
+This would allow, for instance, for defining say a `Hash` trait and enforcing for a hashmap that keys implement said type.
 
 ### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
 

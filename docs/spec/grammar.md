@@ -14,11 +14,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     file             ::= { expr-or-stmt }
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
-    type-def         ::= "type" type [ ":" type ] ( code-block | "when" [ conditions ] )
+    type-def         ::= "type" type [ ":" type ] ( ":=" "{" code-block "}" | "when" [ conditions ] ) |
     conditions       ::= "{" expression { newline expression } "}" | expression
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
-    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( := code-block )
+    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( ":=" code-block )
     generics         ::= "[" id { "," id } "]"
     
     id               ::= { character }
