@@ -175,7 +175,7 @@ We don't distinguish between a mapping and a function, because a function is (ge
 We also argue that the above mapping is a representation of some functino with a very small domain (only three items).
 Therefore, we index indexable collections (mappings and list) using the `collection(<expression>)` notation.
 
-### 📋 Mutability
+### ✏️🖊️ Mutability
 
 We introduce first two concepts here, mutability and classes.
 Classes are similar to classes other object oriented language like Python, Kotlin and to an extent Rust.
@@ -377,10 +377,10 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := {
     def is_connected: Bool  := False
     # we can nest blocks to enforce that certain statements are executed in order
     [
-        def ip_addr: Str = "my address is {ip_address}"
-        def date: Str = "The current date is {datetime.datetime.now()}"
+        def ip_addr: Str := "my address is {ip_address}"
+        def date: Str := "The current date is {datetime.datetime.now()}"
 
-        def _welcome_message: Str = "Welcome! {date}, {ip_addr}"
+        def _welcome_message: Str := "Welcome! {date}, {ip_addr}"
         def _last_message: Str? := welcome_message
     ]
 
@@ -474,6 +474,60 @@ def pure sin(x: Int) -> Int := [
     ans
 ]
 ```
+
+### 🤚 Total functions (🇻 0.5+)
+
+A function may also be total, which means:
+
+1. It is defined for possible values of its domain
+2. It will halt on all such inputs
+
+The second property is interesting, because that would imply that the compiler can prove that an arbitrary function can halt.
+To build such a compiler, we would need to solve the halting problem (which is impossible).
+Instead, we place heavy restrictions on total functions, enforcing that they are weakly normalizing:
+
+1. We may only call total functions
+2. Within the _call tree_ of a function, all arguments to nodes in the tree must be _strictly decreasing_ compared to the first parent of a node which is equal to said node.
+3. Potentially non-terminating loops, which includes `while`, are not allowed
+4. For may only be called over collections which implement `SizedIterator`, which is also implemented by the built-in:
+   - `RangeToInclusive` :  `..=b`
+   - `RangeTo` : `..b`
+   - `Range` : `a..b`
+   - `RangeInclusive` : `a..=b`
+
+Take for instance this naive implementation of the Fibbonaci sequence:
+
+```mamba
+## fibbonaci, implemented using recursion and not dynamic programming
+def total pure fibbonaci(x: PosInt) -> Int := match x {
+    0 => 0
+    1 => 1
+    n => fibbonaci(n - 1) + fibbonaci(n - 2)
+}
+```
+
+This would, with some substitution magic, give the following _call tree_:
+
+```
+            fibbonaci(x)
+             /      \
+fibbonaci(x - 1) fibbonaci(x - 2)
+```
+
+Thus, this function has the property of a final function, and we may thus mark it as `total` if we so choose.
+The reason why we above state "compared to the first parent of a node which is equal to said node." is that we can have situations where we call other total functions which have recursive calls to self.
+This allows us to call other recursive functions without having to strictly decrease the value of the input, but still enfroce that calls to self (and more generally recursive calls to the same function) again are strictly decreasing.
+This strictly decreasing property is likely difficult to prove, so we will limit this to a set of primtives at first.
+
+In general:
+
+- If a function is `pure`, it has no side effects.
+- If a function is `total`, it will terminate for all possible inputs.
+
+One does not imply the other, so you need both keywords if you want to say a function is total and pure.
+
+The intended use-case is a bit more niche, likely mostly functions in the standard library, to show that they halt on all possible inputs.
+But we can imagine that library writers might find these useful if they wish to be more thorough.
 
 ### ⚠ Error handling
 
