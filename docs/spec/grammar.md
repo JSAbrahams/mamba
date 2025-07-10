@@ -14,12 +14,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     file             ::= { expr-or-stmt }
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
-    type-def         ::= "type" type ":" type ( ":=" "{" code-block "}" | "when" [ conditions ] )
-    trait-def        ::= "trait" type ( ":" type { "," type } ) ":=" ( expression-or-statement | "{" code-block "}" )
-    conditions       ::= "{" expression { newline expression } "}" | expression
+    type-def         ::= "type" type ":" type ( ":=" "{" code-set "}" | "when" [ code-set ] )
+    trait-def        ::= "trait" type ( ":" type { "," type } ) [ ":=" code-set ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
-    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( ":=" code-block )
+    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] [ ":=" code-set ]
     generics         ::= "[" id { "," id } "]"
     
     id               ::= { character }
@@ -28,16 +27,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     type             ::= ( id [ generics ] | type-tuple ) [ "->" type ]
     type-tuple       ::= "(" [ type { "," type } ] ")"
     
-    expr-or-stmt     ::= ( statement | expression ) [ comment ]
+    expr-or-stmt     ::= ( statement | expression )
     statement        ::= control-flow-stmt
                       | definition
                       | reassignment
                       | type-def
-                      | "retry"
                       | "pass"
                       | class
                       | type-def
-                      | comment
                       | import
     expression       ::= "(" expression ")"
                       | expression "?or" expression
@@ -52,35 +49,27 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | call
                       | "_"
                      
-    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple 
-                         [ "!" ( match-case | newline "{" match-cases "}" ) [ recover ( expr-or-stmt | "{" expr-or-statement { newline expr-or-statement } "}" ) ] ]
+    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) code-block
+    call             ::= code-block [ ( "." | "?." ) ] id tuple [ "!" match-cases [ recover code-block ] ]
     raise            ::= "!" id { "," id }
     
     collection       ::= tuple | set | list | map
-    tuple            ::= "(" { expression } ")"
-    set              ::= "{" { expression } "}" | set-builder
+    tuple            ::= "(" code-block { "," code-block } ")"
+    set              ::= "{" code-block { "," code-block } "}" | set-builder
     set-builder      ::= "{" expression "|" expression { "," expression } "}"
-    list             ::= "[" { expression } "]" | list-builder
+    list             ::= "[" code-block { "," code-block } "]" | list-builder
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
     
-    slice            ::= expression ( "::" | "::=" ) expression
-    range            ::= expression ( ".." | "..=" ) expression
+    slice            ::= code-block ( "::" | "::=" ) code-block
+    range            ::= code-block ( ".." | "..=" ) code-block
     
-    definition       ::= "def" ( variable-def | fun-def | operator-def ) | special-def
-    special-def      ::= type-def | trait-def | class-def
+    definition       ::= "def" ( variable-def | fun-def ) | type-def | trait-def | class-def
 
-    variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
-    operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
-                         [ ":=" ( expr-or-stmt | code-block ) ]
-
-    fun-def          ::= ( [ "const" ] | [ "total" ] [ "pure" ] ) id fun-args [ "->" type ] [ raise ] 
-                         [ ":=" ( expr-or-stmt | code-block ) ]
+    variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" code-block ] [ forward ]
+    fun-def          ::= ( [ "const" ] | [ "total" ] [ "pure" ] ) ( id | overridable-op ) fun-args [ "->" type ] [ raise ] [ ":=" code-block ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    fun-arg          ::= id-maybe-type [ ":=" expression ]
-    forward          ::= "forward" id { "," id }
-    
-    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
+    fun-arg          ::= id-maybe-type [ ":=" code-block ]
+    anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" code-block
     
     operation        ::= relation [ ( equality | instance-eq | boolean-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
@@ -106,24 +95,24 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     e-notation       ::= ( integer | real ) "E" [ "-" ] integer
     string           ::= """ { character } """
     
-    code-block       ::= "[" expr-or-statement "]" 
-                      | expr-or-stmt
-                      | "[" newline expr-or-statement { newline expr-or-statement } "]"
-    one-or-more-expr ::= expression { "," expression }
+    code-block       ::= expr-or-stmt
+                      | "[" expr-or-stmt "]" 
+                      | "[" newline expr-or-stmt { newline expr-or-stmt } "]"
+    code-set         ::= expr-or-stmt
+                      | "{" expr-or-stmt "}"
+                      | "{" newline expr-or-stmt { newline expr-or-stmt } "}"
     
     control-flow-expr::= if | match
-    if               ::= "if" one-or-more-expr "then" code-block [ "else" code-block ]
-    match            ::= "match" one-or-more-expr "with" newline match-cases
-    match-cases      ::= match-case | "{" match-case { newline match-case } "}"
-    match-case       ::= expression "=>" expr-or-stmt
+    if               ::= "if" code-block "then" code-block [ "else" code-block ]
+    match            ::= "match" code-block "with" match-cases
+    match-cases      ::= "{" match-case "}" | "{" newline match-case { newline match-case } "}"
+    match-case       ::= expression "=>" code-block
     
     control-flow-stmt::= while | foreach | "break" | "continue"
-    while            ::= "while" one-or-more-expr "do" code-block
-    foreach          ::= "for" one-or-more-expr "in" expression "do" code-block
+    while            ::= "while" code-block "do" code-block
+    foreach          ::= "for" code-block "in" code-block "do" code-block
     
-    newline          ::= newline-char
-    newline-char     ::= \n | \r\n
-    comment          ::= "#" { character } newline
+    newline          ::= <platform dependent>
 ```
 
 ## Notes

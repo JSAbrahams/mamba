@@ -177,9 +177,7 @@ Therefore, we index indexable collections (mappings and list) using the `collect
 
 ### ✏️🖊️ Mutability
 
-We introduce first two concepts here, mutability and classes.
-Classes are similar to classes other object oriented language like Python, Kotlin and to an extent Rust.
-Mutability gives us the power to modify an object in the language after it is created (we consider everything to be an object, though we don't consider Mamba to be strictly object-oriented).
+Mutability gives us the power to modify an instance in the language after it is created.
 So for instance
 
 ```
@@ -197,48 +195,55 @@ This same philosophy will also influence later how we deal with equality checks 
 
 ### 📋 Types, Properties, and Classes
 
-Continuing on classes, in Mamba, like Python and Rust, each method in a class has an explicit `self` argument, which gives access to the state of this class instance.
+Next, we introduce the concept of a class.
+A class is essentially a blueprint for the behaviour of instances of that class.
+
+In Mamba, like Python and Rust, each method in a class has an explicit `self` argument, which gives access to the state of this instance.
 However, we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
 If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
 We can do the same for any field.
-We showcase this using a simple dummy `Server` object.
+
+We showcase this using a simple dummy `Matrix` object.
+You will also see some "pure" functions, these will be explained later.
 
 ```mamba
-from ipaddress import IPv4Address
+class MatrixErr(def message: Str): Exception(message)
 
-class ServerError(def message: Str): Exception(message)
+class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
+    # Accessor for matrix contents
+    def contents(fin self) -> List[Int] := [a, b, c, d]
 
-def fin always_the_same_message := "Connected!"
+    # Trace of the matrix (a + d)
+    def pure trace(fin self) -> Int := a + d
 
-class MyServer(def ip_address: IPv4Address) := {
-    def is_connected: Bool  := False
-    # We can use constructor arguments in the body of the class
-    def _last_message: Str  := "my ip address when I was created was {ip_address}"
+    # Determinant recomputation (pure function)
+    def pure determinant(fin self) -> Int := a * d - b * c
 
-    def last_sent(fin self) -> Str ! ServerError := self._last_message
-
-    def connect(self) := [
-        self.is_connected := True
-        print(always_the_same_message)
+    def scale(self, factor: Int) := [
+        self.a := self.a * factor
+        self.b := self.b * factor
+        self.c := self.c * factor
+        self.d := self.d * factor
     ]
 
-    def send(self, message: Str) ! ServerError := 
-        if self.is_connected then self._last_message := message
-        else ! ServerError("Not connected!")
-
-    def disconnect(self) := self.is_connected := False
+    def reset(self) := [
+        self.a := 1
+        self.b := 0
+        self.c := 0
+        self.d := 1
+    ]
 }
 ```
 
-Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
+Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable so we can change properties of `self`.
 In general, the notation of a class is:
 
 `class MyClass(<one-or-more-constructor-args>) := [<one-or-more-expressions>]`
 
-Though the body is optional.
+The body of the class is optional, i.e. one can create "just" a data class.
 As for constructor arguments:
 
-- If they are prefixed with `def`, then they are immediately accessible (e.g. `my_server.ip_address`).
+- If they are prefixed with `def`, then they are immediately accessible (e.g. `matrix.a`).
 - If they are **not** prefixed with `def`, then they are only constructor arguments.
   This means that they are a class-constant, a constant which is defined in the context of a class.
   This means that they may be used in any part of the class (body, functions, methods).
@@ -247,27 +252,29 @@ As for constructor arguments:
 We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
-from ipaddress import IPv4Address
+class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := {
+    # ORIGIN_X and ORIGIN_Y are constructor constants — they cannot be changed
+    # current x and y are mutable fields initialized from the constants
+    def x: Int := ORIGIN_X
+    def y: Int := ORIGIN_Y
 
-class MyServer(IP_ADDRESS: IPv4Address) := {
-    # The above IP_ADDRESS is a constant defined within the context of this class
-    # The intial value of ip_address is the value we passed to the constructor, but it may change
-    def ip_address: IPv4Address := IP_ADDRESS
-
-    def change_ip(self, new_address: IPv4Address) := [
-        print("When we first created this server, the address was {IP_ADDRESS}")
-        print("In the meantime, our address is {self.ip_address}")
-        print("And now we will change our address to {new_address}")
-
-        self.ip_address := new_address
-        # The following would result in a compilation error, we cannot assign to constants! 
-        # IP_ADDRESS := new_address
+    def move(self, dx: Int, dy: Int) := [
+        self.x := self.x + dx
+        self.y := self.y + dy
     ]
+
+    def reset(self) := [
+        self.x := ORIGIN_X
+        self.y := ORIGIN_Y
+    ]
+
+    def info(fin self) -> Str := 
+        "Currently at ({self.x}, {self.y}), originally from ({ORIGIN_X}, {ORIGIN_Y})"
 }
 ```
 
-Last, we have `trait`s can also serve as interfaces Mamba.
-These are similar to interfaces in Java and Kotlin, and similar to traits in Rust.
+Last, we have `trait`s, which in Mamba are more fine-grained building blocks to describe the behaviour of instances.
+These are similar to interfaces in Java and Kotlin, and almost identical to traits in Rust.
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
 For instance, consider example with iterators (which briefly showcases language generics):
 
@@ -362,37 +369,28 @@ else
 ```
 In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
 
-Lets expand our server example from above, and rewrite it slightly:
+Lets expand our matrix example from above, and rewrite it slightly:
 
 ```mamba
-from ipaddress import IPv4Address
-import datetime
+type InvertibleMatrix: Matrix when self.determinant() != 0.0
 
-type ConnMyServer: MyServer when self.is_connected
-type DisConnMyServer: MyServer when not self.is_connected
+class MatrixErr(def message: Str): Exception(message)
 
-class ServerErr(def message: Str): Exception(message)
+## Matrix, which now takes floats as argument
+class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := {
+    def _last_op: Str? := None
 
-class MyServer(self: DisConnMyServer, def ip_address: IPv4Address) := {
-    def is_connected: Bool  := False
-    # we can nest blocks to enforce that certain statements are executed in order
-    [
-        def ip_addr: Str := "my address is {ip_address}"
-        def date: Str := "The current date is {datetime.datetime.now()}"
+    def determinant(fin self) -> Float := self.a * self.d - self.b * self.c
 
-        def _welcome_message: Str := "Welcome! {date}, {ip_addr}"
-        def _last_message: Str? := welcome_message
-    ]
+    def inverse(self: InvertibleMatrix) -> Matrix :=
+        def det := self.determinant()
+        self._last_op := "inverse"
 
-    def last_sent(self) -> Str ! ServerErr :=
-        if self.last_message != None then self._last_message
-        else ! ServerError("No last message!")
+        Matrix(self.d / det, -self.b / det, -self.c / det, self.a / det)
 
-    def connect(self: DisConnMyServer) := self.is_connected := True
-
-    def send(self: ConnMyServer, message: Str) := self._last_message := message
-
-    def disconnect(self: ConnMyServer) := self.is_connected := False
+    def last_op(fin self) -> Str ! MatrixErr :=
+        if self._last_op != None then self._last_op
+        else ! MatrixErr("No operation performed")
 }
 ```
 
@@ -404,23 +402,17 @@ Each type effectively denotes another state that `self` can be in.
 For each type, we use `when` to show that it is a type refinement, which certain conditions.
 
 ```mamba
-import ipaddress
-from server import MyServer
+def m := Matrix(1.0, 2.0, 3.0, 4.0)
 
-def fin some_ip := ipaddress.ip_address("151.101.193.140")
-def my_server   := MyServer(some_ip)
+if m isa InvertibleMatrix then
+    def m_inv := m.inverse()
+    print("Original matrix: {m}")
+    print("Inverse: {m_inv}")
+else
+    print("Matrix is singular (not invertible).")
 
-# The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
-http_server.connect()
-
-# We check the state
-if my_server isa ConnMyServer then [
-    # http_server is a Connected Server if the above is true
-    my_server.send("Hello World!")
-]
-
-print("last message sent before disconnect: \"{my_server.last_sent}\".")
-if my_server isa ConnectedMyServer then my_server.disconnect()
+def last_op = m.last_op()!
+print("Last operation was: {last_op}")
 ```
 
 Type refinement allows, in the context of object oriented programming, thus allows us to also explicitly name the possible states of an object. 
@@ -433,7 +425,8 @@ In general, the goal of the compiler will become:
 - Detect when it becomes impossible to raise an exception, i.e. if it is impossible to break an invariant then we will never raise an exception.
 
 Overall, the goal of type refinement it to allow us to express in greater detail the expected behaviour of functions in a more concise manner.
-It is similar to "design by contract", though it should hopefully also create a clearer mental model of domains and codomains of functions.
+This is somewhat similar to "design by contract", though baked more into the language itself.
+This should help us to express more clearly domains and codomains of functions.
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 
@@ -445,8 +438,11 @@ For use to be able to compare two instances, the instance must implement the `Eq
 By default, functions are not pure.
 When we mark a function `pure`, restrictions are enforced by the language:
 
-- Read non-final properties of `self` (if this is a method).
-  This means that its output depends only on the direct input, and input to the constructor of the class.
+- `self` **must** be final (if this is a method).
+  This means that it cannot mutate the values of self.
+  It should be noted that if we mutate self and call a method again, then the output might be different.
+  But, this makes sense!
+  Self is just another argument to the function, and by mutating the instance we call the same function again but with a different instance, conceptually speaking.
 - Call impure functions.
 
 Some additional rules hold for calling and assigning to passed arguments to uphold the pure property (meaning, no side-effects):
@@ -506,11 +502,13 @@ def total pure fibbonaci(x: PosInt) -> Int := match x {
 }
 ```
 
-This would, with some substitution magic, give the following _call tree_:
+This would, with some substitution magic, give the following _call tree_ (showing only the important parts):
 
 ```
             fibbonaci(x)
-             /      \
+                |
+                + # addition operator 
+               / \
 fibbonaci(x - 1) fibbonaci(x - 2)
 ```
 
@@ -535,7 +533,7 @@ trait def StrictlyDecreases: Measure {
 }
 ```
 
-This avoids abuse of `decreases`.
+This avoids abuse of `decreases` (i.e. one could write `def fin const decreases(self, other: Self) := True`).
 Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
 It is for instance defined for the built-in primtive `Int`.
 
@@ -560,7 +558,7 @@ def ConstOrdered for Int {
 }
 ```
 
-At compilation time, the compiler then runs this trait and verifies that this property holds.
+At compilation time, the compiler then evaluates `measure` and `less_than` and verifies that these properties holds.
 _Note: this means that we need to evaluate code during compilation time!_
 Only constant functions can be evaluated at compile time, see the section on constant functions below.
 
@@ -577,16 +575,24 @@ But we can imagine that library writers might find these useful if they wish to 
 ### Constant functions (🇻 0.5+)
 
 The above also highlights constant functions in the language, which is a necessary evil.
-Evil because it does clash a bit with the more "math focussed" aspect of the language.
+Evil because it does clash a bit with the more "math-focused" aspect of the language.
 Constant functions are functions which can be evaluated at compile time.
 These functions have two constraints:
 
 - These may not call non-constant functions (including total and pure functions).
 - A constant function is also pure.
+
+Additionally:
+
 - A constant function is not enforced to be total, but it is recommended that it is!
+  This is because for the compiler to prove a function is constant, it must compile the application.
+  But since we are already compiling, that is not an option (unless we have a meta-compiler, but that would require a meta-meta compiler, which would require...).
 - We may well place additional constraints on constant functions in future.
 
-The most important use-case of constant functions is for the total functions above.
+**Essentially, the main reason for Mamba having constant functions is to serve as the logical bedrock for provable total functions**.
+One other benefit is that compiled functions are evaluated at compile time and not runtime, potentially offering significant speed benefits.
+This is useful when one wants to document how one derived a constant in the form of code, without re-calculating it each time at runtime.
+
 A constant function is defined as `def const my_function(<args>) := ...`.
 
 Because the function `less_than` returns objects which implement the `ConstOrdered` trait, the `less_than` must necessarily also be a constant function:
@@ -597,8 +603,7 @@ trait ConstOrdered[T] {
 }
 ```
 
-We differentiate this from the `Ordered` trait so that we don't enforce everyone must implement `less_than` as a constant function, which is rarely necessary.
-
+In this case, we differentiate this from the `Ordered` trait so that we don't enforce everyone must implement `less_than` as a constant function, which is rarely necessary.
 
 ### ⚠ Error handling
 
@@ -609,40 +614,39 @@ Again, this represents a trade-off between elegancy of the type system and simpl
 Arguably it may be easier to just use Monads, similar to how Rust's solution.
 But, we are operating in a different domain, so that may be overly verbose for our purposes.
 
-Lets continue with our Server example.
-We modify the above script such that we don't check whether the server is connected or not.
-In that case, we must handle the case where `my_server` throws a `ServerErr`:
+Lets continue with our matrix example.
+Before, we simply discarded the error by appending `!` to `last_op`.
+Instead, we now handle the error on-site:
 
 ```mamba
-import ipaddress
-from server import MyServer
+def m := Matrix(1.0, 2.0, 3.0, 4.0)
 
-def fin some_ip := ipaddress.ip_address("151.101.193.140")
-def my_server   := MyServer(some_ip)
+if m isa InvertibleMatrix then
+    def inv := m.inverse()
+else
+    print("Matrix is singular (not invertible).")
 
-def message := "Hello World!"
-my_server.send(message) ! {
-    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
+def last_op = m.last_op() ! {
+    err: MatrixErr(message) => [
+        print("Error when getting last op: \"{message}\"")
+        "N/A" # optionally we can also return, but here we assign default value
+    ]
 }
 
-if my_server isa ConnectedMyServer then my_server.disconnect()
+print("Last operation was: {last_op}")
 ```
 
-In the above script, we will always print the error since we forgot to actually connect to the server.
+In the above script, we will always print an error (gracefully) and assign some other value to `last_op`.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
-This means that we don't need a `finally` block:
-We aim to deal with the error where it happens and then continue executing the remaining code.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-`my_server.send(message) ! { ... }` is syntax sugar for
+`m.last_op() ! { ... }` is syntax sugar for
 
 ```mamba
-match my_server.send(message) {
-    err: Exception(ServerErr) => print("Error while sending message: \"{message}\": {err}")
+match m.last_op() {
+    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
 }
 ```
-
-The `{...}` after `!` is also not necessary if we only match on one exception.
 
 So esentially, we add `!` as a way to shorthand match on exceptions.
 Currently, we allow both notations, but this comes at the cost of there not being "one way" to handle exceptions.
