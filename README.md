@@ -484,12 +484,21 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
 
 1. We may only call total functions
 2. Within the _call tree_ of a function, all arguments to nodes in the tree must be _strictly decreasing_ compared to the first parent of a node which is equal to said node.
+
+   a. If in the _call tree_ we call a different total function, the argument does not have to be strictly decreasing.
+   b. However, it should still be globally decreasing, meaning that we amend the above:
+      _"compared to the first parent of the node which is equal to said node, summing over all intermediate nodes"
+      This does mean that we must be able to perform basic arithmetic on the types of the function for this (logic) system to work!
+      **In some sense, basic (integer) arithmetic forms the logical bedrock of our system**
+
 3. Potentially non-terminating loops, which includes `while`, are not allowed
 4. For loops may only be called over collections which implement `SizedIterator`, which is also implemented by the built-in:
    - `RangeToInclusive` :  `..=b`
    - `RangeTo` : `..b`
    - `Range` : `a..b`
    - `RangeInclusive` : `a..=b`
+
+Put another way, we sidestep the issue by ensuring that our system is still sound, but incomplete by acknoweldging that we cannot prove termination for arbitary functions!
 
 Take for instance this naive implementation of the Fibbonaci sequence:
 
@@ -518,18 +527,18 @@ This allows us to call other recursive functions without having to strictly decr
 
 We provide the `StrictlyDecreases` trait so users can define if something is strictly decreasing.
 The compiler enforces that this is defined for each argument.
-However, this is ripe for abuse, so instead, we require that each argument implements the trait `Measure`.
+However, this is ripe for abuse, so instead, we require that each argument implements the trait `Measurable`.
 
 ```mamba
-trait Measure {
-    # returns a value which must be ordered, i.e. Int
-    def const measure(self) -> ConstOrdered
-}
+# if we implement strictly decreasing, we must implement measure
+# These are non-overridable method which uses this measure
+trait def StrictlyDecreases: Measurable {
+    def fin const decreases(self, other: Self) -> Bool := self.measure() < other.measure()
+    def fin const =(self, other: Self) -> Bool := self.measure() = other.measure()
+    def fin const difference(self, other: Self) -> Measurable := self.measure() - other.measure()
 
-trait def StrictlyDecreases: Measure {
-    # if we implement strictly decreasing, we must implement measure
-    # decreases has a non-overridable method which uses this measure
-    def fin const decreases(self, other: Self) -> self.measure() < other.measure()
+    # this we must implement
+    def const measure(self) -> Measurable
 }
 ```
 
@@ -538,27 +547,40 @@ Instead, ordering is reduced to numeric ordering, which is verifiable and depend
 It is for instance defined for the built-in primtive `Int`.
 
 ```mamba
-def Measure for Int {
-    # measure for int just returns self
-    def const measure(self) -> ConstOrdered := self
+# Measure for int just returns self
+def StrictlyDecreases for Int {
+    def const measure(self) -> Measurable := self
 }
 
-# This is an example for how we would define it for string.
-# We also show that implementing the StrictlyDecreases trait just results in us only havign to implement measure.
+# For string, we as an example use the length of the string (Which is also an integer)
 def StrictlyDecreases for Str {
-    def const measure(self) -> ConstOrdered := self.len() 
+    def const measure(self) -> Measurable := self.len() 
 }
 ```
 
-Both of the above return an `Int`, which is part of the library and implements the `ConstOrdered` trait:
+Both of the above return an `Int`, which is part of the library and implements the `Measured` trait:
 
 ```mamba
-def ConstOrdered for Int {
-    def const less_than(self, other: Int) := self < other
+# Trait measurable lives at the heart of this system, and by extension Mamba
+trait Measurable: ConstAdd, ConstUnarySub, ConstEq {
+    def const less_than(self, other: Self) -> Bool
+    def const unary_sub(self, other: Self) -> Self
+    def const add(self, other: Self) -> Self
+    def const equal(self, other: Self) -> Bool
+}
+
+# Built in to the standard library
+# The idea is that this allows performing arithmetic not just at runtime but at compile-time.
+def Measurable for Int {
+    def const less_than(self, other: Int) -> Bool := self < other
+    def const unary_sub(self) -> Int              := -other
+    def const add(self, other: Int) -> Int  := self + other
+    def const equal(self, other: Int) -> Bool := self = other
 }
 ```
 
 At compilation time, the compiler then evaluates `measure` and `less_than` and verifies that these properties holds.
+We require that the measured item implements basic arithmetic so that we can add and subtract as we traverse those trees where we interweave recursive calls.
 _Note: this means that we need to evaluate code during compilation time!_
 Only constant functions can be evaluated at compile time, see the section on constant functions below.
 
