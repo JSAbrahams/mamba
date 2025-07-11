@@ -31,14 +31,7 @@ impl FromStr for AST {
     type Err = Box<ParseErr>;
 
     fn from_str(input: &str) -> ParseResult<AST> {
-        let tokens: Vec<Lex> = tokenize(input)
-            .map(|tokens| {
-                tokens
-                    .into_iter()
-                    .filter(|t| !matches!(t.token, Token::Comment(_)))
-                    .collect()
-            })
-            .map_err(ParseErr::from)?;
+        let tokens: Vec<Lex> = tokenize(input).map_err(ParseErr::from)?;
 
         let mut iterator = LexIterator::new(tokens.iter().peekable());
         let statements = block::parse_statements(&mut iterator)?;

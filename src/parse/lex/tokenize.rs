@@ -81,12 +81,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             _ => create(state, Token::Eq),
         },
         '#' => {
-            let mut comment = String::new();
-            while it.peek().is_some() && *it.peek().unwrap() != '\n' && *it.peek().unwrap() != '\r'
-            {
-                comment.push(it.next().unwrap());
+            while it.peek().is_some() && *it.peek().unwrap() != '\n' {
+                it.next().unwrap();
             }
-            create(state, Token::Comment(comment))
+            Ok(vec![])
         }
         '!' => match it.peek() {
             Some('=') => next_and_create(it, state, Token::Neq),

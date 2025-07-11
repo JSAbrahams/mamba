@@ -127,7 +127,6 @@ pub enum Token {
     Question,
 
     Pass,
-    Comment(String),
 
     Eof,
 }
@@ -253,7 +252,6 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
-            Token::Comment(comment) => write!(f, "#{comment}"),
 
             Token::Eof => write!(f, ""),
         }
