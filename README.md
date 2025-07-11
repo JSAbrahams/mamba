@@ -33,18 +33,18 @@ Mamba is similar to Python, but with a few key features:
 - Explicit error handling
 - A distinction between mutability and immutability
 - Pure functions, or, functions without side effects
+- Meta functions, for reasoning about the language itself
 
 See [docs](/docs/) for a more extensive overview of the language philosophy.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
 files.
-Mamba code should therefore be interoperable with Python code.
-Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
-This interoparability is still a work in progress.
+There therefore exists some interopability with Python code.
+Currently we compile down to Python, in future we may compile down to Python bytecode, for instance. 
 
 The below README:
 
-- Gives a quickstart for developer
+- Gives a quickstart for developers
 - Give a short overview of most of the syntax and language features in quick succession, as well as the occasional reasoning behind them.
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
@@ -132,7 +132,7 @@ def empty_list = []
 # lists of tuples, builder syntax
 def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
-# Indexing is done using curly brackets!
+# Indexing is done using round brackets!
 print(a(0)) # prints '0'
 ```
 
@@ -164,24 +164,22 @@ So:
 def numbers := [32, 504, 59]
 ```
 
-Is just shorthand for
+Is essentially just shorthand for
 
 ```mamba
 def numbers := { 0 => 32, 1 => 504, 2 => 59 }
 ```
 
-Unlike C-style languages (which is nearly the whole world at this point), we index collections using `collection(<expression>)`.
-The main reason for doing so is that we see collections which can be indexed as mappings.
-Consider the above argument that a list is just another type of mapping.
+Where we iterate over the list in the order of the keys.
 
-We don't distinguish between a mapping and a function, because a function is (generally speaking) also a type of mapping.
-We also argue that the above mapping is a representation of some functino with a very small domain (only three items).
+Unlike C-style languages (which is nearly the whole world at this point), we index collections using `collection(<expression>)`.
+We namely don't distinguish between a mapping and a function, because a function is (generally speaking) also a type of mapping.
+The above mapping, for instance, is a representation of some functino with a very small domain (only three items).
 Therefore, we index indexable collections (mappings and list) using the `collection(<expression>)` notation.
 
 ### ✏️🖊️ Mutability
 
-Mutability gives us the power to modify an instance in the language after it is created.
-So for instance
+Mutability gives us the power to modify an instance in the language after it is created:
 
 ```
 def a := 10     # we may modify a
@@ -194,17 +192,17 @@ a := a + 2   # allowed
 We opt to make mutability the default (unlike say in Rust, where you have to use the `mut` keyword to make something mutable).
 The reason for doing so is domain;
 Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
-This same philosophy will also influence later how we deal with equality checks between objects in the language and how we copy items in the language, where we favour a pure functional apporach similar to Haskell.
 
 ### 📋 Types, Properties, and Classes
 
 Next, we introduce the concept of a class.
-A class is essentially a blueprint for the behaviour of instances of that class.
+A class is essentially a blueprint for the behaviour of an instance. 
 
-In Mamba, like Python and Rust, each method in a class has an explicit `self` argument, which gives access to the state of this instance.
-However, we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
-If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
-We can do the same for any field.
+In Mamba, like Python and Rust, each function in a class has an explicit `self` argument, which gives access to the state of this instance.
+Such a function is called a method.
+We can for each method state whether we can modify the state of `self` by stating whether it is mutable or not.
+If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its state.
+We can do the same for any argument to a function, for that matter.
 
 We showcase this using a simple dummy `Matrix` object.
 You will also see some "pure" functions, these will be explained later.
@@ -239,7 +237,7 @@ class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
 }
 ```
 
-Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable so we can change properties of `self`.
+Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
 In general, the notation of a class is:
 
 `class MyClass(<one-or-more-constructor-args>) := [<one-or-more-expressions>]`
@@ -276,9 +274,11 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := {
 ```
 
 Last, we have `trait`s, which in Mamba are more fine-grained building blocks to describe the behaviour of instances.
-These are similar to interfaces in Java and Kotlin, and almost identical to traits in Rust.
+These are similar to interfaces in Java and Kotlin, and near identical to traits in Rust.
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
-For instance, consider example with iterators (which briefly showcases language generics):
+For those familiar with object oriented programming, we favour a trait based system over inheritance (like Rust, Mamba doesn't have inheritance). 
+
+Consider example with iterators (which briefly showcases language generics):
 
 ```mamba
 trait Iterator[T] := {
@@ -305,22 +305,21 @@ Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defin
 The syntax here is `trait <id> := { <one-or-more-definitions }` and we use it as `def <trait> for <class>`.
 
 Lastly, like Rust, types (traits) can also be used as generics.
-This would allow, for instance, for defining say a `Hash` trait and enforcing for a hashmap that keys implement said type.
+This would allow, for instance, for defining a `Hash` trait and enforcing for a hashmap that keys implement said trait.
 We can also compose traits, which means that when we define the composite trait for a class we have to implement all definitions at once.
 The syntax is very similar to inheritance for classes:
 
 E.g.
 
 ```mamba
-trait Ordered[T]: Equality, Comparable {
-    def less_than(self, other: T) -> Bool
-}
+trait Ordered[T]: Equality, Comparable
 ```
 
 ### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
 
 Mamba also has type refinement features to assign additional properties to types.
-Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the comlexit of the language.
+
+Note: Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the comlexit of the language.
 Arguably, it might detract from the elegance of the type system as well;
 A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
 
