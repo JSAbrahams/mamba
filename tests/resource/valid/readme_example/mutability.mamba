@@ -1,0 +1,5 @@
+def a := 10     # we may modify a
+def fin b := 20 # we may not modify b
+
+a := a + 2   # allowed
+# b := b + 2 # compilation error

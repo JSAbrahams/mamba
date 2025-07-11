@@ -1,0 +1,6 @@
+def a: Result[Int, MyErr] := function_may_throw_err() ! {
+    err: MyOtherErr => print("We have a problem: {err.message}.")
+} recover [
+    print("cleaning up resource")
+    some_cleanup_function()
+]

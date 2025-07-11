@@ -1,0 +1,3 @@
+trait Ordered[T]: Equality, Comparable {
+    def less_than(self, other: T) -> Bool
+}

@@ -79,7 +79,7 @@ Below are some code examples to showcase the features of Mamba.
 We can write a simple script that computes the factorial of a value given by the user.
 
 ```mamba
-## Factorial of x
+# Factorial of x
 def factorial(x: Int) -> Int := match x {
     0 => 1
     n => n * factorial(n - 1)
@@ -128,7 +128,7 @@ Lists make use of square brackets:
 # lists
 def a := [0, 2, 51]
 def b := ["list", "of", "strings"]
-# lists of tuples, buidler syntax
+# lists of tuples, builder syntax
 def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
 # Indexing is done using curly brackets!
@@ -572,12 +572,14 @@ meta trait Measurable: Add, Sub, Eq, Comparable
 
 # Built in to the standard library
 # The idea is that this allows performing arithmetic not just at runtime but at compile-time.
-def Measurable for Int {
-    def const less_than(self, other: Int) -> Bool := self < other
-    def const unary_sub(self) -> Int              := -other
-    def const add(self, other: Int) -> Int        := self + other
-    def const equal(self, other: Int) -> Bool     := self = other
-}
+def Measurable for Int 
+# The following is already defined for Int, but for the sake of our example:
+# {
+#     def meta less_than(self, other: Int) -> Bool := self < other
+#     def meta unary_sub(self) -> Int              := -other
+#     def meta add(self, other: Int) -> Int        := self + other
+#     def meta equal(self, other: Int) -> Bool     := self = other
+# }
 ```
 
 We require that the measured item implements basic arithmetic so that we can add and subtract as we traverse those trees where we interweave recursive calls.

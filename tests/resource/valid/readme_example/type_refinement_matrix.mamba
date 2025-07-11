@@ -1,0 +1,20 @@
+type InvertibleMatrix: Matrix when self.determinant() != 0.0
+
+class MatrixErr(def message: Str): Exception(message)
+
+## Matrix, which now takes floats as argument
+class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := {
+    def _last_op: Str? := None
+
+    def determinant(fin self) -> Float := self.a * self.d - self.b * self.c
+
+    def inverse(self: InvertibleMatrix) -> Matrix :=
+        def det := self.determinant()
+        self._last_op := "inverse"
+
+        Matrix(self.d / det, -self.b / det, -self.c / det, self.a / det)
+
+    def last_op(fin self) -> Str ! MatrixErr :=
+        if self._last_op != None then self._last_op
+        else ! MatrixErr("No operation performed")
+}

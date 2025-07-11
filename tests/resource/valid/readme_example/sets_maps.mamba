@@ -1,0 +1,14 @@
+# sets
+def c := { 10, 20 }
+def d := { 3 }
+# sets, builder syntax
+def cd := { x ^ y | x in c, y in d }
+
+# maps
+def e := { "do" => 1, "ree" => 2, "meee" => 3 }
+# maps, builder syntax
+def ef := { x => y - 2 | x in e, y = x.len() }
+
+# indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
+print(ab(2)) # prints '(2, "list")'
+print(ef(1)) # prints '1'

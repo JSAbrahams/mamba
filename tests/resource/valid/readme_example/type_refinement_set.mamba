@@ -1,0 +1,4 @@
+type SpecialInt: Int when {
+    self >= 0
+    self <= 100 or self mod 2 = 0
+}

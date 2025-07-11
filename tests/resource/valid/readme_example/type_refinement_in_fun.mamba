@@ -1,0 +1,9 @@
+# we list the conditions below, which are a list of boolean expressions.
+# this first-class language feature desugars to an list of checks which are done at the call site.
+# we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
+type PosInt: Int when self >= 0
+
+def factorial(x: PosInt) -> PosInt := match x {
+    0 => 1
+    n => n * factorial(n - 1)
+}

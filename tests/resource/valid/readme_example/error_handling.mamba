@@ -1,18 +1,15 @@
-from ipaddress import IPv4Address
+def m := Matrix(1.0, 2.0, 3.0, 4.0)
 
-class ServerErr: Exception
-class MyServer(def ip_address: IPv4Address):
-    def send(self, message: Str) :=
-        pass
-    def disconnect() := pass
+if m isa InvertibleMatrix then
+    def inv := m.inverse()
+else
+    print("Matrix is singular (not invertible).")
 
-class ConnectedMyServer: MyServer
+def last_op = m.last_op() ! {
+    err: MatrixErr(message) => [
+        print("Error when getting last op: \"{message}\"")
+        "N/A" # optionally we can also return, but here we assign default value
+    ]
+}
 
-def fin some_ip := ipaddress.ip_address("151.101.193.140")
-def my_server   := MyServer(some_ip)
-
-def message := "Hello World!"
-my_server.send(message) handle
-    err: ServerErr => print("Error while sending message: \"{message}\": {err}")
-
-if my_server isa ConnectedMyServer then my_server.disconnect()
+print("Last operation was: {last_op}")
