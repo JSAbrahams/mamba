@@ -226,6 +226,7 @@ class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
         self.d := self.d * factor
     ]
 
+    # Reset turns this matrix into an 2x2 identity matrix, regardless of the intial value.
     def reset(self) := [
         self.a := 1
         self.b := 0
@@ -263,6 +264,7 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := {
         self.y := self.y + dy
     ]
 
+    # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
     def reset(self) := [
         self.x := ORIGIN_X
         self.y := ORIGIN_Y
@@ -471,7 +473,7 @@ def pure sin(x: Int) -> Int := [
 ]
 ```
 
-### 🤚 Total functions (🇻 0.5+)
+### 🤚 Total functions (🇻 x+)
 
 A function may also be total, which means:
 
@@ -533,56 +535,54 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
 trait def StrictlyDecreases: Measurable {
-    def fin const decreases(self, other: Self) -> Bool := self.measure() < other.measure()
-    def fin const =(self, other: Self) -> Bool := self.measure() = other.measure()
-    def fin const difference(self, other: Self) -> Measurable := self.measure() - other.measure()
+    def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
+    def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
+    def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
 
     # this we must implement
-    def const measure(self) -> Measurable
+    def meta measure(self) -> Measurable
 }
 ```
 
-This avoids abuse of `decreases` (i.e. one could write `def fin const decreases(self, other: Self) := True`).
+This avoids abuse of `decreases` (i.e. one could write `def fin meta decreases(self, other: Self) := True`).
 Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
 It is for instance defined for the built-in primtive `Int`.
 
 ```mamba
 # Measure for int just returns self
 def StrictlyDecreases for Int {
-    def const measure(self) -> Measurable := self
+    def meta measure(self) -> Measurable := self
 }
 
 # For string, we as an example use the length of the string (Which is also an integer)
 def StrictlyDecreases for Str {
-    def const measure(self) -> Measurable := self.len() 
+    def meta measure(self) -> Measurable := self.len() 
 }
 ```
 
-Both of the above return an `Int`, which is part of the library and implements the `Measured` trait:
+Both of the above return an `Int`, which is part of the library and implements the `Measured` trait.
+This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
+This is because this forms the logical bedrock of our system of proving that functions are total, but in future we may relax this constraint.
 
 ```mamba
-# Trait measurable lives at the heart of this system, and by extension Mamba
-trait Measurable: ConstAdd, ConstUnarySub, ConstEq {
-    def const less_than(self, other: Self) -> Bool
-    def const unary_sub(self, other: Self) -> Self
-    def const add(self, other: Self) -> Self
-    def const equal(self, other: Self) -> Bool
-}
+# Trait measurable lives at the heart of this system, and by extension Mamba.
+# If a trait is marked as meta, then all functions within must be meta.
+@builtin
+meta trait Measurable: Add, Sub, Eq, Comparable
 
 # Built in to the standard library
 # The idea is that this allows performing arithmetic not just at runtime but at compile-time.
 def Measurable for Int {
     def const less_than(self, other: Int) -> Bool := self < other
     def const unary_sub(self) -> Int              := -other
-    def const add(self, other: Int) -> Int  := self + other
-    def const equal(self, other: Int) -> Bool := self = other
+    def const add(self, other: Int) -> Int        := self + other
+    def const equal(self, other: Int) -> Bool     := self = other
 }
 ```
 
-At compilation time, the compiler then evaluates `measure` and `less_than` and verifies that these properties holds.
 We require that the measured item implements basic arithmetic so that we can add and subtract as we traverse those trees where we interweave recursive calls.
-_Note: this means that we need to evaluate code during compilation time!_
-Only constant functions can be evaluated at compile time, see the section on constant functions below.
+_Paeno arithmetic, essentially, forms the logical bedrock of the system which proves functions are total._
+Only meta functions can be evaluated at compile time, see the section on meta functions below.
 
 In general:
 
@@ -594,38 +594,34 @@ One does not imply the other, so you need both keywords if you want to say a fun
 The intended use-case is a bit more niche, likely mostly functions in the standard library, to show that they halt on all possible inputs.
 But we can imagine that library writers might find these useful if they wish to be more thorough.
 
-### Constant functions (🇻 0.5+)
+### Meta functions (🇻 x+)
 
-The above also highlights constant functions in the language, which is a necessary evil.
-Evil because it does clash a bit with the more "math-focused" aspect of the language.
-Constant functions are functions which can be evaluated at compile time.
+The above also highlights meta functions in the language, which is a necessary evil.
+Meta functions are functions which can be evaluated at compile time.
+This is somewhat similar to macro's in say C++ (or Rust, whose implementation is arguably far superior).
+However, the goal of meta functions and traits is to prove properties of variables at compile time.
 These functions have two constraints:
 
-- These may not call non-constant functions (including total and pure functions).
-- A constant function is also pure.
+- These may not call non-meta functions (including total and pure functions) or values.
+- A meta function is also pure; they have no side-effects.
+  As this is always implied, we omit the need for the `pure` keyword.
 
 Additionally:
 
-- A constant function is not enforced to be total, but it is recommended that it is!
-  This is because for the compiler to prove a function is constant, it must compile the application.
-  But since we are already compiling, that is not an option (unless we have a meta-compiler, but that would require a meta-meta compiler, which would require...).
-- We may well place additional constraints on constant functions in future.
+- A meta function is not enforced to be total, but it is recommended that it is!
+  This is because for the compiler to prove a function is meta, it must compile the application first.
+  Thus we have a circular dependency;
+  We are already compiling, so this is not an option (unless we have a meta-compiler, but that would require a meta-meta compiler, and so forth...).
+- We may well place additional constraints on meta functions in future.
 
-**Essentially, the main reason for Mamba having constant functions is to serve as the logical bedrock for provable total functions**.
+**Essentially, the main reason for Mamba having meta functions is to serve as the logical bedrock for provable total functions**.
 One other benefit is that compiled functions are evaluated at compile time and not runtime, potentially offering significant speed benefits.
-This is useful when one wants to document how one derived a constant in the form of code, without re-calculating it each time at runtime.
+This is useful when one wants to document how one derived a meta in the form of code, without re-calculating it each time at runtime.
 
-A constant function is defined as `def const my_function(<args>) := ...`.
-
-Because the function `less_than` returns objects which implement the `ConstOrdered` trait, the `less_than` must necessarily also be a constant function:
-
-```mamba
-trait ConstOrdered[T] {
-    def const less_than(self, other: T) -> Bool
-}
-```
-
-In this case, we differentiate this from the `Ordered` trait so that we don't enforce everyone must implement `less_than` as a constant function, which is rarely necessary.
+- A meta function is defined as `def meta my_function(<args>) := ...`.
+- A meta variable is defined `def meta my_var: MyType := ...`, with type annotations being non-optional.
+- A meta trait is defined as `meta trait MyTrait ...`.
+  Within a meta trait, all definitions are also meta.
 
 ### ⚠ Error handling
 
