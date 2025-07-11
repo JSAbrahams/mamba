@@ -119,7 +119,6 @@ use test_case::test_case;
 #[test_case("operation", "in_set_is_bool")]
 #[test_case("operation", "multiply_other_int")]
 #[test_case("operation", "primitives")]
-#[test_case("operation", "bitwise")]
 #[test_case("operation", "boolean")]
 #[test_case("operation", "equality_different_types")]
 #[test_case("operation", "type_alias_primitive" => ignore["investigate whether this should in fact, pass"])]

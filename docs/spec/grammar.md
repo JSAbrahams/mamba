@@ -49,7 +49,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | call
                       | "_"
                      
-    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) code-block
+    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) code-block
     call             ::= code-block [ ( "." | "?." ) ] id tuple [ "!" match-cases [ recover code-block ] ]
     raise            ::= "!" id { "," id }
     
@@ -66,7 +66,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     definition       ::= "def" ( variable-def | fun-def ) | type-def | trait-def | class-def
 
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" code-block ] [ forward ]
-    fun-def          ::= ( [ "const" ] | [ "total" ] [ "pure" ] ) ( id | overridable-op ) fun-args [ "->" type ] [ raise ] [ ":=" code-block ]
+    fun-def          ::= ( [ "meta" ] | [ "total" ] [ "pure" ] ) ( id | overridable-op ) fun-args [ "->" type ] [ raise ] [ ":=" code-block ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= id-maybe-type [ ":=" code-block ]
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" code-block

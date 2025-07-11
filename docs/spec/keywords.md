@@ -40,7 +40,7 @@ Keyword | Use
 `fin`     | Denote defined variable is immutable
 `pure`    | Denote function is pure
 `total`   | Denote a function is total
-`const`   | Denote a function is constant (evaluated during compile time)
+`meta`    | Denote a meta function (evaluated during compile time)
 
 ## Boolean operators
 

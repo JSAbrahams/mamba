@@ -25,10 +25,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         ']' => create(state, Token::RSBrack),
         '{' => create(state, Token::LCBrack),
         '}' => create(state, Token::RCBrack),
-        '|' => match it.peek() {
-            Some('|') => next_and_create(it, state, Token::BOr),
-            _ => create(state, Token::Ver),
-        },
+        '|' => create(state, Token::Ver),
         '\n' => create(state, Token::NL),
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -38,18 +35,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             _ => create(state, Token::Point),
         },
         '<' => match it.peek() {
-            Some('<') => match (it.next(), it.peek()) {
-                (_, Some('=')) => next_and_create(it, state, Token::BLShiftAssign),
-                _ => next_and_create(it, state, Token::BLShift),
-            },
             Some('=') => next_and_create(it, state, Token::Leq),
             _ => create(state, Token::Le),
         },
         '>' => match it.peek() {
-            Some('>') => match (it.next(), it.peek()) {
-                (_, Some('=')) => next_and_create(it, state, Token::BRShiftAssign),
-                _ => next_and_create(it, state, Token::BRShift),
-            },
             Some('=') => next_and_create(it, state, Token::Geq),
             _ => create(state, Token::Ge),
         },
@@ -88,17 +77,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         }
         '!' => match it.peek() {
             Some('=') => next_and_create(it, state, Token::Neq),
-            Some('!') => next_and_create(it, state, Token::BOneCmpl),
-            Some('|') => next_and_create(it, state, Token::BXOr),
             _ => create(state, Token::Raise),
-        },
-        '&' => match it.peek() {
-            Some('&') => next_and_create(it, state, Token::BAnd),
-            _ => Err(Box::new(LexErr::new(
-                state.pos,
-                None,
-                "Is this supposed to be a binary and operator?",
-            ))),
         },
         '?' => create(state, Token::Question),
         '0'..='9' => {

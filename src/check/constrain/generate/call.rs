@@ -353,14 +353,6 @@ fn reassign_op(
                 left: left.clone(),
                 right,
             },
-            NodeOp::BLShift => Node::BLShift {
-                left: left.clone(),
-                right,
-            },
-            NodeOp::BRShift => Node::BRShift {
-                left: left.clone(),
-                right,
-            },
             other => {
                 let msg = format!("Cannot reassign using operator '{other}'");
                 return Err(vec![TypeErr::new(ast.pos, &msg)]);

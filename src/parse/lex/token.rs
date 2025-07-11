@@ -50,8 +50,6 @@ pub enum Token {
     MulAssign,
     DivAssign,
     PowAssign,
-    BLShiftAssign,
-    BRShiftAssign,
     Def,
 
     Real(String),
@@ -73,13 +71,6 @@ pub enum Token {
     Pow,
     Mod,
     Sqrt,
-
-    BAnd,
-    BOr,
-    BXOr,
-    BOneCmpl,
-    BLShift,
-    BRShift,
 
     Ge,
     Geq,
@@ -174,8 +165,6 @@ impl fmt::Display for Token {
             Token::MulAssign => write!(f, "*="),
             Token::PowAssign => write!(f, "^="),
             Token::DivAssign => write!(f, "/="),
-            Token::BLShiftAssign => write!(f, "<<="),
-            Token::BRShiftAssign => write!(f, ">>="),
             Token::Def => write!(f, "def"),
 
             Token::Id(id) => write!(f, "{id}"),
@@ -198,13 +187,6 @@ impl fmt::Display for Token {
             Token::Pow => write!(f, "^"),
             Token::Mod => write!(f, "mod"),
             Token::Sqrt => write!(f, "sqrt"),
-
-            Token::BAnd => write!(f, "_and_"),
-            Token::BOr => write!(f, "_or_"),
-            Token::BXOr => write!(f, "_xor_"),
-            Token::BOneCmpl => write!(f, "_not_"),
-            Token::BLShift => write!(f, "<<"),
-            Token::BRShift => write!(f, ">>"),
 
             Token::Ge => write!(f, ">"),
             Token::Geq => write!(f, ">="),

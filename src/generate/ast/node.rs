@@ -330,8 +330,6 @@ impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
             NodeOp::Mul => Ok(CoreOp::MulAssign),
             NodeOp::Div => Ok(CoreOp::DivAssign),
             NodeOp::Pow => Ok(CoreOp::PowAssign),
-            NodeOp::BLShift => Ok(CoreOp::BLShiftAssign),
-            NodeOp::BRShift => Ok(CoreOp::BRShiftAssign),
             NodeOp::Assign => Ok(CoreOp::Assign),
             op => Err(UnimplementedErr::new(ast, &format!("Reassign with {op}"))),
         }

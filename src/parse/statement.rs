@@ -112,8 +112,6 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
         Token::MulAssign,
         Token::DivAssign,
         Token::PowAssign,
-        Token::BLShiftAssign,
-        Token::BRShiftAssign,
     ];
 
     let (token, op) = if let Some(token) = it.peek_next() {
@@ -142,14 +140,6 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 token: Token::PowAssign,
                 ..
             } => (Token::PowAssign, NodeOp::Pow),
-            Lex {
-                token: Token::BLShiftAssign,
-                ..
-            } => (Token::BLShiftAssign, NodeOp::BLShift),
-            Lex {
-                token: Token::BRShiftAssign,
-                ..
-            } => (Token::BRShiftAssign, NodeOp::BRShift),
             lex => {
                 return Err(Box::from(expected_one_of(&expect, lex, "reassignment")));
             }
