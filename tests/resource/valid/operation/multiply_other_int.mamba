@@ -1,4 +1,4 @@
-class MyClass(def a: Int)
+class MyClass(def a: Int) :=
     def f(self, other: MyClass) -> Int := self.a * other.a
 
 def a := MyClass(10)

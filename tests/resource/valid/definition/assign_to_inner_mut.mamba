@@ -1,11 +1,12 @@
-class A
+class A :=
     def c: C
 
-class C
+class C := {
     def my_class: D := D()
-    def my_field_accessor(self) -> D => self.my_class
+    def my_field_accessor(self) -> D := self.my_class
+}
 
-class D
+class D :=
     def my_field: Int := 10
 
 def a := A()

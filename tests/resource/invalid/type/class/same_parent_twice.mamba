@@ -1,4 +1,4 @@
 class MyType(a: String)
 
-class MyClass1: MyType("asdf"), MyType("qwerty")
+class MyClass1: MyType("asdf"), MyType("qwerty") :=
     def other: Int

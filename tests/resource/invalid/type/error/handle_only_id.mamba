@@ -3,10 +3,13 @@ class MyErr2(msg: String): Exception(msg)
 
 def f(x: Int) -> Int ! { MyErr1, MyErr2 } := x
 
-def a := f(10)
-    MyErr1 =>
+def a := f(10) ! {
+    MyErr1 => [
         print("Something went wrong")
         -1
-    MyErr2 =>
+    ]
+    MyErr2 => [
         print("Something else went wrong")
         -2
+    ]
+}

@@ -1,13 +1,13 @@
-class A
+class A :=
     def b: B := B()
 
-class B
+class B :=
     def fin c: C := C()
 
-class C
+class C :=
     def d: D := D()
 
-class D
+class D :+
     def e: Int := 100
 
 def a := A()

@@ -1,4 +1,4 @@
-class MyClass
+class MyClass :=
     def something(self) -> String := return "my string"
 
 

@@ -1,4 +1,4 @@
-class MyClass[A: UnknownType]
+class MyClass[A: UnknownType] :=
     def f() -> Int := 10
 
 # should error because suddenly we are using an ill-typed class.

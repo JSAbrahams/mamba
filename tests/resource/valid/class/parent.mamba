@@ -1,6 +1,11 @@
-type MyType
+trait MyType := {
     def fun_a(self)
     def factorial(self, x: Int) -> Int
+}
 
-class MyClass1: MyType("asdf")
+class MyClass1: MyType := {
     def other: Int
+
+    def fun_a(self) := print("hello)
+    def factorial(self, x: Int) -> Int := x * 1
+}

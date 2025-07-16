@@ -1,5 +1,6 @@
-class X
+class X := {
     def z: Int
 
     def __init__(self, x: Int) :=
         self.y := x
+}

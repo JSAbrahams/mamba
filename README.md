@@ -128,6 +128,7 @@ Lists make use of square brackets:
 # lists
 def a := [0, 2, 51]
 def b := ["list", "of", "strings"]
+def empty_list = []
 # lists of tuples, builder syntax
 def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
@@ -143,11 +144,13 @@ def c := { 10, 20 }
 def d := { 3 }
 # sets, builder syntax
 def cd := { x ^ y | x in c, y in d }
+def empty_set := {,} # empty sets must have comma to distinguish from code block
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }
 # maps, builder syntax
 def ef := { x => y - 2 | x in e, y = x.len() }
+def empty_mapping := {=>}
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(ab(2)) # prints '(2, "list")'
@@ -211,13 +214,13 @@ class MatrixErr(def message: Str): Exception(message)
 
 class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
     # Accessor for matrix contents
-    def contents(fin self) -> List[Int] := [a, b, c, d]
+    def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(fin self) -> Int := a + d
+    def pure trace(fin self) -> Int := self.a + self.d
 
     # Determinant recomputation (pure function)
-    def pure determinant(fin self) -> Int := a * d - b * c
+    def pure determinant(fin self) -> Int := self.a * self.d - self.b * self.c
 
     def scale(self, factor: Int) := [
         self.a := self.a * factor
@@ -246,16 +249,13 @@ As for constructor arguments:
 
 - If they are prefixed with `def`, then they are immediately accessible (e.g. `matrix.a`).
 - If they are **not** prefixed with `def`, then they are only constructor arguments.
-  This means that they are a class-constant, a constant which is defined in the context of a class.
-  This means that they may be used in any part of the class (body, functions, methods).
+  They may be used at any point in the class, but they are (1) invariant and (2) may not be accessed from outside the class.
 - The body of the class is evaluated for each object we created, effectively making this the constructor body.
 
 We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := {
-    # ORIGIN_X and ORIGIN_Y are constructor constants — they cannot be changed
-    # current x and y are mutable fields initialized from the constants
     def x: Int := ORIGIN_X
     def y: Int := ORIGIN_Y
 

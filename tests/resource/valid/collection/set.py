@@ -1,4 +1,5 @@
 from typing import Any, Tuple
+
 a: set[Any] = {}
 b: set[int] = { 10, 20 }
 c: set[set[Any]] = { {}, {} }

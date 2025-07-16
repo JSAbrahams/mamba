@@ -1,8 +1,8 @@
 def x := 20
 def a: Int := if x > 10 then
-    if x > 30 then
+    if x > 30 then [
         print("string")
-        x + 1
+        x + 1 ]
     else
         x - 1
 else

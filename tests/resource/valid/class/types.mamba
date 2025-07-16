@@ -1,21 +1,21 @@
 class MyGeneric: Str
-class MyType(def some_field: Str)
 
 type SomeState: MyClass when self.private_field > 2
-type OtherState: MyClass when
+type OtherState: MyClass when {
     self.private_field  > 10
     self.private_field  < 200
     self.required_field < 50
+}
 
-type SuperInterface
+trait SuperInterface :=
     def bar: Int
 
-type MyInterface: SuperInterface
+trait MyInterface: SuperInterface :=
     def required_field: Int
-    def higher_order(self) -> int
+    def higher_order(self) -> Int
 
 # some class
-class MyClass(def my_field: Int, other_field: Str := "Hello"): MyType(other_field), MyInterface
+class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface
     def required_field: Int := 100
     def private_field: Int := 20
 

@@ -1,4 +1,4 @@
-class MyClass
+class MyClass :=
     def my_field: Int := 10
 
 def f() -> (MyClass, Int) :=

@@ -10,10 +10,11 @@ def f(x: Int) -> Int ! { MyErr1, MyErr2 } :=
         else
             return x + 2
 
-def a := f(10)
+def a := f(10) ! {
     err: MyErr1 =>
         print("Something went wrong")
         -1
     err: MyErr2 =>
         print("Something else went wrong")
         -2
+}

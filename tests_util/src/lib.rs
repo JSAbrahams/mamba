@@ -124,11 +124,7 @@ pub fn fallable(
     let cmd1 = Command::new(PYTHON)
         .arg("-m")
         .arg("py_compile")
-        .arg(&resource_path(
-            valid,
-            input,
-            &format!("{}_check.py", file_name),
-        ))
+        .arg(&resource_path(valid, input, &format!("{file_name}.py")))
         .output()
         .expect("Could not run Python command.");
 

@@ -1,4 +1,4 @@
-class A
+class A :=
     def my_num: Int := 10
 
 

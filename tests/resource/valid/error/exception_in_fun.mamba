@@ -1,6 +1,6 @@
 def g() -> Int ! Exception :=
     ! Exception("A")
 
-def f(x: Int) -> Int :=
-    g()
-        err: Exception => x + 10
+def f(x: Int) -> Int := g() ! {
+    err: Exception => x + 10
+}

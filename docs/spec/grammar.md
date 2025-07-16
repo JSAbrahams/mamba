@@ -12,7 +12,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
 ```ebnf
     file             ::= { expr-or-stmt }
-    import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
+    import           ::= "import" id [ "::" id ] ( "::" ( "{" import-as { "," import-as } "}" | import-as ) )
+    import-as        ::= id ( "as" id )
 
     type-def         ::= "type" type ":" type ( ":=" "{" code-set "}" | "when" [ code-set ] )
     trait-def        ::= "trait" type ( ":" type { "," type } ) [ ":=" code-set ]

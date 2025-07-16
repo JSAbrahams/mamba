@@ -39,6 +39,7 @@ use mamba::parse::ast::AST;
 #[test_case("class", "same_parent_twice" => matches Err(_))]
 #[test_case("class", "top_level_class_not_assigned_to" => matches Err(_))]
 #[test_case("class", "wrong_generic_type" => matches Err(_))]
+#[test_case("class", "parent_is_class" => matches Err(_))]
 #[test_case("collection", "dictionary_assume_not_optional" => ignore["type checker incorrectly assumes access always non-optional"])]
 #[test_case("collection", "dictionary_in_fun_wrong_ret_ty" => matches Err(_))]
 #[test_case("collection", "dictionary_not_sliceable" => matches Err(_))]

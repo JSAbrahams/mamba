@@ -1,4 +1,4 @@
-class MyClass
+class MyClass :=
     def my_function() -> Int := 10
 
 def my_class := MyClass()

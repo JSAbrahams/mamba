@@ -1,7 +1,7 @@
-class B
+class B :=
     def my_num: Int := 10
 
-class A
+class A :=
     def b: B
 
 

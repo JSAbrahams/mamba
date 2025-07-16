@@ -1,2 +1,3 @@
-class X
+class X := {
     def y.y: Int := 10
+}
