@@ -4,6 +4,7 @@ use crate::parse::ast::AST;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
+use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
@@ -187,23 +188,19 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("return")?;
-    it.eat(&Token::Ret, "return")?;
+    let end = it.eat(&Token::Ret, "return")?;
 
-    if let Some(end) = it.eat_if(&Token::NL) {
-        let node = Node::ReturnEmpty;
-        return Ok(Box::from(AST::new(start.union(end), node)));
-    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof)
-        || it.peek_next().is_none()
-    {
-        let node = Node::ReturnEmpty;
-        return Ok(Box::from(AST::new(start, node)));
+    if let Some(next) = it.peek_next() {
+        if is_start_expression(&next) {
+            let expr = it.parse(&parse_expression, "return", start)?;
+            return Ok(Box::from(AST::new(
+                start.union(expr.pos),
+                Node::Return { expr },
+            )));
+        }
     }
 
-    let expr = it.parse(&parse_expression, "return", start)?;
-    Ok(Box::from(AST::new(
-        start.union(expr.pos),
-        Node::Return { expr },
-    )))
+    Ok(Box::from(AST::new(start.union(end), Node::ReturnEmpty)))
 }
 
 pub fn is_start_statement(tp: &Token) -> bool {

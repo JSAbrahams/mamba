@@ -19,7 +19,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             Some('=') => next_and_create(it, state, Token::Assign),
             _ => create(state, Token::DoublePoint),
         },
-        '(' => create(state, Token::LRBrack),
+        '(' => create(state, Token::LSBrack),
         ')' => create(state, Token::RRBrack),
         '[' => create(state, Token::LSBrack),
         ']' => create(state, Token::RSBrack),
@@ -246,8 +246,6 @@ fn as_op_or_id(string: String) -> Token {
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
-        "is" => Token::Is,
-        "isa" => Token::IsA,
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
@@ -285,7 +283,7 @@ mod test {
 
         assert_eq!(tokens[0].token, Token::Def);
         assert_eq!(tokens[1].token, Token::Id(String::from("f")));
-        assert_eq!(tokens[2].token, Token::LRBrack);
+        assert_eq!(tokens[2].token, Token::LSBrack);
         assert_eq!(tokens[3].token, Token::Id(String::from("x")));
         assert_eq!(tokens[4].token, Token::DoublePoint);
         assert_eq!(tokens[5].token, Token::Id(String::from("Int")));
@@ -294,9 +292,7 @@ mod test {
         assert_eq!(tokens[8].token, Token::Id(String::from("Int")));
         assert_eq!(tokens[9].token, Token::Assign);
         assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Indent);
-        assert_eq!(tokens[12].token, Token::Ret);
-        assert_eq!(tokens[13].token, Token::Dedent);
+        assert_eq!(tokens[11].token, Token::Ret);
 
         Ok(())
     }
@@ -310,16 +306,14 @@ mod test {
         assert_eq!(tokens[0].token, Token::Class);
         assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
         assert_eq!(tokens[2].token, Token::NL);
-        assert_eq!(tokens[3].token, Token::Indent);
-        assert_eq!(tokens[4].token, Token::Def);
-        assert_eq!(tokens[5].token, Token::Id(String::from("var")));
-        assert_eq!(tokens[6].token, Token::Assign);
-        assert_eq!(tokens[7].token, Token::Int(String::from("10")));
+        assert_eq!(tokens[3].token, Token::Def);
+        assert_eq!(tokens[4].token, Token::Id(String::from("var")));
+        assert_eq!(tokens[5].token, Token::Assign);
+        assert_eq!(tokens[6].token, Token::Int(String::from("10")));
+        assert_eq!(tokens[7].token, Token::NL);
         assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Dedent);
-        assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Class);
-        assert_eq!(tokens[12].token, Token::Id(String::from("MyClass1")));
+        assert_eq!(tokens[9].token, Token::Class);
+        assert_eq!(tokens[10].token, Token::Id(String::from("MyClass1")));
 
         Ok(())
     }
@@ -334,15 +328,12 @@ mod test {
         assert_eq!(tokens[1].token, Token::Id(String::from("a")));
         assert_eq!(tokens[2].token, Token::Then);
         assert_eq!(tokens[3].token, Token::NL);
-        assert_eq!(tokens[4].token, Token::Indent);
-        assert_eq!(tokens[5].token, Token::Id(String::from("b")));
+        assert_eq!(tokens[4].token, Token::Id(String::from("b")));
+        assert_eq!(tokens[5].token, Token::NL);
         assert_eq!(tokens[6].token, Token::NL);
-        assert_eq!(tokens[7].token, Token::Dedent);
+        assert_eq!(tokens[7].token, Token::Else);
         assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Else);
-        assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Indent);
-        assert_eq!(tokens[12].token, Token::Id(String::from("c")));
+        assert_eq!(tokens[9].token, Token::Id(String::from("c")));
 
         Ok(())
     }

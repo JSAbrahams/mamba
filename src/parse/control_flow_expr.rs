@@ -63,15 +63,15 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::Indent, "match cases")?;
+    let start = it.eat(&Token::LCBrack, "match cases")?;
     let mut cases = vec![];
-    it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
+    it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
         cases.push(*it.parse(&parse_match_case, "match case", start)?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
 
-    it.eat(&Token::Dedent, "match cases")?;
+    it.eat(&Token::RCBrack, "match cases")?;
     Ok(cases)
 }
 

@@ -70,8 +70,6 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
             Token::Leq => bin_op!(it, parse_level_5, Leq, arithmetic.clone(), "less, equal"),
             Token::Eq => bin_op!(it, parse_level_5, Eq, arithmetic.clone(), "equal"),
             Token::Neq => bin_op!(it, parse_level_5, Neq, arithmetic.clone(), "not equal"),
-            Token::Is => bin_op!(it, parse_level_5, Is, arithmetic.clone(), "is"),
-            Token::IsA => bin_op!(it, parse_level_5, IsA, arithmetic.clone(), "is a"),
             Token::In => bin_op!(it, parse_level_5, In, arithmetic.clone(), "in"),
             _ => Ok(arithmetic.clone()),
         },
@@ -391,46 +389,6 @@ mod test {
             Node::ENum {
                 num: String::from("3"),
                 exp: String::from("10")
-            }
-        );
-    }
-
-    #[test]
-    fn is_verify() {
-        let source = String::from("p is q");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(Is, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("p")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("q")
-            }
-        );
-    }
-
-    #[test]
-    fn isa_verify() {
-        let source = String::from("lizard isa animal");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(IsA, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("lizard")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("animal")
             }
         );
     }

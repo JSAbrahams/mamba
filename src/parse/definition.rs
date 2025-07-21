@@ -29,7 +29,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
 
     let res = it.peek_or_err(
         &|it, lex| match lex.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack if !pure => parse_variable_def(it),
+            Token::LSBrack | Token::LCBrack | Token::LSBrack if !pure => parse_variable_def(it),
 
             Token::Add => op!(it, Add),
             Token::Sub => op!(it, Sub),
@@ -46,7 +46,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
         },
         &[
             Token::Id(String::new()),
-            Token::LRBrack,
+            Token::LSBrack,
             Token::LCBrack,
             Token::LSBrack,
             Token::Add,
@@ -84,7 +84,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
         }
         Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
             &|it, lex| match lex.token {
-                Token::LRBrack => parse_fun_def(&id, pure, it),
+                Token::LSBrack => parse_fun_def(&id, pure, it),
                 _ if !pure => parse_variable_def_id(&id, it),
                 _ => {
                     let msg = format!("Definition cannot have {} identifier", Token::Pure);
@@ -173,7 +173,7 @@ pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 }
 
 pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::LRBrack, "function arguments")?;
+    let start = it.eat(&Token::LSBrack, "function arguments")?;
     let mut args = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
         args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);

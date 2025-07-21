@@ -22,7 +22,6 @@ Keyword | Use
 `when`  | Conditionals of a type definition
 `class` | Denote start of class definition
 `trait` | Denote start of trait definition
-`isa`   | Check whether an object is instance of a class, or more generally type
 
 ## Classes and Utils
 
@@ -49,7 +48,6 @@ Keyword | Use
 `not`   | Negation of a boolean value
 `and`   | And operator
 `or`    | Or operator
-`is`    | Check whether an instance is another instance
 
 ## Mathematical Operators
 

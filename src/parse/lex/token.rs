@@ -31,7 +31,6 @@ pub enum Token {
     Type,
     Class,
     Pure,
-    IsA,
 
     As,
     Import,
@@ -78,7 +77,6 @@ pub enum Token {
     Leq,
 
     Eq,
-    Is,
     Neq,
     And,
     Or,
@@ -95,8 +93,6 @@ pub enum Token {
     BTo,
 
     NL,
-    Indent,
-    Dedent,
     Underscore,
 
     Raise,
@@ -116,10 +112,7 @@ pub enum Token {
     With,
 
     Question,
-
     Pass,
-
-    Eof,
 }
 
 impl Token {
@@ -147,7 +140,6 @@ impl fmt::Display for Token {
             Token::Pure => write!(f, "pure"),
             Token::Type => write!(f, "type"),
             Token::Class => write!(f, "class"),
-            Token::IsA => write!(f, "isa"),
 
             Token::As => write!(f, "as"),
             Token::Import => write!(f, "import"),
@@ -194,7 +186,6 @@ impl fmt::Display for Token {
             Token::Leq => write!(f, "<="),
 
             Token::Eq => write!(f, "="),
-            Token::Is => write!(f, "is"),
             Token::Neq => write!(f, "!="),
             Token::And => write!(f, "and"),
             Token::Or => write!(f, "or"),
@@ -211,8 +202,6 @@ impl fmt::Display for Token {
             Token::BTo => write!(f, "=>"),
 
             Token::NL => write!(f, ""),
-            Token::Indent => write!(f, "    "),
-            Token::Dedent => write!(f, ""),
             Token::Underscore => write!(f, "_"),
 
             Token::While => write!(f, "while"),
@@ -234,8 +223,6 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
-
-            Token::Eof => write!(f, ""),
         }
     }
 }

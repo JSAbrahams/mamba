@@ -1,8 +1,6 @@
-use crate::common::position::CaretPos;
 use crate::parse::lex::pass::pass;
 use crate::parse::lex::result::LexResult;
 use crate::parse::lex::state::State;
-use crate::parse::lex::token::{Lex, Token};
 use crate::parse::lex::tokenize::into_tokens;
 
 pub mod result;
@@ -31,15 +29,6 @@ pub fn tokenize(input: &str) -> LexResult {
     while let Some(c) = it.next() {
         tokens.append(&mut into_tokens(c, &mut it, &mut state)?);
     }
-    tokens.append(&mut state.flush_indents());
-    tokens.push(Lex::new(
-        if let Some(lex) = tokens.last() {
-            lex.pos.end.offset_pos(1)
-        } else {
-            CaretPos::start()
-        },
-        Token::Eof,
-    ));
 
     let tokens = pass(&tokens);
     Ok(tokens)
@@ -53,7 +42,6 @@ fn tokenize_direct(input: &str) -> LexResult {
     while let Some(c) = it.next() {
         tokens.append(&mut into_tokens(c, &mut it, &mut state)?);
     }
-    tokens.append(&mut state.flush_indents());
 
     let tokens = pass(&tokens);
     Ok(tokens)
@@ -90,10 +78,6 @@ mod tests {
                     pos: Position::new(CaretPos::new(1, 15), CaretPos::new(1, 16)),
                     token: Token::Id(String::from("b")),
                 },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 17), CaretPos::new(1, 17)),
-                    token: Token::Eof,
-                },
             ]
         );
     }
@@ -111,7 +95,6 @@ mod tests {
                 Token::MulAssign,
                 Token::DivAssign,
                 Token::PowAssign,
-                Token::Eof,
             ]
         );
     }
@@ -155,10 +138,6 @@ mod tests {
                     pos: Position::new(CaretPos::new(1, 20), CaretPos::new(1, 21)),
                     token: Token::Id(String::from("i")),
                 },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 22)),
-                    token: Token::Eof,
-                },
             ]
         );
     }
@@ -195,16 +174,8 @@ mod tests {
                     token: Token::Neq,
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 16), CaretPos::new(1, 18)),
-                    token: Token::Is,
-                },
-                Lex {
                     pos: Position::new(CaretPos::new(1, 19), CaretPos::new(1, 20)),
                     token: Token::Id(String::from("i")),
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 21), CaretPos::new(1, 21)),
-                    token: Token::Eof,
                 },
             ]
         );
@@ -216,22 +187,16 @@ mod tests {
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens,
-            vec![
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 21)),
-                    token: Token::Str(
-                        String::from("my string {my_var}"),
-                        vec![vec![Lex {
-                            pos: Position::new(CaretPos::new(1, 13), CaretPos::new(1, 19)),
-                            token: Token::Id(String::from("my_var")),
-                        }]],
-                    ),
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 22)),
-                    token: Token::Eof,
-                },
-            ]
+            vec![Lex {
+                pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 21)),
+                token: Token::Str(
+                    String::from("my string {my_var}"),
+                    vec![vec![Lex {
+                        pos: Position::new(CaretPos::new(1, 13), CaretPos::new(1, 19)),
+                        token: Token::Id(String::from("my_var")),
+                    }]],
+                ),
+            },]
         );
     }
 
@@ -241,40 +206,34 @@ mod tests {
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens,
-            vec![
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 11)),
-                    token: Token::Str(
-                        String::from("{{a, b}}"),
-                        vec![vec![
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 3), CaretPos::new(1, 4)),
-                                token: Token::LCBrack,
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 4), CaretPos::new(1, 5)),
-                                token: Token::Id(String::from("a")),
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 5), CaretPos::new(1, 6)),
-                                token: Token::Comma,
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 7), CaretPos::new(1, 8)),
-                                token: Token::Id(String::from("b")),
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 8), CaretPos::new(1, 9)),
-                                token: Token::RCBrack,
-                            },
-                        ]],
-                    ),
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 12), CaretPos::new(1, 12)),
-                    token: Token::Eof,
-                },
-            ]
+            vec![Lex {
+                pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 11)),
+                token: Token::Str(
+                    String::from("{{a, b}}"),
+                    vec![vec![
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 3), CaretPos::new(1, 4)),
+                            token: Token::LCBrack,
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 4), CaretPos::new(1, 5)),
+                            token: Token::Id(String::from("a")),
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 5), CaretPos::new(1, 6)),
+                            token: Token::Comma,
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 7), CaretPos::new(1, 8)),
+                            token: Token::Id(String::from("b")),
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 8), CaretPos::new(1, 9)),
+                            token: Token::RCBrack,
+                        },
+                    ]],
+                ),
+            },]
         );
     }
 
@@ -284,32 +243,26 @@ mod tests {
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens,
-            vec![
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 10)),
-                    token: Token::Str(
-                        String::from("{a + b}"),
-                        vec![vec![
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 3), CaretPos::new(1, 4)),
-                                token: Token::Id(String::from("a")),
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 5), CaretPos::new(1, 6)),
-                                token: Token::Add,
-                            },
-                            Lex {
-                                pos: Position::new(CaretPos::new(1, 7), CaretPos::new(1, 8)),
-                                token: Token::Id(String::from("b")),
-                            },
-                        ]],
-                    ),
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 11), CaretPos::new(1, 11)),
-                    token: Token::Eof,
-                },
-            ]
+            vec![Lex {
+                pos: Position::new(CaretPos::new(1, 1), CaretPos::new(1, 10)),
+                token: Token::Str(
+                    String::from("{a + b}"),
+                    vec![vec![
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 3), CaretPos::new(1, 4)),
+                            token: Token::Id(String::from("a")),
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 5), CaretPos::new(1, 6)),
+                            token: Token::Add,
+                        },
+                        Lex {
+                            pos: Position::new(CaretPos::new(1, 7), CaretPos::new(1, 8)),
+                            token: Token::Id(String::from("b")),
+                        },
+                    ]],
+                ),
+            },]
         );
     }
 }

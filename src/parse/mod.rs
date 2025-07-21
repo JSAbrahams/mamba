@@ -3,9 +3,9 @@ use std::str::FromStr;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::{Lex, Token};
+use crate::parse::lex::token::Lex;
 use crate::parse::lex::tokenize;
-use crate::parse::result::{expected, ParseErr, ParseResult};
+use crate::parse::result::{ParseErr, ParseResult};
 
 pub mod ast;
 
@@ -35,11 +35,6 @@ impl FromStr for AST {
 
         let mut iterator = LexIterator::new(tokens.iter().peekable());
         let statements = block::parse_statements(&mut iterator)?;
-        if iterator.peek_if(&|lex| lex.token != Token::Eof) {
-            if let Some(lex) = iterator.peek_next() {
-                return Err(Box::from(expected(&Token::Eof, &lex, "end of file")));
-            }
-        }
 
         let start = statements
             .first()

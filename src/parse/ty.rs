@@ -15,9 +15,9 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
                 Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
             }
-            Token::LRBrack => {
+            Token::LSBrack => {
                 let mut elements = vec![];
-                let start = it.eat(&Token::LRBrack, "identifier tuple")?;
+                let start = it.eat(&Token::LSBrack, "identifier tuple")?;
                 it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
                     elements.push(*it.parse(&parse_expr_no_type, "identifier", start)?);
                     it.eat_if(&Token::Comma);
@@ -28,7 +28,7 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::Id(String::new()), Token::LRBrack],
+                &[Token::Id(String::new()), Token::LSBrack],
                 lex,
                 "identifier",
             ))),
@@ -77,15 +77,15 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 let node = Node::Type { id, generics };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
-            Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
+            Token::LSBrack => it.parse(&parse_type_tuple, "type", start),
             Token::LCBrack => it.parse(&parse_type_set, "type", start),
             _ => Err(Box::from(expected_one_of(
-                &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
+                &[Token::Id(String::new()), Token::LSBrack, Token::LCBrack],
                 &lex.clone(),
                 "type",
             ))),
         },
-        &[Token::Id(String::new()), Token::LRBrack],
+        &[Token::Id(String::new()), Token::LSBrack],
         "type",
     )?;
 
@@ -129,13 +129,13 @@ pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let mut conditions = vec![];
 
     if it.eat_if(&Token::NL).is_some() {
-        it.eat(&Token::Indent, "conditions")?;
-        it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
+        it.eat(&Token::LRBrack, "conditions")?;
+        it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
             conditions.push(*it.parse(&parse_condition, "conditions", start)?);
             it.eat_if(&Token::NL);
             Ok(())
         })?;
-        it.eat(&Token::Dedent, "conditions")?;
+        it.eat(&Token::RRBrack, "conditions")?;
     } else {
         let start = it.start_pos("conditions")?;
         conditions.push(*it.parse(&parse_condition, "conditions", start)?);
@@ -172,7 +172,7 @@ pub fn parse_type_set(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type tuple")?;
-    it.eat(&Token::LRBrack, "type tuple")?;
+    it.eat(&Token::LSBrack, "type tuple")?;
 
     let mut types = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {

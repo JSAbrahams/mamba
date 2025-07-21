@@ -1,9 +1,9 @@
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
-use crate::parse::block::parse_block;
+use crate::parse::block::parse_code_block;
 use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected, expected_one_of};
@@ -16,7 +16,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let ty = it.parse(&parse_type, "class", start)?;
 
     let mut args = vec![];
-    if it.eat_if(&Token::LRBrack).is_some() {
+    if it.eat_if(&Token::LSBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match lex.token {
             Token::Def => {
                 args.push(*it.parse(&parse_definition, "constructor argument", start)?);
@@ -35,7 +35,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let mut parents = vec![];
     if it.eat_if(&Token::DoublePoint).is_some() {
         it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
-            Token::Id(_) | Token::LRBrack => {
+            Token::Id(_) | Token::LSBrack => {
                 parents.push(*it.parse(&parse_parent, "parents", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
@@ -48,8 +48,8 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
         })?;
     }
 
-    let (body, pos) = if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
-        let body = it.parse(&parse_block, "class", start)?;
+    let (body, pos) = if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) {
+        let body = it.parse(&parse_code_block, "class", start)?;
         (Some(body.clone()), start.union(body.pos))
     } else {
         (None, start)
@@ -69,7 +69,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let ty = it.parse(&parse_type, "parent", start)?;
 
     let mut args = vec![];
-    let end = if it.eat_if(&Token::LRBrack).is_some() {
+    let end = if it.eat_if(&Token::LSBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
             Token::Id { .. } => {
                 args.push(*it.parse(&parse_id, "parent arguments", start)?);
@@ -126,9 +126,9 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
-            _ if it.peek_if_followed_by(&Token::NL, &Token::Indent) => {
+            _ if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) => {
                 it.eat_if(&Token::NL);
-                let body = it.parse(&parse_block, "type definition", start)?;
+                let body = it.parse(&parse_code_block, "type definition", start)?;
                 let isa = isa.clone();
                 let node = Node::TypeDef {
                     ty: ty.clone(),

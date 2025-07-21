@@ -1,8 +1,8 @@
 use crate::parse::ast::{Node, AST};
-use crate::parse::block::parse_block;
+use crate::parse::block::{parse_code_block, parse_code_set};
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
 use crate::parse::statement::parse_statement;
@@ -11,10 +11,8 @@ use crate::parse::statement::{is_start_statement, parse_reassignment};
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     let expr_or_stmt = it.peek_or_err(
         &|it, lex| match &lex.token {
-            Token::NL => {
-                it.eat(&Token::NL, "expression or statement")?;
-                it.parse(&parse_block, "expression or statement", lex.pos)
-            }
+            Token::LSBrack => it.parse(&parse_code_block, "expression", lex.pos),
+            Token::LCBrack => it.parse(&parse_code_set, "statement", lex.pos),
             token if is_start_statement(token) => parse_statement(it),
             _ => parse_expression(it),
         },
@@ -23,9 +21,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     )?;
 
     // if expression/statement followed by newline and indent, we are dealing with a handle block
-    if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
-        it.eat(&Token::NL, "internal error in parsing call")?; // peek covers this
-
+    if it.peek_if(&|lex: &Lex| lex.token == Token::Raise) {
         // parse handle cases if indentation block after
         let cases = it.parse_vec(&parse_match_cases, "handle cases", expr_or_stmt.pos)?;
         let end = cases.last().map_or(expr_or_stmt.pos, |stmt| stmt.pos);

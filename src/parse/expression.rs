@@ -26,7 +26,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let expected = [
         Token::If,
         Token::Match,
-        Token::LRBrack,
+        Token::LSBrack,
         Token::LSBrack,
         Token::LCBrack,
         Token::Underscore,
@@ -44,7 +44,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let result = it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
-            Token::LRBrack | Token::LSBrack | Token::LCBrack => parse_collection(it),
+            Token::LSBrack | Token::LRBrack | Token::LCBrack => parse_collection(it),
             Token::Underscore => parse_underscore(it),
             Token::Id(_) => parse_id(it),
             Token::Real(real) => literal!(it, real.to_string(), Real),
@@ -99,12 +99,8 @@ fn parse_underscore(it: &mut LexIterator) -> ParseResult {
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.peek(
         &|it, lex| match lex.token {
-            Token::LRBrack | Token::Point => {
+            Token::LSBrack | Token::Point => {
                 let res = parse_call(pre, it)?;
-                parse_post_expr(&res, it)
-            }
-            Token::LSBrack => {
-                let res = parse_index(pre, it)?;
                 parse_post_expr(&res, it)
             }
             _ if is_start_expression_exclude_unary(lex) => {
@@ -117,25 +113,14 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     )
 }
 
-fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    it.eat(&Token::LSBrack, "index")?;
-
-    let item = Box::from(pre.clone());
-    let range = it.parse(&parse_expression, "index", pre.pos)?;
-
-    let node = Node::Index { item, range };
-    let end = it.eat(&Token::RSBrack, "index")?;
-    Ok(Box::from(AST::new(pre.pos.union(end), node)))
-}
-
 /// Excluding unary addition and subtraction
 pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
     matches!(
         tp.token,
         Token::If
             | Token::Match
-            | Token::LRBrack
             | Token::LSBrack
+            | Token::LRBrack
             | Token::LCBrack
             | Token::Underscore
             | Token::BSlash
