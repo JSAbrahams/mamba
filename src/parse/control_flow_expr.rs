@@ -108,16 +108,14 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 #[cfg(test)]
 mod test {
     use crate::parse::ast::{Node, AST};
-    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
 
     #[test]
     fn if_else_verify() {
         let source = String::from("if a then c else d");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::IfElse { cond, then, el } = &statements.first().expect("script empty.").node
-        else {
+        let Node::IfElse { cond, then, el } = &ast.node else {
             panic!("first element script was not if.")
         };
 
@@ -144,9 +142,9 @@ mod test {
     #[test]
     fn match_verify() {
         let source = String::from("match a\n    a => b\n    c => d");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::Match { cond, cases } = &statements.first().expect("script empty.").node else {
+        let Node::Match { cond, cases } = &ast.node else {
             panic!("first element script was not match.")
         };
 
@@ -215,9 +213,9 @@ mod test {
     #[test]
     fn if_expression() -> ParseResult<()> {
         let source = String::from("if a then\n    b\n");
-        let ast = parse_direct(&source)?;
+        let ast: AST = source.parse()?;
 
-        let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
+        let Node::IfElse { cond, then, el } = ast.node else {
             panic!("Expected if, got {ast:?}")
         };
 
@@ -245,9 +243,9 @@ mod test {
     #[test]
     fn if_else_expression() -> ParseResult<()> {
         let source = String::from("if a then\n    b\nelse\n    c");
-        let ast = parse_direct(&source)?;
+        let ast: AST = source.parse()?;
 
-        let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
+        let Node::IfElse { cond, then, el } = ast.node else {
             panic!("Expected if, got {ast:?}")
         };
 
@@ -281,27 +279,11 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn if_then_missing_body() {
-        let source = String::from("if a then b else");
-        parse_direct(&source).unwrap_err();
-    }
-
-    #[test]
-    fn match_missing_condition() {
-        let source = String::from("match\n    a => b");
-        parse_direct(&source).unwrap_err();
-    }
-
-    #[test]
-    fn match_missing_arms() {
-        let source = String::from("match a with\n    ");
-        parse_direct(&source).unwrap_err();
-    }
-
-    #[test]
-    fn match_missing_arms_no_newline() {
-        let source = String::from("match a");
-        parse_direct(&source).unwrap_err();
+    #[test_case::test_case("if a then b else"; "if_then_missing_body")]
+    #[test_case::test_case("match\n    a => b"; "match_missing_condition")]
+    #[test_case::test_case("match a with\n    "; "match_missing_arms")]
+    #[test_case::test_case("match a"; "match_missing_match_missing_arms_no_newlinearms")]
+    fn invalid(src: &str) {
+        src.parse::<AST>().unwrap_err();
     }
 }

@@ -137,7 +137,6 @@ mod test {
     use crate::check::name::Name;
     use crate::common::position::Position;
     use crate::parse::ast::Node;
-    use crate::parse::parse_direct;
     use crate::{TypeErr, AST};
 
     #[test]
@@ -149,11 +148,7 @@ mod test {
     #[test]
     fn from_fundef() -> Result<(), Vec<TypeErr>> {
         let source = "def f(fin a: Int, b: String := \"a\") -> String ! E := pass";
-        let ast = parse_direct(source)
-            .expect("valid function syntax")
-            .into_iter()
-            .next()
-            .expect("function AST");
+        let ast: AST = source.parse().expect("valid function syntax");
 
         let generic_function = GenericFunction::try_from(&ast)?;
 
@@ -185,11 +180,7 @@ mod test {
     #[test]
     fn from_fundef_no_ret() -> Result<(), Vec<TypeErr>> {
         let source = "def f() := pass";
-        let ast = parse_direct(source)
-            .expect("valid function syntax")
-            .into_iter()
-            .next()
-            .expect("function AST");
+        let ast: AST = source.parse().expect("valid function syntax");
 
         let generic_function = GenericFunction::try_from(&ast)?;
         assert_eq!(generic_function.ret_ty, None);

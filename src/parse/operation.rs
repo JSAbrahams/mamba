@@ -201,11 +201,10 @@ mod test {
 
     use crate::parse::ast::{Node, AST};
     use crate::parse::lex::token::Token::*;
-    use crate::parse::parse_direct;
 
     macro_rules! verify_is_operation {
         ($op:ident, $ast:expr) => {{
-            match &$ast.first().expect("script empty.").node {
+            match &$ast.node {
                 Node::$op { left, right } => (left.clone(), right.clone()),
                 other => panic!(
                     "first element script was not op: {}, but was: {:?}",
@@ -217,9 +216,9 @@ mod test {
 
     macro_rules! verify_is_un_operation {
         ($op:ident, $ast:expr) => {{
-            match &$ast.first().expect("script empty.").node {
+            match &$ast.node {
                 Node::$op { expr } => expr.clone(),
-                _ => panic!("first element script was not tuple."),
+                _ => panic!("was not operator: {:?}", $ast),
             }
         }};
     }
@@ -227,7 +226,7 @@ mod test {
     #[test]
     fn addition_verify() {
         let source = String::from("a + b");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Add, ast);
         assert_eq!(
@@ -247,7 +246,7 @@ mod test {
     #[test]
     fn addition_unary_verify() {
         let source = String::from("+ b");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let expr = verify_is_un_operation!(AddU, ast);
         assert_eq!(
@@ -261,7 +260,7 @@ mod test {
     #[test]
     fn subtraction_verify() {
         let source = String::from("a - False");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Sub, ast);
         assert_eq!(
@@ -281,7 +280,7 @@ mod test {
     #[test]
     fn subtraction_unary_verify() {
         let source = String::from("- c");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let expr = verify_is_un_operation!(SubU, ast);
         assert_eq!(
@@ -295,7 +294,7 @@ mod test {
     #[test]
     fn multiplication_verify() {
         let source = String::from("True * b");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Mul, ast);
         assert_eq!(
@@ -315,7 +314,7 @@ mod test {
     #[test]
     fn division_verify() {
         let source = String::from("10.0 / fgh");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Div, ast);
         assert_eq!(
@@ -335,7 +334,7 @@ mod test {
     #[test]
     fn floor_division_verify() {
         let source = String::from("10.0 // fgh");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(FDiv, ast);
         assert_eq!(
@@ -355,7 +354,7 @@ mod test {
     #[test]
     fn power_verify() {
         let source = String::from("chopin ^ liszt");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Pow, ast);
         assert_eq!(
@@ -375,7 +374,7 @@ mod test {
     #[test]
     fn mod_verify() {
         let source = String::from("chopin mod 3E10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Mod, ast);
         assert_eq!(
@@ -396,7 +395,7 @@ mod test {
     #[test]
     fn equality_verify() {
         let source = String::from("i = s");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Eq, ast);
         assert_eq!(
@@ -416,7 +415,7 @@ mod test {
     #[test]
     fn le_verify() {
         let source = String::from("one < two");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Le, ast);
         assert_eq!(
@@ -436,7 +435,7 @@ mod test {
     #[test]
     fn leq_verify() {
         let source = String::from("two_hundred <= three");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Leq, ast);
         assert_eq!(
@@ -456,7 +455,7 @@ mod test {
     #[test]
     fn ge_verify() {
         let source = String::from("r > 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Ge, ast);
         assert_eq!(
@@ -476,7 +475,7 @@ mod test {
     #[test]
     fn geq_verify() {
         let source = String::from("4 >= 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Geq, ast);
         assert_eq!(
@@ -496,7 +495,7 @@ mod test {
     #[test]
     fn in_verify() {
         let source = String::from("one in my_set");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(In, ast);
         assert_eq!(
@@ -516,7 +515,7 @@ mod test {
     #[test]
     fn and_verify() {
         let source = String::from("one and three");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(And, ast);
         assert_eq!(
@@ -536,7 +535,7 @@ mod test {
     #[test]
     fn or_verify() {
         let source = String::from("one or \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let (left, right) = verify_is_operation!(Or, ast);
         assert_eq!(
@@ -557,7 +556,7 @@ mod test {
     #[test]
     fn not_verify() {
         let source = String::from("not some_cond");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let expr = verify_is_un_operation!(Not, ast);
         assert_eq!(
@@ -571,7 +570,7 @@ mod test {
     #[test]
     fn sqrt_verify() {
         let source = String::from("sqrt some_num");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
         let expr = verify_is_un_operation!(Sqrt, ast);
         assert_eq!(

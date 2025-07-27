@@ -65,15 +65,14 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::Node;
-    use crate::parse::parse_direct;
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn for_statement_verify() {
         let source = String::from("for a in c do d");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (expr, collection, body) = match &statements.first().expect("script empty.").node {
+        let (expr, collection, body) = match &ast.node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not for."),
         };
@@ -101,9 +100,9 @@ mod test {
     #[test]
     fn for_range_step_verify() {
         let source = String::from("for a in c .. d .. e do f");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (expr, col, body) = match &statements.first().expect("script empty.").node {
+        let (expr, col, body) = match &ast.node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not foreach."),
         };
@@ -155,9 +154,9 @@ mod test {
     #[test]
     fn for_range_incl_verify() {
         let source = String::from("for a in c ..= d do f");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (expr, col, body) = match &statements.first().expect("script empty.").node {
+        let (expr, col, body) = match &ast.node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not foreach."),
         };
@@ -204,9 +203,9 @@ mod test {
     #[test]
     fn if_verify() {
         let source = String::from("if a then c");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (cond, then, el) = match &statements.first().expect("script empty.").node {
+        let (cond, then, el) = match &ast.node {
             Node::IfElse { cond, then, el } => (cond, then, el),
             _ => panic!("first element script was not if."),
         };
@@ -229,9 +228,9 @@ mod test {
     #[test]
     fn if_with_block_verify() {
         let source = String::from("if a then\n    c\n    d");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (cond, then, el) = match &statements.first().expect("script empty.").node {
+        let (cond, then, el) = match &ast.node {
             Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
             _ => panic!("first element script was not if."),
         };
@@ -267,9 +266,9 @@ mod test {
     #[test]
     fn while_verify() {
         let source = String::from("while a do d");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (cond, body) = match &statements.first().expect("script empty.").node {
+        let (cond, body) = match &ast.node {
             Node::While { cond, body } => (cond.clone(), body.clone()),
             _ => panic!("first element script was not while."),
         };
@@ -290,21 +289,21 @@ mod test {
 
     #[test]
     fn for_missing_do() {
-        parse_direct(&String::from("for a in c d")).unwrap_err();
+        "for a in c d".parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn for_missing_body() {
-        parse_direct(&String::from("for a in c")).unwrap_err();
+        "for a in c".parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn if_missing_then() {
-        parse_direct(&String::from("if a b")).unwrap_err();
+        "if a b".parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn if_missing_body() {
-        parse_direct(&String::from("if a then")).unwrap_err();
+        "if a then".parse::<AST>().unwrap_err();
     }
 }

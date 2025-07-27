@@ -35,6 +35,9 @@ impl FromStr for AST {
 
         let mut iterator = LexIterator::new(tokens.iter().peekable());
         let statements = block::parse_statements(&mut iterator)?;
+        if statements.len() == 1 {
+            return Ok(statements.first().cloned().unwrap());
+        }
 
         let start = statements
             .first()
@@ -44,13 +47,5 @@ impl FromStr for AST {
             .map_or_else(Position::invisible, |stmt| stmt.pos);
 
         Ok(AST::new(start.union(end), Node::Block { statements }))
-    }
-}
-
-#[cfg(test)]
-pub fn parse_direct(input: &str) -> ParseResult<Vec<AST>> {
-    match AST::from_str(input)?.node {
-        Node::Block { statements } => Ok(statements),
-        _ => Ok(vec![]),
     }
 }

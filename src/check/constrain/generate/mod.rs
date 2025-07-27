@@ -32,7 +32,7 @@ pub(super) mod env;
 
 pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 
-pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<Vec<Constraints>> {
+pub fn constrain(ast: &AST, ctx: &Context) -> Constrained<Vec<Constraints>> {
     let mut builder = ConstrBuilder::new();
 
     generate(ast, &Environment::default(), ctx, &mut builder)?;

@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use log::trace;
 
 use crate::check::ast::ASTTy;
-use crate::check::constrain::constraints;
+use crate::check::constrain::constrain_and_unify;
 use crate::check::context::Context;
 use crate::check::result::TypeResult;
 use crate::parse::ast::AST;
@@ -31,7 +31,7 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
         ctx.fields.len()
     );
 
-    let finished = constraints(ast, ctx)?;
+    let finished = constrain_and_unify(ast, ctx)?;
     Ok(ASTTy::from((ast, &finished)))
 }
 

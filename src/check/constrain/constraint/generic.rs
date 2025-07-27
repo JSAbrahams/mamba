@@ -353,7 +353,8 @@ mod test {
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
         let source = "class MyClass(def fin a: Int, b: Int): Parent(b)\n    def c: Int := a + b\n";
-        let ast: AST = source.parse().expect("valid class syntax");
+        let ast: AST = source.parse()
+            .expect("valid class syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -414,7 +415,9 @@ mod test {
     #[test]
     fn from_class() -> Result<(), Vec<TypeErr>> {
         let source = "class MyClass\n    def c: Int := a + b\n";
-        let ast: AST = source.parse().expect("valid class syntax");
+        let ast: AST = source.parse()
+            .expect("valid class syntax");
+
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -450,7 +453,11 @@ mod test {
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "class MyClass[T]\n    def c: T\n";
-        let ast: AST = source.parse().expect("valid type syntax");
+        let asts: AST = source.parse()(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -487,7 +494,8 @@ mod test {
     #[test]
     fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType[T]\n    def c: T\n";
-        let ast: AST = source.parse().expect("valid type syntax");
+        let ast: AST = source.parse()
+            .expect("valid type syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -524,7 +532,11 @@ mod test {
     #[test]
     fn from_type_def() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType\n    def c: String\n";
-        let ast: AST = source.parse().expect("valid type syntax");
+        let asts: AST = source.parse()(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 

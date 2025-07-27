@@ -232,12 +232,11 @@ mod tests {
     use crate::check::constrain::constraint::expected::{Expect, Expected};
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{Node, AST};
-    use crate::parse::parse_direct;
 
     #[test]
     fn test_expected_from_int_constructor_call() {
-        let ast = parse_direct("Int(10)").unwrap();
-        let expect = Expected::from(&ast[0]);
+        let ast: AST = "Int(10)".parse().unwrap();
+        let expect = Expected::from(&ast);
 
         assert_eq!(
             expect.expect,

@@ -150,14 +150,13 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::Node;
-    use crate::parse::parse_direct;
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn tuple_empty_verify() {
         let source = String::from("()");
-        let statements = parse_direct(&source).unwrap();
-        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+        let ast: AST = source.parse().unwrap();
+        let Node::Tuple { elements } = &ast.node else {
             panic!("first element script was not tuple.")
         };
 
@@ -167,8 +166,8 @@ mod test {
     #[test]
     fn tuple_single_is_expr_verify() {
         let source = String::from("(a)");
-        let statements = parse_direct(&source).unwrap();
-        let Node::Id { lit } = &statements.first().expect("script empty.").node else {
+        let ast: AST = source.parse().unwrap();
+        let Node::Id { lit } = &ast.node else {
             panic!("first element script was not tuple.")
         };
 
@@ -178,8 +177,8 @@ mod test {
     #[test]
     fn tuple_multiple_verify() {
         let source = String::from("(d, c)");
-        let statements = parse_direct(&source).unwrap();
-        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+        let ast: AST = source.parse().unwrap();
+        let Node::Tuple { elements } = &ast.node else {
             panic!("first element script was not tuple.")
         };
 
@@ -201,9 +200,9 @@ mod test {
     #[test]
     fn set_verify() {
         let source = String::from("{a, b}");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::Set { elements } = &statements.first().expect("script empty.").node else {
+        let Node::Set { elements } = &ast.node else {
             panic!("first element script was not set.")
         };
 
@@ -224,11 +223,9 @@ mod test {
     #[test]
     fn set_builder_verify() {
         let source = String::from("{a | c, d}");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::SetBuilder { item, conditions } =
-            &statements.first().expect("script empty.").node
-        else {
+        let Node::SetBuilder { item, conditions } = &ast.node else {
             panic!("first element script was not set builder.")
         };
 
@@ -257,9 +254,9 @@ mod test {
     #[test]
     fn list_verify() {
         let source = String::from("[a, b]");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::List { elements } = &statements.first().expect("script empty.").node else {
+        let Node::List { elements } = &ast.node else {
             panic!("first element script was not list.")
         };
 
@@ -280,10 +277,8 @@ mod test {
     #[test]
     fn list_builder_verify() {
         let source = String::from("[a | c, d]");
-        let statements = parse_direct(&source).unwrap();
-        let Node::ListBuilder { item, conditions } =
-            &statements.first().expect("script empty.").node
-        else {
+        let ast: AST = source.parse().unwrap();
+        let Node::ListBuilder { item, conditions } = &ast.node else {
             panic!("first element script was not list builder.")
         };
 

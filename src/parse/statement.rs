@@ -221,18 +221,15 @@ pub fn is_start_statement(tp: &Token) -> bool {
 mod test {
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::node_op::NodeOp;
-    use crate::parse::ast::Node;
-    use crate::parse::parse_direct;
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn parse_return() {
         let source = String::from("return 20");
-        let asts = parse_direct(&source).expect("valid AST");
+        let ast: AST = source.parse().expect("valid AST");
 
-        assert_eq!(asts.len(), 1);
-        let ret = asts.first().expect("return");
-        let Node::Return { expr } = &ret.node else {
-            panic!("Expected reassignment, was: {:?}", ret.node)
+        let Node::Return { expr } = &ast.node else {
+            panic!("Expected reassignment, was: {ast:?}")
         };
 
         assert_eq!(
@@ -250,12 +247,10 @@ mod test {
     #[test]
     fn parse_reassignment() {
         let source = String::from("a := 1");
-        let asts = parse_direct(&source).expect("valid AST");
+        let ast: AST = source.parse().expect("valid AST");
 
-        assert_eq!(asts.len(), 1);
-        let reassignment = asts.first().expect("reassignment");
-        let Node::Reassign { left, right, op } = &reassignment.node else {
-            panic!("Expected reassignment, was {reassignment:?}")
+        let Node::Reassign { left, right, op } = &ast.node else {
+            panic!("Expected reassignment, was {ast:?}")
         };
 
         assert_eq!(
@@ -276,12 +271,10 @@ mod test {
     #[test]
     fn parse_reassignment_call() {
         let source = String::from("a.b := 1");
-        let asts = parse_direct(&source).expect("valid AST");
+        let ast: AST = source.parse().expect("valid AST");
 
-        assert_eq!(asts.len(), 1);
-        let reassignment = asts.first().expect("reassignment");
-        let Node::Reassign { left, right, op } = &reassignment.node else {
-            panic!("Expected reassignment, was {reassignment:?}")
+        let Node::Reassign { left, right, op } = &ast.node else {
+            panic!("Expected reassignment, was {ast:?}")
         };
 
         let Node::PropertyCall { instance, property } = &left.node else {

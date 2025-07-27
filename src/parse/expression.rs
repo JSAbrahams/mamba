@@ -140,17 +140,14 @@ pub fn is_start_expression(tp: &Lex) -> bool {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::ast::Node;
-    use crate::parse::parse_direct;
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn parse_call() {
         let source = String::from("a.b.c");
-        let asts = parse_direct(&source).expect("valid AST");
+        let ast: AST = source.parse().expect("valid AST");
 
-        assert_eq!(asts.len(), 1);
-        let reassignment = asts.first().expect("reassignment");
-        let (first, second, third) = match &reassignment.node {
+        let (first, second, third) = match &ast.node {
             Node::PropertyCall { instance, property } => match &property.node {
                 Node::PropertyCall {
                     instance: inner,

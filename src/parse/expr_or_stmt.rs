@@ -53,14 +53,13 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::ast::node_op::NodeOp;
     use crate::parse::ast::{Node, AST};
-    use crate::parse::parse_direct;
 
     #[test]
     fn range_verify() {
         let source = String::from("hello .. world");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        let (from, to, inclusive, step) = match &ast.node {
             Node::Range {
                 from,
                 to,
@@ -89,9 +88,9 @@ mod test {
     #[test]
     fn range_step_verify() {
         let source = String::from("hello .. world .. 2");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        let (from, to, inclusive, step) = match &ast.node {
             Node::Range {
                 from,
                 to,
@@ -125,9 +124,9 @@ mod test {
     #[test]
     fn range_incl_verify() {
         let source = String::from("foo ..= bar");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        let (from, to, inclusive, step) = match &ast.node {
             Node::Range {
                 from,
                 to,
@@ -156,9 +155,9 @@ mod test {
     #[test]
     fn reassign_verify() {
         let source = String::from("id := new_value");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (left, right) = match &statements.first().expect("script empty.").node {
+        let (left, right) = match &ast.node {
             Node::Reassign { left, right, op } => {
                 assert_eq!(*op, NodeOp::Assign);
                 (left.clone(), right.clone())
@@ -183,9 +182,9 @@ mod test {
     #[test]
     fn return_verify() {
         let source = String::from("return some_value");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let expr = match &statements.first().expect("script empty.").node {
+        let expr = match &ast.node {
             Node::Return { expr } => expr.clone(),
             _ => panic!("first element script was not reassign."),
         };
@@ -201,9 +200,9 @@ mod test {
     #[test]
     fn return_stmt_with_comment_verify() {
         let source = String::from("return some_value # comment");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let expr = match &statements.first().expect("script empty.").node {
+        let expr = match &ast.node {
             Node::Return { expr } => expr.clone(),
             _ => panic!("first element script was not reassign."),
         };
@@ -219,9 +218,9 @@ mod test {
     #[test]
     fn literal_expr_with_comment_verify() {
         let source = String::from("10 # comment");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let lit = match &statements.first().expect("script empty.").node {
+        let lit = match &ast.node {
             Node::Int { lit } => lit.clone(),
             _ => panic!("first element script was not reassign."),
         };
@@ -232,19 +231,8 @@ mod test {
     #[test]
     fn underscore_verify() {
         let source = String::from("_");
-        let statements = parse_direct(&source).unwrap();
-
-        let ast = statements.first().expect("script empty.").clone();
+        let ast: AST = source.parse().unwrap();
         assert_eq!(ast.node, Node::Underscore);
-    }
-
-    #[test]
-    fn pass_verify() {
-        let source = String::from("pass");
-        let statements = parse_direct(&source).unwrap();
-
-        let ast = statements.first().expect("script empty.").clone();
-        assert_eq!(ast.node, Node::Pass);
     }
 
     #[test]

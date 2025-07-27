@@ -75,12 +75,16 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 mod test {
     use crate::parse::ast::node_op::NodeOp;
     use crate::parse::ast::{Node, AST};
-    use crate::parse::parse_direct;
 
     #[test]
     fn op_assign() {
         let source = String::from("a:=1\nb+=2\nc-=3\nd*=4\ne/=5\nf^=6\n");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
+
+        let statements = match &ast.node {
+            Node::Block { statements } => statements,
+            _ => panic!("Expected multiple statements, got {ast:?}"),
+        };
 
         let ops: Vec<NodeOp> = statements
             .iter()
@@ -101,9 +105,9 @@ mod test {
     #[test]
     fn anon_fun_no_args_verify() {
         let source = String::from("\\ := c");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {
+        let Node::AnonFun { args, body } = &ast.node else {
             panic!("first element script was anon fun.")
         };
 
@@ -119,9 +123,9 @@ mod test {
     #[test]
     fn anon_fun_verify() {
         let source = String::from("\\a,b := c");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {
+        let Node::AnonFun { args, body } = &ast.node else {
             panic!("first element script was anon fun.")
         };
 
@@ -176,10 +180,9 @@ mod test {
     #[test]
     fn direct_call_verify() {
         let source = String::from("a(b, c)");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node
-        else {
+        let Node::FunctionCall { name, args } = &ast.node else {
             panic!("first element script was anon fun.")
         };
 
@@ -207,9 +210,9 @@ mod test {
     #[test]
     fn method_call_verify() {
         let source = String::from("instance.a(b, c)");
-        let statements = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
 
-        let (instance, name, args) = match &statements.first().expect("script empty.").node {
+        let (instance, name, args) = match &ast.node {
             Node::PropertyCall { instance, property } => match &property.node {
                 Node::FunctionCall { name, args } => (instance.clone(), name.clone(), args.clone()),
                 other => panic!("not function call in property call {other:?}"),

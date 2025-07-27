@@ -295,12 +295,10 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 #[cfg(test)]
 mod test {
     use crate::parse::ast::{Node, AST};
-    use crate::parse::parse_direct;
 
     macro_rules! unwrap_func_definition {
         ($ast:expr) => {{
-            let definition = $ast.first().expect("script empty.").clone();
-            match definition.node {
+            match $ast.node {
                 Node::FunDef {
                     id,
                     pure,
@@ -317,7 +315,7 @@ mod test {
 
     macro_rules! unwrap_definition {
         ($ast:expr) => {{
-            let definition = $ast.first().expect("script empty.").node.clone();
+            let definition = $ast.node.clone();
             match definition {
                 Node::VariableDef {
                     mutable,
@@ -334,7 +332,7 @@ mod test {
     #[test]
     fn empty_definition_verify() {
         let source = String::from("def a");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -352,7 +350,7 @@ mod test {
     #[test]
     fn definition_verify() {
         let source = String::from("def a := 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -379,7 +377,7 @@ mod test {
     #[test]
     fn mutable_definition_verify() {
         let source = String::from("def fin a := 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(!mutable);
@@ -406,7 +404,7 @@ mod test {
     #[test]
     fn private_definition_verify() {
         let source = String::from("def a := 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -433,7 +431,7 @@ mod test {
     #[test]
     fn typed_definition_verify() {
         let source = String::from("def a: Object := 10");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         let type_id = match ty {
@@ -473,7 +471,7 @@ mod test {
     #[test]
     fn forward_empty_definition_verify() {
         let source = String::from("def a forward b, c");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -503,7 +501,7 @@ mod test {
     #[test]
     fn forward_definition_verify() {
         let source = String::from("def a := MyClass forward b, c");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -538,7 +536,7 @@ mod test {
     #[test]
     fn function_definition_verify() {
         let source = String::from("def f(fin b: Something, c) := d");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
@@ -622,7 +620,7 @@ mod test {
     #[test]
     fn function_no_args_definition_verify() {
         let source = String::from("def f() := d");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
@@ -649,7 +647,7 @@ mod test {
     #[test]
     fn function_pure_definition_verify() {
         let source = String::from("def pure f() := d");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(pure);
@@ -676,13 +674,13 @@ mod test {
     #[test]
     fn function_no_separator_args() {
         let source = String::from("def f(x b: Something) := d");
-        parse_direct(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn function_definition_with_literal_verify() {
         let source = String::from("def f(x, b: Something) := d");
-        let ast = parse_direct(&source).unwrap();
+        let ast: AST = source.parse().unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
