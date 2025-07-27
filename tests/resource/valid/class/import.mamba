@@ -1,4 +1,4 @@
-import a::{b as c,c as d}
-import b::c
+from a import {b as c, c as d}
+from b import c
 import d
-import d::dd
+from d import dd
