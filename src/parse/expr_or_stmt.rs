@@ -1,5 +1,5 @@
 use crate::parse::ast::{Node, AST};
-use crate::parse::block::{parse_code_block, parse_code_set};
+use crate::parse::block::{parse_code_block_or_list, parse_code_set_or_set};
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
@@ -11,9 +11,9 @@ use crate::parse::statement::{is_start_statement, parse_reassignment};
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     let expr_or_stmt = it.peek_or_err(
         &|it, lex| match &lex.token {
-            Token::LSBrack => it.parse(&parse_code_block, "expression", lex.pos),
-            Token::LCBrack => it.parse(&parse_code_set, "statement", lex.pos),
-            token if is_start_statement(token) => parse_statement(it),
+            Token::LSBrack => it.parse(&parse_code_block_or_list, "expression", lex.pos),
+            Token::LCBrack => it.parse(&parse_code_set_or_set, "statement", lex.pos),
+            _ if is_start_statement(lex) => parse_statement(it),
             _ => parse_expression(it),
         },
         &[],
@@ -240,16 +240,7 @@ mod test {
         let source = String::from("import c");
         let ast = source.parse::<AST>().unwrap();
 
-        let imports = match ast.node {
-            Node::Block {
-                statements: modules,
-                ..
-            } => modules,
-            _ => panic!("ast was not file."),
-        };
-
-        assert_eq!(imports.len(), 1);
-        let (from, import, alias) = match &imports[0].node {
+        let (from, import, alias) = match &ast.node {
             Node::Import {
                 from,
                 import,
@@ -273,16 +264,7 @@ mod test {
         let source = String::from("import a, b as c, d");
         let ast = source.parse::<AST>().unwrap();
 
-        let imports = match ast.node {
-            Node::Block {
-                statements: modules,
-                ..
-            } => modules,
-            _ => panic!("ast was not file."),
-        };
-
-        assert_eq!(imports.len(), 1);
-        let (from, import, alias) = match &imports[0].node {
+        let (from, import, alias) = match &ast.node {
             Node::Import {
                 from,
                 import,

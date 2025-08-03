@@ -352,7 +352,7 @@ mod test {
 
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass(def fin a: Int, b: Int): Parent(b)\n    def c: Int := a + b\n";
+        let source = "class MyClass(def fin a: Int, b: Int): Parent(b) := { def c: Int := a + b }";
         let ast: AST = source.parse().expect("valid class syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;

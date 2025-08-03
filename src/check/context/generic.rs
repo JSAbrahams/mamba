@@ -11,7 +11,7 @@ use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{Node, OptAST, AST};
 
 pub fn generics(
-    files: &[AST],
+    asts: &[AST],
 ) -> TypeResult<(
     HashSet<GenericClass>,
     HashSet<GenericField>,
@@ -21,41 +21,49 @@ pub fn generics(
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
 
-    for file in files {
-        match &file.node {
+    for ast in asts {
+        match &ast.node {
             Node::Block { statements } => {
-                for module in statements {
-                    match &module.node {
-                        Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
-                            types.insert(GenericClass::try_from(module)?);
-                        }
-                        Node::FunDef { .. } => {
-                            functions.insert(GenericFunction::try_from(module)?);
-                        }
-                        Node::VariableDef { .. } => {
-                            GenericFields::try_from(module)?
-                                .fields
-                                .iter()
-                                .for_each(|ty| {
-                                    fields.insert(ty.clone());
-                                });
-                        }
-                        Node::Import {
-                            from,
-                            import,
-                            alias,
-                        } => from_import(from, import, alias)?.into_iter().for_each(|t| {
-                            types.insert(t);
-                        }),
-                        _ => {}
-                    }
+                for ast in statements {
+                    single_ast(ast, &mut types, &mut fields, &mut functions)?
                 }
             }
-            _ => return Err(vec![TypeErr::new(file.pos, "Expected file")]),
-        }
+            _ => single_ast(ast, &mut types, &mut fields, &mut functions)?,
+        };
     }
 
     Ok((types, fields, functions))
+}
+
+fn single_ast(
+    ast: &AST,
+    types: &mut HashSet<GenericClass>,
+    fields: &mut HashSet<GenericField>,
+    functions: &mut HashSet<GenericFunction>,
+) -> TypeResult<()> {
+    match &ast.node {
+        Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
+            types.insert(GenericClass::try_from(ast)?);
+        }
+        Node::FunDef { .. } => {
+            functions.insert(GenericFunction::try_from(ast)?);
+        }
+        Node::VariableDef { .. } => {
+            GenericFields::try_from(ast)?.fields.iter().for_each(|ty| {
+                fields.insert(ty.clone());
+            });
+        }
+        Node::Import {
+            from,
+            import,
+            alias,
+        } => from_import(from, import, alias)?.into_iter().for_each(|t| {
+            types.insert(t);
+        }),
+        _ => {}
+    };
+
+    Ok(())
 }
 
 /// From import.

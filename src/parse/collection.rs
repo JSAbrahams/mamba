@@ -31,11 +31,10 @@ pub fn parse_tuple(it: &mut LexIterator) -> ParseResult {
     let elements = it.parse_vec(&parse_expressions, "tuple", start)?;
     let end = it.eat(&Token::RRBrack, "tuple")?;
 
-    Ok(Box::from(if elements.len() == 1 {
-        elements[0].clone()
-    } else {
-        AST::new(start.union(end), Node::Tuple { elements })
-    }))
+    Ok(Box::new(AST::new(
+        start.union(end),
+        Node::Tuple { elements },
+    )))
 }
 
 fn parse_set_or_dict(it: &mut LexIterator) -> ParseResult {
@@ -48,19 +47,31 @@ fn parse_set_or_dict(it: &mut LexIterator) -> ParseResult {
     }
 
     let item = it.parse(&parse_expression, "set", start)?;
+    parse_set_or_dict_partial(start, &item, it)
+}
+
+/// Parse set where first element is already parsed.
+pub fn parse_set_or_dict_partial(
+    start: Position,
+    first: &AST,
+    it: &mut LexIterator,
+) -> ParseResult {
     if it.eat_if(&Token::BTo).is_some() {
         let to = it.parse(&parse_expression, "dictionary entry to", start)?;
-        return parse_dict(it, &(*item.clone(), *to), start);
+        return parse_dict(it, &(first.clone(), *to), start);
     }
 
     if it.eat_if(&Token::Ver).is_some() {
         let conditions = it.parse_vec(&parse_expressions, "set builder", start)?;
         let end = it.eat(&Token::RCBrack, "set builder")?;
-        let node = Node::SetBuilder { item, conditions };
+        let node = Node::SetBuilder {
+            item: Box::new(first.clone()),
+            conditions,
+        };
         return Ok(Box::from(AST::new(start.union(end), node)));
     }
 
-    let mut elements = vec![*item];
+    let mut elements = vec![first.clone()];
     elements.append(&mut it.parse_vec_if(&Token::Comma, &parse_expressions, "set", start)?);
 
     let end = it.eat(&Token::RCBrack, "set")?;
@@ -122,14 +133,21 @@ fn parse_list(it: &mut LexIterator) -> ParseResult {
     }
 
     let item = it.parse(&parse_expression, "list", start)?;
+    parse_list_partial(start, &item, it)
+}
+
+pub fn parse_list_partial(start: Position, first: &AST, it: &mut LexIterator) -> ParseResult {
     if it.eat_if(&Token::Ver).is_some() {
         let conditions = it.parse_vec(&parse_expressions, "list", start)?;
         let end = it.eat(&Token::RSBrack, "list")?;
-        let node = Node::ListBuilder { item, conditions };
+        let node = Node::ListBuilder {
+            item: Box::new(first.clone()),
+            conditions,
+        };
         return Ok(Box::from(AST::new(start.union(end), node)));
     }
 
-    let mut elements = vec![*item];
+    let mut elements = vec![first.clone()];
     elements.append(&mut it.parse_vec_if(&Token::Comma, &parse_expressions, "list", start)?);
 
     let end = it.eat(&Token::RSBrack, "list")?;
@@ -167,11 +185,17 @@ mod test {
     fn tuple_single_is_expr_verify() {
         let source = String::from("(a)");
         let ast: AST = source.parse().unwrap();
-        let Node::Id { lit } = &ast.node else {
+        let Node::Tuple { elements } = &ast.node else {
             panic!("first element script was not tuple.")
         };
 
-        assert_eq!(lit.as_str(), "a");
+        assert_eq!(elements.len(), 1);
+        assert_eq!(
+            elements[0].node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
     }
 
     #[test]

@@ -203,9 +203,9 @@ pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(end), Node::ReturnEmpty)))
 }
 
-pub fn is_start_statement(tp: &Token) -> bool {
+pub fn is_start_statement(lex: &Lex) -> bool {
     matches!(
-        tp,
+        lex.token,
         Token::Def
             | Token::Fin
             | Token::For

@@ -238,9 +238,9 @@ class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
 ```
 
 Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
-In general, the notation of a class is:
+_In general_, the notation of a class is:
 
-`class MyClass(<one-or-more-constructor-args>) := [<one-or-more-expressions>]`
+`class MyClass(<one-or-more-constructor-args>) := {<one-or-more-expressions>}`
 
 The body of the class is optional, i.e. one can create "just" a data class.
 As for constructor arguments:
@@ -249,6 +249,14 @@ As for constructor arguments:
 - If they are **not** prefixed with `def`, then they are only constructor arguments.
   They may be used at any point in the class, but they are (1) invariant and (2) may not be accessed from outside the class.
 - The body of the class is evaluated for each object we created, effectively making this the constructor body.
+
+As for the class body
+
+- It is denoted using a code set: Using `{` and `}`.
+  This is because the concept of order is not defined in a class body.
+- In future, we may generalize the code-set notation to mean a set of statements which may be executed in arbitrary order, and thus **also in parallel**.
+  Therefore baking parallel computations into the semantics of the language, as opposed to a library.
+  However, this idea is still in its infancy.
 
 We can change the relevant parts of the above example to use a class constant:
 

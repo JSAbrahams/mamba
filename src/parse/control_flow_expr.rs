@@ -141,7 +141,7 @@ mod test {
 
     #[test]
     fn match_verify() {
-        let source = String::from("match a\n    a => b\n    c => d");
+        let source = String::from("match a\n{   a => b\n    c => d}");
         let ast: AST = source.parse().unwrap();
 
         let Node::Match { cond, cases } = &ast.node else {

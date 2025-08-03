@@ -1,11 +1,13 @@
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::class::{parse_class, parse_type_def};
+use crate::parse::collection::{parse_list_partial, parse_set_or_dict_partial};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
+use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
-use crate::parse::result::{expected_one_of, ParseResult};
-use crate::parse::statement::parse_import;
+use crate::parse::lex::token::{Lex, Token};
+use crate::parse::result::{custom, ParseResult};
+use crate::parse::statement::{is_start_statement, parse_import};
 
 pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("statements")?;
@@ -36,35 +38,35 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
         }
         _ => {
             statements.push(*it.parse(&parse_expr_or_stmt, "statements", start)?);
-            if it.peek_if(&|lex| lex.token != Token::NL) {
-                Err(Box::from(expected_one_of(
-                    &[Token::NL],
-                    lex,
-                    "end of statement",
-                )))
-            } else {
-                Ok(())
+            if it.peek_if(&is_start_statement) || it.peek_if(&is_start_expression) {
+                let pos = it.peek_next().map_or(start, |next| next.pos);
+                return Err(Box::new(custom("statement or expression cannot be immediately followed by another statement or expression", pos)))
             }
+            Ok(())
         }
     })?;
 
     Ok(statements)
 }
 
-/// Parse block, and consumes any newlines preceding it.
-pub fn parse_code_block(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("block block")?;
+/// Similar to parse code block, but used in situations where a list is also allowed (when parsing an expression).
+pub fn parse_code_block_or_list(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("block block or list")?;
     it.eat_while(&Token::NL);
 
-    it.eat(&Token::LSBrack, "block block")?;
+    it.eat(&Token::LSBrack, "block block or list")?;
     let statements = it.parse_vec(&parse_statements, "block block", start)?;
     let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
 
-    it.eat(&Token::RSBrack, "block block")?;
-    Ok(Box::from(AST::new(
-        start.union(end),
-        Node::Block { statements },
-    )))
+    if statements.len() == 1 && it.peek_if(&|lex: &Lex| lex.token == Token::Comma) {
+        parse_list_partial(start, statements.first().unwrap(), it)
+    } else {
+        it.eat(&Token::RSBrack, "block block or list")?;
+        Ok(Box::from(AST::new(
+            start.union(end),
+            Node::Block { statements },
+        )))
+    }
 }
 
 pub fn parse_code_set(it: &mut LexIterator) -> ParseResult {
@@ -80,4 +82,23 @@ pub fn parse_code_set(it: &mut LexIterator) -> ParseResult {
         start.union(end),
         Node::Block { statements },
     )))
+}
+
+pub fn parse_code_set_or_set(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("block set or set")?;
+    it.eat_while(&Token::NL);
+
+    it.eat(&Token::LCBrack, "block set or set")?;
+    let statements = it.parse_vec(&parse_statements, "block set", start)?;
+    let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
+
+    if statements.len() == 1 && it.peek_if(&|lex: &Lex| lex.token == Token::Comma) {
+        parse_set_or_dict_partial(start, statements.first().unwrap(), it)
+    } else {
+        it.eat(&Token::RCBrack, "block set or set")?;
+        Ok(Box::from(AST::new(
+            start.union(end),
+            Node::Block { statements },
+        )))
+    }
 }

@@ -227,7 +227,7 @@ mod test {
 
     #[test]
     fn if_with_block_verify() {
-        let source = String::from("if a then\n    c\n    d");
+        let source = String::from("if a then\n[c\nd]");
         let ast: AST = source.parse().unwrap();
 
         let (cond, then, el) = match &ast.node {

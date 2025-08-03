@@ -311,9 +311,8 @@ mod test {
         assert_eq!(tokens[5].token, Token::Assign);
         assert_eq!(tokens[6].token, Token::Int(String::from("10")));
         assert_eq!(tokens[7].token, Token::NL);
-        assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Class);
-        assert_eq!(tokens[10].token, Token::Id(String::from("MyClass1")));
+        assert_eq!(tokens[8].token, Token::Class);
+        assert_eq!(tokens[9].token, Token::Id(String::from("MyClass1")));
 
         Ok(())
     }
@@ -330,10 +329,9 @@ mod test {
         assert_eq!(tokens[3].token, Token::NL);
         assert_eq!(tokens[4].token, Token::Id(String::from("b")));
         assert_eq!(tokens[5].token, Token::NL);
-        assert_eq!(tokens[6].token, Token::NL);
-        assert_eq!(tokens[7].token, Token::Else);
-        assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Id(String::from("c")));
+        assert_eq!(tokens[6].token, Token::Else);
+        assert_eq!(tokens[7].token, Token::NL);
+        assert_eq!(tokens[8].token, Token::Id(String::from("c")));
 
         Ok(())
     }
