@@ -34,19 +34,24 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
 
     let mut parents = vec![];
     if it.eat_if(&Token::DoublePoint).is_some() {
-        it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
-            Token::Id(_) | Token::LSBrack => {
-                parents.push(*it.parse(&parse_parent, "parents", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
-            _ => Err(Box::from(expected(
-                &Token::Id(String::new()),
-                &lex.clone(),
-                "parents",
-            ))),
-        })?;
+        it.peek_while_not_tokens(
+            &[Token::NL, Token::Assign],
+            &mut |it, lex| match lex.token {
+                Token::Id(_) | Token::LSBrack => {
+                    parents.push(*it.parse(&parse_parent, "parents", start)?);
+                    it.eat_if(&Token::Comma);
+                    Ok(())
+                }
+                _ => Err(Box::from(expected(
+                    &Token::Id(String::new()),
+                    &lex.clone(),
+                    "parents",
+                ))),
+            },
+        )?;
     }
+    it.eat_if(&Token::NL);
+    it.eat_if(&Token::Assign);
 
     let (body, pos) = if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) {
         let body = it.parse(&parse_code_set, "class", start)?;
@@ -160,6 +165,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use std::str::FromStr;
 
     use crate::common::result::WithSource;
@@ -386,5 +392,19 @@ mod test {
         let source = "Parent(\"hello world\")\n";
         let mut it = LexIterator::from_str(source)?;
         parse_parent(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn class_with_parent_with_args() -> ParseResult<()> {
+        let source = "class Class: Parent(\"hello world\")\n";
+        let mut it = LexIterator::from_str(source)?;
+        parse_class(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn class_with_parent_with_args_with_body() -> ParseResult<()> {
+        let source = "class Class: Parent(\"hello world\") := { def var := 10 }";
+        let mut it = LexIterator::from_str(source)?;
+        parse_class(&mut it).map(|_| ())
     }
 }
