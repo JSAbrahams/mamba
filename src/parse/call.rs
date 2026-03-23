@@ -39,8 +39,8 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(pre.pos.union(property.pos), node)))
             }
-            Token::LSBrack => {
-                it.eat(&Token::LSBrack, "direct call")?;
+            Token::LRBrack => {
+                it.eat(&Token::LRBrack, "direct call")?;
                 let args = it.parse_vec(&parse_arguments, "direct call", pre.pos)?;
                 let end = it.eat(&Token::RRBrack, "direct call")?;
                 let node = Node::FunctionCall {
@@ -50,12 +50,12 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::Point, Token::LSBrack],
+                &[Token::Point, Token::LRBrack],
                 ast,
                 "function call",
             ))),
         },
-        &[Token::Point, Token::LSBrack],
+        &[Token::Point, Token::LRBrack],
         "function call",
     )
 }

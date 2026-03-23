@@ -283,7 +283,7 @@ mod test {
 
         assert_eq!(tokens[0].token, Token::Def);
         assert_eq!(tokens[1].token, Token::Id(String::from("f")));
-        assert_eq!(tokens[2].token, Token::LSBrack);
+        assert_eq!(tokens[2].token, Token::LRBrack);
         assert_eq!(tokens[3].token, Token::Id(String::from("x")));
         assert_eq!(tokens[4].token, Token::DoublePoint);
         assert_eq!(tokens[5].token, Token::Id(String::from("Int")));

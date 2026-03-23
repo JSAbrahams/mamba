@@ -294,6 +294,9 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
+    use super::*;
     use crate::parse::ast::{Node, AST};
 
     macro_rules! unwrap_func_definition {
@@ -327,6 +330,34 @@ mod test {
                 other => panic!("Expected variabledef but was {:?}.", other),
             }
         }};
+    }
+
+    #[test]
+    fn definition_simple() -> ParseResult<()> {
+        let source = "def a := b + b";
+        let mut it = LexIterator::from_str(source)?;
+        parse_definition(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn func_definition_simple() -> ParseResult<()> {
+        let source = "def a() := b + b";
+        let mut it = LexIterator::from_str(source)?;
+        parse_definition(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn func_definition_one_arg() -> ParseResult<()> {
+        let source = "def a(b: Int) := b + b";
+        let mut it = LexIterator::from_str(source)?;
+        parse_definition(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn func_definition_two_arg() -> ParseResult<()> {
+        let source = "def f(x: Int, b: Something) := d";
+        let mut it = LexIterator::from_str(source)?;
+        parse_definition(&mut it).map(|_| ())
     }
 
     #[test]
@@ -679,7 +710,7 @@ mod test {
 
     #[test]
     fn function_definition_with_literal_verify() {
-        let source = String::from("def f(x, b: Something) := d");
+        let source = String::from("def f(x: Int, b: Something) := d");
         let ast: AST = source.parse().unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
