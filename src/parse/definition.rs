@@ -84,10 +84,10 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
         }
         Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
             &|it, lex| match lex.token {
-                Token::LSBrack => parse_fun_def(&id, pure, it),
+                Token::LRBrack => parse_fun_def(&id, pure, it),
                 _ if !pure => parse_variable_def_id(&id, it),
                 _ => {
-                    let msg = format!("Definition cannot have {} identifier", Token::Pure);
+                    let msg = format!("Definition cannot have '{}' identifier", Token::Pure);
                     Err(Box::from(custom(&msg, id.pos)))
                 }
             },
@@ -173,7 +173,7 @@ pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 }
 
 pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::LSBrack, "function arguments")?;
+    let start = it.eat(&Token::LRBrack, "function arguments")?;
     let mut args = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
         args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);
@@ -710,7 +710,7 @@ mod test {
 
     #[test]
     fn function_definition_with_literal_verify() {
-        let source = String::from("def f(x: Int, b: Something) := d");
+        let source = String::from("def f(x, b: Something) := d");
         let ast: AST = source.parse().unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
