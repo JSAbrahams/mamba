@@ -65,7 +65,12 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use std::str::FromStr;
+
     use crate::parse::ast::{Node, AST};
+    use crate::parse::iterator::LexIterator;
+    use crate::parse::result::ParseResult;
 
     #[test]
     fn for_statement_verify() {
@@ -95,6 +100,12 @@ mod test {
                 lit: String::from("d")
             }
         );
+    }
+
+    #[test]
+    fn for_range_step_no_panic() -> ParseResult<()> {
+        let mut it = LexIterator::from_str("for a in c .. d .. e do f")?;
+        parse_cntrl_flow_stmt(&mut it).map(|_| ())
     }
 
     #[test]

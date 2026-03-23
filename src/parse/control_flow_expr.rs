@@ -107,8 +107,29 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
+    use super::*;
     use crate::parse::ast::{Node, AST};
     use crate::parse::result::ParseResult;
+
+    #[test]
+    fn if_with_block_verify_no_panic() -> ParseResult<()> {
+        let mut it = LexIterator::from_str("if a then c")?;
+        parse_cntrl_flow_expr(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn if_with_block_verify_block_no_panic() -> ParseResult<()> {
+        let mut it = LexIterator::from_str("if a then [c]")?;
+        parse_cntrl_flow_expr(&mut it).map(|_| ())
+    }
+
+    #[test]
+    fn if_with_block_verify_block_ret_list_no_panic() -> ParseResult<()> {
+        let mut it = LexIterator::from_str("if a then [[c]]")?;
+        parse_cntrl_flow_expr(&mut it).map(|_| ())
+    }
 
     #[test]
     fn if_else_verify() {
