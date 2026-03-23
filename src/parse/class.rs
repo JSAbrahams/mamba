@@ -69,7 +69,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let ty = it.parse(&parse_type, "parent", start)?;
 
     let mut args = vec![];
-    let end = if it.eat_if(&Token::LSBrack).is_some() {
+    let end = if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
             Token::Id { .. } => {
                 args.push(*it.parse(&parse_id, "parent arguments", start)?);
@@ -160,9 +160,13 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use crate::common::result::WithSource;
     use crate::parse::ast::{Node, AST};
-    use crate::parse::result::ParseErr;
+    use crate::parse::class::parse_parent;
+    use crate::parse::iterator::LexIterator;
+    use crate::parse::result::{ParseErr, ParseResult};
 
     #[test]
     fn import_verify() {
@@ -375,5 +379,12 @@ mod test {
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map_err(Box::new)
             .map(|_| ())
+    }
+
+    #[test]
+    fn parent_with_args() -> ParseResult<()> {
+        let source = "Parent(\"hello world\")\n";
+        let mut it = LexIterator::from_str(source)?;
+        parse_parent(&mut it).map(|_| ())
     }
 }

@@ -54,7 +54,11 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 
                 let expressions: Vec<Box<AST>> = tokens
                     .iter()
-                    .map(|tokens| parse_expression(&mut LexIterator::new(tokens.iter().peekable())))
+                    .map(|tokens| {
+                        parse_expression(&mut LexIterator::new(
+                            tokens.clone().into_iter().peekable(),
+                        ))
+                    })
                     .collect::<Result<_, _>>()?;
                 let node = Node::Str {
                     lit: string.clone(),

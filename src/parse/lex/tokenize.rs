@@ -19,7 +19,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             Some('=') => next_and_create(it, state, Token::Assign),
             _ => create(state, Token::DoublePoint),
         },
-        '(' => create(state, Token::LSBrack),
+        '(' => create(state, Token::LRBrack),
         ')' => create(state, Token::RRBrack),
         '[' => create(state, Token::LSBrack),
         ']' => create(state, Token::RSBrack),

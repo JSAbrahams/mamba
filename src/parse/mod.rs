@@ -3,8 +3,6 @@ use std::str::FromStr;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::tokenize;
 use crate::parse::result::{ParseErr, ParseResult};
 
 pub mod ast;
@@ -31,9 +29,7 @@ impl FromStr for AST {
     type Err = Box<ParseErr>;
 
     fn from_str(input: &str) -> ParseResult<AST> {
-        let tokens: Vec<Lex> = tokenize(input).map_err(ParseErr::from)?;
-
-        let mut iterator = LexIterator::new(tokens.iter().peekable());
+        let mut iterator = LexIterator::from_str(input)?;
         let statements = block::parse_statements(&mut iterator)?;
         if statements.len() == 1 {
             return Ok(statements.first().cloned().unwrap());
