@@ -5,11 +5,11 @@ if m isa InvertibleMatrix then
 else
     print("Matrix is singular (not invertible).")
 
-def last_op = m.last_op() ! {
-    err: MatrixErr(message) => [
-        print("Error when getting last op: \"{message}\"")
+def last_op = m.last_op() ! where
+    err: MatrixErr(message) => do
+        print("Error where getting last op: \"{message}\"")
         "N/A" # optionally we can also return, but here we assign default value
-    ]
-}
+    end
+end
 
 print("Last operation was: {last_op}")

@@ -75,7 +75,7 @@ Keyword | Use
 `while`   | Denote start of while statement
 `for`     | Denote start of for statement
 `in`      | Specify which collection to iterate over in for statement
-`do`      | Specify what needs to be done in control flow statement
+`do`      | Specify what needs to be done in control flow statement, and start of code block
 `continue`| Continue onto next iteration within loop
 `break`   | Exit loop
 
@@ -84,6 +84,12 @@ Keyword | Use
 Keyword | Use
 ---|---
 `return`  | Return from a function or method
+
+## Blocks
+
+Keyword | Use
+`end`   | Denote end of code block of set
+`where` | Denote start of code set
 
 ## 3.2.2 Special Characters
 

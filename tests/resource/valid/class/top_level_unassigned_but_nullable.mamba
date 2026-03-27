@@ -1,5 +1,5 @@
-class X := {
+class X := where
     def y: Int?
     # typically, statements are evaluated in order, but Mamba makes no guarantees about this behaviour!
     print("No assignments here!")
-}
+end

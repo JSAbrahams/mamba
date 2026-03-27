@@ -5,9 +5,9 @@ meta trait Measurable: Add, Sub, Eq, Comparable
 
 # Built in to the standard library
 # The idea is that this allows performing arithmetic not just at runtime but at compile-time.
-def Measurable for Int {
+def Measurable for Int where
     def const less_than(self, other: Int) -> Bool := self < other
     def const unary_sub(self) -> Int              := -other
     def const add(self, other: Int) -> Int        := self + other
     def const equal(self, other: Int) -> Bool     := self = other
-}
+end

@@ -1,4 +1,4 @@
-trait MyType := {
+trait MyType := when
     def abstract_fun(my_arg: Int) -> Str
     def concrete_fun(x: Int) -> Int := return x + 10
-}
+end

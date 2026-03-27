@@ -15,9 +15,9 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
                 Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
             }
-            Token::LSBrack => {
+            Token::LRBrack => {
                 let mut elements = vec![];
-                let start = it.eat(&Token::LSBrack, "identifier tuple")?;
+                let start = it.eat(&Token::LRBrack, "identifier tuple")?;
                 it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
                     elements.push(*it.parse(&parse_expr_no_type, "identifier", start)?);
                     it.eat_if(&Token::Comma);
@@ -28,7 +28,7 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::Id(String::new()), Token::LSBrack],
+                &[Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier",
             ))),
@@ -77,7 +77,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 let node = Node::Type { id, generics };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
-            Token::LSBrack => it.parse(&parse_type_tuple, "type", start),
+            Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
             Token::LCBrack => it.parse(&parse_type_set, "type", start),
             _ => Err(Box::from(expected_one_of(
                 &[Token::Id(String::new()), Token::LSBrack, Token::LCBrack],
@@ -172,7 +172,7 @@ pub fn parse_type_set(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type tuple")?;
-    it.eat(&Token::LSBrack, "type tuple")?;
+    it.eat(&Token::LRBrack, "type tuple")?;
 
     let mut types = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {

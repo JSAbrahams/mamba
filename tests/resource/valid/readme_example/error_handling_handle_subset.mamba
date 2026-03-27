@@ -1,9 +1,9 @@
-def a: Result[Int, MyErr] := function_may_throw_err() ! {
-    err: MyOtherErr => [
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
-    ]
-}
+def a: Result[Int, MyErr] := function_may_throw_err() ! where
+        err: MyOtherErr => do
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
+    end
+end
 
 a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised.
 

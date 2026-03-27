@@ -1,5 +1,5 @@
-def f(x: Int) -> Str := match x {
+def f(x: Int) -> Str := match x where
     1 => "One"
     2 => "Two"
     _ => "Three"
-}
+end

@@ -1,7 +1,7 @@
-class MyClass := {
+class MyClass := where
     def __eq__(self, other: MyOtherClass) -> Bool := True
     def __ne__(self, other: MyOtherClass) -> Bool := False
-}
+end
 
 class MyOtherClass
 

@@ -1,13 +1,13 @@
-trait Iterator[T] := {
+trait Iterator[T] := where
     def has_next(self) -> Bool
     def next(self) -> T? # syntax sugar for Option[T]
-}
+end
 
-class RangeIter(def _start: Int, def _end: Int) := {
+class RangeIter(def _start: Int, def _end: Int) := where
     def _current: Int := _start
-}
+end
 
-def Iterator[Int] for RangeIter := {
+def Iterator[Int] for RangeIter := where
     def has_next(self) -> Bool := self._current < self._stop
 
     def next(self) -> Int? := if self.has_next() then [
@@ -15,4 +15,4 @@ def Iterator[Int] for RangeIter := {
         self._current := self._current + 1
         value
     ] else None
-}
+end

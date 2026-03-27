@@ -1,6 +1,6 @@
 trait MyType
 
-class MyClass2(other_field: Int, z: Int) := {
+class MyClass2(other_field: Int, z: Int) := where
     def fin z_modified: Str := "asdf"
     def other_field: Int := z + other_field
-}
+end

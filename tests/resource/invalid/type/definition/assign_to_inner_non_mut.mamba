@@ -1,10 +1,10 @@
 class A :=
     def c: C
 
-class C := {
+class C := where
     def my_class: D := D()
     def my_field_accessor(self) -> D := self.my_class
-}
+end
 
 class D
     def fin my_field: Int := 10

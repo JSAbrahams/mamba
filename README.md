@@ -39,13 +39,13 @@ See [docs](/docs/) for a more extensive overview of the language philosophy.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
 files.
-There therefore exists some interopability with Python code.
+There therefore exists some interoperability with Python code.
 Currently we compile down to Python, in future we may compile down to Python bytecode, for instance. 
 
-The below README:
+This README:
 
 - Gives a quickstart for developers
-- Give a short overview of most of the syntax and language features in quick succession, as well as the occasional reasoning behind them.
+- Gives a short overview of the syntax and language features in quick succession, as well as the occasional reasoning behind them.
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
@@ -80,16 +80,16 @@ We can write a simple script that computes the factorial of a value given by the
 
 ```mamba
 # Factorial of x
-def factorial(x: Int) -> Int := match x {
+def factorial(x: Int) -> Int := match x where
     0 => 1
     n => n * factorial(n - 1)
-}
+end
 
 def num := input("Compute factorial: ")
-if num.is_digit() then [
+if num.is_digit() then do
     def result := factorial(Int(num))
     print("Factorial {num} is: {result}.")
-] else
+end else
     print("Input was not an integer.")
 ```
 
@@ -98,24 +98,22 @@ This is part of the signature of the function, and is required (it cannot be inf
 This means that the compiler will check for us that factorial is only used with integers as argument.
 Also note that:
 
-- Code blocks are denoted using `[` and `]` because this is a list of statements and expressions that gets executed _in order_.
-- For a match expression or statement, each case is denoted using `{` and `}`, as this is a _set_ of cases which we match on.
-  You you can read `match x {}` , where we read this as "match `x` on this set of conditions in `{...}`", though we omit the "on" as to not introduce another keyword.
+- Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
+- For a match expression or statement, each case is denoted using `where` and `end`, as this is a _set_ of cases which we match on.
+  You you can read `match x where ... end` , where we read this as "match `x` on this set of conditions in `where ... end`", though we omit the "on" as to not introduce another keyword.
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int := match x {
+def factorial(x: Int) -> Int := match x where
     0 => 1
-    n => [
+    n => do
         def ans := 1
         for i in 1 ..= n do ans := ans * i
         ans
-    ]
-}
+    end
+end
 ```
-
-Logically, the `[...]` and `{...}` notation leads us nicely to collections in Mamba.
 
 ### 🍡 Collections
 
@@ -174,7 +172,7 @@ Where we iterate over the list in the order of the keys.
 
 Unlike C-style languages (which is nearly the whole world at this point), we index collections using `collection(<expression>)`.
 We namely don't distinguish between a mapping and a function, because a function is (generally speaking) also a type of mapping.
-The above mapping, for instance, is a representation of some functino with a very small domain (only three items).
+The above mapping, for instance, is a representation of some function with a very small domain (only three items).
 Therefore, we index indexable collections (mappings and list) using the `collection(<expression>)` notation.
 
 ### ✏️🖊️ Mutability
@@ -210,7 +208,7 @@ You will also see some "pure" functions, these will be explained later.
 ```mamba
 class MatrixErr(def message: Str): Exception(message)
 
-class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
+class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := where
     # Accessor for matrix contents
     def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
@@ -220,27 +218,27 @@ class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := {
     # Determinant recomputation (pure function)
     def pure determinant(fin self) -> Int := self.a * self.d - self.b * self.c
 
-    def scale(self, factor: Int) := [
+    def scale(self, factor: Int) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
         self.d := self.d * factor
-    ]
+    end
 
-    # Reset turns this matrix into an 2x2 identity matrix, regardless of the intial value.
-    def reset(self) := [
+    # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
+    def reset(self) := do
         self.a := 1
         self.b := 0
         self.c := 0
         self.d := 1
-    ]
-}
+    end
+end
 ```
 
 Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
 _In general_, the notation of a class is:
 
-`class MyClass(<one-or-more-constructor-args>) := {<one-or-more-expressions>}`
+`class MyClass(<one-or-more-constructor-args>) := where <one-or-more-expressions> end`
 
 The body of the class is optional, i.e. one can create "just" a data class.
 As for constructor arguments:
@@ -261,24 +259,24 @@ As for the class body
 We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
-class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := {
+class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := where
     def x: Int := ORIGIN_X
     def y: Int := ORIGIN_Y
 
-    def move(self, dx: Int, dy: Int) := [
+    def move(self, dx: Int, dy: Int) := do
         self.x := self.x + dx
         self.y := self.y + dy
-    ]
+    end
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
-    def reset(self) := [
+    def reset(self) := do
         self.x := ORIGIN_X
         self.y := ORIGIN_Y
-    ]
+    end
 
     def info(fin self) -> Str := 
         "Currently at ({self.x}, {self.y}), originally from ({ORIGIN_X}, {ORIGIN_Y})"
-}
+end
 ```
 
 Last, we have `trait`s, which in Mamba are more fine-grained building blocks to describe the behaviour of instances.
@@ -289,28 +287,28 @@ For those familiar with object oriented programming, we favour a trait based sys
 Consider example with iterators (which briefly showcases language generics):
 
 ```mamba
-trait Iterator[T] := {
+trait Iterator[T] := where
     def has_next(self) -> Bool
     def next(self) -> T? # syntax sugar for Option[T]
-}
+end
 
-class RangeIter(def _start: Int, def _end: Int) := {
+class RangeIter(def _start: Int, def _end: Int) := where
     def _current: Int := _start
-}
+end
 
-def Iterator[Int] for RangeIter := {
+def Iterator[Int] for RangeIter := where
     def has_next(self) -> Bool := self._current < self._stop
 
-    def next(self) -> Int? := if self.has_next() then [
+    def next(self) -> Int? := if self.has_next() then do
         def value := self._current
         self._current := self._current + 1
         value
-    ] else None
-}
+    end else None
+end
 ```
 
 Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
-The syntax here is `trait <id> := { <one-or-more-definitions }` and we use it as `def <trait> for <class>`.
+The syntax here is `trait <id> := where <one-or-more-definitions end` and we use it as `def <trait> for <class>`.
 
 Lastly, like Rust, types (traits) can also be used as generics.
 This would allow, for instance, for defining a `Hash` trait and enforcing for a hashmap that keys implement said trait.
@@ -327,7 +325,7 @@ trait Ordered[T]: Equality, Comparable
 
 Mamba also has type refinement features to assign additional properties to types.
 
-Note: Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the comlexit of the language.
+Note: Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the complexity of the language.
 Arguably, it might detract from the elegance of the type system as well;
 A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
 
@@ -335,17 +333,16 @@ The general syntax is `type MyType: MainType when <expression>`.
 The expression can be of any form (and size), but **must** evaluate to a boolean.
 
 ```mamba
-type SpecialInt: Int when self >= 0 and self <= 100 or self mod 2 = 0
+type SpecialInt: Int where self >= 0 and self <= 100 or self mod 2 = 0
 ```
 
-We also introduce some syntax sugar again, where we can use `{` `}` to write each element of the conjunction on its own line.
 _Note on performance: In terms of correctness, the order of the conjunctions obviously doesn't matter, but those who care about performance should know they are evaluated in order, so best to have simple ones first._
 
 ```mamba
-type SpecialInt: Int when {
+type SpecialInt: Int when
     self >= 0
     self <= 100 or self mod 2 = 0
-}
+end
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
@@ -356,10 +353,10 @@ Type refinement also allows us to specify the domain and co-domain of a function
 # we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
 type PosInt: Int when self >= 0
 
-def factorial(x: PosInt) -> PosInt := match x {
+def factorial(x: PosInt) -> PosInt := match x where
     0 => 1
     n => n * factorial(n - 1)
-}
+end
 ```
 
 At the call site, one could do
@@ -386,21 +383,22 @@ type InvertibleMatrix: Matrix when self.determinant() != 0.0
 class MatrixErr(def message: Str): Exception(message)
 
 ## Matrix, which now takes floats as argument
-class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := {
+class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := where
     def _last_op: Str? := None
 
     def determinant(fin self) -> Float := self.a * self.d - self.b * self.c
 
-    def inverse(self: InvertibleMatrix) -> Matrix :=
+    def inverse(self: InvertibleMatrix) -> Matrix := do
         def det := self.determinant()
         self._last_op := "inverse"
 
         Matrix(self.d / det, -self.b / det, -self.c / det, self.a / det)
+    end
 
     def last_op(fin self) -> Str ! MatrixErr :=
         if self._last_op != None then self._last_op
         else ! MatrixErr("No operation performed")
-}
+end
 ```
 
 Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
@@ -413,11 +411,11 @@ For each type, we use `when` to show that it is a type refinement, which certain
 ```mamba
 def m := Matrix(1.0, 2.0, 3.0, 4.0)
 
-if m isa InvertibleMatrix then
+if m isa InvertibleMatrix then do
     def m_inv := m.inverse()
     print("Original matrix: {m}")
     print("Inverse: {m_inv}")
-else
+end else
     print("Matrix is singular (not invertible).")
 
 def last_op = m.last_op()!
@@ -472,12 +470,12 @@ Immutable variables and pure functions make it easier to write declarative progr
 def fin taylor := 7
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) -> Int := [
+def pure sin(x: Int) -> Int := do
     def ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     ans
-]
+end
 ```
 
 ### 🤚 Total functions (🇻 x+)
@@ -507,27 +505,27 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
    - `Range` : `a..b`
    - `RangeInclusive` : `a..=b`
 
-Put another way, we sidestep the issue by ensuring that our system is still sound, but incomplete by acknoweldging that we cannot prove termination for arbitary functions!
+Put another way, we sidestep the issue by ensuring that our system is still sound, but incomplete by acknowledging that we cannot prove termination for arbitrary functions!
 
-Take for instance this naive implementation of the Fibbonaci sequence:
+Take for instance this naive implementation of the Fibonacci sequence:
 
 ```mamba
-## fibbonaci, implemented using recursion and not dynamic programming
-def total pure fibbonaci(x: PosInt) -> Int := match x {
+## Fibonacci, implemented using recursion and not dynamic programming
+def total pure fibonacci(x: PosInt) -> Int := match x where
     0 => 0
     1 => 1
-    n => fibbonaci(n - 1) + fibbonaci(n - 2)
-}
+    n => fibonacci(n - 1) + fibonacci(n - 2)
+end
 ```
 
 This would, with some substitution magic, give the following _call tree_ (showing only the important parts):
 
 ```
-            fibbonaci(x)
+            fibonacci(x)
                 |
                 + # addition operator 
                / \
-fibbonaci(x - 1) fibbonaci(x - 2)
+fibonacci(x - 1) fibonacci(x - 2)
 ```
 
 Thus, this function has the property of a final function, and we may thus mark it as `total` if we so choose.
@@ -541,30 +539,30 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 ```mamba
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
-trait def StrictlyDecreases: Measurable {
+trait def StrictlyDecreases: Measurable where
     def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
     def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
     def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
-}
+end
 ```
 
 This avoids abuse of `decreases` (i.e. one could write `def fin meta decreases(self, other: Self) := True`).
 Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
-It is for instance defined for the built-in primtive `Int`.
+It is for instance defined for the built-in primitive `Int`.
 
 ```mamba
 # Measure for int just returns self
-def StrictlyDecreases for Int {
+def StrictlyDecreases for Int where
     def meta measure(self) -> Measurable := self
-}
+end
 
 # For string, we as an example use the length of the string (Which is also an integer)
-def StrictlyDecreases for Str {
+def StrictlyDecreases for Str where
     def meta measure(self) -> Measurable := self.len() 
-}
+end
 ```
 
 Both of the above return an `Int`, which is part of the library and implements the `Measured` trait.
@@ -590,7 +588,7 @@ def Measurable for Int
 ```
 
 We require that the measured item implements basic arithmetic so that we can add and subtract as we traverse those trees where we interweave recursive calls.
-_Paeno arithmetic, essentially, forms the logical bedrock of the system which proves functions are total._
+_Peano arithmetic, essentially, forms the logical bedrock of the system which proves functions are total._
 Only meta functions can be evaluated at compile time, see the section on meta functions below.
 
 In general:
@@ -635,7 +633,7 @@ This is useful when one wants to document how one derived a meta in the form of 
 ### ⚠ Error handling
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
-Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
+Instead, we aim to directly handle errors on-site so the origin of errors is more traceable.
 The following is an attempt mixing and matching `Result` monad (of languages like Rust and Scala), with a more first-class approach of exceptions in languages like Kotlin.
 Again, this represents a trade-off between elegancy of the type system and simplicity of the grammar versus having first-class language features.
 Arguably it may be easier to just use Monads, similar to how Rust's solution.
@@ -653,12 +651,12 @@ if m isa InvertibleMatrix then
 else
     print("Matrix is singular (not invertible).")
 
-def last_op = m.last_op() ! {
-    err: MatrixErr(message) => [
+def last_op = m.last_op() ! where
+    err: MatrixErr(message) => do
         print("Error when getting last op: \"{message}\"")
         "N/A" # optionally we can also return, but here we assign default value
-    ]
-}
+    end
+end
 
 print("Last operation was: {last_op}")
 ```
@@ -667,34 +665,21 @@ In the above script, we will always print an error (gracefully) and assign some 
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-`m.last_op() ! { ... }` is syntax sugar for
-
-```mamba
-match m.last_op() {
-    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
-}
-```
-
-So esentially, we add `!` as a way to shorthand match on exceptions.
-Currently, we allow both notations, but this comes at the cost of there not being "one way" to handle exceptions.
-This can lead to similar problems like with Scala where we have multiple ways to do the same thing.
-We can, of course, add warnings to strongly encourage the "right" way to handle exceptions.
-
 This can also be combined with an assign.
 In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below:
 
 ```mamba
-def a: Int := function_may_throw_err() ! {
-    err: MyErr => [
+def a: Int := function_may_throw_err() ! where
+    err: MyErr => do
         print("We have a problem: {err.message}.")
         return  # we return, halting execution
-    ]
-    err: MyOtherErr => [
+    end
+    err: MyOtherErr => do
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
-    ]
-}
+    end
+end
 
 print("a has value {a}.")
 ```
@@ -710,7 +695,7 @@ Only when the union is empty, which happens when every error case is covered, do
 
 If `a` is is type `Result[...,...]`, and we are required to do error handling later.
 So if we don't want to handle any of the exception cases at a given point, we just append an `!` to a function.
-The exception(s) must be handeld further up the stack.
+The exception(s) must be handled further up the stack.
 
 ```mamba
 def a := function_may_throw_err() !
@@ -721,12 +706,12 @@ print("a has value {a}.")
 This also gives an alternative way to write the above example, where we only case about a subset of the exceptions here.
 
 ```mamba
-def a: Result[Int, MyErr] := function_may_throw_err() ! {
-    err: MyOtherErr => [
+def a: Result[Int, MyErr] := function_may_throw_err() ! where
+    err: MyOtherErr => do
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a
-    ]
-}
+    end
+end
 
 a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised.
 
@@ -743,12 +728,12 @@ The general syntax is `<expression-or-statement> recover <expression-or-statemen
 So:
 
 ```mamba
-def a: Result[Int, MyErr] := function_may_throw_err() ! {
+def a: Result[Int, MyErr] := function_may_throw_err() ! where
     err: MyOtherErr => print("We have a problem: {err.message}.")
-} recover [
+end recover do
     print("cleaning up resource")
     some_cleanup_function()
-]
+end
 ```
 
 ## 💻 The Command Line Interface

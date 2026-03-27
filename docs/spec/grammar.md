@@ -100,8 +100,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     e-notation       ::= ( integer | real ) "E" [ "-" ] integer
     string           ::= """ { character } """
     
-    code-block       ::= "[" expr-or-stmt { newline expr-or-stmt } "]" 
-    code-set         ::= "{" expr-or-stmt { newline expr-or-stmt } "}"
+    code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end" 
+    code-set         ::= "where" expr-or-stmt { newline expr-or-stmt } "end"
     
     control-flow-expr::= if | match
     if               ::= "if" expression "then" expression [ "else" expression ]

@@ -1,10 +1,10 @@
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
-trait def StrictlyDecreases: Measurable {
+trait def StrictlyDecreases: Measurable where
     def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
     def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
     def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
-}
+end

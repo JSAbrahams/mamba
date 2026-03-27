@@ -113,6 +113,9 @@ pub enum Token {
 
     Question,
     Pass,
+
+    Where,
+    End,
 }
 
 /// Name structure, used to give a more descriptive name of a token.
@@ -298,6 +301,8 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
+            Token::Where => write!(f, "where"),
+            Token::End => write!(f, "end"),
         }
     }
 }

@@ -3,4 +3,4 @@ def g() -> Int ! Exception :=
 
 def a := g() ! {
     err: Exception => 10
-}
+end

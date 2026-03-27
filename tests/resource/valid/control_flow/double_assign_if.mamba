@@ -1,6 +1,6 @@
 def other := 20
-def my_variable := if True then
+def my_variable := if True then do
     other := 30
     20
-else
+end else
     10

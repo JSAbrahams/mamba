@@ -1,6 +1,6 @@
-def my_fun() -> Str := [
+def my_fun() -> Str := do
     print("a statement")
     "a"
-]
+end
 
 print(my_fun())

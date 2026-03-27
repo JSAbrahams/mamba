@@ -6,4 +6,4 @@ def a:= match 40 {
     2 => MyClass()
     4 => MyClass1()
     _ => MyClass2()
-}
+end

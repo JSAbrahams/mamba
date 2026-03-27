@@ -1,9 +1,9 @@
 # Measure for int just returns self
-def StrictlyDecreases for Int {
+def StrictlyDecreases for Int where
     def meta measure(self) -> Measurable := self
-}
+end
 
 # For string, we as an example use the length of the string (Which is also an integer)
-def StrictlyDecreases for Str {
+def StrictlyDecreases for Str where
     def meta measure(self) -> Measurable := self.len() 
-}
+end

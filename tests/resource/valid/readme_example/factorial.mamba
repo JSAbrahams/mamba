@@ -1,8 +1,8 @@
 # Factorial of x
-def factorial(x: Int) -> Int := match x {
+def factorial(x: Int) -> Int := match x where
     0 => 1
     n => n * factorial(n - 1)
-}
+end
 
 def num := input("Compute factorial: ")
 if num.is_digit() then [

@@ -1,21 +1,23 @@
 class MyGeneric: Str
 
-type SomeState: MyClass when self.private_field > 2
-type OtherState: MyClass when {
+type SomeState: MyClass where self.private_field > 2
+type OtherState: MyClass when
     self.private_field  > 10
     self.private_field  < 200
     self.required_field < 50
-}
+end
 
-trait SuperInterface :=
+trait SuperInterface := where
     def bar: Int
+end
 
-trait MyInterface: SuperInterface :=
+trait MyInterface: SuperInterface := where
     def required_field: Int
     def higher_order(self) -> Int
+end
 
 # some class
-class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface
+class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface := where
     def required_field: Int := 100
     def private_field: Int := 20
 
@@ -24,3 +26,4 @@ class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface
 
     def some_higher_order(self, fun: Int -> Int) -> Int := return fun(self.my_field)
     def higher_order(self) -> Int := return self.some_higher_order(\x: Int := x * 2)
+end

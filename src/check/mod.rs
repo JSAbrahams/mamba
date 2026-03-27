@@ -82,15 +82,11 @@ mod tests {
         let ast = src.parse::<AST>().unwrap();
         let result = check_all(&[ast]).unwrap();
 
-        let NodeTy::Block { statements } = &result[0].node else {
-            panic!()
-        };
-
         let NodeTy::VariableDef {
             expr: Some(expr), ..
-        } = &statements[0].node
+        } = &result[0].node
         else {
-            panic!("Expected variabledef: {:?}", statements[0].node)
+            panic!("Expected variabledef: {:?}", result[0].node)
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int")));
