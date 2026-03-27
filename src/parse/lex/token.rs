@@ -115,6 +115,10 @@ pub enum Token {
     Pass,
 }
 
+/// Name structure, used to give a more descriptive name of a token.
+/// Useful in debug or error messages, where we don't only want to print the token itself, but instead a description.
+pub struct TokenName<'a>(&'a Token);
+
 impl Token {
     pub fn width(&self) -> usize {
         self.to_string().len()
@@ -129,6 +133,77 @@ impl Token {
             (Token::DocStr(_), Token::DocStr(_)) => true,
             (Token::ENum(..), Token::ENum(..)) => true,
             _ => left == right,
+        }
+    }
+
+    /// Similar to `Display`, except that it writes a more descriptive name.
+    /// Useful in say error or debug messages, where you don't want to literally print the token but what it is.
+    /// In many cases, similar to display.
+    pub fn name<'a>(&'a self) -> TokenName<'a> {
+        TokenName(self)
+    }
+
+    /// Quick check to see if token name is not equal to self.
+    /// Used in context of error message generation.
+    pub fn equals_name(&self) -> bool {
+        format!("{self}") == format!("{}", self.name())
+    }
+}
+
+impl fmt::Display for TokenName<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            Token::Assign => write!(f, "assign"),
+            Token::AddAssign => write!(f, "add assign"),
+            Token::SubAssign => write!(f, "sub assign"),
+            Token::MulAssign => write!(f, "mul assign"),
+            Token::PowAssign => write!(f, "pow assign"),
+            Token::DivAssign => write!(f, "div assign"),
+
+            Token::Id(_) => write!(f, "identifier"),
+            Token::Real(_) => write!(f, "real literal"),
+            Token::Int(_) => write!(f, "integer literal"),
+            Token::Str(..) => write!(f, "string literal"),
+            Token::DocStr(_) => write!(f, "doc string"),
+            Token::ENum(..) => write!(f, "enum variant"),
+
+            Token::Range => write!(f, "range"),
+            Token::RangeIncl => write!(f, "range inclusive"),
+            Token::Slice => write!(f, "slice"),
+            Token::SliceIncl => write!(f, "slice inclusive"),
+
+            Token::Add => write!(f, "add"),
+            Token::Sub => write!(f, "sub"),
+            Token::Mul => write!(f, "mul"),
+            Token::Div => write!(f, "div"),
+            Token::FDiv => write!(f, "floor div"),
+            Token::Pow => write!(f, "pow"),
+
+            Token::Ge => write!(f, "greater than"),
+            Token::Geq => write!(f, "greater than or equal to"),
+            Token::Le => write!(f, "less than"),
+            Token::Leq => write!(f, "less than or equal to"),
+
+            Token::Eq => write!(f, "equal"),
+            Token::Neq => write!(f, "not equal"),
+
+            Token::LRBrack => write!(f, "left roung bracket"),
+            Token::RRBrack => write!(f, "right rount bracket"),
+            Token::LSBrack => write!(f, "left square bracket"),
+            Token::RSBrack => write!(f, "right square bracket"),
+            Token::LCBrack => write!(f, "left curly bracket"),
+            Token::RCBrack => write!(f, "right curly bracket"),
+            Token::Ver => write!(f, "vertial"),
+            Token::To => write!(f, "to"),
+            Token::BTo => write!(f, "broad to"),
+
+            Token::NL => write!(f, "newline"),
+            Token::Underscore => write!(f, "underscore"),
+
+            Token::Question => write!(f, "question"),
+            Token::Raise => write!(f, "raise"),
+
+            _ => write!(f, "{}", self.0),
         }
     }
 }
