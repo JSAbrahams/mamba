@@ -15,19 +15,19 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set_or_dict(it),
             _ => Err(Box::from(expected_one_of(
-                &[Token::LSBrack, Token::LSBrack, Token::LCBrack],
+                &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
                 "collection",
             ))),
         },
-        &[Token::LSBrack, Token::LSBrack, Token::LCBrack],
+        &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
         "collection",
     )
 }
 
 pub fn parse_tuple(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("tuple")?;
-    it.eat(&Token::LSBrack, "tuple")?;
+    it.eat(&Token::LRBrack, "tuple")?;
     let elements = it.parse_vec(&parse_expressions, "tuple", start)?;
     let end = it.eat(&Token::RRBrack, "tuple")?;
 
