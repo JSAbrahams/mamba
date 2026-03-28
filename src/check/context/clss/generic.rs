@@ -356,7 +356,8 @@ mod test {
             "class MyClass(def fin a: Int, b: Int): Parent(b) := where def c: Int := a + b end";
         let ast: AST = source.parse().expect("valid class syntax");
 
-        let generic_class = GenericClass::try_from(&ast)?;
+        let generic_class = GenericClass::try_from(&ast)
+            .expect(format!("expected class, was {:#?}", ast.node).as_str());
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(!generic_class.is_py_type);
@@ -414,7 +415,7 @@ mod test {
 
     #[test]
     fn from_class() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass\n    def c: Int := a + b\n";
+        let source = "class MyClass := where def c: Int := a + b end";
         let ast: AST = source.parse().expect("valid class syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;
@@ -450,7 +451,7 @@ mod test {
 
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass[T]\n    def c: T\n";
+        let source = "class MyClass[T] := where  def c: T end";
         let ast: AST = source.parse().expect("valid type syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;
@@ -487,10 +488,11 @@ mod test {
 
     #[test]
     fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
-        let source = "type MyType[T]\n    def c: T\n";
+        let source = "type MyType[T] where    def c: T end";
         let ast: AST = source.parse().expect("valid type syntax");
 
-        let generic_class = GenericClass::try_from(&ast)?;
+        let generic_class = GenericClass::try_from(&ast)
+            .expect(format!("was not class, was {:#?}", ast.node).as_str());
 
         let name = StringName::new("MyType", &[Name::from("T")]);
         assert_eq!(generic_class.name, name.clone());
@@ -524,7 +526,7 @@ mod test {
 
     #[test]
     fn from_type_def() -> Result<(), Vec<TypeErr>> {
-        let source = "type MyType\n    def c: String\n";
+        let source = "type MyType where   def c: String end";
         let ast: AST = source.parse().expect("valid type syntax");
 
         let generic_class = GenericClass::try_from(&ast)?;

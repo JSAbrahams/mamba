@@ -12,7 +12,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("statements")?;
     let mut statements: Vec<AST> = Vec::new();
 
-    it.peek_while_not_tokens(&[], &mut |it, lex| match &lex.token {
+    it.peek_while_not_tokens(&[Token::End], &mut |it, lex| match &lex.token {
         Token::NL => it.eat(&Token::NL, "statements").map(|_| ()),
 
         Token::Import | Token::From => {

@@ -89,7 +89,11 @@ pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
         "Expected {}{expected:?} token while parsing {}{parsing}, but found {}",
         an_or_a(expected),
         an_or_a(parsing),
-        actual.token
+        if actual.token.equals_name() {
+            format!("'{}'", actual.token)
+        } else {
+            format!("{} ('{}')", actual.token.name(), actual.token)
+        }
     );
     ParseErr {
         pos: actual.pos,

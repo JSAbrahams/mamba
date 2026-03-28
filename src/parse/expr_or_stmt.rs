@@ -24,6 +24,9 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 
     // if expression/statement followed by newline and indent, we are dealing with a handle block
     if it.peek_if(&|lex: &Lex| lex.token == Token::Raise) {
+        it.eat(&Token::Raise, "handle cases")?;
+        it.eat(&Token::Where, "handle cases")?;
+
         // parse handle cases if indentation block after
         let cases = it.parse_vec(&parse_match_cases, "handle cases", expr_or_stmt.pos)?;
         let end = cases.last().map_or(expr_or_stmt.pos, |stmt| stmt.pos);

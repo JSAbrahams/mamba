@@ -16,7 +16,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let ty = it.parse(&parse_type, "class", start)?;
 
     let mut args = vec![];
-    if it.eat_if(&Token::LSBrack).is_some() {
+    if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match lex.token {
             Token::Def => {
                 args.push(*it.parse(&parse_definition, "constructor argument", start)?);
@@ -50,10 +50,10 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
             },
         )?;
     }
-    it.eat_if(&Token::NL);
-    it.eat_if(&Token::Assign);
 
+    it.eat_while(&Token::NL);
     let (body, pos) = if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) {
+        it.eat(&Token::Assign, "class")?;
         let body = it.parse(&parse_code_set, "class", start)?;
         (Some(body.clone()), start.union(body.pos))
     } else {
@@ -131,7 +131,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
-            _ if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) => {
+            _ if it.peek_if(&|lex: &Lex| lex.token == Token::Where) => {
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_code_set, "type definition", start)?;
                 let isa = isa.clone();
@@ -403,7 +403,7 @@ mod test {
 
     #[test]
     fn class_with_parent_with_args_with_body() -> ParseResult<()> {
-        let source = "class Class: Parent(\"hello world\") := { def var := 10 }";
+        let source = "class Class: Parent(\"hello world\") := where def var := 10 end";
         let mut it = LexIterator::from_str(source)?;
         parse_class(&mut it).map(|_| ())
     }

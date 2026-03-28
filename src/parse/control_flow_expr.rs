@@ -1,3 +1,4 @@
+use crate::common::position::Position;
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
@@ -54,7 +55,8 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
     let cond = it.parse(&parse_expression, "match", start)?;
-    it.eat(&Token::NL, "match")?;
+    it.eat_while(&Token::NL);
+    it.eat(&Token::Where, "match")?;
     let cases = it.parse_vec(&parse_match_cases, "match", start)?;
     let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
 
@@ -63,15 +65,14 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::LCBrack, "match cases")?;
     let mut cases = vec![];
-    it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match case", start)?);
+    it.peek_while_not_token(&Token::End, &mut |it, _| {
+        cases.push(*it.parse(&parse_match_case, "match case", Position::invisible())?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
 
-    it.eat(&Token::RCBrack, "match cases")?;
+    it.eat(&Token::End, "match cases")?;
     Ok(cases)
 }
 
@@ -162,7 +163,7 @@ mod test {
 
     #[test]
     fn match_verify() {
-        let source = String::from("match a\n{   a => b\n    c => d}");
+        let source = String::from("match a\nwhere   a => b\n    c => d \nend");
         let ast: AST = source.parse().unwrap();
 
         let Node::Match { cond, cases } = &ast.node else {
@@ -233,7 +234,7 @@ mod test {
 
     #[test]
     fn if_expression() -> ParseResult<()> {
-        let source = String::from("if a then\n    b\n");
+        let source = String::from("if a then\nb\n");
         let ast: AST = source.parse()?;
 
         let Node::IfElse { cond, then, el } = ast.node else {
@@ -246,10 +247,6 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
@@ -276,23 +273,14 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
                 lit: String::from("b")
             }
         );
-
-        let el = match el.clone().unwrap().node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
-            el.node,
+            el.unwrap().node,
             Node::Id {
                 lit: String::from("c")
             }
