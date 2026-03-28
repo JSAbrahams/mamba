@@ -9,6 +9,8 @@ use crate::parse::statement::parse_statement;
 use crate::parse::statement::{is_start_statement, parse_reassignment};
 
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
+    it.eat_while(&Token::NL); // TODO more structured way to deal with NL
+
     let expr_or_stmt = it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::Where => it.parse(&parse_code_set, "statement", lex.pos),
