@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::process::Termination;
 
 use crate::check::context::arg;
 use crate::check::context::function::python::INIT;
@@ -31,6 +32,13 @@ impl AST {
             pos: self.pos,
             node: self.node.map(mapping),
         }
+    }
+}
+
+impl Termination for AST {
+    /// AST is always success
+    fn report(self) -> std::process::ExitCode {
+        std::process::ExitCode::SUCCESS
     }
 }
 

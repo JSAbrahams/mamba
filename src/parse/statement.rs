@@ -9,7 +9,7 @@ use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{custom, expected_one_of};
-use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
+use crate::parse::result::{eof_expected_one_of, ParseResult};
 use crate::parse::ty::{parse_expression_type, parse_id};
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
@@ -66,42 +66,49 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         None
     };
 
-    let end = it.eat(&Token::Import, "import")?;
-    let mut import = vec![];
-    it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _| {
-        import.push(*it.parse(&parse_id, "import", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
+    it.eat(&Token::Import, "import")?;
+    let (node, end) = if it.eat_if(&Token::LCBrack).is_none() {
+        let import = *it.parse(&parse_id, "import", start)?;
 
-    let alias = if it.eat_if(&Token::As).is_some() {
-        let mut alias = vec![];
-        it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
-            Token::Id(_) => {
-                alias.push(*it.parse(&parse_id, "as", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
-            _ => Err(Box::from(expected(&Token::Id(String::new()), lex, "as"))),
-        })?;
-        alias
+        let alias = if it.eat_if(&Token::As).is_some() {
+            Some(*it.parse(&parse_id, "as", start)?)
+        } else {
+            None
+        };
+
+        let end: crate::common::position::Position = match &alias {
+            Some(ast) => ast.pos,
+            _ => import.pos,
+        };
+        let node = Node::Import {
+            from,
+            import: vec![import],
+            alias: alias.map_or(vec![], |a| vec![a]),
+        };
+        (node, end)
     } else {
-        vec![]
-    };
+        let mut import = vec![];
+        let mut alias = vec![];
+        it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+            import.push(*it.parse(&parse_id, "import set", start)?);
+            if it.eat_if(&Token::As).is_some() {
+                alias.push(*it.parse(&parse_id, "as", start)?);
+            }
 
-    let end = match (import.last(), alias.last()) {
-        (_, Some(ast)) => ast.pos,
-        (Some(ast), _) => ast.pos,
-        (..) => end,
-    };
-    Ok(Box::from(AST::new(
-        start.union(end),
-        Node::Import {
+            it.eat_if(&Token::Comma);
+            Ok(())
+        })?;
+
+        let end = it.eat(&Token::RCBrack, "import set")?;
+        let node = Node::Import {
             from,
             import,
             alias,
-        },
-    )))
+        };
+        (node, end)
+    };
+
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
@@ -219,9 +226,17 @@ pub fn is_start_statement(lex: &Lex) -> bool {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::node_op::NodeOp;
-    use crate::parse::ast::{Node, AST};
+    use test_case::test_case;
+
+    #[test_case("from a import b")]
+    #[test_case("from a import b as c")]
+    #[test_case("from a import {b as c, d as e}")]
+    #[test_case("from a import b as c, d as e" => matches Err(_))]
+    fn parse(src: &str) -> ParseResult<AST> {
+        src.parse::<AST>()
+    }
 
     #[test]
     fn parse_return() {
