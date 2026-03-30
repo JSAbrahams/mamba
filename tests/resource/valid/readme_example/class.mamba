@@ -1,6 +1,6 @@
 class MatrixErr(def message: Str): Exception(message)
 
-class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := where
+class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) where
     # Accessor for matrix contents
     def contents(fin self) -> List[Int] := [a, b, c, d]
 

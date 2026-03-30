@@ -1,14 +1,15 @@
-class A :=
+class A where
     def b: B := B()
-
-class B :=
+end
+class B where
     def c: C := C()
-
-class C :=
+end
+class C where
     def d: D := D()
-
-class D :=
+end
+class D where
     def e: Int := 100
+end
 
 def a := A()
 a.b.c.d.e := 20

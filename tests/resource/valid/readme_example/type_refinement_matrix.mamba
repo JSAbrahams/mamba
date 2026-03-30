@@ -3,7 +3,7 @@ type InvertibleMatrix: Matrix when self.determinant() != 0.0
 class MatrixErr(def message: Str): Exception(message)
 
 ## Matrix, which now takes floats as argument
-class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := where
+class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) where
     def _last_op: Str? := None
 
     def determinant(fin self) -> Float := self.a * self.d - self.b * self.c

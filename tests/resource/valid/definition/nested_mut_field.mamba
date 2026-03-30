@@ -1,9 +1,9 @@
-class B :=
+class B where
     def my_num: Int := 10
-
-class A :=
+end
+class A where
     def b: B
-
+end
 
 def a := A()
 a.b.my_num := 20

@@ -1,12 +1,11 @@
-class MyClass := where
+class MyClass where
     def x: Int
 
-    def __init__(self) :=
-        match 10 where
-            2 => self.x := 2
-            3 => self.x := 3
-            4 => print("o")
-            5 => print("o")
-            _ => print("p")
-        end
+    def __init__(self) := match 10 where
+        2 => self.x := 2
+        3 => self.x := 3
+        4 => print("o")
+        5 => print("o")
+        _ => print("p")
+    end
 end

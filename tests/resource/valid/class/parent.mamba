@@ -1,9 +1,9 @@
-trait MyType := when
+trait MyType when
     def fun_a(self)
     def factorial(self, x: Int) -> Int
 end
 
-class MyClass1: MyType := where
+class MyClass1: MyType where
     def other: Int
 
     def fun_a(self) := print("hello)

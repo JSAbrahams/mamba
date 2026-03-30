@@ -1,4 +1,4 @@
-class X := where
+class X where
     def (a, b): (Int, Int)
 
     def __init__(self, x: Int) :=

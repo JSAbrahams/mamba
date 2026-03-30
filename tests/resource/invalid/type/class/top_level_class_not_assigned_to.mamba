@@ -1,4 +1,4 @@
-class X := where
+class X where
     def y: Int
     def z: Int
 

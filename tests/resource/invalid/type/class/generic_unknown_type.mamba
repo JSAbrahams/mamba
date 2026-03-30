@@ -1,5 +1,6 @@
-class MyClass[A: UnknownType] :=
+class MyClass[A: UnknownType] where
     def f() -> Int := 10
+end
 
 # should error because suddenly we are using an ill-typed class.
 def my_class := MyClass[10]()

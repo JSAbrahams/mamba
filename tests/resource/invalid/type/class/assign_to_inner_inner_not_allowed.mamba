@@ -1,6 +1,6 @@
 class Y(x: Int)
 
-class X := where
+class X where
     def y: Y
     def __init__(a: Int) :=
         self.y = Y(a)

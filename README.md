@@ -208,7 +208,7 @@ You will also see some "pure" functions, these will be explained later.
 ```mamba
 class MatrixErr(def message: Str): Exception(message)
 
-class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) := where
+class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) where
     # Accessor for matrix contents
     def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
@@ -259,7 +259,7 @@ As for the class body
 We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
-class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := where
+class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
     def x: Int := ORIGIN_X
     def y: Int := ORIGIN_Y
 
@@ -287,16 +287,16 @@ For those familiar with object oriented programming, we favour a trait based sys
 Consider example with iterators (which briefly showcases language generics):
 
 ```mamba
-trait Iterator[T] := where
+trait Iterator[T] where
     def has_next(self) -> Bool
     def next(self) -> T? # syntax sugar for Option[T]
 end
 
-class RangeIter(def _start: Int, def _end: Int) := where
+class RangeIter(def _start: Int, def _end: Int) where
     def _current: Int := _start
 end
 
-def Iterator[Int] for RangeIter := where
+def Iterator[Int] for RangeIter where
     def has_next(self) -> Bool := self._current < self._stop
 
     def next(self) -> Int? := if self.has_next() then do
@@ -383,7 +383,7 @@ type InvertibleMatrix: Matrix when self.determinant() != 0.0
 class MatrixErr(def message: Str): Exception(message)
 
 ## Matrix, which now takes floats as argument
-class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) := where
+class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) where
     def _last_op: Str? := None
 
     def determinant(fin self) -> Float := self.a * self.d - self.b * self.c

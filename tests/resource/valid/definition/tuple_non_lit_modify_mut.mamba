@@ -1,5 +1,6 @@
-class MyClass :=
+class MyClass where
     def my_field: Int := 10
+end
 
 def f() -> (MyClass, Int) :=
     (MyClass(), 10)

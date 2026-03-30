@@ -1,4 +1,4 @@
-class MyServer() := where
+class MyServer() where
     def _message: Str? := None
 
     def send(self, x: Str) :=

@@ -190,8 +190,8 @@ impl fmt::Display for TokenName<'_> {
             Token::Eq => write!(f, "equal"),
             Token::Neq => write!(f, "not equal"),
 
-            Token::LRBrack => write!(f, "left roung bracket"),
-            Token::RRBrack => write!(f, "right rount bracket"),
+            Token::LRBrack => write!(f, "left round bracket"),
+            Token::RRBrack => write!(f, "right round bracket"),
             Token::LSBrack => write!(f, "left square bracket"),
             Token::RSBrack => write!(f, "right square bracket"),
             Token::LCBrack => write!(f, "left curly bracket"),

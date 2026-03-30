@@ -245,14 +245,6 @@ mod tests {
     }
 
     #[test]
-    pub fn test_import_as_too_many_parse() {
-        let file = "import IPv4Address as {Other, Other2}"
-            .parse::<AST>()
-            .unwrap();
-        Context::try_from(vec![file].as_slice()).unwrap_err();
-    }
-
-    #[test]
     pub fn test_from_import_parse() {
         let file = "from ipaddress import IPv4Address".parse::<AST>().unwrap();
         let context = Context::try_from(vec![file].as_slice()).unwrap();

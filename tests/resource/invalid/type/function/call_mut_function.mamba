@@ -1,4 +1,4 @@
-class MyClass := where
+class MyClass where
     def a: Int := 20
 
     # not allowed, self is fin!

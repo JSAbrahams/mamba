@@ -7,17 +7,17 @@ type OtherState: MyClass when
     self.required_field < 50
 end
 
-trait SuperInterface := where
+trait SuperInterface where
     def bar: Int
 end
 
-trait MyInterface: SuperInterface := where
+trait MyInterface: SuperInterface where
     def required_field: Int
     def higher_order(self) -> Int
 end
 
 # some class
-class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface := where
+class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface where
     def required_field: Int := 100
     def private_field: Int := 20
 

@@ -34,26 +34,22 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
 
     let mut parents = vec![];
     if it.eat_if(&Token::DoublePoint).is_some() {
-        it.peek_while_not_tokens(
-            &[Token::NL, Token::Assign],
-            &mut |it, lex| match lex.token {
-                Token::Id(_) | Token::LSBrack => {
-                    parents.push(*it.parse(&parse_parent, "parents", start)?);
-                    it.eat_if(&Token::Comma);
-                    Ok(())
-                }
-                _ => Err(Box::from(expected(
-                    &Token::Id(String::new()),
-                    &lex.clone(),
-                    "parents",
-                ))),
-            },
-        )?;
+        it.peek_while_not_tokens(&[Token::NL, Token::Where], &mut |it, lex| match lex.token {
+            Token::Id(_) | Token::LSBrack => {
+                parents.push(*it.parse(&parse_parent, "parents", start)?);
+                it.eat_if(&Token::Comma);
+                Ok(())
+            }
+            _ => Err(Box::from(expected(
+                &Token::Id(String::new()),
+                &lex.clone(),
+                "parents",
+            ))),
+        })?;
     }
 
     it.eat_while(&Token::NL);
-    let (body, pos) = if it.peek_if(&|lex: &Lex| lex.token == Token::Assign) {
-        it.eat(&Token::Assign, "class")?;
+    let (body, pos) = if it.peek_if(&|lex: &Lex| lex.token == Token::Where) {
         let body = it.parse(&parse_code_set, "class", start)?;
         (Some(body.clone()), start.union(body.pos))
     } else {
@@ -190,7 +186,7 @@ mod test {
 
         assert_eq!(from, None);
         assert_eq!(import.len(), 1);
-        assert!(alias.is_empty());
+        assert!(alias[0].is_none());
         assert_eq!(
             import[0].node,
             Node::Id {
@@ -265,15 +261,9 @@ mod test {
             }
         );
         assert_eq!(
-            alias[0].as_ref().unwrap().node,
-            Node::Id {
-                lit: String::from("e")
-            }
-        );
-        assert_eq!(
             alias[1].as_ref().unwrap().node,
             Node::Id {
-                lit: String::from("g")
+                lit: String::from("e")
             }
         );
     }
@@ -403,7 +393,7 @@ mod test {
 
     #[test]
     fn class_with_parent_with_args_with_body() -> ParseResult<()> {
-        let source = "class Class: Parent(\"hello world\") := where def var := 10 end";
+        let source = "class Class: Parent(\"hello world\") where def var := 10 end";
         let mut it = LexIterator::from_str(source)?;
         parse_class(&mut it).map(|_| ())
     }

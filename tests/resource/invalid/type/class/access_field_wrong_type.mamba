@@ -1,6 +1,6 @@
-class MyClass :=
+class MyClass where
     def something: String := "my string"
-
+end
 
 def my_class := MyClass()
 def b := my_class.something

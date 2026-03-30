@@ -3,7 +3,7 @@
 It can do many thing
 """
 
-class MyClass
+class MyClass where
     """This is my class
 
     It can do many things
@@ -14,3 +14,4 @@ class MyClass
         This is my function, it can't do so much
         """
         200
+end

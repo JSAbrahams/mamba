@@ -1,4 +1,4 @@
-class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) := where
+class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
     # ORIGIN_X and ORIGIN_Y are constructor constants — they cannot be changed
     # current x and y are mutable fields initialized from the constants
     def x: Int := ORIGIN_X

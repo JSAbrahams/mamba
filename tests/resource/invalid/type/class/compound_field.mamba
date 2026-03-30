@@ -1,4 +1,4 @@
-class MyClass := where
+class MyClass where
     def a: Int := 10
     def b: Int := self.a + 1
 end

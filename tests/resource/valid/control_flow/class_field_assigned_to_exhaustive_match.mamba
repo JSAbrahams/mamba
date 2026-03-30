@@ -1,4 +1,4 @@
-class MyClass
+class MyClass where
     def x: Int
 
     def __init__(self) :=
@@ -6,3 +6,4 @@ class MyClass
             2 => self.x := 2
             3 => self.x := 3
             _ => self.x := 3
+end

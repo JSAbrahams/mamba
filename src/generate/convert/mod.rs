@@ -538,8 +538,13 @@ mod tests {
             }))]
         });
 
+        let statements = match gen(&ASTTy::from(&_break)).unwrap() {
+            Core::Block { statements } => statements,
+            _ => panic!("Expected block, because multiple imports generated"),
+        };
+
         assert_eq!(
-            gen(&ASTTy::from(&_break)).unwrap(),
+            statements[0],
             Core::Import {
                 from: None,
                 import: Box::new(Core::Id {

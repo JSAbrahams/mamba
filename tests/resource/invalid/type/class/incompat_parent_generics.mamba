@@ -1,4 +1,5 @@
 class SuperClass[B: Int]
 
-class MyClass[A: String]: SuperClass[A] :=
+class MyClass[A: String]: SuperClass[A] where
     def my_fun(x: A) -> A := x
+end

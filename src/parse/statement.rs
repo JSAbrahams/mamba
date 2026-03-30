@@ -67,26 +67,7 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
     };
 
     it.eat(&Token::Import, "import")?;
-    let (node, end) = if it.eat_if(&Token::LCBrack).is_none() {
-        let import = *it.parse(&parse_id, "import", start)?;
-
-        let alias = if it.eat_if(&Token::As).is_some() {
-            Some(*it.parse(&parse_id, "as", start)?)
-        } else {
-            None
-        };
-
-        let end: crate::common::position::Position = match &alias {
-            Some(ast) => ast.pos,
-            _ => import.pos,
-        };
-        let node = Node::Import {
-            from,
-            import: vec![import],
-            alias: alias.map_or(vec![None], |a| vec![Some(a)]),
-        };
-        (node, end)
-    } else {
+    let (node, end) = if it.eat_if(&Token::LCBrack).is_some() {
         let mut import = vec![];
         let mut alias = vec![];
         it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
@@ -106,6 +87,25 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
             from,
             import,
             alias,
+        };
+        (node, end)
+    } else {
+        let import = *it.parse(&parse_id, "import", start)?;
+
+        let alias = if it.eat_if(&Token::As).is_some() {
+            Some(*it.parse(&parse_id, "as", start)?)
+        } else {
+            None
+        };
+
+        let end: crate::common::position::Position = match &alias {
+            Some(ast) => ast.pos,
+            _ => import.pos,
+        };
+        let node = Node::Import {
+            from,
+            import: vec![import],
+            alias: alias.map_or(vec![None], |a| vec![Some(a)]),
         };
         (node, end)
     };

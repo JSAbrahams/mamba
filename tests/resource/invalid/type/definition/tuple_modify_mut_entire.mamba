@@ -1,6 +1,6 @@
-class MyClass :=
+class MyClass where
     def my_field: Int := 10
-
+end
 
 def fin c := (MyClass(), 10)
 c := (MyClass(), 30)

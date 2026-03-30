@@ -1,5 +1,6 @@
-class MyClass :=
+class MyClass where
     def my_function() -> Int := 10
+end
 
 def my_class := MyClass()
 print(my_class.my_function())
