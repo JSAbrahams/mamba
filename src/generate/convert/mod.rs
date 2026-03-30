@@ -41,15 +41,27 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             from,
             import,
             alias,
-        } => Core::Import {
-            from: if let Some(from) = from {
-                Some(Box::from(convert_node(from, imp, state, ctx)?))
-            } else {
-                None
-            },
-            import: convert_vec(import, imp, state, ctx)?,
-            alias: convert_vec(alias, imp, state, ctx)?,
-        },
+        } => {
+            let mut statements = vec![];
+            for (import, alias) in import.iter().zip(alias) {
+                let alias = if let Some(alias) = alias {
+                    Some(Box::new(convert_node(alias, imp, state, ctx)?))
+                } else {
+                    None
+                };
+
+                statements.push(Core::Import {
+                    from: if let Some(from) = from {
+                        Some(Box::from(convert_node(from, imp, state, ctx)?))
+                    } else {
+                        None
+                    },
+                    import: Box::new(convert_node(import, imp, state, ctx)?),
+                    alias,
+                });
+            }
+            Core::Block { statements }
+        }
 
         NodeTy::VariableDef { .. } | NodeTy::FunDef { .. } | NodeTy::FunArg { .. } => {
             convert_def(ast, imp, state, ctx)?
@@ -521,21 +533,21 @@ mod tests {
             import: vec![to_pos_unboxed!(Node::Id {
                 lit: String::from("a")
             })],
-            alias: vec![to_pos_unboxed!(Node::Id {
+            alias: vec![Some(to_pos_unboxed!(Node::Id {
                 lit: String::from("b")
-            })]
+            }))]
         });
 
         assert_eq!(
             gen(&ASTTy::from(&_break)).unwrap(),
             Core::Import {
                 from: None,
-                import: vec![Core::Id {
+                import: Box::new(Core::Id {
                     lit: String::from("a")
-                }],
-                alias: vec![Core::Id {
+                }),
+                alias: Some(Box::new(Core::Id {
                     lit: String::from("b")
-                }],
+                })),
             }
         );
     }
@@ -650,10 +662,10 @@ mod tests {
             import,
             Core::Import {
                 from: None,
-                import: vec![Core::Id {
+                import: Box::new(Core::Id {
                     lit: String::from("math")
-                }],
-                alias: vec![],
+                }),
+                alias: None,
             }
         );
         assert_eq!(

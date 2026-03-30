@@ -1,13 +1,10 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use itertools::EitherOrBoth::{Both, Left, Right};
-use itertools::Itertools;
-
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::result::TypeResult;
 use crate::parse::ast::{Node, OptAST, AST};
 
 pub fn generics(
@@ -69,21 +66,18 @@ fn single_ast(
 /// From import.
 ///
 /// A more elaborate import system will extract the signature of the class.
-fn from_import(_from: &OptAST, import: &[AST], alias: &[AST]) -> TypeResult<Vec<GenericClass>> {
-    let (mut classes, mut errs) = (vec![], vec![]);
-    for pair in import.iter().zip_longest(alias) {
+fn from_import(
+    _from: &OptAST,
+    import: &[AST],
+    alias: &[Option<AST>],
+) -> TypeResult<Vec<GenericClass>> {
+    let mut classes = vec![];
+    for pair in import.iter().zip(alias) {
         match pair {
-            Left(import) => classes.push(GenericClass::try_from_id(import)?),
-            Both(_, alias) => classes.push(GenericClass::try_from_id(alias)?),
-            Right(alias) => {
-                let msg = format!("alias with no matching import: {}", alias.node);
-                errs.push(TypeErr::new(alias.pos, &msg));
-            }
+            (import, None) => classes.push(GenericClass::try_from_id(import)?),
+            (_, Some(alias)) => classes.push(GenericClass::try_from_id(alias)?),
         }
     }
 
-    if !errs.is_empty() {
-        return Err(errs);
-    }
     Ok(classes)
 }

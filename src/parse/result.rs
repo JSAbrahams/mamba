@@ -64,13 +64,23 @@ impl From<LexErr> for ParseErr {
     }
 }
 
+fn comma_delm_tokens(tokens: &[Token]) -> String {
+    comma_delm(tokens.iter().map(|t| {
+        if t.equals_name() {
+            format!("'{t}'")
+        } else {
+            format!("{} ('{t}')", t.name())
+        }
+    }))
+}
+
 pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     let msg = format!(
-        "Expected one of [{}] while parsing {}{parsing}, but found {}",
-        comma_delm(tokens),
+        "Expected one of {{{}}} while parsing {}{parsing}, but found {}",
+        comma_delm_tokens(tokens),
         an_or_a(parsing),
         if actual.token.equals_name() {
-            format!("'{}'", actual.token)
+            format!("{}", actual.token)
         } else {
             format!("{} ('{}')", actual.token.name(), actual.token)
         }
@@ -119,13 +129,13 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
         pos: Position::invisible(),
         msg: match tokens {
             tokens if tokens.len() > 1 => format!(
-                "Expected one of [{}] tokens while parsing {}{parsing}",
-                comma_delm(tokens),
+                "Expected one of {{{}}} tokens while parsing {}{parsing}",
+                comma_delm_tokens(tokens),
                 an_or_a(parsing),
             ),
             tokens if tokens.len() == 1 => format!(
-                "Expected a {} token while parsing {}{parsing}",
-                comma_delm(tokens),
+                "Expected a '{}' token while parsing {}{parsing}",
+                comma_delm_tokens(tokens),
                 an_or_a(parsing),
             ),
             _ => format!(

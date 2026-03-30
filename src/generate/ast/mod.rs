@@ -57,9 +57,9 @@ fn to_py(core: &Core, ind: usize) -> String {
             } else {
                 String::from("")
             },
-            comma_delimited(import, ind),
-            if !alias.is_empty() {
-                format!(" as {}", comma_delimited(alias, ind))
+            to_py(import, ind),
+            if let Some(alias) = alias {
+                format!(" as {}", to_py(alias, ind))
             } else {
                 String::from("")
             }

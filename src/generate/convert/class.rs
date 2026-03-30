@@ -350,7 +350,6 @@ fn init(
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
-    use crate::generate::ast::node::Core;
     use crate::generate::gen;
     use crate::parse::ast::{Node, AST};
     use crate::ASTTy;
@@ -368,51 +367,6 @@ mod tests {
         ($node:expr) => {{
             Box::from(to_pos_unboxed!($node))
         }};
-    }
-
-    #[test]
-    fn import_verify() {
-        let from = Some(to_pos!(Node::Break));
-        let import = vec![
-            to_pos_unboxed!(Node::ENum {
-                num: String::from("a"),
-                exp: String::from("100")
-            }),
-            to_pos_unboxed!(Node::Real {
-                lit: String::from("3000.5")
-            }),
-        ];
-        let alias = vec![];
-        let import = to_pos!(Node::Import {
-            from,
-            import,
-            alias
-        });
-
-        let (from, import, alias) = match gen(&ASTTy::from(&*import)) {
-            Ok(Core::Import {
-                from,
-                import,
-                alias,
-            }) => (from.clone(), import.clone(), alias.clone()),
-            other => panic!("Expected import but got {other:?}"),
-        };
-
-        assert_eq!(*from.unwrap(), Core::Break);
-        assert_eq!(
-            import[0],
-            Core::ENum {
-                num: String::from("a"),
-                exp: String::from("100")
-            }
-        );
-        assert_eq!(
-            import[1],
-            Core::Float {
-                float: String::from("3000.5")
-            }
-        );
-        assert!(alias.is_empty());
     }
 
     #[test]

@@ -10,8 +10,8 @@ use crate::ASTTy;
 pub enum Core {
     Import {
         from: Option<Box<Core>>,
-        import: Vec<Core>,
-        alias: Vec<Core>,
+        import: Box<Core>,
+        alias: Option<Box<Core>>,
     },
     ClassDef {
         name: Box<Core>,

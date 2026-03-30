@@ -6,7 +6,7 @@ if False then "hello" else "world"
 def cond := True and False
 cond := True or False
 
-if cond then
+if cond then do
     "asdf"
     print("hello \"world\"")
 
@@ -19,7 +19,7 @@ if cond then
     if cond or False then
         "hhh"
     else iii
-else
+end else do
     "other"
     print("hello \"world\"")
 
@@ -27,5 +27,6 @@ else
         "bbb"
     else
         "ccc"
+end
 
 if "as" = "as" then print("hi") else print("asdf")

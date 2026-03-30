@@ -199,6 +199,7 @@ impl fmt::Display for TokenName<'_> {
             Token::Ver => write!(f, "vertial"),
             Token::To => write!(f, "to"),
             Token::BTo => write!(f, "broad to"),
+            Token::BSlash => write!(f, "backslash"),
 
             Token::NL => write!(f, "newline"),
             Token::Underscore => write!(f, "underscore"),

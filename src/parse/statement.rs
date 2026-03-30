@@ -83,7 +83,7 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         let node = Node::Import {
             from,
             import: vec![import],
-            alias: alias.map_or(vec![], |a| vec![a]),
+            alias: alias.map_or(vec![None], |a| vec![Some(a)]),
         };
         (node, end)
     } else {
@@ -91,9 +91,11 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         let mut alias = vec![];
         it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
             import.push(*it.parse(&parse_id, "import set", start)?);
-            if it.eat_if(&Token::As).is_some() {
-                alias.push(*it.parse(&parse_id, "as", start)?);
-            }
+            alias.push(if it.eat_if(&Token::As).is_some() {
+                Some(*it.parse(&parse_id, "as", start)?)
+            } else {
+                None
+            });
 
             it.eat_if(&Token::Comma);
             Ok(())
@@ -234,6 +236,10 @@ mod test {
     #[test_case("from a import b as c")]
     #[test_case("from a import {b as c, d as e}")]
     #[test_case("from a import b as c, d as e" => matches Err(_))]
+    #[test_case("import b")]
+    #[test_case("import b as c")]
+    #[test_case("import {b as c, d as e}")]
+    #[test_case("import b as c, d as e" => matches Err(_))]
     fn parse(src: &str) -> ParseResult<AST> {
         src.parse::<AST>()
     }

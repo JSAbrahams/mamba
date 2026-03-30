@@ -49,7 +49,7 @@ pub enum Node {
     Import {
         from: Option<Box<AST>>,
         import: Vec<AST>,
-        alias: Vec<AST>,
+        alias: Vec<Option<AST>>,
     },
     Class {
         ty: Box<AST>,

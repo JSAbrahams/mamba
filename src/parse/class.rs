@@ -223,7 +223,7 @@ mod test {
             }
         );
         assert_eq!(
-            alias[0].node,
+            alias[0].as_ref().unwrap().node,
             Node::Id {
                 lit: String::from("e")
             }
@@ -232,7 +232,7 @@ mod test {
 
     #[test]
     fn from_import_as_verify() {
-        let source = String::from("from c import d,f as e,g");
+        let source = String::from("from c import {d,f as e,g}");
         let ast = source.parse::<AST>().unwrap();
 
         let (from, import, alias) = match ast.node {
@@ -250,8 +250,8 @@ mod test {
                 lit: String::from("c")
             }
         );
-        assert_eq!(import.len(), 2);
-        assert_eq!(alias.len(), 2);
+        assert_eq!(import.len(), 3);
+        assert_eq!(alias.len(), 3);
         assert_eq!(
             import[0].node,
             Node::Id {
@@ -265,13 +265,13 @@ mod test {
             }
         );
         assert_eq!(
-            alias[0].node,
+            alias[0].as_ref().unwrap().node,
             Node::Id {
                 lit: String::from("e")
             }
         );
         assert_eq!(
-            alias[1].node,
+            alias[1].as_ref().unwrap().node,
             Node::Id {
                 lit: String::from("g")
             }

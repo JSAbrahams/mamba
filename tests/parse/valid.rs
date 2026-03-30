@@ -47,14 +47,15 @@ use mamba::parse::result::ParseResult;
 #[test_case("reamde_example", "type_refinement_matrix" => ignore["rewrite parser"])]
 #[test_case("reamde_example", "type_refinement_on_matrix" => ignore["rewrite parser"])]
 #[test_case("reamde_example", "type_refinement_set" => ignore["rewrite parser"])]
-fn syntax(input_dir: &str, file_name: &str) -> ParseResult<()> {
+fn syntax(input_dir: &str, file_name: &str) -> ParseResult<AST> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(true, &[input_dir], &file_name).unwrap();
 
     // include path and source in error for faster debugging
-    source.parse::<AST>().map(|_| ()).map_err(|mut e| {
+    source.parse::<AST>().map_err(|mut e| {
         e.source = Some(source);
         e.path = Some(PathBuf::new().join(input_dir).join(file_name));
+        eprintln!("{e}");
         e
     })
 }

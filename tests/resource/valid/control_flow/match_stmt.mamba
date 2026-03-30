@@ -2,7 +2,7 @@ def a := "d"
 
 def (b, bb, bbb) := (0, 1, 2)
 
-match (b, bb, bbb)
+match (b, bb, bbb) where
     (0, 1, 2) => print("hello world")
 
 def nested := "other"

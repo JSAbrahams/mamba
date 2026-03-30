@@ -27,7 +27,7 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .collect(),
                 alias: alias
                     .iter()
-                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(|ast| ast.as_ref().map(|ast| ASTTy::from((ast, finished))))
                     .collect(),
             },
             Node::Class {

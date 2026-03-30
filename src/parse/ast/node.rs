@@ -25,6 +25,19 @@ fn equal_vec(this: &[AST], other: &[AST]) -> bool {
     }
 }
 
+fn equal_nullable_vec(this: &[Option<AST>], other: &[Option<AST>]) -> bool {
+    if this.len() != other.len() {
+        false
+    } else {
+        for (left, right) in this.iter().zip(other) {
+            if !equal_optional(&left.clone().map(Box::new), &right.clone().map(Box::new)) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let name = match &self {
@@ -183,7 +196,10 @@ impl Node {
             } => Node::Import {
                 from: from.map(|a| a.map(mapping)).map(Box::from),
                 import: import.iter().map(|i| i.map(mapping)).collect(),
-                alias: alias.iter().map(|a| a.map(mapping)).collect(),
+                alias: alias
+                    .iter()
+                    .map(|a| a.as_ref().map(|a| a.map(mapping)))
+                    .collect(),
             },
             Node::Class {
                 ty,
@@ -520,7 +536,7 @@ impl Node {
                     import: ri,
                     alias: ra,
                 },
-            ) => lf == rf && equal_vec(li, ri) && equal_vec(la, ra),
+            ) => lf == rf && equal_vec(li, ri) && equal_nullable_vec(la, ra),
             (
                 Node::Class {
                     ty: lt,
@@ -1450,7 +1466,7 @@ mod test {
         two_ast!(Node::Import {
             from: Some(Box::from(AST::new(Position::invisible(), Node::Break))),
             import: vec![AST::new(Position::invisible(), Node::Continue)],
-            alias: vec![AST::new(Position::invisible(), Node::Pass)],
+            alias: vec![Some(AST::new(Position::invisible(), Node::Pass))],
         });
     }
 

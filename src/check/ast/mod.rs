@@ -81,7 +81,7 @@ pub enum NodeTy {
     Import {
         from: Option<Box<ASTTy>>,
         import: Vec<ASTTy>,
-        alias: Vec<ASTTy>,
+        alias: Vec<Option<ASTTy>>,
     },
     Class {
         ty: StringName,
