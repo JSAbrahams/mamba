@@ -263,7 +263,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "in" => Token::In,
         "when" => Token::When,
-        "pass" => Token::Pass,
 
         "where" => Token::Where,
         "end" => Token::End,

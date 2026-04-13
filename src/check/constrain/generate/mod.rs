@@ -63,7 +63,6 @@ pub fn generate(
 
         ExpressionType { .. } | Id { .. } | Question { .. } => gen_expr(ast, env, ctx, constr),
         AnonFun { .. } => gen_expr(ast, env, ctx, constr),
-        Pass => gen_expr(ast, env, ctx, constr),
 
         With { .. } => gen_resources(ast, env, ctx, constr),
 

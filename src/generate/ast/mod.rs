@@ -480,7 +480,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_if_body(body, ind)
         ),
 
-        Core::Pass => String::from("pass"),
+        Core::Nop => String::from("pass"),
         Core::None => String::from("None"),
         Core::Empty => String::new(),
 

@@ -112,7 +112,6 @@ pub enum Token {
     With,
 
     Question,
-    Pass,
 
     Where,
     End,
@@ -301,7 +300,6 @@ impl fmt::Display for Token {
             Token::Raise => write!(f, "!"),
             Token::When => write!(f, "when"),
 
-            Token::Pass => write!(f, "pass"),
             Token::Where => write!(f, "where"),
             Token::End => write!(f, "end"),
         }

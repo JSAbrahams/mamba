@@ -357,7 +357,6 @@ pub enum Node {
     },
     ReturnEmpty,
     Underscore,
-    Pass,
     Question {
         left: Box<AST>,
         right: Box<AST>,

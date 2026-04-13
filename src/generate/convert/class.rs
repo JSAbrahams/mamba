@@ -188,7 +188,7 @@ fn extract_class(
         .collect();
 
     let statements = if body_stmts.is_empty() {
-        vec![Core::Pass]
+        vec![Core::Nop]
     } else {
         body_stmts
     };

@@ -175,7 +175,6 @@ impl Display for Node {
             Node::Continue => format!("{}", Token::Continue),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
             Node::Underscore => format!("{}", Token::Underscore),
-            Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
         };
@@ -1268,7 +1267,6 @@ mod test {
         map_eq!(Node::Continue, Node::Continue, old, new);
         map_eq!(Node::ReturnEmpty, Node::ReturnEmpty, old, new);
         map_eq!(Node::Underscore, Node::Underscore, old, new);
-        map_eq!(Node::Pass, Node::Pass, old, new);
     }
 
     #[test]
@@ -1466,7 +1464,12 @@ mod test {
         two_ast!(Node::Import {
             from: Some(Box::from(AST::new(Position::invisible(), Node::Break))),
             import: vec![AST::new(Position::invisible(), Node::Continue)],
-            alias: vec![Some(AST::new(Position::invisible(), Node::Pass))],
+            alias: vec![Some(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string()
+                }
+            ))],
         });
     }
 
@@ -1475,7 +1478,12 @@ mod test {
         let node = Node::Class {
             ty: Box::new(AST::new(Position::invisible(), Node::Continue)),
             args: vec![AST::new(Position::invisible(), Node::ReturnEmpty)],
-            parents: vec![AST::new(Position::invisible(), Node::Pass)],
+            parents: vec![AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            )],
             body: Some(Box::from(AST::new(Position::invisible(), Node::new_self()))),
         };
 
@@ -1496,7 +1504,12 @@ mod test {
     fn parent_equal_value() {
         let node = Node::Parent {
             ty: Box::new(AST::new(Position::invisible(), Node::new_self())),
-            args: vec![AST::new(Position::invisible(), Node::Pass)],
+            args: vec![AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            )],
         };
 
         two_ast!(node);
@@ -1505,7 +1518,12 @@ mod test {
     #[test]
     fn reassign_equal_value() {
         let node = Node::Reassign {
-            left: Box::new(AST::new(Position::invisible(), Node::Pass)),
+            left: Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            )),
             right: Box::new(AST::new(Position::invisible(), Node::ReturnEmpty)),
             op: NodeOp::Sub,
         };
@@ -1517,7 +1535,12 @@ mod test {
     fn def_equal_value() {
         let first = Box::from(AST::new(Position::invisible(), Node::Continue));
         let second = Box::from(AST::new(Position::invisible(), Node::Break));
-        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
+        let third = Box::from(AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: "Random".to_string(),
+            },
+        ));
 
         two_ast!(Node::VariableDef {
             mutable: false,
@@ -1564,7 +1587,12 @@ mod test {
     fn handle_same_value() {
         let first = Box::from(AST::new(Position::invisible(), Node::Continue));
         let second = Box::from(AST::new(Position::invisible(), Node::Break));
-        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
+        let third = Box::from(AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: "Random".to_string(),
+            },
+        ));
 
         two_ast!(Node::Handle {
             cases: vec![*first.clone()],
@@ -1573,7 +1601,12 @@ mod test {
         two_ast!(Node::With {
             resource: first.clone(),
             alias: Some((second.clone(), false, Some(third.clone()))),
-            expr: Box::from(AST::new(Position::invisible(), Node::Pass))
+            expr: Box::from(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string()
+                }
+            ))
         });
     }
 
@@ -1614,7 +1647,12 @@ mod test {
     #[test]
     fn expression_type_equal_value() {
         let expr = Box::from(AST::new(Position::invisible(), Node::Continue));
-        let expr2 = Box::from(AST::new(Position::invisible(), Node::Pass));
+        let expr2 = Box::from(AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: "Random".to_string(),
+            },
+        ));
         two_ast!(Node::ExpressionType {
             expr: expr.clone(),
             mutable: false,
@@ -1626,7 +1664,12 @@ mod test {
     fn type_equal_value() {
         let first = Box::from(AST::new(Position::invisible(), Node::Continue));
         let second = Box::from(AST::new(Position::invisible(), Node::Break));
-        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
+        let third = Box::from(AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: "Random".to_string(),
+            },
+        ));
 
         two_ast!(Node::TypeDef {
             ty: first.clone(),
@@ -1689,7 +1732,12 @@ mod test {
             },
             Node::Str {
                 lit: String::from("yuk"),
-                expressions: vec![AST::new(Position::invisible(), Node::Pass)]
+                expressions: vec![AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: "Random".to_string()
+                    }
+                )]
             }
         );
     }
@@ -1951,7 +1999,9 @@ mod test {
         two_ast!(Node::Continue);
         two_ast!(Node::ReturnEmpty);
         two_ast!(Node::Underscore);
-        two_ast!(Node::Pass);
+        two_ast!(Node::Id {
+            lit: "Random".to_string()
+        });
     }
 
     #[test]
@@ -1976,7 +2026,12 @@ mod test {
     fn block_end_with_expression_is_expression() {
         let node = Node::Block {
             statements: vec![
-                AST::new(Position::invisible(), Node::Pass),
+                AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: "Random".to_string(),
+                    },
+                ),
                 AST::new(
                     Position::invisible(),
                     Node::Int {
@@ -1998,7 +2053,12 @@ mod test {
                         lit: String::from("3"),
                     },
                 ),
-                AST::new(Position::invisible(), Node::Pass),
+                AST::new(
+                    Position::invisible(),
+                    Node::Id {
+                        lit: "Random".to_string(),
+                    },
+                ),
             ],
         };
         assert!(!node.is_expression())
@@ -2018,7 +2078,12 @@ mod test {
                     lit: "True".to_string(),
                 },
             )),
-            then: Box::new(AST::new(Position::invisible(), Node::Pass)),
+            then: Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            )),
             el: None,
         };
         assert!(!node.is_expression())
@@ -2033,8 +2098,18 @@ mod test {
                     lit: "True".to_string(),
                 },
             )),
-            then: Box::new(AST::new(Position::invisible(), Node::Pass)),
-            el: Some(Box::new(AST::new(Position::invisible(), Node::Pass))),
+            then: Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            )),
+            el: Some(Box::new(AST::new(
+                Position::invisible(),
+                Node::Id {
+                    lit: "Random".to_string(),
+                },
+            ))),
         };
         assert!(node.is_expression())
     }
@@ -2043,7 +2118,12 @@ mod test {
     fn expression_is_expression() {
         let first = Box::from(AST::new(Position::invisible(), Node::Continue));
         let second = Box::from(AST::new(Position::invisible(), Node::Break));
-        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
+        let third = Box::from(AST::new(
+            Position::invisible(),
+            Node::Id {
+                lit: "Random".to_string(),
+            },
+        ));
 
         assert!(Node::AnonFun {
             args: vec![*first.clone()],

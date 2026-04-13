@@ -277,7 +277,7 @@ pub enum Core {
         expr: Box<Core>,
     },
     UnderScore,
-    Pass,
+    Nop,
     None,
     Empty,
     TryExcept {

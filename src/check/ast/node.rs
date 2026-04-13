@@ -468,7 +468,6 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::Continue => NodeTy::Continue,
             Node::ReturnEmpty => NodeTy::ReturnEmpty,
             Node::Underscore => NodeTy::Underscore,
-            Node::Pass => NodeTy::Pass,
             _ => NodeTy::Empty,
         }
     }

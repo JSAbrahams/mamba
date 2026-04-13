@@ -316,7 +316,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
         NodeTy::Raise { .. } | NodeTy::Handle { .. } => convert_handle(ast, imp, state, ctx)?,
 
-        NodeTy::Pass => Core::Pass,
         _ => Core::Empty,
     };
 
@@ -489,12 +488,6 @@ mod tests {
     fn continue_verify() {
         let _continue = to_pos!(Node::Continue);
         assert_eq!(gen(&ASTTy::from(&_continue)).unwrap(), Core::Continue);
-    }
-
-    #[test]
-    fn pass_verify() {
-        let pass = to_pos!(Node::Pass);
-        assert_eq!(gen(&ASTTy::from(&pass)).unwrap(), Core::Pass);
     }
 
     #[test]

@@ -389,20 +389,3 @@ pub enum NodeTy {
     },
     Empty,
 }
-
-#[cfg(test)]
-mod test {
-    use crate::check::name::Name;
-    use crate::common::position::Position;
-    use crate::parse::ast::Node;
-    use crate::{ASTTy, AST};
-
-    #[test]
-    fn to_ty() {
-        let node = Node::Pass;
-        let ast = AST::new(Position::invisible(), node.clone());
-        let ast_ty = ASTTy::from(&ast).with_ty(&Name::from("Dummy"));
-
-        assert_eq!(ast_ty.ty, Some(Name::from("Dummy")));
-    }
-}

@@ -79,7 +79,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             };
             let (dec, body) = if state.interface && expression.is_none() {
                 imp.add_from_import("abc", "abstractmethod");
-                (vec![String::from("abstractmethod")], Box::from(Core::Pass))
+                (vec![String::from("abstractmethod")], Box::from(Core::Nop))
             } else {
                 (
                     vec![],
@@ -90,7 +90,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                             &state.expand_ty(true).is_last_must_be_ret(ty.is_some()),
                             ctx,
                         )?,
-                        None => Core::Pass,
+                        None => Core::Nop,
                     }),
                 )
             };
@@ -475,7 +475,7 @@ mod test {
                 default: None,
             }
         );
-        assert_eq!(*body, Core::Pass);
+        assert_eq!(*body, Core::Nop);
     }
 
     #[test]
@@ -523,7 +523,7 @@ mod test {
                 })),
             }
         );
-        assert_eq!(*body, Core::Pass);
+        assert_eq!(*body, Core::Nop);
     }
 
     #[test]

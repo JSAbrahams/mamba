@@ -135,15 +135,7 @@ mod test {
     use crate::check::context::function::generic::GenericFunction;
     use crate::check::name::string_name::StringName;
     use crate::check::name::Name;
-    use crate::common::position::Position;
-    use crate::parse::ast::Node;
     use crate::{TypeErr, AST};
-
-    #[test]
-    fn from_non_fundef_node() {
-        let ast = AST::new(Position::invisible(), Node::Pass);
-        assert!(GenericFunction::try_from(&ast).is_err())
-    }
 
     #[test]
     fn from_fundef() -> Result<(), Vec<TypeErr>> {

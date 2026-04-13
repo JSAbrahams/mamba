@@ -41,14 +41,6 @@ pub fn gen_expr(
             generate(right, env, ctx, constr)?;
             Ok(env.clone())
         }
-        Node::Pass => {
-            if let Some(expected_ret_ty) = &env.return_type {
-                constr.add("pass", &Expected::none(ast.pos), expected_ret_ty, env);
-                Ok(env.clone())
-            } else {
-                Ok(env.clone())
-            }
-        }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected an expression")]),
     }
