@@ -153,7 +153,7 @@ pub fn mamba_to_python(
         .iter()
         .map(|(src, path)| {
             src.parse::<AST>()
-                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
+                .map_err(|err| Box::new(err.with_source(&Some(src.clone()), &path.clone())))
         })
         .partition(Result::is_ok);
 

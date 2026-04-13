@@ -33,7 +33,6 @@ pub fn unify_function(
             let arguments_union: Vec<Vec<Name>> = name
                 .names
                 .iter()
-                .cloned()
                 .map(|n| n.args(right.pos))
                 .collect::<Result<_, _>>()?;
 

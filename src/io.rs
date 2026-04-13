@@ -56,7 +56,7 @@ pub fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
 
     let mut relative_paths = vec![];
     for absolute_result in glob {
-        let absolute_path = absolute_result.map_err(|e| (e.to_string()))?;
+        let absolute_path = absolute_result.map_err(|e| e.to_string())?;
         let relative_path = diff_paths(absolute_path.as_path(), in_path)
             .ok_or_else(|| String::from("Unable to create relative path"))?;
         relative_paths.push(relative_path.into_os_string());
