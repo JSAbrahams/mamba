@@ -4,14 +4,18 @@ def (b, bb, bbb) := (0, 1, 2)
 
 match (b, bb, bbb) where
     (0, 1, 2) => print("hello world")
+end
 
 def nested := "other"
 
-match nested
-    "a" =>
+match nested where
+    "a" => do
         "b"
         "c"
-    "c" => match nested
+    end
+    "c" => match nested where
         "other" => "even_other"
         "other_one" => "better_one"
         _ => "default"
+    end
+end

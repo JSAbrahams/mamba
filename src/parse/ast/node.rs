@@ -2053,12 +2053,7 @@ mod test {
                         lit: String::from("3"),
                     },
                 ),
-                AST::new(
-                    Position::invisible(),
-                    Node::Id {
-                        lit: "Random".to_string(),
-                    },
-                ),
+                AST::new(Position::invisible(), Node::Break),
             ],
         };
         assert!(!node.is_expression())
