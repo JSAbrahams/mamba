@@ -11,129 +11,105 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 - ```{ ... }``` = zero or more
 
 ```ebnf
-    file             ::= block
-    import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
+    file             ::= { expr-or-stmt }
+    import           ::= [ "from" id ] "import" 
+                         ( import-as | "{" import-as "," "}" | "{" import-as "," import-as { "," import-as } "}" )
+    import-as        ::= id ( "as" id )
 
-    type-def         ::= "type" type [ ":" type ] ( newline block | "when" [ conditions ] )
-    conditions       ::= ( newline indent { condition newline } dedent | condition )
-    condition        ::= expression [ "!" expression ]
-    type-tuple       ::= "(" [ type ] { "," type } ")"
-    
-    class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( newline block )
-    generics         ::= "[" id { "," id } "]"
+    type-def         ::= "type" type-not-fun ":" type-not-fun "when" ( expression | code-set )
+    trait-def        ::= "trait" type-not-fun ( ":" type-not-fun { "," type-not-fun } ) [ ":=" statement ]
+    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ ":=" statement ]
     
     id               ::= { character }
     id-maybe-type    ::= id [ ":" type ]
 
-    type             ::= ( id [ generics ] | type-tuple ) [ "->" type ]
-    type-tuple       ::= "(" [ type { "," type } ] ")"
+    type-not-fun     ::= id [ generics ]
+    type             ::= id [ generics ] [ "->" type ]
+    generics         ::= "[" id { "," id } "]"
     
-    block            ::= indent { expr-or-stmt } dedent
-    
-    expr-or-stmt     ::= ( statement | expression ) [ comment ]
+    expr-or-stmt     ::= ( statement | expression )
     statement        ::= control-flow-stmt
                       | definition
                       | reassignment
                       | type-def
-                      | "retry"
-                      | "pass"
-                      | class
-                      | type-def
-                      | comment
+                      | trait-def
+                      | class-def
                       | import
-    expression       ::= "(" expression ")"
-                      | expression "?or" expression
                       | "return" [ expression ]
-                      | expression "as" id 
-                      | control-flow-expr 
-                      | newline block
+                      | code-set
+    expression       ::= control-flow-expr 
                       | collection
-                      | index
-                      | key-value
                       | operation
                       | anon-fun
                       | call
                       | "_"
+                      | code-block
                      
-    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" | ">>=" | "<<=" ) expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" ] [ newline match-cases ]
+    reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) expression
+    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" match-cases [ recover expression ] ]
     raise            ::= "!" id { "," id }
     
-    collection       ::= tuple | set | list | map
-    tuple            ::= "(" { expression } ")"
-    set              ::= "{" { expression } "}" | set-builder
-    set-builder      ::= "{" expression "|" expression { "," expression } "}"
-    list             ::= "[" { expression } "]" | list-builder
-    list-builder     ::= "[" expression "|" expression { "," expression } "]"
+    # for all collections, we require one comma at least to avoid ambiguity
+    collection       ::= tuple | set | set-builder | list | list-builder | map | map-builder
+    tuple            ::= "(" "," ")" | "(" expression "," ")" 
+                      | "(" expression "," [ newline ] expression { "," [ newline ] expression } ")"
+    set              ::= "{" "," "}" | "{" expression "," "}" 
+                      | "{" expression { "," [ newline ] expression } "}"
+    set-builder      ::= "{" expression "|" expression { "," [ newline ] expression } "}"
+    list             ::= "[" "," "]" | "[" expression "," "]" 
+                      | "[" expression { "," [ newline ] expression } "]"
+    list-builder     ::= "[" expression "|" expression { "," [ newline ] expression } "]"
+    map              ::= "{" expression "=>" expression "," "}"
+                      | "{" expression "=>" expression { "," [ newline ] expression "=>" expression } "}"
+    map-builder      ::= "{ expression "=>" expression | expression { "," [ newline ] expression } }
+      
+    slice            ::= expression ( "::" | "::=" ) expression
+    range            ::= expression ( ".." | "..=" ) expression
     
-    slice            ::= expression ( "::" | "::=" ) expression [ "::" expression ]
-    range            ::= expression ( ".." | "..=" ) expression [ ".." expression ]
-    index            ::= expression "[" expression "]"
-    
-    definition       ::= "def" ( variable-def | fun-def | operator-def )
+    definition       ::= variable-def | fun-def | type-def | trait-def | class-def
 
-    variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
-    operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
-                         [ ":=" ( expr-or-stmt | newline block ) ]
-
-    fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
-                         [ ":=" ( expr-or-stmt | newline block ) ]
+    variable-def     ::= "def" [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ]
+    # type checker should check for valid combination of meta, total, pure
+    fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
+                         ( id | overridable-op ) fun-args [ "->" type ] [ raise ] 
+                         [ ":=" expression ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= id-maybe-type [ ":=" expression ]
-    forward          ::= "forward" id { "," id }
-    
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     
-    operation        ::= relation [ ( equality | instance-eq | boolean-logic ) relation ]
+    operation        ::= relation [ ( equality | boolean-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
-    term             ::= inner-term [ ( multiclative | range | slice ) term ]
+    term             ::= inner-term [ ( multiplicative | range | slice ) term ]
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ unary ] ( literal | id | expression )
     
-    overrideable-op  ::= additive | multiplicative | power | "=" | "<" | ">"
+    overridable-op   ::= additive | multiplicative | power | "=" | "<" | ">"
     unary            ::= "not" | additive 
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    instance-eq      ::= "is" | "isa"
     equality         ::= "=" | "!="
     comparison       ::= "<=" | ">=" | "<" | ">"
     boolean-logic    ::= "and" | "or"
     
-    literal          ::= number | string | "None"
+    literal          ::= number | string
     number           ::= real | integer | e-notation
     real             ::= integer "." integer | "." integer | integer "."
     integer          ::= { digit }
     e-notation       ::= ( integer | real ) "E" [ "-" ] integer
     string           ::= """ { character } """
     
-    newline-block    ::= newline block | expr-or-stmt
-    one-or-more-expr ::= expression { "," expression }
+    code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end" 
+    code-set         ::= "where" expr-or-stmt { newline expr-or-stmt } "end"
     
     control-flow-expr::= if | match
-    if               ::= "if" one-or-more-expr "then" newline-block [ "else" newline-block ]
-    match            ::= "match" one-or-more-expr "with" newline match-cases
-    match-cases      ::= indent { match-case { newline } } dedent
-    match-case       ::= expression "=>" expr-or-stmt
+    if               ::= "if" expression "then" expression [ "else" expression ]
+    match            ::= "match" expression "with" map
     
     control-flow-stmt::= while | foreach | "break" | "continue"
-    while            ::= "while" one-or-more-expr "do" newline-block
-    foreach          ::= "for" one-or-more-expr "in" expression "do" newline-block
+    while            ::= "while" expression "do" expression
+    foreach          ::= "for" expression "in" expression "do" expression
     
-    newline          ::= newline-char
-    newline-char     ::= \n | \r\n
-    comment          ::= "#" { character } newline
+    newline          ::= <platform dependent>
 ```
-
-## Notes
-
-An `expression` is used in a situation where an expression is required.
-This allows the parser to short-circuit if something is definitely not an expression where it should be.
-However, we cannot always know in advance whether something is an expression, e.g. when it is a function call.
-Those cases should be verified by the type checker.
-An `expr-or-stmt` may be used when it does not matter whether something is an expression or statement, such as the body of a loop.
-
-We do not systematically desugar multiple delimited by commas, or a single expression, to tuples, as is the case in Python.
-This prevents ambiguity in the grammar as specified above, and also prevents confusing situations such as `(0)` and `0` being equal.
-Instead, we only do this in specific contexts, such as in the conditional of control flows.
