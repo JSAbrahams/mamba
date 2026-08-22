@@ -49,13 +49,24 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
+            Token::LSBrack => {
+                it.eat(&Token::LSBrack, "call generics")?;
+                let generics = it.parse_vec(&parse_generic_arguments, "call generics", pre.pos)?;
+                let end = it.eat(&Token::RSBrack, "call generics")?;
+                let node = Node::Type {
+                    id: Box::from(pre.clone()),
+                    generics,
+                };
+                let ty = AST::new(pre.pos.union(end), node);
+                parse_call(&ty, it)
+            }
             _ => Err(Box::from(expected_one_of(
-                &[Token::Point, Token::LRBrack],
+                &[Token::Point, Token::LRBrack, Token::LSBrack],
                 ast,
                 "function call",
             ))),
         },
-        &[Token::Point, Token::LRBrack],
+        &[Token::Point, Token::LRBrack, Token::LSBrack],
         "function call",
     )
 }
@@ -64,6 +75,17 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("arguments")?;
     let mut arguments = vec![];
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+        arguments.push(*it.parse(&parse_expression, "arguments", start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
+    Ok(arguments)
+}
+
+fn parse_generic_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
+    let start = it.start_pos("arguments")?;
+    let mut arguments = vec![];
+    it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
         arguments.push(*it.parse(&parse_expression, "arguments", start)?);
         it.eat_if(&Token::Comma);
         Ok(())
@@ -246,6 +268,36 @@ mod test {
                 lit: String::from("c")
             }
         );
+    }
+
+    #[test]
+    fn direct_call_with_generics_verify() {
+        let source = String::from("MyClass[Generic]()");
+        let ast: AST = source.parse().unwrap();
+
+        let Node::FunctionCall { name, args } = &ast.node else {
+            panic!(
+                "first element script was not a function call: {:?}",
+                ast.node
+            );
+        };
+        assert_eq!(args.len(), 0);
+
+        let Node::Type { id, generics } = &name.node else {
+            panic!("name of call was not a type: {:?}", name.node);
+        };
+        assert_eq!(
+            id.node,
+            Node::Id {
+                lit: String::from("MyClass")
+            }
+        );
+
+        assert_eq!(generics.len(), 1);
+        let Node::Id { lit: generic_id } = &generics[0].node else {
+            panic!("generic was not a generic node: {:?}", generics[0].node);
+        };
+        assert_eq!(generic_id, "Generic");
     }
 
     #[test]

@@ -27,7 +27,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::If,
         Token::Match,
         Token::LSBrack,
-        Token::LSBrack,
+        Token::LRBrack,
         Token::LCBrack,
         Token::Underscore,
         Token::Real(String::new()),
@@ -82,10 +82,14 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(Box::from(expected_one_of(&expected, lex, "expression"))),
+            _ => Err(Box::from(expected_one_of(
+                &expected,
+                lex,
+                "inner expression",
+            ))),
         },
         &expected,
-        "expression",
+        "inner expression",
     );
 
     match result {
