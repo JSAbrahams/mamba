@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest", "macos-latest", "windows-latest" ]
         python: [ "3.10" ]
-        rust: [ "1.87.0" ]
+        rust: [ "1.98.0" ]
 
     runs-on: ${{ matrix.os }}
     name: via ${{ matrix.os }}, Python v${{ matrix.python }}, Rust v${{ matrix.rust }}
@@ -40,5 +40,8 @@ jobs:
       - name: Build
         run: cargo build
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
       - name: Run tests
-        run: cargo test --package mamba
+        run: cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci

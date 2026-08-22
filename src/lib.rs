@@ -131,6 +131,7 @@ impl From<&Arguments> for PipelineArguments {
 ///
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
+#[allow(clippy::result_large_err)]
 pub fn mamba_to_python(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,

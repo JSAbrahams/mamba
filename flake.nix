@@ -34,6 +34,7 @@
             
             clang                 # C++ tooling
             llvmPackages.bintools #
+            lvm2     # LLVM build tools
 
             rustc   # Start off with rust from nix store, reproducible start of rust toolchain
                     # We keep rustup around for making it easy to switch channels
@@ -72,6 +73,9 @@
                 # workspace is where we called flake from
                 export WORKSPACE="$PWD"
                 export STARSHIP_CONFIG="$WORKSPACE/.config/startship.toml"
+
+                export LLVM_COV="${pkgs.nushell}/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-cov"
+                export LLVM_PROFDATA="${pkgs.nushell}/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata"
 
                 # first check for user-specific config
                 if [ -f "$(pwd)/.config/nushell/config.nu" ]; then

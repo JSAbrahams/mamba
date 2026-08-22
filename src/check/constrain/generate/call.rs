@@ -293,14 +293,14 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
     match &ast.node {
         Node::PropertyCall { instance, property } => match check_reassignable(property)? {
             Identifier::Multi(_) => {
-                let msg = format!("Cannot reassign to {}", &ast.node);
+                let msg = format!("Cannot reassign to {}", ast.node);
                 Err(vec![TypeErr::new(ast.pos, &msg)])
             }
             Identifier::Single(m, prop_call) => {
                 let (_, inst_call) = match check_reassignable(instance)? {
                     Identifier::Single(m, call) => (m, call),
                     Identifier::Multi(_) => {
-                        let msg = format!("Cannot reassign to {}", &ast.node);
+                        let msg = format!("Cannot reassign to {}", ast.node);
                         return Err(vec![TypeErr::new(ast.pos, &msg)]);
                     }
                 };
@@ -312,7 +312,7 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
         _ => Identifier::try_from(ast).map_err(|errs| {
             errs.iter()
                 .map(|err| {
-                    let msg = format!("Cannot reassign to {}: {}", &ast.node, &err.msg);
+                    let msg = format!("Cannot reassign to {}: {}", ast.node, err.msg);
                     TypeErr::new(ast.pos, &msg)
                 })
                 .collect()

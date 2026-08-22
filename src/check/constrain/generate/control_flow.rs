@@ -11,6 +11,7 @@ use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
 
+#[allow(clippy::result_large_err)]
 pub fn gen_flow(
     ast: &AST,
     env: &Environment,

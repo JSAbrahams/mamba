@@ -85,7 +85,7 @@ impl Display for Function {
         let raises = if self.raises.is_empty() {
             String::new()
         } else {
-            format!(" ! {}", &self.raises)
+            format!(" ! {}", self.raises)
         };
         write!(
             f,

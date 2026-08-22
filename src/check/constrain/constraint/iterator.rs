@@ -52,7 +52,7 @@ impl Constraints {
             // Can only reinsert constraint once
             let msg = format!(
                 "Cannot infer type within {}. Expected a {}, was {}",
-                constraint.msg, &constraint.parent.expect, &constraint.child.expect
+                constraint.msg, constraint.parent.expect, constraint.child.expect
             );
             return Err(vec![TypeErr::new(constraint.parent.pos, &msg)]);
         }
