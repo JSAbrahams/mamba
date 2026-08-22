@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         python: [ "3.10" ]
-        rust: [ "1.87.0" ]      
+        rust: [ "1.98.0" ]      
 
     runs-on: ${{ matrix.os }}
     name: via ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}

@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
-        rust: [ "1.87.0" ]
+        rust: [ "1.98.0" ]
 
     runs-on: ${{ matrix.os }}
     name: via ${{ matrix.os }}, Rust v${{ matrix.rust }}
