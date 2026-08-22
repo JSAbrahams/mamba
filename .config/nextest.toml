@@ -1,0 +1,11 @@
+# see https://nexte.st/docs/configuration/
+
+[profile.default]
+failure-output = "immediate-final"
+fail-fast = false
+status-level = "all"
+success-output = "never"
+
+[profile.ci]
+# Run all tests regardless of failures.
+fail-fast = false

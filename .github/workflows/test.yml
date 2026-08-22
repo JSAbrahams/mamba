@@ -40,5 +40,8 @@ jobs:
       - name: Build
         run: cargo build
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
       - name: Run tests
-        run: cargo test --package mamba
+        run: cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
