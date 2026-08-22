@@ -33,7 +33,6 @@ pub fn unify_function(
             let arguments_union: Vec<Vec<Name>> = name
                 .names
                 .iter()
-                .cloned()
                 .map(|n| n.args(right.pos))
                 .collect::<Result<_, _>>()?;
 
@@ -50,7 +49,7 @@ pub fn unify_function(
                             let msg = format!(
                                 "{} arguments given to function '{}', which takes {} arguments",
                                 args.len(),
-                                &left.expect,
+                                left.expect,
                                 arguments.len()
                             );
                             return Err(vec![TypeErr::new(left.pos, &msg)]);

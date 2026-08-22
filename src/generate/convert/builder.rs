@@ -18,7 +18,7 @@ pub fn convert_builder(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Cont
 
             if let Some(col) = conditions.first() {
                 let conds = conditions
-                    .strip_prefix(&[col.clone()])
+                    .strip_prefix(std::slice::from_ref(col))
                     .expect("Unreachable");
                 let conds = convert_vec(conds, imp, state, ctx)?;
                 let col = Box::from(convert_node(col, imp, state, ctx)?);
@@ -37,7 +37,7 @@ pub fn convert_builder(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Cont
 
             if let Some(col) = conditions.first() {
                 let conds = conditions
-                    .strip_prefix(&[col.clone()])
+                    .strip_prefix(std::slice::from_ref(col))
                     .expect("Unreachable");
                 let conds = convert_vec(conds, imp, state, ctx)?;
                 let col = Box::from(convert_node(col, imp, state, ctx)?);
@@ -53,7 +53,7 @@ pub fn convert_builder(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Cont
 
             if let Some(col) = conditions.first() {
                 let conds = conditions
-                    .strip_prefix(&[col.clone()])
+                    .strip_prefix(std::slice::from_ref(col))
                     .expect("Unreachable");
                 let conds = convert_vec(conds, imp, state, ctx)?;
                 let col = Box::from(convert_node(col, imp, state, ctx)?);

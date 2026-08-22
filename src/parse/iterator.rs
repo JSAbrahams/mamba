@@ -61,7 +61,10 @@ impl<'a> LexIterator<'a> {
         match self.it.next() {
             Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(*pos),
             Some(lex) => Err(Box::from(expected(token, lex, err_msg))),
-            None => Err(Box::from(eof_expected_one_of(&[token.clone()], err_msg))),
+            None => Err(Box::from(eof_expected_one_of(
+                std::slice::from_ref(token),
+                err_msg,
+            ))),
         }
     }
 

@@ -119,7 +119,7 @@ fn gen_builder(
             generate(pair, &conds_env, ctx, constr)?;
         }
 
-        if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
+        if let Some(conditions) = conditions.strip_prefix(std::slice::from_ref(cond)) {
             for cond in conditions {
                 generate(cond, &conds_env, ctx, constr)?;
                 let cond = Expected::from(cond);
