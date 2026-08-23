@@ -53,14 +53,14 @@ The first way of writing is preferred, as this more clearly separates the return
 However, using Result may be better in some other situations. For instance, it allows us to use the type alias feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency.
 See "Types" for a more in-depth explanation. A trivial case would be:
 
-    type MyResult <- Result[Int, MyErr]
+    type MyResult := Result[Int, MyErr]
     
-    def g (x: Int): MyResult := if x is 10 then MyErr("x was 10") else x
+    def g (x: Int): MyResult := if x is 10 then ! MyErr("x was 10") else x
     
 Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
 
-    def g (x: Int): Int ! [MyErr] := x
-    def g (0)                     := ! MyErr("x was 10")
+    def g (x: Int): Int ! { MyErr } := x
+    def g (0)                       := ! MyErr("x was 10")
     
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
