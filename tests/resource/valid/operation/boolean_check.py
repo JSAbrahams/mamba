@@ -14,6 +14,3 @@ g: bool = False
 h: bool = True
 i: bool = True
 j: bool = False
-
-c is d
-isinstance(g, Exception)

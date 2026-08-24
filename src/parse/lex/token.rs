@@ -31,7 +31,6 @@ pub enum Token {
     Type,
     Class,
     Pure,
-    IsA,
 
     As,
     Import,
@@ -78,7 +77,6 @@ pub enum Token {
     Leq,
 
     Eq,
-    Is,
     Neq,
     And,
     Or,
@@ -145,7 +143,6 @@ impl fmt::Display for Token {
             Token::Pure => write!(f, "pure"),
             Token::Type => write!(f, "type"),
             Token::Class => write!(f, "class"),
-            Token::IsA => write!(f, "isa"),
 
             Token::As => write!(f, "as"),
             Token::Import => write!(f, "import"),
@@ -192,7 +189,6 @@ impl fmt::Display for Token {
             Token::Leq => write!(f, "<="),
 
             Token::Eq => write!(f, "="),
-            Token::Is => write!(f, "is"),
             Token::Neq => write!(f, "!="),
             Token::And => write!(f, "and"),
             Token::Or => write!(f, "or"),

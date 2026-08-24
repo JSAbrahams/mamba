@@ -247,8 +247,6 @@ fn as_op_or_id(string: String) -> Token {
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
-        "is" => Token::Is,
-        "isa" => Token::IsA,
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
