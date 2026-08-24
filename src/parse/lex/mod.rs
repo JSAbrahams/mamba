@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn assign_operations() {
-        let source = String::from(":= += -= *= /= ^= >>= <<=");
+        let source = String::from(":= += -= *= /= ^=");
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens.iter().map(|l| l.token.clone()).collect_vec(),
@@ -111,8 +111,6 @@ mod tests {
                 Token::MulAssign,
                 Token::DivAssign,
                 Token::PowAssign,
-                Token::BRShiftAssign,
-                Token::BLShiftAssign,
                 Token::Eof,
             ]
         );

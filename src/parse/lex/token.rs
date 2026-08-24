@@ -50,8 +50,6 @@ pub enum Token {
     MulAssign,
     DivAssign,
     PowAssign,
-    BLShiftAssign,
-    BRShiftAssign,
     Def,
 
     Real(String),
@@ -175,8 +173,6 @@ impl fmt::Display for Token {
             Token::MulAssign => write!(f, "*="),
             Token::PowAssign => write!(f, "^="),
             Token::DivAssign => write!(f, "/="),
-            Token::BLShiftAssign => write!(f, "<<="),
-            Token::BRShiftAssign => write!(f, ">>="),
             Token::Def => write!(f, "def"),
 
             Token::Id(id) => write!(f, "{id}"),

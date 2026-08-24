@@ -79,7 +79,7 @@ mod test {
 
     #[test]
     fn op_assign() {
-        let source = String::from("a:=1\nb+=2\nc-=3\nd*=4\ne/=5\nf^=6\ng<<=7\nh>>=8\n");
+        let source = String::from("a:=1\nb+=2\nc-=3\nd*=4\ne/=5\nf^=6\n");
         let statements = parse_direct(&source).unwrap();
 
         let ops: Vec<NodeOp> = statements
@@ -96,8 +96,6 @@ mod test {
         assert_eq!(ops[3], NodeOp::Mul);
         assert_eq!(ops[4], NodeOp::Div);
         assert_eq!(ops[5], NodeOp::Pow);
-        assert_eq!(ops[6], NodeOp::BLShift);
-        assert_eq!(ops[7], NodeOp::BRShift);
     }
 
     #[test]

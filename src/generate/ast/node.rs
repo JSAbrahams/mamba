@@ -316,8 +316,6 @@ pub enum CoreOp {
     MulAssign,
     DivAssign,
     PowAssign,
-    BLShiftAssign,
-    BRShiftAssign,
 }
 
 impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
@@ -330,8 +328,6 @@ impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
             NodeOp::Mul => Ok(CoreOp::MulAssign),
             NodeOp::Div => Ok(CoreOp::DivAssign),
             NodeOp::Pow => Ok(CoreOp::PowAssign),
-            NodeOp::BLShift => Ok(CoreOp::BLShiftAssign),
-            NodeOp::BRShift => Ok(CoreOp::BRShiftAssign),
             NodeOp::Assign => Ok(CoreOp::Assign),
             op => Err(UnimplementedErr::new(ast, &format!("Reassign with {op}"))),
         }
@@ -388,8 +384,6 @@ impl Display for CoreOp {
                 CoreOp::MulAssign => "*=",
                 CoreOp::DivAssign => "/=",
                 CoreOp::PowAssign => "**=",
-                CoreOp::BLShiftAssign => "<<=",
-                CoreOp::BRShiftAssign => ">>=",
             }
         )
     }

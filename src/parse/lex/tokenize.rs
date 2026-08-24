@@ -38,18 +38,12 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             _ => create(state, Token::Point),
         },
         '<' => match it.peek() {
-            Some('<') => match (it.next(), it.peek()) {
-                (_, Some('=')) => next_and_create(it, state, Token::BLShiftAssign),
-                _ => next_and_create(it, state, Token::BLShift),
-            },
+            Some('<') => next_and_create(it, state, Token::BLShift),
             Some('=') => next_and_create(it, state, Token::Leq),
             _ => create(state, Token::Le),
         },
         '>' => match it.peek() {
-            Some('>') => match (it.next(), it.peek()) {
-                (_, Some('=')) => next_and_create(it, state, Token::BRShiftAssign),
-                _ => next_and_create(it, state, Token::BRShift),
-            },
+            Some('>') => next_and_create(it, state, Token::BRShift),
             Some('=') => next_and_create(it, state, Token::Geq),
             _ => create(state, Token::Ge),
         },
