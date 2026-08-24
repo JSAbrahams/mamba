@@ -209,29 +209,6 @@ pub enum Core {
     Sqrt {
         expr: Box<Core>,
     },
-    BAnd {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    BOr {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    BXOr {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    BOneCmpl {
-        expr: Box<Core>,
-    },
-    BLShift {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    BRShift {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
     For {
         expr: Box<Core>,
         col: Box<Core>,

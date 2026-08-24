@@ -208,30 +208,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::BAnd { left, right } => Core::BAnd {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::BOr { left, right } => Core::BOr {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::BXOr { left, right } => Core::BXOr {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::BOneCmpl { expr } => Core::BOneCmpl {
-            expr: Box::from(convert_node(expr, imp, state, ctx)?),
-        },
-        NodeTy::BLShift { left, right } => Core::BLShift {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::BRShift { left, right } => Core::BRShift {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-
         NodeTy::AddU { expr } => Core::AddU {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },

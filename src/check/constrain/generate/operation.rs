@@ -92,52 +92,6 @@ pub fn gen_op(
             generate(expr, env, ctx, constr)
         }
 
-        Node::BOneCmpl { expr } => {
-            constr.add(
-                "binary compliment",
-                &Expected::from(expr),
-                &Expected::any(expr.pos),
-                env,
-            );
-            generate(expr, env, ctx, constr)?;
-            Ok(env.clone())
-        }
-        Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
-            constr.add(
-                "binary logical op",
-                &Expected::from(left),
-                &Expected::any(left.pos),
-                env,
-            );
-            constr.add(
-                "binary logical op",
-                &Expected::from(right),
-                &Expected::any(right.pos),
-                env,
-            );
-
-            bin_op(left, right, env, ctx, constr)
-        }
-        Node::BLShift { left, right } | Node::BRShift { left, right } => {
-            constr.add(
-                "binary shift",
-                &Expected::from(left),
-                &Expected::any(right.pos),
-                env,
-            );
-
-            let name = Name::from(INT);
-            let l_exp = Expected::from(right);
-            constr.add(
-                "binary shift",
-                &l_exp,
-                &Expected::new(right.pos, &Type { name }),
-                env,
-            );
-
-            bin_op(left, right, env, ctx, constr)
-        }
-
         Node::Is { left, right } | Node::IsN { left, right } => {
             let bool = Expected::new(
                 ast.pos,

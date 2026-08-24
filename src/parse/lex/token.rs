@@ -72,13 +72,6 @@ pub enum Token {
     Mod,
     Sqrt,
 
-    BAnd,
-    BOr,
-    BXOr,
-    BOneCmpl,
-    BLShift,
-    BRShift,
-
     Ge,
     Geq,
     Le,
@@ -195,13 +188,6 @@ impl fmt::Display for Token {
             Token::Pow => write!(f, "^"),
             Token::Mod => write!(f, "mod"),
             Token::Sqrt => write!(f, "sqrt"),
-
-            Token::BAnd => write!(f, "_and_"),
-            Token::BOr => write!(f, "_or_"),
-            Token::BXOr => write!(f, "_xor_"),
-            Token::BOneCmpl => write!(f, "_not_"),
-            Token::BLShift => write!(f, "<<"),
-            Token::BRShift => write!(f, ">>"),
 
             Token::Ge => write!(f, ">"),
             Token::Geq => write!(f, ">="),

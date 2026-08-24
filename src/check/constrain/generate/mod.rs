@@ -86,10 +86,6 @@ pub fn generate(
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
         Sqrt { .. } => gen_op(ast, env, ctx, constr),
 
-        BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
-        BAnd { .. } | BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
-        BLShift { .. } | BRShift { .. } => gen_op(ast, env, ctx, constr),
-
         Is { .. } | IsN { .. } | IsA { .. } | IsNA { .. } => gen_op(ast, env, ctx, constr),
         And { .. } | Or { .. } | Not { .. } => gen_op(ast, env, ctx, constr),
 

@@ -250,29 +250,6 @@ pub enum Node {
     Sqrt {
         expr: Box<AST>,
     },
-    BAnd {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BOr {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BXOr {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BOneCmpl {
-        expr: Box<AST>,
-    },
-    BLShift {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BRShift {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
     Le {
         left: Box<AST>,
         right: Box<AST>,
