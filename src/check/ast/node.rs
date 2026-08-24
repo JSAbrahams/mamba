@@ -312,29 +312,6 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::Sqrt { expr } => NodeTy::Sqrt {
                 expr: Box::from(ASTTy::from((expr, finished))),
             },
-            Node::BAnd { left, right } => NodeTy::BAnd {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::BOr { left, right } => NodeTy::BOr {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::BXOr { left, right } => NodeTy::BXOr {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::BOneCmpl { expr } => NodeTy::BOneCmpl {
-                expr: Box::from(ASTTy::from((expr, finished))),
-            },
-            Node::BLShift { left, right } => NodeTy::BLShift {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::BRShift { left, right } => NodeTy::BRShift {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
             Node::Le { left, right } => NodeTy::Le {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),

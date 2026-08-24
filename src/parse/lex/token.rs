@@ -31,7 +31,6 @@ pub enum Token {
     Type,
     Class,
     Pure,
-    IsA,
 
     As,
     Import,
@@ -50,8 +49,6 @@ pub enum Token {
     MulAssign,
     DivAssign,
     PowAssign,
-    BLShiftAssign,
-    BRShiftAssign,
     Def,
 
     Real(String),
@@ -74,20 +71,12 @@ pub enum Token {
     Mod,
     Sqrt,
 
-    BAnd,
-    BOr,
-    BXOr,
-    BOneCmpl,
-    BLShift,
-    BRShift,
-
     Ge,
     Geq,
     Le,
     Leq,
 
     Eq,
-    Is,
     Neq,
     And,
     Or,
@@ -127,9 +116,6 @@ pub enum Token {
     Question,
 
     Pass,
-    Comment(String),
-
-    Eof,
 }
 
 impl Token {
@@ -157,7 +143,6 @@ impl fmt::Display for Token {
             Token::Pure => write!(f, "pure"),
             Token::Type => write!(f, "type"),
             Token::Class => write!(f, "class"),
-            Token::IsA => write!(f, "isa"),
 
             Token::As => write!(f, "as"),
             Token::Import => write!(f, "import"),
@@ -175,8 +160,6 @@ impl fmt::Display for Token {
             Token::MulAssign => write!(f, "*="),
             Token::PowAssign => write!(f, "^="),
             Token::DivAssign => write!(f, "/="),
-            Token::BLShiftAssign => write!(f, "<<="),
-            Token::BRShiftAssign => write!(f, ">>="),
             Token::Def => write!(f, "def"),
 
             Token::Id(id) => write!(f, "{id}"),
@@ -200,20 +183,12 @@ impl fmt::Display for Token {
             Token::Mod => write!(f, "mod"),
             Token::Sqrt => write!(f, "sqrt"),
 
-            Token::BAnd => write!(f, "_and_"),
-            Token::BOr => write!(f, "_or_"),
-            Token::BXOr => write!(f, "_xor_"),
-            Token::BOneCmpl => write!(f, "_not_"),
-            Token::BLShift => write!(f, "<<"),
-            Token::BRShift => write!(f, ">>"),
-
             Token::Ge => write!(f, ">"),
             Token::Geq => write!(f, ">="),
             Token::Le => write!(f, "<"),
             Token::Leq => write!(f, "<="),
 
             Token::Eq => write!(f, "="),
-            Token::Is => write!(f, "is"),
             Token::Neq => write!(f, "!="),
             Token::And => write!(f, "and"),
             Token::Or => write!(f, "or"),
@@ -253,9 +228,6 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
-            Token::Comment(comment) => write!(f, "#{comment}"),
-
-            Token::Eof => write!(f, ""),
         }
     }
 }

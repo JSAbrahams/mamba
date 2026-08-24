@@ -38,7 +38,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Add,
         Token::Id(String::new()),
         Token::Sub,
-        Token::BOneCmpl,
         Token::BSlash,
     ];
 
@@ -75,9 +74,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(start.union(end), node)))
             }
 
-            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl => {
-                parse_expression(it)
-            }
+            Token::Not | Token::Sqrt | Token::Add | Token::Sub => parse_expression(it),
 
             Token::BSlash => parse_anon_fun(it),
 

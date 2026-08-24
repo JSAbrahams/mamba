@@ -112,8 +112,6 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
         Token::MulAssign,
         Token::DivAssign,
         Token::PowAssign,
-        Token::BLShiftAssign,
-        Token::BRShiftAssign,
     ];
 
     let (token, op) = if let Some(token) = it.peek_next() {
@@ -142,14 +140,6 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 token: Token::PowAssign,
                 ..
             } => (Token::PowAssign, NodeOp::Pow),
-            Lex {
-                token: Token::BLShiftAssign,
-                ..
-            } => (Token::BLShiftAssign, NodeOp::BLShift),
-            Lex {
-                token: Token::BRShiftAssign,
-                ..
-            } => (Token::BRShiftAssign, NodeOp::BRShift),
             lex => {
                 return Err(Box::from(expected_one_of(&expect, lex, "reassignment")));
             }
@@ -202,9 +192,7 @@ pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     if let Some(end) = it.eat_if(&Token::NL) {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start.union(end), node)));
-    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof)
-        || it.peek_next().is_none()
-    {
+    } else if it.peek_if(&|lex| lex.token == Token::Dedent) || it.peek_next().is_none() {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start, node)));
     }

@@ -14,6 +14,3 @@ def g := False
 def h := True
 def i := True
 def j := False
-
-c is d
-g isa Exception

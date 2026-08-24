@@ -131,7 +131,6 @@ use mamba::parse::ast::AST;
 #[test_case("operation", "in_dict_wrong_ty" => matches Err(_))]
 #[test_case("operation", "in_list_wrong_ty" => matches Err(_))]
 #[test_case("operation", "in_set_wrong_ty" => matches Err(_))]
-#[test_case("operation", "isa_not_id" => matches Err(_))]
 #[test_case("operation", "reassign_to_nullable" => matches Err(_))]
 #[test_case("operation", "reassign_to_undefined" => matches Err(_))]
 #[test_case("operation", "string_minus" => matches Err(_))]

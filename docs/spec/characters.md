@@ -44,17 +44,6 @@ Symbol | Use
 `=`  | Structurally equal
 `!=` | Structurally not equal
 
-## Binary operators
-
-Symbol | Use
----|---
-`&&`   | And operator
-`||`   | Or operator
-`!|`   | Exclusive or operator
-`!!`   | Negation operator
-`<<`   | Left shift
-`>>`   | Right shift
-
 ## Assignment and Functions
 
 Symbol | Use
@@ -76,8 +65,6 @@ Symbol | Use
 `*=`  | Multiply value with variable and assign to variable
 `/=`  | Divide variable by value and assign to variable
 `^=`  | Raise variable by value and assign to variable
-`>>=` | Binary shift variable to the right by value
-`<<=` | Binary shift variable to the left by value
 
 ## Context Dependent
 

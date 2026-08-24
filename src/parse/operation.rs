@@ -30,27 +30,7 @@ macro_rules! inner_bin_op {
 /// 7. and, or, question or
 /// 8. postfix calls
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
-    parse_level_7(it)
-}
-
-fn parse_level_7(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation (7)")?;
-    let arithmetic = it.parse(&parse_level_6, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
-    it.peek(
-        &|it, lex| match lex.token {
-            Token::And => bin_op!(it, parse_level_7, And, arithmetic.clone(), "and"),
-            Token::Or => bin_op!(it, parse_level_7, Or, arithmetic.clone(), "or"),
-            Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
-            _ => Ok(arithmetic.clone()),
-        },
-        Ok(arithmetic.clone()),
-    )
+    parse_level_6(it)
 }
 
 fn parse_level_6(it: &mut LexIterator) -> ParseResult {
@@ -64,15 +44,9 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::Ge => bin_op!(it, parse_level_6, Ge, arithmetic.clone(), "greater"),
-            Token::Geq => bin_op!(it, parse_level_6, Geq, arithmetic.clone(), "greater, equal"),
-            Token::Le => bin_op!(it, parse_level_6, Le, arithmetic.clone(), "less"),
-            Token::Leq => bin_op!(it, parse_level_6, Leq, arithmetic.clone(), "less, equal"),
-            Token::Eq => bin_op!(it, parse_level_6, Eq, arithmetic.clone(), "equal"),
-            Token::Neq => bin_op!(it, parse_level_6, Neq, arithmetic.clone(), "not equal"),
-            Token::Is => bin_op!(it, parse_level_6, Is, arithmetic.clone(), "is"),
-            Token::IsA => bin_op!(it, parse_level_6, IsA, arithmetic.clone(), "is a"),
-            Token::In => bin_op!(it, parse_level_6, In, arithmetic.clone(), "in"),
+            Token::And => bin_op!(it, parse_level_6, And, arithmetic.clone(), "and"),
+            Token::Or => bin_op!(it, parse_level_6, Or, arithmetic.clone(), "or"),
+            Token::Question => bin_op!(it, parse_level_6, Question, arithmetic.clone(), "question"),
             _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
@@ -90,23 +64,13 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::BLShift => bin_op!(
-                it,
-                parse_level_5,
-                BLShift,
-                arithmetic.clone(),
-                "bitwise left shift"
-            ),
-            Token::BRShift => bin_op!(
-                it,
-                parse_level_5,
-                BRShift,
-                arithmetic.clone(),
-                "bitwise right shift"
-            ),
-            Token::BAnd => bin_op!(it, parse_level_5, BAnd, arithmetic.clone(), "bitwise and"),
-            Token::BOr => bin_op!(it, parse_level_5, BOr, arithmetic.clone(), "bitwise or"),
-            Token::BXOr => bin_op!(it, parse_level_5, BXOr, arithmetic.clone(), "bitwise xor"),
+            Token::Ge => bin_op!(it, parse_level_5, Ge, arithmetic.clone(), "greater"),
+            Token::Geq => bin_op!(it, parse_level_5, Geq, arithmetic.clone(), "greater, equal"),
+            Token::Le => bin_op!(it, parse_level_5, Le, arithmetic.clone(), "less"),
+            Token::Leq => bin_op!(it, parse_level_5, Leq, arithmetic.clone(), "less, equal"),
+            Token::Eq => bin_op!(it, parse_level_5, Eq, arithmetic.clone(), "equal"),
+            Token::Neq => bin_op!(it, parse_level_5, Neq, arithmetic.clone(), "not equal"),
+            Token::In => bin_op!(it, parse_level_5, In, arithmetic.clone(), "in"),
             _ => Ok(arithmetic.clone()),
         },
         Ok(arithmetic.clone()),
@@ -199,14 +163,6 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
         un_op!(it, parse_expression, Sqrt, Sqrt, "square root")
     } else if it.eat_if(&Token::Not).is_some() {
         un_op!(it, parse_expression, Not, Not, "not")
-    } else if it.eat_if(&Token::BOneCmpl).is_some() {
-        un_op!(
-            it,
-            parse_expression,
-            BOneCmpl,
-            BOneCmpl,
-            "bitwise ones compliment"
-        )
     } else {
         parse_level_1(it)
     }
@@ -438,46 +394,6 @@ mod test {
     }
 
     #[test]
-    fn is_verify() {
-        let source = String::from("p is q");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(Is, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("p")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("q")
-            }
-        );
-    }
-
-    #[test]
-    fn isa_verify() {
-        let source = String::from("lizard isa animal");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(IsA, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("lizard")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("animal")
-            }
-        );
-    }
-
-    #[test]
     fn equality_verify() {
         let source = String::from("i = s");
         let ast = parse_direct(&source).unwrap();
@@ -662,125 +578,6 @@ mod test {
             expr.node,
             Node::Id {
                 lit: String::from("some_num")
-            }
-        );
-    }
-
-    #[test]
-    fn b_and_verify() {
-        let source = String::from("one && three");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(BAnd, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("one")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Id {
-                lit: String::from("three")
-            }
-        );
-    }
-
-    #[test]
-    fn b_or_verify() {
-        let source = String::from("one || \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(BOr, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("one")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Str {
-                lit: String::from("asdf"),
-                expressions: vec![]
-            }
-        );
-    }
-
-    #[test]
-    fn b_xor_verify() {
-        let source = String::from("one !| \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(BXOr, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("one")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Str {
-                lit: String::from("asdf"),
-                expressions: vec![]
-            }
-        );
-    }
-
-    #[test]
-    fn b_ones_complement_verify() {
-        let source = String::from("!! \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
-
-        let expr = verify_is_un_operation!(BOneCmpl, ast);
-        assert_eq!(
-            expr.node,
-            Node::Str {
-                lit: String::from("asdf"),
-                expressions: vec![]
-            }
-        );
-    }
-
-    #[test]
-    fn b_lshift_verify() {
-        let source = String::from("one << \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(BLShift, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("one")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Str {
-                lit: String::from("asdf"),
-                expressions: vec![]
-            }
-        );
-    }
-
-    #[test]
-    fn brshift_verify() {
-        let source = String::from("one >> \"asdf\"");
-        let ast = parse_direct(&source).unwrap();
-
-        let (left, right) = verify_is_operation!(BRShift, ast);
-        assert_eq!(
-            left.node,
-            Node::Id {
-                lit: String::from("one")
-            }
-        );
-        assert_eq!(
-            right.node,
-            Node::Str {
-                lit: String::from("asdf"),
-                expressions: vec![]
             }
         );
     }

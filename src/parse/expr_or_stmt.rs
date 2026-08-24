@@ -46,9 +46,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
             | Token::SubAssign
             | Token::MulAssign
             | Token::DivAssign
-            | Token::PowAssign
-            | Token::BLShiftAssign
-            | Token::BRShiftAssign => parse_reassignment(&expr_or_stmt, it),
+            | Token::PowAssign => parse_reassignment(&expr_or_stmt, it),
             _ => Ok(expr_or_stmt.clone()),
         },
         Ok(expr_or_stmt.clone()),

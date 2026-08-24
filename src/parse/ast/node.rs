@@ -133,12 +133,6 @@ impl Display for Node {
             Node::Mod { left, right } => format!("{} mod {}", left.node, right.node),
             Node::Pow { left, right } => format!("{} ^ {}", left.node, right.node),
             Node::Sqrt { expr } => format!("sqrt {}", expr.node),
-            Node::BAnd { left, right } => format!("{} _and_ {}", left.node, right.node),
-            Node::BOr { left, right } => format!("{} _or_ {}", left.node, right.node),
-            Node::BXOr { left, right } => format!("{} _xor_ {}", left.node, right.node),
-            Node::BOneCmpl { expr } => format!("_not {}", expr.node),
-            Node::BLShift { left, right } => format!("{} << {}", left.node, right.node),
-            Node::BRShift { left, right } => format!("{} >> {}", left.node, right.node),
             Node::Le { left, right } => format!("{} < {}", left.node, right.node),
             Node::Ge { left, right } => format!("{} > {}", left.node, right.node),
             Node::Leq { left, right } => format!("{} <= {}", left.node, right.node),
@@ -391,29 +385,6 @@ impl Node {
             },
             Node::Sqrt { expr } => Node::Sqrt {
                 expr: Box::from(expr.map(mapping)),
-            },
-            Node::BAnd { left, right } => Node::BAnd {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::BOr { left, right } => Node::BOr {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::BXOr { left, right } => Node::BXOr {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::BOneCmpl { expr } => Node::BOneCmpl {
-                expr: Box::from(expr.map(mapping)),
-            },
-            Node::BLShift { left, right } => Node::BLShift {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::BRShift { left, right } => Node::BRShift {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
             },
             Node::Le { left, right } => Node::Le {
                 left: Box::from(left.map(mapping)),
@@ -844,16 +815,6 @@ impl Node {
                 },
             ) => ll.same_value(rl) && lr.same_value(rr),
             (
-                Node::BOr {
-                    left: ll,
-                    right: lr,
-                },
-                Node::BOr {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
                 Node::Mod {
                     left: ll,
                     right: lr,
@@ -880,47 +841,6 @@ impl Node {
                     right: lr,
                 },
                 Node::FDiv {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
-                Node::BAnd {
-                    left: ll,
-                    right: lr,
-                },
-                Node::BAnd {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
-                Node::BXOr {
-                    left: ll,
-                    right: lr,
-                },
-                Node::BXOr {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (Node::BOneCmpl { expr: l }, Node::BOneCmpl { expr: r }) => l.same_value(r),
-            (
-                Node::BLShift {
-                    left: ll,
-                    right: lr,
-                },
-                Node::BLShift {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
-                Node::BRShift {
-                    left: ll,
-                    right: lr,
-                },
-                Node::BRShift {
                     left: rl,
                     right: rr,
                 },
@@ -1169,12 +1089,6 @@ impl Node {
                 | Node::Mod { .. }
                 | Node::Pow { .. }
                 | Node::Sqrt { .. }
-                | Node::BAnd { .. }
-                | Node::BOr { .. }
-                | Node::BXOr { .. }
-                | Node::BOneCmpl { .. }
-                | Node::BLShift { .. }
-                | Node::BRShift { .. }
                 | Node::Le { .. }
                 | Node::Ge { .. }
                 | Node::Leq { .. }
@@ -1782,39 +1696,6 @@ mod test {
             left: left.clone(),
             right: right.clone()
         });
-        two_ast!(Node::BAnd {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BOr {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BXOr {
-            left: left.clone(),
-            right: right.clone()
-        });
-
-        two_ast!(Node::BAnd {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BOr {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BXOr {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BLShift {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::BRShift {
-            left: left.clone(),
-            right: right.clone()
-        });
 
         two_ast!(Node::Le {
             left: left.clone(),
@@ -1879,7 +1760,6 @@ mod test {
         two_ast!(Node::AddU { expr: expr.clone() });
         two_ast!(Node::SubU { expr: expr.clone() });
         two_ast!(Node::Sqrt { expr: expr.clone() });
-        two_ast!(Node::BOneCmpl { expr: expr.clone() });
         two_ast!(Node::Not { expr: expr.clone() });
     }
 
@@ -2170,35 +2050,6 @@ mod test {
             expr: right.clone()
         }
         .is_expression());
-        assert!(Node::BAnd {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::BOr {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::BXOr {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::BOneCmpl {
-            expr: right.clone()
-        }
-        .is_expression());
-        assert!(Node::BLShift {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::BRShift {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
         assert!(Node::Le {
             left: left.clone(),
             right: right.clone()
@@ -2327,35 +2178,6 @@ mod test {
         .is_operator());
         assert!(Node::Sqrt {
             expr: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BAnd {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BOr {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BXOr {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BOneCmpl {
-            expr: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BLShift {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::BRShift {
-            left: left.clone(),
-            right: right.clone()
         }
         .is_operator());
         assert!(Node::Le {
