@@ -36,12 +36,14 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             Ok(())
         }
         _ => {
-            statements.push(*it.parse(&parse_expr_or_stmt, "statements", start)?);
+            let ast = it.parse(&parse_expr_or_stmt, "statements", start)?;
+            statements.push(*ast.clone());
+
             if it.peek_if(&|lex| lex.token != Token::NL) {
                 Err(Box::from(expected_one_of(
                     &[Token::NL],
                     lex,
-                    "end of statement",
+                    &format!("end of statement '{}'", ast.node),
                 )))
             } else {
                 Ok(())

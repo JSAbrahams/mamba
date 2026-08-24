@@ -66,11 +66,20 @@ impl From<LexErr> for ParseErr {
 
 pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     let msg = format!(
-        "Expected one of [{}] while parsing {}{parsing}, but found token '{}'",
-        comma_delm(tokens),
+        "Expected one of [{}] while parsing {}{parsing}, but found token '{}' ({})",
+        comma_delm(tokens.iter().map(|t| {
+            // if token tempty, or name is equal to token itself, print as normal
+            if t.to_string().is_empty() || t.to_string() == t.name().to_string() {
+                t.name().to_string()
+            } else {
+                format!("'{t}' ({})", t.name())
+            }
+        })),
         an_or_a(parsing),
-        actual.token
+        actual.token,
+        actual.token.name()
     );
+
     ParseErr {
         pos: actual.pos,
         msg,
@@ -82,11 +91,13 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
 
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     let msg = format!(
-        "Expected {}{expected:?} token while parsing {}{parsing}, but found {}",
+        "Expected {}{expected:?} token while parsing {}{parsing}, but found '{}' ({})",
         an_or_a(expected),
         an_or_a(parsing),
-        actual.token
+        actual.token,
+        actual.token.name()
     );
+
     ParseErr {
         pos: actual.pos,
         msg,
