@@ -88,8 +88,14 @@ mod test {
                 lit: String::from("c")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("d")
             }
@@ -142,8 +148,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("f")
             }
@@ -191,8 +203,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("f")
             }

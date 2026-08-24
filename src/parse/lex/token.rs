@@ -253,11 +253,11 @@ impl fmt::Display for TokenName<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
             Token::Assign => write!(f, "assign"),
-            Token::AddAssign => write!(f, "add assign"),
-            Token::SubAssign => write!(f, "sub assign"),
-            Token::MulAssign => write!(f, "mul assign"),
-            Token::PowAssign => write!(f, "pow assign"),
-            Token::DivAssign => write!(f, "div assign"),
+            Token::AddAssign => write!(f, "addition and assign"),
+            Token::SubAssign => write!(f, "subtract and assign"),
+            Token::MulAssign => write!(f, "multiply and assign"),
+            Token::PowAssign => write!(f, "power and assign"),
+            Token::DivAssign => write!(f, "division and assign"),
 
             Token::Id(_) => write!(f, "identifier"),
             Token::Real(_) => write!(f, "real literal"),
@@ -271,12 +271,12 @@ impl fmt::Display for TokenName<'_> {
             Token::Slice => write!(f, "slice"),
             Token::SliceIncl => write!(f, "slice inclusive"),
 
-            Token::Add => write!(f, "add"),
-            Token::Sub => write!(f, "sub"),
-            Token::Mul => write!(f, "mul"),
-            Token::Div => write!(f, "div"),
-            Token::FDiv => write!(f, "floor div"),
-            Token::Pow => write!(f, "pow"),
+            Token::Add => write!(f, "addition"),
+            Token::Sub => write!(f, "subtract"),
+            Token::Mul => write!(f, "multiply"),
+            Token::Div => write!(f, "division"),
+            Token::FDiv => write!(f, "floor division"),
+            Token::Pow => write!(f, "power of"),
 
             Token::Ge => write!(f, "greater than"),
             Token::Geq => write!(f, "greater than or equal to"),

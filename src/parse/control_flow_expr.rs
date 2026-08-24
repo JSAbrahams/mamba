@@ -31,7 +31,7 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Then, "if expression")?;
     let then = it.parse(&parse_expr_or_stmt, "if then branch", start)?;
 
-    let el = if it.peek_if(&|lex| lex.token == Token::Else) {
+    let el = if it.peek_if_skipping(&Token::NL, &|lex| lex.token == Token::Else) {
         it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?
     } else {
         None
@@ -229,10 +229,6 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
@@ -259,10 +255,6 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
@@ -270,12 +262,8 @@ mod test {
             }
         );
 
-        let el = match el.clone().unwrap().node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
-            el.node,
+            el.clone().unwrap().node,
             Node::Id {
                 lit: String::from("c")
             }

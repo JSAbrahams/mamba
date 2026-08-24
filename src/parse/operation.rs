@@ -24,12 +24,15 @@ macro_rules! inner_bin_op {
 /// 2. unary and, unary or, bitwise ones complement
 /// 3. multiplication, division, floor division, modulus, range, range inclusive
 /// 4. addition, subtraction
-/// 5. binary left shift, binary right shift, binary and, binary or, binary xor
-/// 6. greater, greater or equal, less, less or equal, equal, not equal, is, is,
+/// 5. greater, greater or equal, less, less or equal, equal, not equal, is, is,
 ///    in not, is a, is not a
-/// 7. and, or, question or
-/// 8. postfix calls
+/// 6. and, or, question or
+/// 7. postfix calls
+///
+/// Newlines in front of exprsesions are ignored.
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
+    it.eat_while(&Token::NL);
+
     parse_level_6(it)
 }
 

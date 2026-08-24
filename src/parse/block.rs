@@ -39,7 +39,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             let ast = it.parse(&parse_expr_or_stmt, "statements", start)?;
             statements.push(*ast.clone());
 
-            if it.peek_if(&|lex| lex.token != Token::NL) {
+            if it.peek_if(&|lex| lex.token != Token::NL && lex.token != Token::End) {
                 Err(Box::from(expected_one_of(
                     &[Token::NL],
                     lex,

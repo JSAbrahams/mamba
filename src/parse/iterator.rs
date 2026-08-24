@@ -27,6 +27,28 @@ impl<'a> LexIterator<'a> {
         }
     }
 
+    /// Look past any number of `skip` tokens for a token matching `fun`.
+    /// If found, the `skip` tokens (but not the matched token) are consumed.
+    /// Otherwise, the iterator is left untouched.
+    pub fn peek_if_skipping(&mut self, skip: &Token, fun: &dyn Fn(&Lex) -> bool) -> bool {
+        let mut lookahead = self.it.clone();
+        while let Some(lex) = lookahead.peek() {
+            if Token::same_type(&lex.token, skip) {
+                lookahead.next();
+            } else {
+                break;
+            }
+        }
+
+        match lookahead.peek() {
+            Some(lex) if fun(lex) => {
+                self.it = lookahead;
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
         match self.it.next() {
             Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(*pos),
