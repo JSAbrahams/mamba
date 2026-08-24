@@ -197,7 +197,7 @@ impl<'a> LexIterator<'a> {
         loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
     ) -> ParseResult<()> {
         while let Some(&lex) = self.it.peek() {
-            if !check_fn(lex) || lex.token == Token::Eof {
+            if !check_fn(lex) {
                 break;
             }
             loop_fn(self, lex)?;

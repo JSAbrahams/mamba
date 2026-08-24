@@ -118,8 +118,6 @@ pub enum Token {
     Question,
 
     Pass,
-
-    Eof,
 }
 
 impl Token {
@@ -234,8 +232,6 @@ impl fmt::Display for Token {
             Token::When => write!(f, "when"),
 
             Token::Pass => write!(f, "pass"),
-
-            Token::Eof => write!(f, ""),
         }
     }
 }
