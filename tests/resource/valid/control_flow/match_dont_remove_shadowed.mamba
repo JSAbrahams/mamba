@@ -1,7 +1,8 @@
 def n := 10
 
-match 10
+match 10 with
     n =>
         print("10")
+end
 
 print(n)

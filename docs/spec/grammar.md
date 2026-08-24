@@ -17,8 +17,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     import-as        ::= id ( "as" id )
 
     type-def         ::= "type" type-not-fun ":" type-not-fun "when" ( expression | code-set )
-    trait-def        ::= "trait" type-not-fun ( ":" type-not-fun { "," type-not-fun } ) [ ":=" statement ]
-    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ ":=" statement ]
+    trait-def        ::= "trait" type-not-fun ( ":" type-not-fun { "," type-not-fun } ) [ code-set ]
+    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ code-set ]
     
     id               ::= { character }
     id-maybe-type    ::= id [ ":" type ]

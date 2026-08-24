@@ -1,0 +1,12 @@
+def a: Int := function_may_throw_err() ! where
+    err: MyErr => do
+        print("We have a problem: {err.message}.")
+        return  # we return, halting execution
+    end
+    err: MyOtherErr => do
+        print("We have another problem: {err.message}.")
+        0  # ... or we assign default value 0 to a
+    end
+end
+
+print("a has value {a}.")

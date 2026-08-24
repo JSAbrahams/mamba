@@ -1,3 +1,4 @@
-match 10
+match 10 with
     n =>
         print(x)
+end

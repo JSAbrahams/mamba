@@ -1,5 +1,3 @@
-class X
-    def (y, z): (Int, Int?)
-
-    def __init__(self) :=
-        self.y := 10
+class X := where
+    def (y, z): (Int, Int?) := (10, None)
+end

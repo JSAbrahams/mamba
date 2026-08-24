@@ -23,12 +23,6 @@ impl State {
         }
     }
 
-    pub fn flush_indents(&mut self) -> Vec<Lex> {
-        let amount = ((self.cur_indent) / 4) as usize;
-        self.cur_indent = 1;
-        vec![Lex::new(self.pos, Token::Dedent); amount]
-    }
-
     /// Change state depending on given [Token](lexer::token::Token) and return
     /// [TokenPos](lexer::token::TokenPos) with current line and position
     /// (1-indexed).
@@ -46,14 +40,6 @@ impl State {
 
         self.token_this_line = true;
         let mut res = self.newlines.pop().map_or(vec![], |nl| vec![nl]);
-        if self.line_indent >= self.cur_indent {
-            let amount = ((self.line_indent - self.cur_indent) / 4) as usize;
-            res.append(&mut vec![Lex::new(self.pos, Token::Indent); amount]);
-        } else {
-            let amount = ((self.cur_indent - self.line_indent) / 4) as usize;
-            res.append(&mut vec![Lex::new(self.pos, Token::Dedent); amount]);
-            res.push(Lex::new(self.pos, Token::NL));
-        }
 
         res.append(&mut self.newlines);
         res.push(Lex::new(self.pos, token.clone()));

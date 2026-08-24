@@ -35,6 +35,12 @@ impl FromStr for AST {
 
         let mut iterator = LexIterator::new(tokens.iter().peekable());
         let statements = block::parse_statements(&mut iterator)?;
+        if let Some(next) = iterator.peek_next() {
+            return Err(Box::new(crate::parse::result::custom(
+                &format!("unexpected token '{}'", next.token.name()),
+                next.pos,
+            )));
+        }
 
         let start = statements
             .first()

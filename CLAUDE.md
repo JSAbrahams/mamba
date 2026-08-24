@@ -93,7 +93,7 @@ has its own README worth reading before making non-trivial changes there (`src/p
 ### Tests
 
 - `tests/parse/{valid,invalid}.rs` and `tests/check/{valid,invalid}.rs`: table-driven tests over fixtures in
-  `tests/resource/{valid,invalid}/<category>/<name>.mamba` (+ a `<name>_check.py` reference file for valid
+  `tests/resource/{valid,invalid}/<category>/<name>.mamba` (+ a `<name>.py` reference file for valid
   check tests — see `tests_util::fallable`, which diffs the transpiler's Python AST against the reference file's
   Python AST, not raw text). `valid`/`invalid` fixtures are separate directory trees under `tests/resource/`.
 - `tests/main.rs`: black-box CLI tests (invokes the built binary via `assert_cmd`) covering input/output
@@ -101,8 +101,6 @@ has its own README worth reading before making non-trivial changes there (`src/p
 - `tests_util` (a separate crate, path-dependency of `mamba`'s dev-dependencies) holds shared test helpers:
   fixture path resolution, randomized temp output dirs, and the Python-AST-diff assertion logic used by
   `test_directory`/`test_directory_args`.
-- Adding a new valid `check` fixture generally means adding both a `.mamba` file and a matching `_check.py`
-  reference under `tests/resource/valid/<category>/`, then a `#[test_case(...)]` entry.
 
 ## Documentation
 

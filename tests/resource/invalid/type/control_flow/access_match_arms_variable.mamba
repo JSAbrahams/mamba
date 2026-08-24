@@ -1,5 +1,5 @@
-match 10
-    n =>
-        print("10")
+match 10 with
+    n => print("10")
+end
 
 print(n)

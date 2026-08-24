@@ -1,4 +1,5 @@
-class MyClass[A]
+class MyClass[A] where
     def my_fun(x: A) -> A := x
+end
 
 def my_class := MyClass()

@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn for_col_variable_ty() {
-        let src = "def a := 0 ..= 2\nfor i in a do\n    print(\"hello\")";
+        let src = "def a := 0 ..= 2\nfor i in a do\n    print(\"hello\")\nend";
         let ast = src.parse::<AST>().unwrap();
         let result = check_all(&[ast]).unwrap();
 

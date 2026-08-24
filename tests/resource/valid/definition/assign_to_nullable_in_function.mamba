@@ -1,3 +1,4 @@
-def send(message: Str) :=
+def send(message: Str) := do
     def _message: Str? := None
     _message := message
+end

@@ -1,17 +1,15 @@
 use std::ops::Deref;
 
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
-use crate::parse::call::parse_anon_fun;
-use crate::parse::call::parse_call;
+use crate::parse::ast::{Node, AST};
+use crate::parse::block::parse_block;
+use crate::parse::call::{parse_anon_fun, parse_call};
 use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Lex;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::expected_one_of;
-use crate::parse::result::ParseResult;
+use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_id;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
@@ -39,6 +37,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Id(String::new()),
         Token::Sub,
         Token::BSlash,
+        Token::Do,
     ];
 
     let result = it.peek_or_err(
@@ -75,6 +74,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             }
 
             Token::Not | Token::Sqrt | Token::Add | Token::Sub => parse_expression(it),
+            Token::Do => parse_block(it),
 
             Token::BSlash => parse_anon_fun(it),
 

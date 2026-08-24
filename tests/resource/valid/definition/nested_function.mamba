@@ -1,11 +1,14 @@
-class A
+class A where
     def b: B
+end
 
-class B
+class B where
     def my_c(self) -> C := C()
+end
 
-class C
+class C where
     def fin my_field: Int := 10
+end
 
 def a := A()
 print(a.b.my_c().my_field)

@@ -7,5 +7,6 @@ while d do
     print(d and False)
 
     print(d and True)
+end
 
 print("hello")

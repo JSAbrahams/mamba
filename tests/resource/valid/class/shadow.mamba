@@ -1,11 +1,15 @@
-class MyClass1
+class MyClass1 where
     def f1(self) := print("1")
-class MyClass2
+end
+class MyClass2 where
     def f2(self) := print("2")
-class MyClass3
+end
+class MyClass3 where
     def f3(self) := print("3")
-class MyClass4
+end
+class MyClass4 where
     def f4(self) := print("4")
+end
 
 def x := MyClass1()
 x.f1()
@@ -13,7 +17,7 @@ x.f1()
 def x := MyClass2()
 x.f2()
 
-class MyClass
+class MyClass where
     def x: MyClass3 := MyClass3()
 
     def g() :=
@@ -21,3 +25,4 @@ class MyClass
 
     def f(x: MyClass4) :=
         x.f4()
+end

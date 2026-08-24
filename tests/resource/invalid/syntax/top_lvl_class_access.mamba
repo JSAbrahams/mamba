@@ -1,2 +1,3 @@
-class X
+class X where
     def y.y: Int := 10
+end

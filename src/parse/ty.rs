@@ -129,13 +129,11 @@ pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let mut conditions = vec![];
 
     if it.eat_if(&Token::NL).is_some() {
-        it.eat(&Token::Indent, "conditions")?;
-        it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
+        it.peek_while_not_token(&Token::End, &mut |it, _| {
             conditions.push(*it.parse(&parse_condition, "conditions", start)?);
             it.eat_if(&Token::NL);
             Ok(())
         })?;
-        it.eat(&Token::Dedent, "conditions")?;
     } else {
         let start = it.start_pos("conditions")?;
         conditions.push(*it.parse(&parse_condition, "conditions", start)?);

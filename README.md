@@ -80,7 +80,7 @@ We can write a simple script that computes the factorial of a value given by the
 
 ```mamba
 # Factorial of x
-def factorial(x: Int) -> Int := match x where
+def factorial(x: Int) -> Int := match x with
     0 => 1
     n => n * factorial(n - 1)
 end
@@ -99,13 +99,13 @@ This means that the compiler will check for us that factorial is only used with 
 Also note that:
 
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
-- For a match expression or statement, each case is denoted using `where` and `end`, as this is a _set_ of cases which we match on.
-  You you can read `match x where ... end` , where we read this as "match `x` on this set of conditions in `where ... end`", though we omit the "on" as to not introduce another keyword.
+- For a match expression or statement we denote cases starting with `with` and ending with `end`, as this is a _set_ of cases which we match on.
+  You you can read `match x with ... end` , where we read this as "match `x` on this set of conditions in `with ... end`".
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int := match x where
+def factorial(x: Int) -> Int := match x with
     0 => 1
     n => do
         def ans := 1
@@ -353,7 +353,7 @@ Type refinement also allows us to specify the domain and co-domain of a function
 # we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
 type PosInt: Int when self >= 0
 
-def factorial(x: PosInt) -> PosInt := match x where
+def factorial(x: PosInt) -> PosInt := match x with
     0 => 1
     n => n * factorial(n - 1)
 end
@@ -511,7 +511,7 @@ Take for instance this naive implementation of the Fibonacci sequence:
 
 ```mamba
 ## Fibonacci, implemented using recursion and not dynamic programming
-def total pure fibonacci(x: PosInt) -> Int := match x where
+def total pure fibonacci(x: PosInt) -> Int := match x with
     0 => 0
     1 => 1
     n => fibonacci(n - 1) + fibonacci(n - 2)

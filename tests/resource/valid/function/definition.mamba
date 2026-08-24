@@ -1,10 +1,11 @@
-def fun_a() -> Int? :=
+def fun_a() -> Int? := do
     print(11)
     if True and True then print("hello")
     if False or True then print("world")
 
     def a := None ? 11
     if True then return 10 else return None
+end
 
 def fun_b(b: Int) := print(b)
 
@@ -18,11 +19,12 @@ def fun_e(m: Int, o: (Str, Str), r: (Int, (Str, Str)) -> Int) -> Int := return r
 
 def fun_v(y: Str, ab: Str -> Str -> Bool) -> Str -> Bool := return ab(y)
 
-class MyClass(def a: Int, def b: Int)
-    def some_function(self, c: Int) -> Int :=
+class MyClass(def a: Int, def b: Int) where
+    def some_function(self, c: Int) -> Int := do
         def d := 20
         d := 10 + 30
         return c + 20 + d
+    end
 
     def +(self, other: MyClass) -> MyClass := return MyClass(self.a + self.b + other.some_function(self.a), self.b)
     def -(self, other: MyClass) -> MyClass := return self + other
@@ -37,6 +39,7 @@ class MyClass(def a: Int, def b: Int)
 
     def sqrt(self) -> MyClass := return MyClass(self.a // self.b, self.a // self.b)
     def mod(self, other: MyClass) -> MyClass := return MyClass(self.a mod self.b, self.b)
+end
 
 def factorial(x: Int) -> Int := x * factorial(x - 1)
 

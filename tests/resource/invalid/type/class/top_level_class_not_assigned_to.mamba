@@ -1,6 +1,7 @@
-class X
+class X where
     def y: Int
     def z: Int
 
     def __init__(self, x: Int) :=
         self.y := x
+end

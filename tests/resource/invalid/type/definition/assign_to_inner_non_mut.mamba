@@ -1,12 +1,15 @@
-class A
+class A where
     def c: C
+end
 
-class C
+class C where
     def my_class: D := D()
     def my_field_accessor(self) -> D := self.my_class
+end
 
-class D
+class D where
     def fin my_field: Int := 10
+end
 
 def a := A()
 a.c.my_field_accessor().mmy_field := 20

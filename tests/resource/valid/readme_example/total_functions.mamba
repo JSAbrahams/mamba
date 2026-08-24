@@ -1,0 +1,6 @@
+## fibbonaci, implemented using recursion and not dynamic programming
+def total pure fibbonaci(x: PosInt) -> Int := match x with
+    0 => 0
+    1 => 1
+    n => fibbonaci(n - 1) + fibbonaci(n - 2)
+end

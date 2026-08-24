@@ -1,8 +1,6 @@
 use std::iter::Peekable;
 use std::slice::Iter;
 
-use itertools::multipeek;
-
 use crate::common::position::Position;
 use crate::common::result::WithCause;
 use crate::parse::lex::token::Lex;
@@ -11,6 +9,7 @@ use crate::parse::result::eof_expected_one_of;
 use crate::parse::result::expected;
 use crate::parse::result::ParseResult;
 
+#[derive(Debug)]
 pub struct LexIterator<'a> {
     it: Peekable<Iter<'a, Lex>>,
 }
@@ -26,35 +25,6 @@ impl<'a> LexIterator<'a> {
         } else {
             false
         }
-    }
-
-    pub fn peek_if_followed_by(&mut self, token: &Token, final_token: &Token) -> bool {
-        if self.it.peek().map(|l| l.token.clone()) != Some(token.clone()) {
-            return false;
-        }
-
-        let mut multi_peek = multipeek(self.it.clone());
-        let mut first_token: Option<Token> = None;
-        while let Some(lex) = multi_peek.peek() {
-            let second_token = lex.token.clone();
-
-            match (&first_token, &second_token) {
-                (Some(first_token), second_token)
-                    if Token::same_type(first_token, token)
-                        && Token::same_type(second_token, final_token) =>
-                {
-                    return true;
-                }
-                _ if second_token != token.clone() => {
-                    break;
-                }
-                _ => {}
-            }
-
-            first_token = Some(second_token.clone());
-        }
-
-        first_token == Some(final_token.clone())
     }
 
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
@@ -161,7 +131,6 @@ impl<'a> LexIterator<'a> {
         }
     }
 
-    #[allow(dead_code)] // Useful method when debugging
     pub fn peek_next(&mut self) -> Option<Lex> {
         self.it.peek().cloned().cloned()
     }
@@ -213,42 +182,5 @@ impl<'a> LexIterator<'a> {
                 &format!("start of a {msg}"),
             ))),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::common::position::CaretPos;
-
-    use super::*;
-
-    #[test]
-    fn test_peek_followed_by() {
-        let l1 = Lex::new(CaretPos::start().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(CaretPos::start().offset_pos(1), Token::Neq);
-        let l3 = Lex::new(CaretPos::start().offset_pos(2), Token::Eq);
-        let lex = vec![l1, l2, l3];
-        let mut it = LexIterator::new(lex.iter().peekable());
-
-        assert!(it.peek_if_followed_by(&Token::Neq, &Token::Eq));
-        assert!(it.peek_if_followed_by(&Token::Neq, &Token::Neq));
-
-        assert!(!it.peek_if_followed_by(&Token::Neq, &Token::Not));
-        assert!(!it.peek_if_followed_by(&Token::Eq, &Token::Eq));
-        assert!(!it.peek_if_followed_by(&Token::Not, &Token::Not));
-    }
-
-    #[test]
-    fn test_peek_followed_by_leaves_iter_unmodified() {
-        let l1 = Lex::new(CaretPos::start().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(CaretPos::start().offset_pos(1), Token::Eq);
-        let lex = [l1, l2];
-        let mut lex_iter = LexIterator::new(lex.iter().peekable());
-
-        lex_iter.peek_if_followed_by(&Token::Neq, &Token::Eq);
-        assert_eq!(
-            lex_iter.it.peek().map(|l| l.token.clone()),
-            Some(Token::Neq)
-        );
     }
 }

@@ -4,14 +4,15 @@ use crate::parse::class::{parse_class, parse_type_def};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
-use crate::parse::result::{expected_one_of, ParseResult};
+use crate::parse::result::expected_one_of;
+use crate::parse::result::ParseResult;
 use crate::parse::statement::parse_import;
 
 pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("statements")?;
     let mut statements: Vec<AST> = Vec::new();
 
-    it.peek_while_not_tokens(&[Token::Dedent], &mut |it, lex| match &lex.token {
+    it.peek_while_not_tokens(&[Token::End], &mut |it, lex| match &lex.token {
         Token::NL => it.eat(&Token::NL, "statements").map(|_| ()),
 
         Token::Import | Token::From => {
@@ -36,9 +37,9 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
         }
         _ => {
             statements.push(*it.parse(&parse_expr_or_stmt, "statements", start)?);
-            if it.peek_if(&|lex| lex.token != Token::NL && lex.token != Token::Dedent) {
+            if it.peek_if(&|lex| lex.token != Token::NL) {
                 Err(Box::from(expected_one_of(
-                    &[Token::NL, Token::Dedent],
+                    &[Token::NL],
                     lex,
                     "end of statement",
                 )))
@@ -53,14 +54,28 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 /// Parse block, and consumes any newlines preceding it.
 pub fn parse_block(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("block")?;
-    it.eat_while(&Token::NL);
+    let start = it.start_pos("code block")?;
+    it.eat(&Token::Do, "code block")?;
 
-    it.eat(&Token::Indent, "block")?;
-    let statements = it.parse_vec(&parse_statements, "block", start)?;
+    let statements = it.parse_vec(&parse_statements, "code block", start)?;
     let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
 
-    it.eat(&Token::Dedent, "block")?;
+    it.eat(&Token::End, "code block")?;
+    Ok(Box::from(AST::new(
+        start.union(end),
+        Node::Block { statements },
+    )))
+}
+
+/// Parse block, and consumes any newlines preceding it.
+pub fn parse_set(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("code block")?;
+    it.eat(&Token::Where, "code set")?;
+
+    let statements = it.parse_vec(&parse_statements, "code set", start)?;
+    let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
+
+    it.eat(&Token::End, "code set")?;
     Ok(Box::from(AST::new(
         start.union(end),
         Node::Block { statements },

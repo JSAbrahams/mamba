@@ -265,6 +265,8 @@ fn as_op_or_id(string: String) -> Token {
         "in" => Token::In,
         "when" => Token::When,
         "pass" => Token::Pass,
+        "end" => Token::End,
+        "where" => Token::Where,
 
         _ => Token::Id(string),
     }
@@ -293,9 +295,7 @@ mod test {
         assert_eq!(tokens[8].token, Token::Id(String::from("Int")));
         assert_eq!(tokens[9].token, Token::Assign);
         assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Indent);
-        assert_eq!(tokens[12].token, Token::Ret);
-        assert_eq!(tokens[13].token, Token::Dedent);
+        assert_eq!(tokens[11].token, Token::Ret);
 
         Ok(())
     }
@@ -309,16 +309,13 @@ mod test {
         assert_eq!(tokens[0].token, Token::Class);
         assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
         assert_eq!(tokens[2].token, Token::NL);
-        assert_eq!(tokens[3].token, Token::Indent);
-        assert_eq!(tokens[4].token, Token::Def);
-        assert_eq!(tokens[5].token, Token::Id(String::from("var")));
-        assert_eq!(tokens[6].token, Token::Assign);
-        assert_eq!(tokens[7].token, Token::Int(String::from("10")));
-        assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Dedent);
-        assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Class);
-        assert_eq!(tokens[12].token, Token::Id(String::from("MyClass1")));
+        assert_eq!(tokens[3].token, Token::Def);
+        assert_eq!(tokens[4].token, Token::Id(String::from("var")));
+        assert_eq!(tokens[5].token, Token::Assign);
+        assert_eq!(tokens[6].token, Token::Int(String::from("10")));
+        assert_eq!(tokens[7].token, Token::NL);
+        assert_eq!(tokens[8].token, Token::Class);
+        assert_eq!(tokens[9].token, Token::Id(String::from("MyClass1")));
 
         Ok(())
     }
@@ -333,15 +330,11 @@ mod test {
         assert_eq!(tokens[1].token, Token::Id(String::from("a")));
         assert_eq!(tokens[2].token, Token::Then);
         assert_eq!(tokens[3].token, Token::NL);
-        assert_eq!(tokens[4].token, Token::Indent);
-        assert_eq!(tokens[5].token, Token::Id(String::from("b")));
-        assert_eq!(tokens[6].token, Token::NL);
-        assert_eq!(tokens[7].token, Token::Dedent);
-        assert_eq!(tokens[8].token, Token::NL);
-        assert_eq!(tokens[9].token, Token::Else);
-        assert_eq!(tokens[10].token, Token::NL);
-        assert_eq!(tokens[11].token, Token::Indent);
-        assert_eq!(tokens[12].token, Token::Id(String::from("c")));
+        assert_eq!(tokens[4].token, Token::Id(String::from("b")));
+        assert_eq!(tokens[5].token, Token::NL);
+        assert_eq!(tokens[6].token, Token::Else);
+        assert_eq!(tokens[7].token, Token::NL);
+        assert_eq!(tokens[8].token, Token::Id(String::from("c")));
 
         Ok(())
     }

@@ -1,4 +1,4 @@
-class MyClass
+class MyClass where
     def x: Int
 
     def __init__(self) :=
@@ -6,3 +6,4 @@ class MyClass
             self.x := 10
         else
             self.x := 20
+end
