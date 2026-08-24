@@ -1,5 +1,6 @@
-class A :=
+class A where
     def my_num: Int := 10
+end
 
 
 def fin a := A()

@@ -1,9 +1,9 @@
 use crate::parse::ast::node_op::NodeOp;
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::block::parse_block;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
-use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
@@ -174,8 +174,7 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
         None
     };
 
-    it.eat(&Token::Do, "with")?;
-    let expr = it.parse(&parse_expr_or_stmt, "with", start)?;
+    let expr = it.parse(&parse_block, "with", start)?;
 
     let node = Node::With {
         resource,

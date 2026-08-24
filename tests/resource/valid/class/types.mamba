@@ -1,17 +1,17 @@
 class MyGeneric: Str
 
-type SomeState: MyClass where self.private_field > 2
+type SomeState: MyClass when self.private_field > 2
 type OtherState: MyClass when
     self.private_field  > 10
     self.private_field  < 200
     self.required_field < 50
 end
 
-trait SuperInterface where
+type SuperInterface where
     def bar: Int
 end
 
-trait MyInterface: SuperInterface where
+type MyInterface: SuperInterface where
     def required_field: Int
     def higher_order(self) -> Int
 end

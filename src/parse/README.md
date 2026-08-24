@@ -13,11 +13,8 @@ Implementation wise, an `AST` is where a `Node` are stored.
 
 ## Lex
 
-The lexer converts a string to a vector of `Token`s. This is in part to simplify the parsing stage.
-
-The lexer also deals with the logic necessary to detect indentations. It produces special tokens `Indent` and `Dedent`,
-which the next stage uses to identify the start and end of blocks.
-
+The lexer converts a string to a vector of `Token`s.
+This is in part to simplify the parsing stage.
 We get an error if we encounter an illegal character
 
 ## Parse

@@ -7,7 +7,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
     def fin z_modified: Str := "asdf"
     def other_field: Int := 10
 
-    def __init__(self, other_field: Int, z: Int) ! Err1 :=
+    def __init__(self, other_field: Int, z: Int) ! Err1 := do
         if z > 10 then ! Err1("Something is wrong!")
         self.z_modified := "fdsa"
 
@@ -17,13 +17,17 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
 
         def my_bool := True
 
-        def a := self.error_function()
-            err1: Err1 =>
+        def a := self.error_function() ! where
+            err1: Err1 => do
                 print(err1)
                 -1
-            err2: Err2 =>
+            end
+            err2: Err2 => do
                 print(err2)
                 -2
+            end
+        end
+    end
 
     def error_function(self) -> Int ! { Err1, Err2 } := 200
 

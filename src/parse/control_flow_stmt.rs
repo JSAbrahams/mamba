@@ -1,6 +1,5 @@
 use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_block;
-use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
@@ -34,9 +33,8 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
 fn parse_while(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("while statement")?;
     it.eat(&Token::While, "while statement")?;
-    let cond = it.parse(&parse_expression, "while statement", start)?;
-    it.eat(&Token::Do, "while")?;
-    let body = it.parse(&parse_expr_or_stmt, "while statement", start)?;
+    let cond = it.parse(&parse_expression, "while statement condition", start)?;
+    let body = it.parse(&parse_block, "while statement block", start)?;
 
     let node = Node::While {
         cond,
@@ -282,7 +280,7 @@ mod test {
 
     #[test]
     fn while_verify() {
-        let source = String::from("while a do d");
+        let source = String::from("while a do d end");
         let statements = parse_direct(&source).unwrap();
 
         let (cond, body) = match &statements.first().expect("script empty.").node {
@@ -296,8 +294,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("d")
             }

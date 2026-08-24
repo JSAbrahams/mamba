@@ -1,8 +1,10 @@
 def f() -> Int ! Exception := 10
 
 def x:= if True then
-    f()
+    f() ! where
         err: Exception => 3
+    end
 else
-    f()
+    f() ! where
         err: Exception => 3
+    end

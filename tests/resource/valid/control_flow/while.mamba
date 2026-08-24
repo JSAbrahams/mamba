@@ -1,6 +1,6 @@
 def b := False
 def e := "Hello world"
-while b do print(b)
+while b do print(b) end
 
 def d := True
 while d do

@@ -134,6 +134,7 @@ pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             it.eat_if(&Token::NL);
             Ok(())
         })?;
+        it.eat(&Token::End, "conditions")?;
     } else {
         let start = it.start_pos("conditions")?;
         conditions.push(*it.parse(&parse_condition, "conditions", start)?);

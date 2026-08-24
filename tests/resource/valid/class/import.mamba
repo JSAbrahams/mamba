@@ -1,4 +1,4 @@
-from a import {b as c, c as d}
+from a import b,c as c,d
 from b import c
 import d
-from d import dd
+import d as dd

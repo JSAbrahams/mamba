@@ -9,6 +9,8 @@ use crate::parse::statement::{is_start_statement, parse_reassignment, parse_stat
 use crate::parse::Lex;
 
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
+    it.eat_while(&Token::NL);
+
     let expr_or_stmt = it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::Do => it.parse(&parse_block, "expression or statement", lex.pos),
@@ -19,9 +21,11 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
         "expression or statement",
     )?;
 
-    // if expression/statement followed by newline and indent, we are dealing with a handle block
+    // a call that may raise is marked with '!'; if followed by 'where' we are dealing with a handle block
+    it.eat_if(&Token::Raise);
+
     if it.peek_if(&|lex: &Lex| lex.token == Token::Where) {
-        it.eat(&Token::NL, "internal error in parsing call")?; // peek covers this
+        it.eat(&Token::Where, "handle expression")?;
 
         // parse handle cases if indentation block after
         let cases = it.parse_vec(&parse_match_cases, "handle cases", expr_or_stmt.pos)?;

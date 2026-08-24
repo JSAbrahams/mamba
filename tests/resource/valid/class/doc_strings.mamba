@@ -9,9 +9,10 @@ class MyClass where
     It can do many things
     """
 
-    def my_fun(self) -> Int :=
+    def my_fun(self) -> Int := do
         """
         This is my function, it can't do so much
         """
         200
+    end
 end
