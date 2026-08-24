@@ -44,17 +44,6 @@ Symbol | Use
 `=`  | Structurally equal
 `!=` | Structurally not equal
 
-## Binary operators
-
-Symbol | Use
----|---
-`&&`   | And operator
-`||`   | Or operator
-`!|`   | Exclusive or operator
-`!!`   | Negation operator
-`<<`   | Left shift
-`>>`   | Right shift
-
 ## Assignment and Functions
 
 Symbol | Use
