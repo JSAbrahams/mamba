@@ -20,7 +20,7 @@ Keyword | Use
 ---|---
 `type`  | When constructing an interface (abstract base class) or type alias
 `class` | Denote a class
-`isa`   | Check whether an object is instance of a class
+`isa`   | Check whether an object is an instance of a class
 `when`  | Conditional types
 
 ## Classes and Utils

@@ -49,7 +49,7 @@ This README:
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-To get started right away, if on a Linux machine and you wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.).
+To get started right away, if you are on a Linux machine and wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.).
 Still work in progress (Nix flakes are difficult to get right):
 
 ```sh
@@ -100,7 +100,7 @@ Also note that:
 
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
 - For a match expression or statement we denote cases starting with `with` and ending with `end`, as this is a _set_ of cases which we match on.
-  You you can read `match x with ... end` , where we read this as "match `x` on this set of conditions in `with ... end`".
+  You can read `match x with ... end`, where we read this as "match `x` on this set of conditions in `with ... end`".
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
@@ -170,10 +170,10 @@ def numbers := { 0 => 32, 1 => 504, 2 => 59 }
 
 Where we iterate over the list in the order of the keys.
 
-Unlike C-style languages (which is nearly the whole world at this point), we index collections using `collection(<expression>)`.
+Unlike C-style languages (which are nearly the whole world at this point), we index collections using `collection(<expression>)`.
 We namely don't distinguish between a mapping and a function, because a function is (generally speaking) also a type of mapping.
 The above mapping, for instance, is a representation of some function with a very small domain (only three items).
-Therefore, we index indexable collections (mappings and list) using the `collection(<expression>)` notation.
+Therefore, we index indexable collections (mappings and lists) using the `collection(<expression>)` notation.
 
 ### ✏️🖊️ Mutability
 
@@ -248,7 +248,7 @@ As for constructor arguments:
   They may be used at any point in the class, but they are (1) invariant and (2) may not be accessed from outside the class.
 - The body of the class is evaluated for each object we created, effectively making this the constructor body.
 
-As for the class body
+As for the class body:
 
 - It is denoted using a code set: Using `{` and `}`.
   This is because the concept of order is not defined in a class body.
@@ -282,7 +282,7 @@ end
 Last, we have `trait`s, which in Mamba are more fine-grained building blocks to describe the behaviour of instances.
 These are similar to interfaces in Java and Kotlin, and near identical to traits in Rust.
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
-For those familiar with object oriented programming, we favour a trait based system over inheritance (like Rust, Mamba doesn't have inheritance). 
+For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
 
 Consider example with iterators (which briefly showcases language generics):
 
@@ -375,7 +375,7 @@ else
 ```
 In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
 
-Lets expand our matrix example from above, and rewrite it slightly:
+Let's expand our matrix example from above, and rewrite it slightly:
 
 ```mamba
 type InvertibleMatrix: Matrix when self.determinant() != 0.0
@@ -422,7 +422,7 @@ def last_op = m.last_op()!
 print("Last operation was: {last_op}")
 ```
 
-Type refinement allows, in the context of object oriented programming, thus allows us to also explicitly name the possible states of an object. 
+Type refinement, in the context of object-oriented programming, thus allows us to also explicitly name the possible states of an object. 
 This means that we don't constantly have to check that certain conditions hold.
 We can simply ask whether a given object is a certain state by checking whether it is a certain type.
 
@@ -431,7 +431,7 @@ In general, the goal of the compiler will become:
 - Limit the amount of checks that need to be done
 - Detect when it becomes impossible to raise an exception, i.e. if it is impossible to break an invariant then we will never raise an exception.
 
-Overall, the goal of type refinement it to allow us to express in greater detail the expected behaviour of functions in a more concise manner.
+Overall, the goal of type refinement is to allow us to express in greater detail the expected behaviour of functions in a more concise manner.
 This is somewhat similar to "design by contract", though baked more into the language itself.
 This should help us to express more clearly domains and codomains of functions.
 
@@ -459,7 +459,7 @@ Some additional rules hold for calling and assigning to passed arguments to upho
 - The field of an argument may not be assigned to, as this will modify the original reference.
 - One may only read fields of an argument which are final (`fin`).
 - One may only call methods of an argument which are pure (`pure`).
-- It should be emphasized that all of the above also hold accesses to `self` in the case of methods.
+- It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
 
 When a function is `pure`, its output is always the same for a given input.
 It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
@@ -482,7 +482,7 @@ end
 
 A function may also be total, which means:
 
-1. It is defined for possible values of its domain
+1. It is defined for all possible values of its domain
 2. It will halt on all such inputs
 
 The second property is interesting, because that would imply that the compiler can prove that an arbitrary function can halt.
@@ -530,7 +530,7 @@ fibonacci(x - 1) fibonacci(x - 2)
 
 Thus, this function has the property of a final function, and we may thus mark it as `total` if we so choose.
 The reason why we above state "compared to the first parent of a node which is equal to said node." is that we can have situations where we call other total functions which have recursive calls to self.
-This allows us to call other recursive functions without having to strictly decrease the value of the input, but still enfroce that calls to self (and more generally recursive calls to the same function) again are strictly decreasing.
+This allows us to call other recursive functions without having to strictly decrease the value of the input, but still enforce that calls to self (and more generally recursive calls to the same function) again are strictly decreasing.
 
 We provide the `StrictlyDecreases` trait so users can define if something is strictly decreasing.
 The compiler enforces that this is defined for each argument.
@@ -605,7 +605,7 @@ But we can imagine that library writers might find these useful if they wish to 
 
 The above also highlights meta functions in the language, which is a necessary evil.
 Meta functions are functions which can be evaluated at compile time.
-This is somewhat similar to macro's in say C++ (or Rust, whose implementation is arguably far superior).
+This is somewhat similar to macros in say C++ (or Rust, whose implementation is arguably far superior).
 However, the goal of meta functions and traits is to prove properties of variables at compile time.
 These functions have two constraints:
 
@@ -634,12 +634,12 @@ This is useful when one wants to document how one derived a meta in the form of 
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
 Instead, we aim to directly handle errors on-site so the origin of errors is more traceable.
-The following is an attempt mixing and matching `Result` monad (of languages like Rust and Scala), with a more first-class approach of exceptions in languages like Kotlin.
-Again, this represents a trade-off between elegancy of the type system and simplicity of the grammar versus having first-class language features.
-Arguably it may be easier to just use Monads, similar to how Rust's solution.
+The following is an attempt at mixing and matching `Result` monad (of languages like Rust and Scala), with a more first-class approach of exceptions in languages like Kotlin.
+Again, this represents a trade-off between elegance of the type system and simplicity of the grammar versus having first-class language features.
+Arguably it may be easier to just use Monads, similar to Rust's solution.
 But, we are operating in a different domain, so that may be overly verbose for our purposes.
 
-Lets continue with our matrix example.
+Let's continue with our matrix example.
 Before, we simply discarded the error by appending `!` to `last_op`.
 Instead, we now handle the error on-site:
 
@@ -693,7 +693,7 @@ def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
 By extension, if we don't handle all cases, then the union becomes smaller.
 Only when the union is empty, which happens when every error case is covered, does `a` have type `Int`.
 
-If `a` is is type `Result[...,...]`, and we are required to do error handling later.
+If `a` is type `Result[...,...]`, and we are required to do error handling later.
 So if we don't want to handle any of the exception cases at a given point, we just append an `!` to a function.
 The exception(s) must be handled further up the stack.
 
@@ -703,7 +703,7 @@ def a := function_may_throw_err() !
 print("a has value {a}.")
 ```
 
-This also gives an alternative way to write the above example, where we only case about a subset of the exceptions here.
+This also gives an alternative way to write the above example, where we only care about a subset of the exceptions here.
 
 ```mamba
 def a: Result[Int, MyErr] := function_may_throw_err() ! where
@@ -720,8 +720,8 @@ print("a has value {a}.")
 
 Finally, we also introduce the `recover` keyword.
 The intention is that instead of letting someone else up the stack perform cleanup, we can couple some of the cleanup at this site.
-For instance, de-allocation resources which we no longer need.
-This is similar to `drop` in Rust, though this applies only to errors/exceptions (as we generally speaking rely on garbage collection).
+For instance, de-allocating resources which we no longer need.
+This is similar to `drop` in Rust, though this applies only to errors/exceptions (as, generally speaking, we rely on garbage collection).
 This is also similar to `finally` in Python, though we don't always run this block, only when we encounter an error.
 
 The general syntax is `<expression-or-statement> recover <expression-or-statement>`
@@ -751,7 +751,7 @@ FLAGS:
         --no-module-path    Disable the module path in the log statements
         --no-color          Disable colorized output
     -v                      Set level of verbosity
-                            - v   : info, error, warning printed to sterr (Default)
+                            - v   : info, error, warning printed to stderr (Default)
                             - vv  : debug messages are printed
                             - vvv : trace messages are printed
     -V, --version           Prints version information

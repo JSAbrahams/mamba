@@ -24,7 +24,7 @@ For instance:
 
 An `if` is an expression if:
 
-- Have an `else` branch.
+- Has an `else` branch.
 - Return an `<expression>` (not a `<statement>`) in both branches.
   An expression evaluates to a value, for instance, `10 * x` is an expression if `x` is a number for instance, whereas `print "hello world"` is a statement, as it does not return anything.
 
@@ -32,13 +32,13 @@ So, an `if` _expression_ has the form
 
     if <expression> then <expression> else <expression>
 
-An examplew would be:
+An example would be:
 
     def my_value = if a > 0 then 2E30 else 8E21
 
 ### Match Expressions (or Statements)
 
-A `match` can be used match based on the value of an expression.
+A `match` can be used to match based on the value of an expression.
 We can even match based on the type of the returned expression.
 
 A `match` has the form:
@@ -71,4 +71,4 @@ So, a `match` _expression_ has the form:
 
     match <expression> with { <expression> => <expression> }
 
-With the additional requirement that we have a arm for every possible value of a given input type.
+With the additional requirement that we have an arm for every possible value of a given input type.

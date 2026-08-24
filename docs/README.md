@@ -3,9 +3,9 @@
 </head>
 
 <p align="center"><i>
-The documentation is currently oudated.
+The documentation is currently outdated.
 There are some examples in the README of the original project.
-We are currenty in the process of updating the documentation here however!
+We are currently in the process of updating the documentation here however!
 </i></p>
 
 <p align="center">
@@ -17,7 +17,7 @@ We are currenty in the process of updating the documentation here however!
 
 The documentation of the [Mamba](http://joelabrahams.nl/mamba/) programming language.
 
-Here you can find both the informal description of the language feaures, and the formal specification of the language.
+Here you can find both the informal description of the language features, and the formal specification of the language.
 
 ## 📄 Contents
 

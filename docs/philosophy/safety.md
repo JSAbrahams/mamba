@@ -1,15 +1,15 @@
 ⬅ [🏠 Home](../README.md)
 
-⬅ [1 💭 Philsophy of the Language](README.md)
+⬅ [1 💭 Philosophy of the Language](README.md)
 
 # 1.5 Safety
 
 ## Null Safety
 
-The `None` or `null` value, or `undefined` in cases of Mamba, is value which is meant to symbolize the concept of nothing.
+The `None` or `null` value, or `undefined` in cases of Mamba, is a value which is meant to symbolize the concept of nothing.
 It can be useful in some cases.
-Implemented poorly in a language however can be the source of many bugs.
-It has lead to headlines akin to:
+If implemented poorly in a language, however, it can be the source of many bugs.
+It has led to headlines akin to:
 
 > Null Pointers, the billion dollar mistake
 
@@ -19,7 +19,7 @@ If I write a function, and I say that it returns an integer, a user of said func
 Over the years, multiple languages have tried to implement null safety, with the two prevailing strategies being as follows:
 
 - The language does not contain `null` as a concept, but has a monad.
-  This often called an `Optional`, and can either be `None`, or `Some`, with `Some` wrapping the return value of say a function.
+  This is often called an `Optional`, and can either be `None`, or `Some`, with `Some` wrapping the return value of say a function.
 - Null safety is baked into the language, and is enforced by the type system itself.
   This is for instance the approach that Kotlin uses.
 
@@ -27,7 +27,7 @@ For Mamba I opted to bake null safety into the language itself.
 `?` is appended to types that may be `undefined`.
 If this has not been appended, say in the signature of a method, this method may never return `undefined`.
 If the type checker can not ensure that this is the case (or it detects that this is indeed the case), then it will raise an error and the code will not compile.
-`?.` can be used to call a method of a expressions that may be null, and it means a method is only called if the expression is not `undefined`.
+`?.` can be used to call a method of an expression that may be null, and it means a method is only called if the expression is not `undefined`.
 
 ```mamba
 # g never returns undefined.
@@ -43,7 +43,7 @@ def y <- f(3)?.is_even() # f(3) is undefined, so is_even() is never called and y
 # note that both x and y have type Bool?, meaning that they may both be undefined.
 ```
 
-As with most language, Mamba also uses bounds checking.
+As with most languages, Mamba also uses bounds checking.
 Unlike Python however, we don't wrap the value around if we access outside the bounds of an array, but we raise an error, which should be handled.
 This should ideally make it easier to track down bugs, which might otherwise be undetected for some time.
 This adheres somewhat to the **fail fast** philosophy.

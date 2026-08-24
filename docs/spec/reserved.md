@@ -20,7 +20,7 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`type`  | Denote start of type defintion or type alias
+`type`  | Denote start of type definition or type alias
 `when`  | Conditionals of a type definition
 `class` | Denote start of class definition
 `trait` | Denote start of trait definition
@@ -88,7 +88,7 @@ Keyword | Use
 ## Blocks
 
 Keyword | Use
-`end`   | Denote end of code block of set
+`end`   | Denote end of code block or set
 `where` | Denote start of code set
 
 ## 3.2.2 Special Characters
@@ -140,7 +140,7 @@ Symbol | Use
 Symbol | Use
 ---|---
 `:=` | Assign to definition
-`->` | Used in signature of method or signature
+`->` | Used in signature of method or function
 `=>` | Denote the mapping in a match arm
 `:`  | Specify type of identifier
 `.`  | Precedes method call, or fractional digits of real number
@@ -161,7 +161,7 @@ Symbol | Use
 
 Symbol | Use
 ---|---
-`E` | If nested between two integer, or an integer and a real, denotes e-number
+`E` | If nested between two integers, or an integer and a real, denotes e-number
 '\|' | Within set and list builder notation "such that"
 
 ## Other Operators

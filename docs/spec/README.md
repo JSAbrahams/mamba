@@ -8,4 +8,4 @@
 
 ### [3.2 Special Characters and Symbols](reserved.md)
 
-### [3.3 Standar Library](std/characters.md)
+### [3.3 Standard Library](std/characters.md)

@@ -6,7 +6,7 @@
 
 # 2.4.4 Generics
 
-A `type`, `fuction`, or `class` may have a generic parameter.
+A `type`, `function`, or `class` may have a generic parameter.
 
 To demonstrate generics, we will use an incomplete implementation of a graph.
 

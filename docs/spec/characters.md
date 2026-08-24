@@ -49,7 +49,7 @@ Symbol | Use
 Symbol | Use
 ---|---
 `:=` | Assign to definition
-`->` | Used in signature of method or signature
+`->` | Used in signature of method or function
 `=>` | Denote the mapping in a match arm
 `:`  | Specify type of identifier
 `.`  | Precedes method call, or fractional digits of real number
@@ -70,7 +70,7 @@ Symbol | Use
 
 Symbol | Use
 ---|---
-`E` | If nested between two integer, or an integer and a real, denotes e-number
+`E` | If nested between two integers, or an integer and a real, denotes e-number
 '\|' | Within set and list builder notation "such that"
 
 ## Other Operators

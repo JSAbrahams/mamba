@@ -6,7 +6,7 @@
 
 # 2.4.2 Error Handling
 
-Errors are a fact of life. It may be the result of incorrect data, user input, or a programming mistake. Error handling,
+Errors are a fact of life. They may be the result of incorrect data, user input, or a programming mistake. Error handling,
 ideally, should be done in an explicit manner. However, at the same time, error handling code should not become overly
 verbose as it might obfuscate the actual relevant parts of the codebase which perform the actual calculations. Thus, a
 balance must be reached.
@@ -18,15 +18,15 @@ These constructs however have been shown to be somewhat troublesome:
 - Certain languages don't require all exceptions to be part of the function or method signature. This means that a method call might result in an exception even if the source code does not reflect this.
   This means that the use of said method either has to either:
   - Manually check that a method does indeed not throw an exception, which becomes exponentially more difficult when a method calls other methods, and so forth.
-  - Wrap all method calls in `try` `catch` blocks, which might often be unnecessarily and make the application  unnecessarily verbose.
+  - Wrap all method calls in `try` `catch` blocks, which might often be unnecessary and make the application unnecessarily verbose.
   - Assume that the method will not throw an exception, which might be a source of bugs down the line and may result in runtime errors.
 
 As such, we aim to address the above concerns by using a more explicit system of error handling outlined below.
 In general we:
 
-- Wish to handle errors where the occur in an explicit manner, or,
+- Wish to handle errors where they occur in an explicit manner, or,
 - We explicitly state that an expression or statement (or function or method) might throw an error.
-  This creates a visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from without even having to compile the and run the code.
+  This creates a visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from without even having to compile and run the code.
 
 ## Raises, and Result
 
@@ -65,7 +65,7 @@ Small side note: using the default behaviour feature of the language, we can rew
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
 
-    # type error! exception of type MyErr is can never be raised
+    # type error! exception of type MyErr can never be raised
     def no_err(x: Int): Int ! [MyErr] := x + 1
     
 ## Handle
@@ -76,7 +76,7 @@ value to determine what to do. A good first step is to log the error. In this ca
     def l := g(9) + 1.5
         err: MyErr => println err
         
-    # here, l has type Int?, as we don not know if an error occurred or not
+    # here, l has type Int?, as we do not know if an error occurred or not
     println "we don't know whether l is an Int or None"
     
 The above would desugar to the following:
@@ -86,7 +86,7 @@ The above would desugar to the following:
             println err
             None
 
-    # here, l has type l?, as we don not know if an error occurred or not
+    # here, l has type l?, as we do not know if an error occurred or not
     println "we don't know whether l is an Int or None"
 
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
@@ -100,7 +100,7 @@ We may also return if we detect an error. In that case, the code after would onl
     # if an error was thrown this will not be executed at all
     println "[l] has type Int and not Int?"
     
-We can, instead of returning, also assign a default value to l. This should be done with care however. Assigning
+We can, instead of returning, also assign a default value to l. This should be done with care, however. Assigning
 to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
     def l := g(9)
