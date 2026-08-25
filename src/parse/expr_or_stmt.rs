@@ -22,9 +22,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     )?;
 
     // a call that may raise is marked with '!'; if followed by 'where' we are dealing with a handle block
-    it.eat_if(&Token::Raise);
-
-    if it.peek_if(&|lex: &Lex| lex.token == Token::Where) {
+    if it.eat_if(&Token::Raise).is_some() && it.peek_if(&|lex: &Lex| lex.token == Token::Where) {
         it.eat(&Token::Where, "handle expression")?;
 
         // parse handle cases if indentation block after
