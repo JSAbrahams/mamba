@@ -1,8 +1,8 @@
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::result::{GenResult, UnimplementedErr};
 use crate::check::ast::NodeTy;
-use crate::generate::ast::node::Core;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::{ASTTy, Context};
 
 pub fn convert_cntrl_flow(
@@ -31,20 +31,20 @@ pub fn convert_cntrl_flow(
                             .remove_ret(true)
                             .must_assign_to(None, None);
 
-                        Core::Ternary {
+                        PythonCore::Ternary {
                             cond,
                             then: Box::from(convert_node(then, imp, &state, ctx)?),
                             el: Box::from(convert_node(el, imp, &state, ctx)?),
                         }
                     } else {
-                        Core::IfElse {
+                        PythonCore::IfElse {
                             cond,
                             then: Box::from(convert_node(then, imp, state, ctx)?),
                             el: Box::from(convert_node(el, imp, state, ctx)?),
                         }
                     }
                 }
-                None => Core::If {
+                None => PythonCore::If {
                     cond,
                     then: Box::from(convert_node(then, imp, state, ctx)?),
                 },
@@ -65,7 +65,7 @@ pub fn convert_cntrl_flow(
             for case in match_cases {
                 if let NodeTy::Case { cond, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
-                        cases.push(Core::Case {
+                        cases.push(PythonCore::Case {
                             expr: Box::from(convert_node(
                                 expr.as_ref(),
                                 imp,
@@ -78,19 +78,19 @@ pub fn convert_cntrl_flow(
                 }
             }
 
-            Core::Match { expr, cases }
+            PythonCore::Match { expr, cases }
         }
-        NodeTy::While { cond, body } => Core::While {
+        NodeTy::While { cond, body } => PythonCore::While {
             cond: Box::from(convert_node(cond, imp, state, ctx)?),
             body: Box::from(convert_node(body, imp, state, ctx)?),
         },
-        NodeTy::For { expr, col, body } => Core::For {
+        NodeTy::For { expr, col, body } => PythonCore::For {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
             col: Box::from(convert_node(col, imp, state, ctx)?),
             body: Box::from(convert_node(body, imp, state, ctx)?),
         },
-        NodeTy::Break => Core::Break,
-        NodeTy::Continue => Core::Continue,
+        NodeTy::Break => PythonCore::Break,
+        NodeTy::Continue => PythonCore::Continue,
         other => {
             let msg = format!("Expected control flow but was: {other:?}.");
             return Err(Box::from(UnimplementedErr::new(ast, &msg)));
@@ -123,9 +123,9 @@ fn is_expr_valid_in_ternary(node: &ASTTy) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::backend::python::ast::node::PythonCore;
+    use crate::backend::python::gen;
     use crate::common::position::Position;
-    use crate::generate::ast::node::Core;
-    use crate::generate::gen;
     use crate::parse::ast::Node;
     use crate::parse::ast::AST;
     use crate::ASTTy;
@@ -160,19 +160,19 @@ mod tests {
         });
 
         let (core_cond, core_then) = match gen(&ASTTy::from(&if_stmt)) {
-            Ok(Core::If { cond, then }) => (cond, then),
+            Ok(PythonCore::If { cond, then }) => (cond, then),
             other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
             *core_cond,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("cond")
             }
         );
         assert_eq!(
             *core_then,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("then")
             }
         );
@@ -196,25 +196,25 @@ mod tests {
         });
 
         let (core_cond, core_then, core_else) = match gen(&ASTTy::from(&if_stmt)) {
-            Ok(Core::IfElse { cond, then, el }) => (cond, then, el),
+            Ok(PythonCore::IfElse { cond, then, el }) => (cond, then, el),
             other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
             *core_cond,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("cond")
             }
         );
         assert_eq!(
             *core_then,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("then")
             }
         );
         assert_eq!(
             *core_else,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("else")
             }
         );
@@ -232,19 +232,19 @@ mod tests {
         let while_stmt = to_pos!(Node::While { cond, body });
 
         let (core_cond, core_body) = match gen(&ASTTy::from(&while_stmt)) {
-            Ok(Core::While { cond, body }) => (cond, body),
+            Ok(PythonCore::While { cond, body }) => (cond, body),
             other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
             *core_cond,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("cond")
             }
         );
         assert_eq!(
             *core_body,
-            Core::ENum {
+            PythonCore::ENum {
                 num: String::from("num"),
                 exp: String::from("0")
             }
@@ -265,25 +265,25 @@ mod tests {
         let for_stmt = to_pos!(Node::For { expr, col, body });
 
         let (core_expr, core_col, core_body) = match gen(&ASTTy::from(&for_stmt)) {
-            Ok(Core::For { expr, col, body }) => (expr, col, body),
+            Ok(PythonCore::For { expr, col, body }) => (expr, col, body),
             other => panic!("Expected for but was {other:?}"),
         };
 
         assert_eq!(
             *core_expr,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("expr_1")
             }
         );
         assert_eq!(
             *core_col,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("col")
             }
         );
         assert_eq!(
             *core_body,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("body")
             }
         );
@@ -305,10 +305,10 @@ mod tests {
         });
 
         let (from, to, step) = match gen(&ASTTy::from(&range)) {
-            Ok(Core::FunctionCall { function, args }) => {
+            Ok(PythonCore::FunctionCall { function, args }) => {
                 assert_eq!(
                     *function,
-                    Core::Id {
+                    PythonCore::Id {
                         lit: String::from("range")
                     }
                 );
@@ -319,19 +319,19 @@ mod tests {
 
         assert_eq!(
             from,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a")
             }
         );
         assert_eq!(
             to,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("b")
             }
         );
         assert_eq!(
             step,
-            Core::Int {
+            PythonCore::Int {
                 int: String::from("1")
             }
         );
@@ -353,10 +353,10 @@ mod tests {
         });
 
         let (from, to, step) = match gen(&ASTTy::from(&range)) {
-            Ok(Core::FunctionCall { function, args }) => {
+            Ok(PythonCore::FunctionCall { function, args }) => {
                 assert_eq!(
                     *function,
-                    Core::Id {
+                    PythonCore::Id {
                         lit: String::from("range")
                     }
                 );
@@ -367,24 +367,24 @@ mod tests {
 
         assert_eq!(
             from,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a")
             }
         );
         assert_eq!(
             to,
-            Core::Add {
-                left: Box::from(Core::Id {
+            PythonCore::Add {
+                left: Box::from(PythonCore::Id {
                     lit: String::from("b")
                 }),
-                right: Box::from(Core::Int {
+                right: Box::from(PythonCore::Int {
                     int: String::from("1")
                 }),
             }
         );
         assert_eq!(
             step,
-            Core::Int {
+            PythonCore::Int {
                 int: String::from("1")
             }
         );
@@ -409,10 +409,10 @@ mod tests {
         });
 
         let (from, to, step) = match gen(&ASTTy::from(&range)) {
-            Ok(Core::FunctionCall { function, args }) => {
+            Ok(PythonCore::FunctionCall { function, args }) => {
                 assert_eq!(
                     *function,
-                    Core::Id {
+                    PythonCore::Id {
                         lit: String::from("range")
                     }
                 );
@@ -423,19 +423,19 @@ mod tests {
 
         assert_eq!(
             from,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a")
             }
         );
         assert_eq!(
             to,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("b")
             }
         );
         assert_eq!(
             step,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("c")
             }
         );

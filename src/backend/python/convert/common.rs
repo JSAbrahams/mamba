@@ -1,7 +1,7 @@
-use crate::generate::ast::node::Core;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::result::GenResult;
 use crate::{ASTTy, Context};
 
 pub fn convert_vec(
@@ -9,7 +9,7 @@ pub fn convert_vec(
     imp: &mut Imports,
     state: &State,
     ctx: &Context,
-) -> GenResult<Vec<Core>> {
+) -> GenResult<Vec<PythonCore>> {
     let mut result = vec![];
     for ast in node_vec {
         result.push(convert_node(ast, imp, state, ctx)?)

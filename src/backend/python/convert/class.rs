@@ -3,17 +3,17 @@ use std::ops::Deref;
 
 use itertools::Itertools;
 
+use crate::backend::python::ast::node::{CoreOp, PythonCore};
+use crate::backend::python::convert::common::convert_vec;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::name::ToPy;
+use crate::backend::python::result::{GenResult, UnimplementedErr};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::Class;
 use crate::check::context::{arg, function, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::common::position::Position;
-use crate::generate::ast::node::{Core, CoreOp};
-use crate::generate::convert::common::convert_vec;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::name::ToPy;
-use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::{ASTTy, Context};
 
 /// Desugar a class.
@@ -29,13 +29,13 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
             imp.add_from_import("typing", "NewType");
             let lit = ty.name.clone();
 
-            Ok(Core::Assign {
-                left: Box::new(Core::Id { lit: lit.clone() }),
-                right: Box::new(Core::FunctionCall {
-                    function: Box::new(Core::Id {
+            Ok(PythonCore::Assign {
+                left: Box::new(PythonCore::Id { lit: lit.clone() }),
+                right: Box::new(PythonCore::FunctionCall {
+                    function: Box::new(PythonCore::Id {
                         lit: String::from("NewType"),
                     }),
-                    args: vec![Core::Str { string: lit }, isa.to_py(imp)],
+                    args: vec![PythonCore::Str { string: lit }, isa.to_py(imp)],
                 }),
                 op: CoreOp::Assign,
             })
@@ -65,7 +65,7 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
         }
 
         NodeTy::Parent { ty, args } if args.is_empty() => Ok(ty.to_py(imp)),
-        NodeTy::Parent { ty, args } => Ok(Core::FunctionCall {
+        NodeTy::Parent { ty, args } => Ok(PythonCore::FunctionCall {
             function: Box::from(ty.to_py(imp)),
             args: convert_vec(args, imp, state, ctx)?,
         }),
@@ -89,7 +89,7 @@ fn extract_class(
     ty: &StringName,
     body: &Option<Box<ASTTy>>,
     args: &[ASTTy],
-    parents: &[Core],
+    parents: &[PythonCore],
     imp: &mut Imports,
     state: &State,
     ctx: &Context,
@@ -102,8 +102,8 @@ fn extract_class(
     } else {
         None
     };
-    let mut body_name_stmts: HashMap<Core, (usize, Core)> = match body {
-        Some(Core::Block { statements }) => statements,
+    let mut body_name_stmts: HashMap<PythonCore, (usize, PythonCore)> = match body {
+        Some(PythonCore::Block { statements }) => statements,
         Some(other) => vec![other],
         None => vec![],
     }
@@ -112,17 +112,17 @@ fn extract_class(
     .map(|(i, stmt)| {
         // function two further to leave place for init
         let (pos, key) = match stmt {
-            Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
-            Core::FunDefOp { op, .. } => (
+            PythonCore::FunDef { id, .. } => (i + 2, PythonCore::Id { lit: id.clone() }),
+            PythonCore::FunDefOp { op, .. } => (
                 i + 2,
-                Core::Id {
+                PythonCore::Id {
                     lit: format!("{op}"),
                 },
             ),
-            Core::VarDef { var, .. } => (i, var.deref().clone()),
+            PythonCore::VarDef { var, .. } => (i, var.deref().clone()),
             _ => (
                 i,
-                Core::Id {
+                PythonCore::Id {
                     lit: String::from("@"),
                 },
             ),
@@ -141,10 +141,10 @@ fn extract_class(
 
     let old_init = body_name_stmts
         .iter()
-        .find(|(name, _)| matches!(name, Core::Id { lit } if *lit == function::python::INIT))
+        .find(|(name, _)| matches!(name, PythonCore::Id { lit } if *lit == function::python::INIT))
         .map(|(_, (_, function))| function);
     if let Some(new_init) = init(&old_init, &args, parents, hoisted)? {
-        let init = Core::Id {
+        let init = PythonCore::Id {
             lit: String::from(function::python::INIT),
         };
         let pos = if let Some((pos, _)) = body_name_stmts.get(&init) {
@@ -152,7 +152,7 @@ fn extract_class(
         } else {
             body_name_stmts
                 .values()
-                .filter(|(_, stmt)| matches!(stmt, Core::VarDef { .. }))
+                .filter(|(_, stmt)| matches!(stmt, PythonCore::VarDef { .. }))
                 .map(|(pos, _)| *pos + 1)
                 .max()
                 .unwrap_or(0) // otherwise always first
@@ -164,20 +164,20 @@ fn extract_class(
     let parent_names = parents
         .iter()
         .map(|parent| match parent.clone() {
-            Core::FunctionCall { function, .. } => match *function {
-                Core::Type { lit, .. } => Ok(Core::Id { lit }),
+            PythonCore::FunctionCall { function, .. } => match *function {
+                PythonCore::Type { lit, .. } => Ok(PythonCore::Id { lit }),
                 other => panic!("Expected type in parent, was {other}"),
             },
-            Core::Type { .. } => Ok(parent.clone()),
+            PythonCore::Type { .. } => Ok(parent.clone()),
             other => panic!("Expected type in parent, was {other}"),
         })
-        .collect::<GenResult<Vec<Core>>>()?;
+        .collect::<GenResult<Vec<PythonCore>>>()?;
 
     let parent_names = if state.interface && !has_abstract_parent(&class, ctx) {
         imp.add_from_import("abc", "ABC");
         parent_names
             .into_iter()
-            .chain(vec![Core::Id {
+            .chain(vec![PythonCore::Id {
                 lit: String::from("ABC"),
             }])
             .collect()
@@ -185,22 +185,22 @@ fn extract_class(
         parent_names
     };
 
-    let body_stmts: Vec<Core> = body_name_stmts
+    let body_stmts: Vec<PythonCore> = body_name_stmts
         .values()
         .sorted_by_key(|(pos, _)| *pos)
         .map(|(_, stmt)| stmt.clone())
         .collect();
 
     let statements = if body_stmts.is_empty() {
-        vec![Core::Pass]
+        vec![PythonCore::Pass]
     } else {
         body_stmts
     };
-    let body = Core::Block { statements };
+    let body = PythonCore::Block { statements };
 
-    if let Core::Type { lit, .. } = ty.to_py(imp) {
-        let name = Box::from(Core::Id { lit });
-        Ok(Core::ClassDef {
+    if let PythonCore::Type { lit, .. } = ty.to_py(imp) {
+        let name = Box::from(PythonCore::Id { lit });
+        Ok(PythonCore::ClassDef {
             name,
             parent_names,
             body: Box::from(body),
@@ -216,24 +216,24 @@ fn extract_class(
 /// A field declaration keeps its class-level slot with `None` in place of the initializer;
 /// any other statement (e.g. a bare `print(self.a)`) is moved wholesale.
 fn hoist_constructor_dependent_stmts(
-    body_name_stmts: &mut HashMap<Core, (usize, Core)>,
+    body_name_stmts: &mut HashMap<PythonCore, (usize, PythonCore)>,
     self_name: &HashSet<String>,
-) -> Vec<Core> {
-    let mut hoisted: Vec<(usize, Core)> = vec![];
+) -> Vec<PythonCore> {
+    let mut hoisted: Vec<(usize, PythonCore)> = vec![];
     let mut to_remove = vec![];
 
     for (key, (pos, stmt)) in body_name_stmts.iter_mut() {
         match stmt {
-            Core::VarDef {
+            PythonCore::VarDef {
                 var,
                 expr: Some(expr),
                 ..
             } if references_free_var(expr, self_name) => {
                 hoisted.push((
                     *pos,
-                    Core::Assign {
-                        left: Box::from(Core::PropertyCall {
-                            object: Box::from(Core::Id {
+                    PythonCore::Assign {
+                        left: Box::from(PythonCore::PropertyCall {
+                            object: Box::from(PythonCore::Id {
                                 lit: String::from(arg::python::SELF),
                             }),
                             property: var.clone(),
@@ -242,14 +242,14 @@ fn hoist_constructor_dependent_stmts(
                         op: CoreOp::Assign,
                     },
                 ));
-                *expr = Box::from(Core::None);
+                *expr = Box::from(PythonCore::None);
             }
             // A docstring must stay a literal first statement in the class body, not move into
             // `__init__`.
-            Core::FunDef { .. }
-            | Core::FunDefOp { .. }
-            | Core::VarDef { .. }
-            | Core::DocStr { .. } => {}
+            PythonCore::FunDef { .. }
+            | PythonCore::FunDefOp { .. }
+            | PythonCore::VarDef { .. }
+            | PythonCore::DocStr { .. } => {}
             // Any other class-body statement (e.g. a bare `print(...)`) runs once per instance,
             // like the rest of the constructor — not once at class-definition time — so it
             // always moves into `__init__`, whether or not it happens to reference `self`.
@@ -272,7 +272,7 @@ fn hoist_constructor_dependent_stmts(
 /// This could still be `None` at that point.
 ///
 /// A statement referencing its *own* field is exempt, since that reads the constructor-arg auto-assignment, not a hoisted default.
-fn order_by_self_field_deps(mut hoisted: Vec<(usize, Core)>) -> Vec<Core> {
+fn order_by_self_field_deps(mut hoisted: Vec<(usize, PythonCore)>) -> Vec<PythonCore> {
     hoisted.sort_by_key(|(pos, _)| *pos);
 
     let names: Vec<Option<String>> = hoisted
@@ -323,15 +323,19 @@ fn order_by_self_field_deps(mut hoisted: Vec<(usize, Core)>) -> Vec<Core> {
 }
 
 /// The field name of a hoisted `self.<field> = ...` assignment, if `stmt` is one.
-fn assigned_self_field(stmt: &Core) -> Option<String> {
+fn assigned_self_field(stmt: &PythonCore) -> Option<String> {
     match stmt {
-        Core::Assign { left, .. } => match left.as_ref() {
-            Core::PropertyCall { object, property } => match (object.as_ref(), property.as_ref()) {
-                (Core::Id { lit: obj }, Core::Id { lit: prop }) if obj == arg::python::SELF => {
-                    Some(prop.clone())
+        PythonCore::Assign { left, .. } => match left.as_ref() {
+            PythonCore::PropertyCall { object, property } => {
+                match (object.as_ref(), property.as_ref()) {
+                    (PythonCore::Id { lit: obj }, PythonCore::Id { lit: prop })
+                        if obj == arg::python::SELF =>
+                    {
+                        Some(prop.clone())
+                    }
+                    _ => None,
                 }
-                _ => None,
-            },
+            }
             _ => None,
         },
         _ => None,
@@ -339,74 +343,74 @@ fn assigned_self_field(stmt: &Core) -> Option<String> {
 }
 
 /// Applies `test` to `core` and every sub-expression, depth-first. Not exhaustive over every
-/// `Core` variant; a missed variant just means a match goes undetected.
-fn any_node(core: &Core, test: &impl Fn(&Core) -> bool) -> bool {
+/// `PythonCore` variant; a missed variant just means a match goes undetected.
+fn any_node(core: &PythonCore, test: &impl Fn(&PythonCore) -> bool) -> bool {
     if test(core) {
         return true;
     }
     match core {
-        Core::PropertyCall { object, .. } => any_node(object, test),
-        Core::FunctionCall { function, args } => {
+        PythonCore::PropertyCall { object, .. } => any_node(object, test),
+        PythonCore::FunctionCall { function, args } => {
             any_node(function, test) || args.iter().any(|a| any_node(a, test))
         }
-        Core::Index { item, range } => any_node(item, test) || any_node(range, test),
-        Core::KeyValue { key, value } => any_node(key, test) || any_node(value, test),
-        Core::Ge { left, right }
-        | Core::Geq { left, right }
-        | Core::Le { left, right }
-        | Core::Leq { left, right }
-        | Core::Eq { left, right }
-        | Core::Neq { left, right }
-        | Core::And { left, right }
-        | Core::Or { left, right }
-        | Core::Add { left, right }
-        | Core::Sub { left, right }
-        | Core::Mul { left, right }
-        | Core::Mod { left, right }
-        | Core::Pow { left, right }
-        | Core::Div { left, right }
-        | Core::FDiv { left, right }
-        | Core::In { left, right } => any_node(left, test) || any_node(right, test),
-        Core::Not { expr }
-        | Core::AddU { expr }
-        | Core::SubU { expr }
-        | Core::Sqrt { expr }
-        | Core::Return { expr }
-        | Core::Raise { error: expr } => any_node(expr, test),
-        Core::If { cond, then } => any_node(cond, test) || any_node(then, test),
-        Core::IfElse { cond, then, el } | Core::Ternary { cond, then, el } => {
+        PythonCore::Index { item, range } => any_node(item, test) || any_node(range, test),
+        PythonCore::KeyValue { key, value } => any_node(key, test) || any_node(value, test),
+        PythonCore::Ge { left, right }
+        | PythonCore::Geq { left, right }
+        | PythonCore::Le { left, right }
+        | PythonCore::Leq { left, right }
+        | PythonCore::Eq { left, right }
+        | PythonCore::Neq { left, right }
+        | PythonCore::And { left, right }
+        | PythonCore::Or { left, right }
+        | PythonCore::Add { left, right }
+        | PythonCore::Sub { left, right }
+        | PythonCore::Mul { left, right }
+        | PythonCore::Mod { left, right }
+        | PythonCore::Pow { left, right }
+        | PythonCore::Div { left, right }
+        | PythonCore::FDiv { left, right }
+        | PythonCore::In { left, right } => any_node(left, test) || any_node(right, test),
+        PythonCore::Not { expr }
+        | PythonCore::AddU { expr }
+        | PythonCore::SubU { expr }
+        | PythonCore::Sqrt { expr }
+        | PythonCore::Return { expr }
+        | PythonCore::Raise { error: expr } => any_node(expr, test),
+        PythonCore::If { cond, then } => any_node(cond, test) || any_node(then, test),
+        PythonCore::IfElse { cond, then, el } | PythonCore::Ternary { cond, then, el } => {
             any_node(cond, test) || any_node(then, test) || any_node(el, test)
         }
-        Core::Tuple { elements }
-        | Core::TupleLiteral { elements }
-        | Core::Set { elements }
-        | Core::List { elements } => elements.iter().any(|e| any_node(e, test)),
-        Core::Dictionary { elements } => elements
+        PythonCore::Tuple { elements }
+        | PythonCore::TupleLiteral { elements }
+        | PythonCore::Set { elements }
+        | PythonCore::List { elements } => elements.iter().any(|e| any_node(e, test)),
+        PythonCore::Dictionary { elements } => elements
             .iter()
             .any(|(k, v)| any_node(k, test) || any_node(v, test)),
-        Core::Assign { right, .. } => any_node(right, test),
-        Core::VarDef {
+        PythonCore::Assign { right, .. } => any_node(right, test),
+        PythonCore::VarDef {
             expr: Some(expr), ..
         } => any_node(expr, test),
-        Core::Block { statements } => statements.iter().any(|s| any_node(s, test)),
+        PythonCore::Block { statements } => statements.iter().any(|s| any_node(s, test)),
         _ => false,
     }
 }
 
 /// Whether `core` contains a free reference to any name in `names`.
-fn references_free_var(core: &Core, names: &HashSet<String>) -> bool {
+fn references_free_var(core: &PythonCore, names: &HashSet<String>) -> bool {
     any_node(
         core,
-        &|c| matches!(c, Core::Id { lit } if names.contains(lit)),
+        &|c| matches!(c, PythonCore::Id { lit } if names.contains(lit)),
     )
 }
 
 /// Whether `core` reads `self.<field>` anywhere.
-fn references_self_field(core: &Core, field: &str) -> bool {
+fn references_self_field(core: &PythonCore, field: &str) -> bool {
     any_node(core, &|c| match c {
-        Core::PropertyCall { object, property } => {
-            matches!(object.as_ref(), Core::Id { lit } if lit == arg::python::SELF)
-                && matches!(property.as_ref(), Core::Id { lit } if lit == field)
+        PythonCore::PropertyCall { object, property } => {
+            matches!(object.as_ref(), PythonCore::Id { lit } if lit == arg::python::SELF)
+                && matches!(property.as_ref(), PythonCore::Id { lit } if lit == field)
         }
         _ => false,
     })
@@ -436,33 +440,33 @@ fn is_abstract(clss: &Option<Class>, ctx: &Context) -> bool {
 }
 
 fn init(
-    old_init: &Option<&Core>,
-    class_args: &[Core],
-    parents: &[Core],
-    mut extra_statements: Vec<Core>,
-) -> GenResult<Option<Core>> {
-    let (parent_inits, parent_args): (Vec<Core>, Vec<Vec<Core>>) = parents
+    old_init: &Option<&PythonCore>,
+    class_args: &[PythonCore],
+    parents: &[PythonCore],
+    mut extra_statements: Vec<PythonCore>,
+) -> GenResult<Option<PythonCore>> {
+    let (parent_inits, parent_args): (Vec<PythonCore>, Vec<Vec<PythonCore>>) = parents
         .iter()
         .map(|parent| {
             let (lit, mut arg) = match parent {
-                Core::FunctionCall { function, args } => match function.deref() {
-                    Core::Type { lit, .. } => (lit.clone(), args.clone()),
+                PythonCore::FunctionCall { function, args } => match function.deref() {
+                    PythonCore::Type { lit, .. } => (lit.clone(), args.clone()),
                     _ => (String::from(""), args.clone()),
                 },
-                Core::Type { lit, .. } => (lit.clone(), vec![]),
+                PythonCore::Type { lit, .. } => (lit.clone(), vec![]),
                 _ => (String::from(""), vec![]),
             };
 
-            let mut args = vec![Core::Id {
+            let mut args = vec![PythonCore::Id {
                 lit: String::from(arg::python::SELF),
             }];
             args.append(&mut arg);
 
             (
-                Core::PropertyCall {
-                    object: Box::from(Core::Id { lit }),
-                    property: Box::new(Core::FunctionCall {
-                        function: Box::new(Core::Id {
+                PythonCore::PropertyCall {
+                    object: Box::from(PythonCore::Id { lit }),
+                    property: Box::new(PythonCore::FunctionCall {
+                        function: Box::new(PythonCore::Id {
                             lit: String::from(function::python::INIT),
                         }),
                         args: args.clone(),
@@ -476,8 +480,8 @@ fn init(
     // Parent calls from parents
     let (mut args, mut statements) = if let Some(old_init) = old_init {
         let (mut old_stmts, args) = match old_init {
-            Core::FunDef { body, arg, .. } => match body.deref() {
-                Core::Block { statements } => (statements.clone(), arg.clone()),
+            PythonCore::FunDef { body, arg, .. } => match body.deref() {
+                PythonCore::Block { statements } => (statements.clone(), arg.clone()),
                 other => (vec![other.clone()], arg.clone()),
             },
             _ => (vec![], vec![]),
@@ -495,7 +499,7 @@ fn init(
         &mut class_args
             .iter()
             .flat_map(|arg| match arg {
-                Core::FunArg { var, .. } => Some(var.deref().clone()),
+                PythonCore::FunArg { var, .. } => Some(var.deref().clone()),
                 _ => None,
             })
             .filter(|arg| {
@@ -503,9 +507,9 @@ fn init(
                     .iter()
                     .any(|p_args| p_args.iter().any(|p_arg| p_arg == arg))
             })
-            .map(|var| Core::Assign {
-                left: Box::from(Core::PropertyCall {
-                    object: Box::from(Core::Id {
+            .map(|var| PythonCore::Assign {
+                left: Box::from(PythonCore::PropertyCall {
+                    object: Box::from(PythonCore::Id {
                         lit: String::from(arg::python::SELF),
                     }),
                     property: Box::from(var.clone()),
@@ -520,8 +524,8 @@ fn init(
     let first_is_self = args
         .first()
         .map(|arg| match arg {
-            Core::FunArg { var, .. } => {
-                if let Core::Id { lit } = var.deref() {
+            PythonCore::FunArg { var, .. } => {
+                if let PythonCore::Id { lit } = var.deref() {
                     lit == arg::python::SELF
                 } else {
                     false
@@ -533,7 +537,7 @@ fn init(
     let args = if first_is_self {
         args
     } else {
-        let mut new_args = vec![Core::Id {
+        let mut new_args = vec![PythonCore::Id {
             lit: String::from(arg::python::SELF),
         }];
         new_args.append(&mut args);
@@ -543,12 +547,12 @@ fn init(
     let id = String::from(function::python::INIT);
     Ok(if !statements.is_empty() {
         let dec = vec![];
-        Some(Core::FunDef {
+        Some(PythonCore::FunDef {
             dec,
             id,
             arg: args,
             ty: None,
-            body: Box::new(Core::Block { statements }),
+            body: Box::new(PythonCore::Block { statements }),
         })
     } else {
         None
@@ -557,9 +561,9 @@ fn init(
 
 #[cfg(test)]
 mod tests {
+    use crate::backend::python::ast::node::PythonCore;
+    use crate::backend::python::gen;
     use crate::common::position::Position;
-    use crate::generate::ast::node::Core;
-    use crate::generate::gen;
     use crate::parse::ast::{Node, AST};
     use crate::ASTTy;
 
@@ -598,7 +602,7 @@ mod tests {
         });
 
         let (from, import, alias) = match gen(&ASTTy::from(&*import)) {
-            Ok(Core::Import {
+            Ok(PythonCore::Import {
                 from,
                 import,
                 alias,
@@ -606,17 +610,17 @@ mod tests {
             other => panic!("Expected import but got {other:?}"),
         };
 
-        assert_eq!(*from.unwrap(), Core::Break);
+        assert_eq!(*from.unwrap(), PythonCore::Break);
         assert_eq!(
             import[0],
-            Core::ENum {
+            PythonCore::ENum {
                 num: String::from("a"),
                 exp: String::from("100")
             }
         );
         assert_eq!(
             import[1],
-            Core::Float {
+            PythonCore::Float {
                 float: String::from("3000.5")
             }
         );

@@ -4,18 +4,19 @@ use std::path::{Path, PathBuf};
 
 use log::{info, trace};
 
+use crate::backend::python::{gen_arguments, GenArguments};
+use crate::backend::Backend;
 use crate::check::ast::ASTTy;
 use crate::check::check;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::common::result::WithSource;
-use crate::generate::{gen_arguments, GenArguments};
 use crate::parse::ast::AST;
 
 pub mod common;
 
+pub mod backend;
 pub mod check;
-pub mod generate;
 pub mod parse;
 
 pub mod cli;

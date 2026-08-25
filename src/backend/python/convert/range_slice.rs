@@ -1,9 +1,9 @@
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::result::{GenResult, UnimplementedErr};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss;
-use crate::generate::ast::node::Core;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::{ASTTy, Context};
 
 pub fn convert_range_slice(
@@ -18,16 +18,16 @@ pub fn convert_range_slice(
             to,
             inclusive,
             step,
-        } => Ok(Core::FunctionCall {
-            function: Box::from(Core::Id {
+        } => Ok(PythonCore::FunctionCall {
+            function: Box::from(PythonCore::Id {
                 lit: String::from(clss::python::RANGE),
             }),
             args: vec![
                 convert_node(from, imp, state, ctx)?,
                 if *inclusive {
-                    Core::Add {
+                    PythonCore::Add {
                         left: Box::from(convert_node(to, imp, state, ctx)?),
-                        right: Box::from(Core::Int {
+                        right: Box::from(PythonCore::Int {
                             int: String::from("1"),
                         }),
                     }
@@ -37,7 +37,7 @@ pub fn convert_range_slice(
                 if let Some(step) = step {
                     convert_node(step, imp, state, ctx)?
                 } else {
-                    Core::Int {
+                    PythonCore::Int {
                         int: String::from("1"),
                     }
                 },
@@ -48,16 +48,16 @@ pub fn convert_range_slice(
             to,
             inclusive,
             step,
-        } => Ok(Core::FunctionCall {
-            function: Box::from(Core::Id {
+        } => Ok(PythonCore::FunctionCall {
+            function: Box::from(PythonCore::Id {
                 lit: String::from(clss::python::SLICE),
             }),
             args: vec![
                 convert_node(from, imp, state, ctx)?,
                 if !inclusive {
-                    Core::Sub {
+                    PythonCore::Sub {
                         left: Box::from(convert_node(to, imp, state, ctx)?),
-                        right: Box::from(Core::Int {
+                        right: Box::from(PythonCore::Int {
                             int: String::from("1"),
                         }),
                     }
@@ -67,7 +67,7 @@ pub fn convert_range_slice(
                 if let Some(step) = step {
                     convert_node(step, imp, state, ctx)?
                 } else {
-                    Core::Int {
+                    PythonCore::Int {
                         int: String::from("1"),
                     }
                 },

@@ -37,7 +37,10 @@ impl Debug for OutTestErr {
 
 /// Test directory with default set to annotate output.
 pub fn test_directory(valid: bool, input: &[&str], output: &[&str], file_name: &str) -> OutTestRet {
-    let args = Arguments { annotate: true };
+    let args = Arguments {
+        annotate: true,
+        ..Arguments::default()
+    };
     test_directory_args(valid, input, output, file_name, &args)
 }
 

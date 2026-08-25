@@ -12,7 +12,7 @@ Converts `AST` to Python code. Errors if:
 
 ## Convert
 
-First step, converts `AST` to a simpler internal `Core` representation, which is closer to the Python language.
+First step, converts `AST` to a simpler internal `PythonCore` representation, which is closer to the Python language.
 
 ### State And Imports
 
@@ -22,7 +22,7 @@ traverses the AST. This is to desugar certain language constructs in a certain m
 Imports are also kept track of and added to the final output. This includes Mamba built-in types which have to be
 explicitly imported in Python. I.e. tuples are imported as `from typing import Tuples` when one annotates the output.
 
-## Core
+## PythonCore
 
-A set of simple `Core` nodes, which are very close to Python constructs. These may almost directly be converted to a
+A set of simple `PythonCore` nodes, which are very close to Python constructs. These may almost directly be converted to a
 Python string. This step also keeps track of code blocks and relevant indentation and dedents.

@@ -1,20 +1,20 @@
 use std::convert::TryFrom;
 
+use crate::backend::python::ast::node::{CoreOp, PythonCore};
+use crate::backend::python::convert::builder::convert_builder;
+use crate::backend::python::convert::call::convert_call;
+use crate::backend::python::convert::class::convert_class;
+use crate::backend::python::convert::common::convert_vec;
+use crate::backend::python::convert::control_flow::convert_cntrl_flow;
+use crate::backend::python::convert::definition::convert_def;
+use crate::backend::python::convert::handle::convert_handle;
+use crate::backend::python::convert::range_slice::convert_range_slice;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::name::ToPy;
+use crate::backend::python::result::{GenResult, UnimplementedErr};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
 use crate::check::name::Name;
-use crate::generate::ast::node::{Core, CoreOp};
-use crate::generate::convert::builder::convert_builder;
-use crate::generate::convert::call::convert_call;
-use crate::generate::convert::class::convert_class;
-use crate::generate::convert::common::convert_vec;
-use crate::generate::convert::control_flow::convert_cntrl_flow;
-use crate::generate::convert::definition::convert_def;
-use crate::generate::convert::handle::convert_handle;
-use crate::generate::convert::range_slice::convert_range_slice;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::name::ToPy;
-use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::{ASTTy, Context};
 
 mod builder;
@@ -41,7 +41,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             from,
             import,
             alias,
-        } => Core::Import {
+        } => PythonCore::Import {
             from: if let Some(from) = from {
                 Some(Box::from(convert_node(from, imp, state, ctx)?))
             } else {
@@ -54,19 +54,19 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::VariableDef { .. } | NodeTy::FunDef { .. } | NodeTy::FunArg { .. } => {
             convert_def(ast, imp, state, ctx)?
         }
-        NodeTy::Reassign { left, right, op } => Core::Assign {
+        NodeTy::Reassign { left, right, op } => PythonCore::Assign {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
             op: CoreOp::try_from((ast, op))?,
         },
 
-        NodeTy::Block { statements } => Core::Block {
+        NodeTy::Block { statements } => PythonCore::Block {
             statements: convert_vec(statements, imp, state, ctx)?,
         },
 
-        NodeTy::Int { lit } => Core::Int { int: lit.clone() },
-        NodeTy::Real { lit } => Core::Float { float: lit.clone() },
-        NodeTy::ENum { num, exp } => Core::ENum {
+        NodeTy::Int { lit } => PythonCore::Int { int: lit.clone() },
+        NodeTy::Real { lit } => PythonCore::Float { float: lit.clone() },
+        NodeTy::ENum { num, exp } => PythonCore::ENum {
             num: num.clone(),
             exp: if exp.is_empty() {
                 String::from("0")
@@ -74,32 +74,32 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 exp.clone()
             },
         },
-        NodeTy::DocStr { lit } => Core::DocStr {
+        NodeTy::DocStr { lit } => PythonCore::DocStr {
             string: lit.clone(),
         },
-        NodeTy::Str { lit, expressions } if expressions.is_empty() => Core::Str {
+        NodeTy::Str { lit, expressions } if expressions.is_empty() => PythonCore::Str {
             string: lit.clone(),
         },
-        NodeTy::Str { lit, .. } => Core::FStr {
+        NodeTy::Str { lit, .. } => PythonCore::FStr {
             string: lit.clone(),
         },
 
-        NodeTy::Undefined => Core::None,
+        NodeTy::Undefined => PythonCore::None,
         NodeTy::ExpressionType { expr, .. } => {
             convert_node(expr, imp, &state.expand_ty(true), ctx)?
         }
-        NodeTy::Id { lit } => Core::Id {
+        NodeTy::Id { lit } => PythonCore::Id {
             lit: concrete_to_python(lit),
         },
-        NodeTy::Bool { lit } => Core::Bool { boolean: *lit },
+        NodeTy::Bool { lit } => PythonCore::Bool { boolean: *lit },
 
-        NodeTy::Tuple { elements } if state.tup_lit => Core::TupleLiteral {
+        NodeTy::Tuple { elements } if state.tup_lit => PythonCore::TupleLiteral {
             elements: convert_vec(elements, imp, state, ctx)?,
         },
-        NodeTy::Tuple { elements } => Core::Tuple {
+        NodeTy::Tuple { elements } => PythonCore::Tuple {
             elements: convert_vec(elements, imp, state, ctx)?,
         },
-        NodeTy::List { elements } => Core::List {
+        NodeTy::List { elements } => PythonCore::List {
             elements: convert_vec(elements, imp, state, ctx)?,
         },
         NodeTy::Dict { elements } => {
@@ -109,14 +109,14 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 let to = convert_node(to, imp, state, ctx)?;
                 converted.push((from, to));
             }
-            Core::Dictionary {
+            PythonCore::Dictionary {
                 elements: converted,
             }
         }
-        NodeTy::Set { elements } => Core::Set {
+        NodeTy::Set { elements } => PythonCore::Set {
             elements: convert_vec(elements, imp, state, ctx)?,
         },
-        NodeTy::Index { item, range } => Core::Index {
+        NodeTy::Index { item, range } => PythonCore::Index {
             item: Box::from(convert_node(item, imp, state, ctx)?),
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
@@ -125,13 +125,13 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::ListBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
         NodeTy::SetBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
 
-        NodeTy::ReturnEmpty => Core::Return {
-            expr: Box::from(Core::None),
+        NodeTy::ReturnEmpty => PythonCore::Return {
+            expr: Box::from(PythonCore::None),
         },
         NodeTy::Return { expr } if state.is_remove_last_ret => {
             convert_node(expr, imp, &state.remove_ret(false), ctx)?
         }
-        NodeTy::Return { expr } => Core::Return {
+        NodeTy::Return { expr } => PythonCore::Return {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
 
@@ -141,80 +141,80 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             convert_cntrl_flow(ast, imp, state, ctx)?
         }
 
-        NodeTy::Not { expr } => Core::Not {
+        NodeTy::Not { expr } => PythonCore::Not {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
-        NodeTy::And { left, right } => Core::And {
+        NodeTy::And { left, right } => PythonCore::And {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Or { left, right } => Core::Or {
+        NodeTy::Or { left, right } => PythonCore::Or {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Eq { left, right } => Core::Eq {
+        NodeTy::Eq { left, right } => PythonCore::Eq {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Neq { left, right } => Core::Neq {
+        NodeTy::Neq { left, right } => PythonCore::Neq {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Add { left, right } => Core::Add {
+        NodeTy::Add { left, right } => PythonCore::Add {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Sub { left, right } => Core::Sub {
+        NodeTy::Sub { left, right } => PythonCore::Sub {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Mul { left, right } => Core::Mul {
+        NodeTy::Mul { left, right } => PythonCore::Mul {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Div { left, right } => Core::Div {
+        NodeTy::Div { left, right } => PythonCore::Div {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::FDiv { left, right } => Core::FDiv {
+        NodeTy::FDiv { left, right } => PythonCore::FDiv {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Mod { left, right } => Core::Mod {
+        NodeTy::Mod { left, right } => PythonCore::Mod {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Pow { left, right } => Core::Pow {
+        NodeTy::Pow { left, right } => PythonCore::Pow {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::AddU { expr } => Core::AddU {
+        NodeTy::AddU { expr } => PythonCore::AddU {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
-        NodeTy::SubU { expr } => Core::SubU {
+        NodeTy::SubU { expr } => PythonCore::SubU {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
         NodeTy::Sqrt { expr } => {
             imp.add_import("math");
-            Core::Sqrt {
+            PythonCore::Sqrt {
                 expr: Box::from(convert_node(expr, imp, state, ctx)?),
             }
         }
 
-        NodeTy::Le { left, right } => Core::Le {
+        NodeTy::Le { left, right } => PythonCore::Le {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Leq { left, right } => Core::Leq {
+        NodeTy::Leq { left, right } => PythonCore::Leq {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Ge { left, right } => Core::Ge {
+        NodeTy::Ge { left, right } => PythonCore::Ge {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Geq { left, right } => Core::Geq {
+        NodeTy::Geq { left, right } => PythonCore::Geq {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
@@ -222,19 +222,19 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::FunctionCall { .. } | NodeTy::PropertyCall { .. } => {
             convert_call(ast, imp, state, ctx)?
         }
-        NodeTy::AnonFun { args, body } => Core::AnonFun {
+        NodeTy::AnonFun { args, body } => PythonCore::AnonFun {
             args: convert_vec(args, imp, &state.expand_ty(false), ctx)?,
             body: Box::from(convert_node(body, imp, state, ctx)?),
         },
 
-        NodeTy::In { left, right } => Core::In {
+        NodeTy::In { left, right } => PythonCore::In {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state, ctx)?,
 
-        NodeTy::Underscore => Core::UnderScore,
-        NodeTy::Question { left, right } => Core::Or {
+        NodeTy::Underscore => PythonCore::UnderScore,
+        NodeTy::Question { left, right } => PythonCore::Or {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
@@ -251,20 +251,20 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             resource,
             alias: Some((alias, ..)),
             expr,
-        } => Core::WithAs {
+        } => PythonCore::WithAs {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),
             alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
-        NodeTy::With { resource, expr, .. } => Core::With {
+        NodeTy::With { resource, expr, .. } => PythonCore::With {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
 
         NodeTy::Raise { .. } | NodeTy::Handle { .. } => convert_handle(ast, imp, state, ctx)?,
 
-        NodeTy::Pass => Core::Pass,
-        _ => Core::Empty,
+        NodeTy::Pass => PythonCore::Pass,
+        _ => PythonCore::Empty,
     };
 
     let core = if let Some((assign_to, name)) = must_assign_to {
@@ -282,39 +282,44 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     Ok(core)
 }
 
-fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut Imports) -> Core {
+fn append_assign(
+    core: &PythonCore,
+    assign_to: &PythonCore,
+    name: &Option<Name>,
+    imp: &mut Imports,
+) -> PythonCore {
     match &core {
-        Core::Block { ref statements } => match statements.last() {
+        PythonCore::Block { ref statements } => match statements.last() {
             Some(last) => {
                 let last = append_assign(last, assign_to, name, imp);
-                let (mut statements, idx): (Vec<Core>, usize) =
+                let (mut statements, idx): (Vec<PythonCore>, usize) =
                     (statements.clone(), statements.len() - 1);
                 statements[idx] = last;
-                Core::Block { statements }
+                PythonCore::Block { statements }
             }
             None => core.clone(),
         },
-        Core::IfElse { cond, then, el } => Core::IfElse {
+        PythonCore::IfElse { cond, then, el } => PythonCore::IfElse {
             cond: cond.clone(),
             then: Box::from(append_assign(then, assign_to, name, imp)),
             el: Box::from(append_assign(el, assign_to, name, imp)),
         },
-        Core::Match { expr, cases } => Core::Match {
+        PythonCore::Match { expr, cases } => PythonCore::Match {
             expr: expr.clone(),
             cases: cases
                 .iter()
                 .map(|c| append_assign(c, assign_to, name, imp))
                 .collect(),
         },
-        Core::Case { expr, body } => Core::Case {
+        PythonCore::Case { expr, body } => PythonCore::Case {
             expr: expr.clone(),
             body: Box::from(append_assign(body, assign_to, name, imp)),
         },
-        Core::TryExcept {
+        PythonCore::TryExcept {
             setup,
             attempt,
             except,
-        } => Core::TryExcept {
+        } => PythonCore::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_assign(attempt, assign_to, name, imp)),
             except: except
@@ -322,17 +327,17 @@ fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut I
                 .map(|e| append_assign(e, assign_to, name, imp))
                 .collect(),
         },
-        Core::ExceptId { id, class, body } => Core::ExceptId {
+        PythonCore::ExceptId { id, class, body } => PythonCore::ExceptId {
             id: id.clone(),
             class: class.clone(),
             body: Box::from(append_assign(body, assign_to, name, imp)),
         },
-        Core::Except { class, body } => Core::Except {
+        PythonCore::Except { class, body } => PythonCore::Except {
             class: class.clone(),
             body: Box::from(append_assign(body, assign_to, name, imp)),
         },
         expr if skip_assign(expr) => core.clone(),
-        _ => Core::VarDef {
+        _ => PythonCore::VarDef {
             var: Box::from(assign_to.clone()),
             ty: name.clone().map(|name| Box::from(name.to_py(imp))),
             expr: Option::from(Box::from(core.clone())),
@@ -340,73 +345,73 @@ fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut I
     }
 }
 
-fn append_ret(core: &Core) -> Core {
+fn append_ret(core: &PythonCore) -> PythonCore {
     match core {
-        Core::Block { ref statements } => match statements.last() {
+        PythonCore::Block { ref statements } => match statements.last() {
             Some(last) => {
                 let last = append_ret(last);
-                let (mut statements, idx): (Vec<Core>, usize) =
+                let (mut statements, idx): (Vec<PythonCore>, usize) =
                     (statements.clone(), statements.len() - 1);
                 statements[idx] = last;
-                Core::Block { statements }
+                PythonCore::Block { statements }
             }
-            None => Core::Block {
-                statements: vec![Core::Return {
-                    expr: Box::from(Core::None),
+            None => PythonCore::Block {
+                statements: vec![PythonCore::Return {
+                    expr: Box::from(PythonCore::None),
                 }],
             },
         },
-        Core::IfElse { cond, then, el } => Core::IfElse {
+        PythonCore::IfElse { cond, then, el } => PythonCore::IfElse {
             cond: cond.clone(),
             then: Box::from(append_ret(then)),
             el: Box::from(append_ret(el)),
         },
-        Core::Match { expr, cases } => Core::Match {
+        PythonCore::Match { expr, cases } => PythonCore::Match {
             expr: expr.clone(),
             cases: cases.iter().map(append_ret).collect(),
         },
-        Core::Case { expr, body } => Core::Case {
+        PythonCore::Case { expr, body } => PythonCore::Case {
             expr: expr.clone(),
             body: Box::from(append_ret(body)),
         },
-        Core::TryExcept {
+        PythonCore::TryExcept {
             setup,
             attempt,
             except,
-        } => Core::TryExcept {
+        } => PythonCore::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
             except: except.iter().map(append_ret).collect(),
         },
-        Core::ExceptId { id, class, body } => Core::ExceptId {
+        PythonCore::ExceptId { id, class, body } => PythonCore::ExceptId {
             id: id.clone(),
             class: class.clone(),
             body: Box::from(append_ret(body)),
         },
-        Core::Except { class, body } => Core::Except {
+        PythonCore::Except { class, body } => PythonCore::Except {
             class: class.clone(),
             body: Box::from(append_ret(body)),
         },
         core if skip_return(core) => core.clone(),
-        _ => Core::Return {
+        _ => PythonCore::Return {
             expr: Box::from(core.clone()),
         },
     }
 }
 
-fn skip_assign(core: &Core) -> bool {
-    skip_return(core) || matches!(core, Core::VarDef { .. } | Core::Assign { .. })
+fn skip_assign(core: &PythonCore) -> bool {
+    skip_return(core) || matches!(core, PythonCore::VarDef { .. } | PythonCore::Assign { .. })
 }
 
-fn skip_return(core: &Core) -> bool {
-    matches!(core, Core::Return { .. } | Core::Raise { .. })
+fn skip_return(core: &PythonCore) -> bool {
+    matches!(core, PythonCore::Return { .. } | PythonCore::Raise { .. })
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::backend::python::ast::node::PythonCore;
+    use crate::backend::python::gen;
     use crate::common::position::Position;
-    use crate::generate::ast::node::Core;
-    use crate::generate::gen;
     use crate::parse::ast::Node;
     use crate::parse::ast::AST;
     use crate::ASTTy;
@@ -429,19 +434,19 @@ mod tests {
     #[test]
     fn break_verify() {
         let _break = to_pos!(Node::Break);
-        assert_eq!(gen(&ASTTy::from(&_break)).unwrap(), Core::Break);
+        assert_eq!(gen(&ASTTy::from(&_break)).unwrap(), PythonCore::Break);
     }
 
     #[test]
     fn continue_verify() {
         let _continue = to_pos!(Node::Continue);
-        assert_eq!(gen(&ASTTy::from(&_continue)).unwrap(), Core::Continue);
+        assert_eq!(gen(&ASTTy::from(&_continue)).unwrap(), PythonCore::Continue);
     }
 
     #[test]
     fn pass_verify() {
         let pass = to_pos!(Node::Pass);
-        assert_eq!(gen(&ASTTy::from(&pass)).unwrap(), Core::Pass);
+        assert_eq!(gen(&ASTTy::from(&pass)).unwrap(), PythonCore::Pass);
     }
 
     #[test]
@@ -454,8 +459,8 @@ mod tests {
 
         assert_eq!(
             gen(&ASTTy::from(&print_stmt)).unwrap(),
-            Core::Return {
-                expr: Box::from(Core::Str {
+            PythonCore::Return {
+                expr: Box::from(PythonCore::Str {
                     string: String::from("a")
                 })
             }
@@ -467,8 +472,8 @@ mod tests {
         let print_stmt = to_pos!(Node::ReturnEmpty);
         assert_eq!(
             gen(&ASTTy::from(&print_stmt)).unwrap(),
-            Core::Return {
-                expr: Box::from(Core::None)
+            PythonCore::Return {
+                expr: Box::from(PythonCore::None)
             }
         );
     }
@@ -487,12 +492,12 @@ mod tests {
 
         assert_eq!(
             gen(&ASTTy::from(&_break)).unwrap(),
-            Core::Import {
+            PythonCore::Import {
                 from: None,
-                import: vec![Core::Id {
+                import: vec![PythonCore::Id {
                     lit: String::from("a")
                 }],
-                alias: vec![Core::Id {
+                alias: vec![PythonCore::Id {
                     lit: String::from("b")
                 }],
             }
@@ -513,19 +518,19 @@ mod tests {
             });
 
             let (left, right) = match gen(&ASTTy::from(&add_node)) {
-                Ok(Core::$ast { left, right }) => (left, right),
+                Ok(PythonCore::$ast { left, right }) => (left, right),
                 other => panic!("Expected binary operation but was {:?}", other),
             };
 
             assert_eq!(
                 *left,
-                Core::Id {
+                PythonCore::Id {
                     lit: String::from("left")
                 }
             );
             assert_eq!(
                 *right,
-                Core::Id {
+                PythonCore::Id {
                     lit: String::from("right")
                 }
             );
@@ -540,13 +545,13 @@ mod tests {
             let add_node = to_pos!(Node::$ast { expr });
 
             let expr_des = match gen(&ASTTy::from(&add_node)) {
-                Ok(Core::$ast { expr }) => expr,
+                Ok(PythonCore::$ast { expr }) => expr,
                 other => panic!("Expected unary operation but was {:?}", other),
             };
 
             assert_eq!(
                 *expr_des,
-                Core::Id {
+                PythonCore::Id {
                     lit: String::from("expression")
                 }
             );
@@ -601,15 +606,15 @@ mod tests {
         let add_node = to_pos!(Node::Sqrt { expr });
 
         let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
-            Ok(Core::Block { statements }) => (statements[0].clone(), statements[1].clone()),
+            Ok(PythonCore::Block { statements }) => (statements[0].clone(), statements[1].clone()),
             other => panic!("Expected unary operation but was {other:?}"),
         };
 
         assert_eq!(
             import,
-            Core::Import {
+            PythonCore::Import {
                 from: None,
-                import: vec![Core::Id {
+                import: vec![PythonCore::Id {
                     lit: String::from("math")
                 }],
                 alias: vec![],
@@ -617,8 +622,8 @@ mod tests {
         );
         assert_eq!(
             expr_des,
-            Core::Sqrt {
-                expr: Box::from(Core::Id {
+            PythonCore::Sqrt {
+                expr: Box::from(PythonCore::Id {
                     lit: String::from("expression")
                 })
             }
@@ -680,20 +685,20 @@ mod tests {
         let core = gen(&ASTTy::from(&tuple));
 
         let core_elements = match core {
-            Ok(Core::Tuple { elements }) => elements,
+            Ok(PythonCore::Tuple { elements }) => elements,
             other => panic!("Expected tuple but got {other:?}"),
         };
 
         assert_eq!(
             core_elements[0],
-            Core::ENum {
+            PythonCore::ENum {
                 num: String::from("a"),
                 exp: String::from("100")
             }
         );
         assert_eq!(
             core_elements[1],
-            Core::Float {
+            PythonCore::Float {
                 float: String::from("3000.5")
             }
         );
@@ -713,17 +718,17 @@ mod tests {
         let core = gen(&ASTTy::from(&set));
 
         let core_elements = match core {
-            Ok(Core::Set { elements }) => elements,
+            Ok(PythonCore::Set { elements }) => elements,
             other => panic!("Expected set but got {other:?}"),
         };
 
         assert_eq!(
             core_elements[0],
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a")
             }
         );
-        assert_eq!(core_elements[1], Core::Bool { boolean: true });
+        assert_eq!(core_elements[1], PythonCore::Bool { boolean: true });
     }
 
     #[test]
@@ -741,20 +746,20 @@ mod tests {
         let core = gen(&ASTTy::from(&tuple));
 
         let core_elements = match core {
-            Ok(Core::List { elements }) => elements,
+            Ok(PythonCore::List { elements }) => elements,
             other => panic!("Expected tuple but got {other:?}"),
         };
 
         assert_eq!(
             core_elements[0],
-            Core::ENum {
+            PythonCore::ENum {
                 num: String::from("a"),
                 exp: String::from("100")
             }
         );
         assert_eq!(
             core_elements[1],
-            Core::Float {
+            PythonCore::Float {
                 float: String::from("3000.5")
             }
         );
@@ -805,7 +810,7 @@ mod tests {
             expr
         });
 
-        let Ok(Core::WithAs {
+        let Ok(PythonCore::WithAs {
             resource,
             alias,
             expr,
@@ -816,19 +821,19 @@ mod tests {
 
         assert_eq!(
             *resource,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("my_resource")
             }
         );
         assert_eq!(
             *alias,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("other")
             }
         );
         assert_eq!(
             *expr,
-            Core::Int {
+            PythonCore::Int {
                 int: String::from("9")
             }
         );
@@ -849,19 +854,19 @@ mod tests {
         });
 
         let (resource, expr) = match gen(&ASTTy::from(&with)) {
-            Ok(Core::With { resource, expr }) => (resource, expr),
+            Ok(PythonCore::With { resource, expr }) => (resource, expr),
             other => panic!("Expected with but was {other:?}"),
         };
 
         assert_eq!(
             *resource,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("other")
             }
         );
         assert_eq!(
             *expr,
-            Core::Int {
+            PythonCore::Int {
                 int: String::from("2341")
             }
         );
@@ -878,7 +883,7 @@ mod tests {
         });
 
         let (setup, _try, except) = match gen(&ASTTy::from(&handle)) {
-            Ok(Core::TryExcept {
+            Ok(PythonCore::TryExcept {
                 setup,
                 attempt,
                 except,
@@ -889,7 +894,7 @@ mod tests {
         assert_eq!(setup, None);
         assert_eq!(
             *_try,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("my_fun")
             }
         );
@@ -922,7 +927,7 @@ mod tests {
             cases: vec![case]
         });
 
-        let Ok(Core::TryExcept {
+        let Ok(PythonCore::TryExcept {
             setup,
             attempt,
             except,
@@ -937,31 +942,31 @@ mod tests {
         assert_eq!(setup, None);
         assert_eq!(
             *attempt,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("my_fun")
             }
         );
         assert_eq!(except.len(), 1);
-        let Core::ExceptId { id, class, body } = &except[0] else {
+        let PythonCore::ExceptId { id, class, body } = &except[0] else {
             panic!("Expected except case but was {:?}", except[0])
         };
 
         assert_eq!(
             *id,
-            Box::from(Core::Id {
+            Box::from(PythonCore::Id {
                 lit: String::from("err")
             })
         );
         assert_eq!(
             *class,
-            Box::from(Core::Type {
+            Box::from(PythonCore::Type {
                 lit: String::from("my_type"),
                 generics: vec![]
             })
         );
         assert_eq!(
             *body,
-            Box::from(Core::Int {
+            Box::from(PythonCore::Int {
                 int: String::from("9999")
             })
         );

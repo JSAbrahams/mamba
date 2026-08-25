@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 
 use itertools::Itertools;
 
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::GenArguments;
 use crate::check::name::Name;
-use crate::generate::ast::node::Core;
-use crate::generate::GenArguments;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -19,7 +19,7 @@ pub struct State {
     pub annotate: bool,
 
     pub is_last_must_be_ret: bool,
-    pub must_assign_to: Option<(Core, Option<Name>)>,
+    pub must_assign_to: Option<(PythonCore, Option<Name>)>,
     pub is_remove_last_ret: bool,
 }
 
@@ -96,7 +96,7 @@ impl State {
         }
     }
 
-    pub fn must_assign_to(&self, must_assign_to: Option<&Core>, name: Option<Name>) -> State {
+    pub fn must_assign_to(&self, must_assign_to: Option<&PythonCore>, name: Option<Name>) -> State {
         if let Some(must_assign_to) = must_assign_to {
             State {
                 must_assign_to: Some((must_assign_to.clone(), name)),
@@ -112,8 +112,8 @@ impl State {
 }
 
 pub struct Imports {
-    imports: Vec<Core>,
-    from_imports: BTreeMap<String, Core>,
+    imports: Vec<PythonCore>,
+    from_imports: BTreeMap<String, PythonCore>,
 }
 
 impl Default for Imports {
@@ -131,9 +131,9 @@ impl Imports {
     }
 
     pub fn add_import(&mut self, import: &str) {
-        let import = Core::Import {
+        let import = PythonCore::Import {
             from: None,
-            import: vec![Core::Id {
+            import: vec![PythonCore::Id {
                 lit: String::from(import),
             }],
             alias: vec![],
@@ -144,29 +144,29 @@ impl Imports {
     }
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
-        if let Some(Core::Import {
+        if let Some(PythonCore::Import {
             import: imports,
             alias,
             ..
         }) = self.from_imports.get(&String::from(from))
         {
-            let new = Core::Id {
+            let new = PythonCore::Id {
                 lit: String::from(import),
             };
-            let imports: Vec<Core> = if !imports.contains(&new) {
+            let imports: Vec<PythonCore> = if !imports.contains(&new) {
                 imports.clone().into_iter().chain(vec![new]).collect()
             } else {
                 imports.to_vec()
             };
 
-            let import = Core::Import {
-                from: Some(Box::from(Core::Id {
+            let import = PythonCore::Import {
+                from: Some(Box::from(PythonCore::Id {
                     lit: String::from(from),
                 })),
                 import: imports
                     .iter()
                     .sorted_by_key(|c| match c {
-                        Core::Id { lit } => lit.clone(),
+                        PythonCore::Id { lit } => lit.clone(),
                         _ => String::from(""),
                     })
                     .cloned()
@@ -177,11 +177,11 @@ impl Imports {
             return;
         }
 
-        let import = Core::Import {
-            from: Some(Box::from(Core::Id {
+        let import = PythonCore::Import {
+            from: Some(Box::from(PythonCore::Id {
                 lit: String::from(from),
             })),
-            import: vec![Core::Id {
+            import: vec![PythonCore::Id {
                 lit: String::from(import),
             }],
             alias: vec![],
@@ -193,7 +193,7 @@ impl Imports {
         self.imports.is_empty() && self.from_imports.is_empty()
     }
 
-    pub fn imports(&self) -> Vec<Core> {
+    pub fn imports(&self) -> Vec<PythonCore> {
         let mut statements = self.imports.clone();
         statements.append(&mut self.from_imports.clone().into_values().collect());
         statements

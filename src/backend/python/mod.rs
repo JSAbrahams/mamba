@@ -1,8 +1,8 @@
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::result::GenResult;
 use crate::check::ast::ASTTy;
-use crate::generate::ast::node::Core;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
 use crate::{Context, PipelineArguments};
 
 mod convert;
@@ -25,12 +25,12 @@ impl From<&PipelineArguments> for GenArguments {
     }
 }
 
-/// Consumes the given [AST](mamba::parser::ast::AST) and produces
-/// a [Core](mamba::generate.ast::construct::Core) node.
+/// Consumes the given [AST](mamba::parse::ast::AST) and produces
+/// a [PythonCore](mamba::backend::python::ast::node::PythonCore) node.
 ///
-/// Note that the given [AST](mamba::parser::ast::AST) must be
+/// Note that the given [AST](mamba::parse::ast::AST) must be
 /// correctly formed. Therefore, malformed
-/// [AST](mamba::parser::ast::AST)'s should be caught by either
+/// [AST](mamba::parse::ast::AST)'s should be caught by either
 /// the parser or the type checker.
 ///
 /// # Examples
@@ -39,15 +39,15 @@ impl From<&PipelineArguments> for GenArguments {
 /// # use mamba::check::ast::ASTTy;
 /// # use mamba::parse::ast::Node;
 /// # use mamba::parse::ast::AST;
-/// # use mamba::generate::ast::node::Core;
+/// # use mamba::backend::python::ast::node::PythonCore;
 /// # use mamba::common::position::{CaretPos, Position};
-/// # use mamba::generate::gen;
+/// # use mamba::backend::python::gen;
 /// let node = Node::ReturnEmpty;
 /// let ast = AST::new(Position::new(CaretPos::new(1, 1), CaretPos::new(1, 5)), node);
 /// let ast_ty = ASTTy::from(&ast);
 /// let core_result = gen(&ast_ty).unwrap();
 ///
-/// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
+/// assert_eq!(core_result, PythonCore::Return { expr: Box::from(PythonCore::None) });
 /// ```
 ///
 /// # Failures
@@ -58,9 +58,9 @@ impl From<&PipelineArguments> for GenArguments {
 /// # use mamba::check::ast::ASTTy;
 /// # use mamba::parse::ast::Node;
 /// # use mamba::parse::ast::AST;
-/// # use mamba::generate::ast::node::Core;
+/// # use mamba::backend::python::ast::node::PythonCore;
 /// # use mamba::common::position::{CaretPos, Position};
-/// # use mamba::generate::gen;
+/// # use mamba::backend::python::gen;
 /// let cond_node = Node::Int { lit: String::from("56") };
 /// let cond_pos = AST::new(Position::new(CaretPos::new(0, 0), CaretPos::new(0, 5)), cond_node);
 /// let node = Node::Condition { cond: Box::from(cond_pos), el: None };
@@ -80,10 +80,10 @@ pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments, ctx: &Context) -> 
 
     let import = &mut Imports::new();
     match convert_node(ast_ty, import, &state, ctx)? {
-        Core::Block { statements } => Ok(Core::Block {
+        PythonCore::Block { statements } => Ok(PythonCore::Block {
             statements: import.imports().into_iter().chain(statements).collect(),
         }),
-        other if !import.is_empty() => Ok(Core::Block {
+        other if !import.is_empty() => Ok(PythonCore::Block {
             statements: import.imports().into_iter().chain(vec![other]).collect(),
         }),
         other => Ok(other),

@@ -1,14 +1,14 @@
 use std::ops::Deref;
 
+use crate::backend::python::ast::node::{CoreFunOp, PythonCore};
+use crate::backend::python::convert::common::convert_vec;
+use crate::backend::python::convert::convert_node;
+use crate::backend::python::convert::state::{Imports, State};
+use crate::backend::python::name::ToPy;
+use crate::backend::python::result::{GenResult, UnimplementedErr};
 use crate::check::ast::NodeTy;
 use crate::check::context::arg::python::SELF;
 use crate::check::context::function;
-use crate::generate::ast::node::{Core, CoreFunOp};
-use crate::generate::convert::common::convert_vec;
-use crate::generate::convert::convert_node;
-use crate::generate::convert::state::{Imports, State};
-use crate::generate::name::ToPy;
-use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::{ASTTy, Context};
 
 pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
@@ -16,12 +16,13 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
         NodeTy::VariableDef { var, expr, ty, .. } => {
             let var = convert_node(var, imp, &state.tuple_literal(), ctx)?;
             let state = state.in_tup(match var.clone() {
-                Core::Tuple { elements } => elements.len(),
+                PythonCore::Tuple { elements } => elements.len(),
                 _ => 1,
             });
 
-            let annotate =
-                state.annotate && state.expand_ty && !matches!(var, Core::TupleLiteral { .. });
+            let annotate = state.annotate
+                && state.expand_ty
+                && !matches!(var, PythonCore::TupleLiteral { .. });
             let ty = match (ty, expr) {
                 (Some(ty), _) if annotate => Some(Box::from(ty.to_py(imp))),
                 (_, Some(expr)) if annotate => {
@@ -37,7 +38,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                     }
                     None => None,
                 };
-                Core::FunArg {
+                PythonCore::FunArg {
                     vararg: false,
                     var: Box::from(var),
                     ty,
@@ -46,19 +47,21 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             } else {
                 let expr = match (&var, expr) {
                     (_, Some(expr)) => match convert_node(expr, imp, &state, ctx)? {
-                        Core::IfElse { .. } | Core::Match { .. } => {
+                        PythonCore::IfElse { .. } | PythonCore::Match { .. } => {
                             // redo convert but with assign to state
                             let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
                             return convert_node(expr, imp, &state, ctx);
                         }
                         other => Some(Box::from(other)),
                     },
-                    (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
-                        elements: vec![Core::None; elements.len()],
-                    })),
+                    (PythonCore::TupleLiteral { elements }, None) => {
+                        Some(Box::from(PythonCore::Tuple {
+                            elements: vec![PythonCore::None; elements.len()],
+                        }))
+                    }
                     (_, None) => None,
                 };
-                Core::VarDef {
+                PythonCore::VarDef {
                     var: Box::from(var),
                     ty,
                     expr,
@@ -79,7 +82,10 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             };
             let (dec, body) = if state.interface && expression.is_none() {
                 imp.add_from_import("abc", "abstractmethod");
-                (vec![String::from("abstractmethod")], Box::from(Core::Pass))
+                (
+                    vec![String::from("abstractmethod")],
+                    Box::from(PythonCore::Pass),
+                )
             } else {
                 (
                     vec![],
@@ -90,18 +96,18 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                             &state.expand_ty(true).is_last_must_be_ret(ty.is_some()),
                             ctx,
                         )?,
-                        None => Core::Pass,
+                        None => PythonCore::Pass,
                     }),
                 )
             };
 
             let c_id = Box::from(convert_node(id, imp, state, ctx)?);
             match c_id.deref() {
-                Core::Id { lit } => Ok(if let Some(op) = CoreFunOp::from(lit.as_str()) {
-                    Core::FunDefOp { op, arg, ty, body }
+                PythonCore::Id { lit } => Ok(if let Some(op) = CoreFunOp::from(lit.as_str()) {
+                    PythonCore::FunDefOp { op, arg, ty, body }
                 } else {
                     let id = match c_id.as_ref() {
-                        Core::Id { ref lit, .. } => match lit.as_str() {
+                        PythonCore::Id { ref lit, .. } => match lit.as_str() {
                             "size" => String::from("__size__"),
                             function::python::INIT => String::from("__init__"),
                             other => String::from(other),
@@ -112,7 +118,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                         }
                     };
 
-                    Core::FunDef {
+                    PythonCore::FunDef {
                         dec,
                         id,
                         arg,
@@ -134,11 +140,11 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             let annotate = state.annotate
                 && state.expand_ty
                 && var
-                    != Core::Id {
+                    != PythonCore::Id {
                         lit: String::from(SELF),
                     };
 
-            Ok(Core::FunArg {
+            Ok(PythonCore::FunArg {
                 vararg: *vararg,
                 var: Box::from(var),
                 ty: if annotate {
@@ -161,9 +167,9 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
 
 #[cfg(test)]
 mod test {
+    use crate::backend::python::ast::node::{CoreOp, PythonCore};
+    use crate::backend::python::gen;
     use crate::common::position::Position;
-    use crate::generate::ast::node::{Core, CoreOp};
-    use crate::generate::gen;
     use crate::parse::ast::node_op::NodeOp;
     use crate::parse::ast::Node;
     use crate::parse::ast::AST;
@@ -199,19 +205,19 @@ mod test {
         });
 
         let (left, right, op) = match gen(&ASTTy::from(&reassign)) {
-            Ok(Core::Assign { left, right, op }) => (left, right, op),
+            Ok(PythonCore::Assign { left, right, op }) => (left, right, op),
             other => panic!("Expected reassign but was {other:?}"),
         };
 
         assert_eq!(
             *left,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("something")
             }
         );
         assert_eq!(
             *right,
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("other")
             }
         );
@@ -233,20 +239,20 @@ mod test {
         });
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
+            Ok(PythonCore::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
         assert_eq!(
             var,
-            Box::from(Core::Id {
+            Box::from(PythonCore::Id {
                 lit: String::from("d")
             })
         );
         assert_eq!(
             expr,
-            Some(Box::from(Core::Int {
+            Some(Box::from(PythonCore::Int {
                 int: String::from("98")
             }))
         );
@@ -267,20 +273,20 @@ mod test {
         });
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
+            Ok(PythonCore::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
         assert_eq!(
             var,
-            Box::from(Core::Id {
+            Box::from(PythonCore::Id {
                 lit: String::from("d")
             })
         );
         assert_eq!(
             expr,
-            Some(Box::from(Core::Int {
+            Some(Box::from(PythonCore::Int {
                 int: String::from("98")
             }))
         );
@@ -315,31 +321,31 @@ mod test {
         });
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
+            Ok(PythonCore::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
         let elements = vec![
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a"),
             },
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("b"),
             },
         ];
-        assert_eq!(var, Box::from(Core::TupleLiteral { elements }));
+        assert_eq!(var, Box::from(PythonCore::TupleLiteral { elements }));
         let expressions = vec![
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("c"),
             },
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("d"),
             },
         ];
         assert_eq!(
             expr,
-            Some(Box::from(Core::Tuple {
+            Some(Box::from(PythonCore::Tuple {
                 elements: expressions
             }))
         );
@@ -358,14 +364,14 @@ mod test {
         });
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
+            Ok(PythonCore::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
         assert_eq!(
             var,
-            Box::from(Core::Id {
+            Box::from(PythonCore::Id {
                 lit: String::from("d")
             })
         );
@@ -391,24 +397,24 @@ mod test {
         });
 
         let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
+            Ok(PythonCore::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {other:?}."),
         };
 
         assert_eq!(ty, None);
         let elements = vec![
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("a"),
             },
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("b"),
             },
         ];
-        assert_eq!(var, Box::from(Core::TupleLiteral { elements }));
+        assert_eq!(var, Box::from(PythonCore::TupleLiteral { elements }));
         assert_eq!(
             expr,
-            Some(Box::from(Core::Tuple {
-                elements: vec![Core::None, Core::None]
+            Some(Box::from(PythonCore::Tuple {
+                elements: vec![PythonCore::None, PythonCore::None]
             }))
         );
     }
@@ -446,7 +452,7 @@ mod test {
         });
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
+            Ok(PythonCore::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {other:?}."),
         };
 
@@ -455,9 +461,9 @@ mod test {
         assert_eq!(args.len(), 2);
         assert_eq!(
             args[0],
-            Core::FunArg {
+            PythonCore::FunArg {
                 vararg: false,
-                var: Box::from(Core::Id {
+                var: Box::from(PythonCore::Id {
                     lit: String::from("arg1")
                 }),
                 ty: None,
@@ -466,16 +472,16 @@ mod test {
         );
         assert_eq!(
             args[1],
-            Core::FunArg {
+            PythonCore::FunArg {
                 vararg: true,
-                var: Box::from(Core::Id {
+                var: Box::from(PythonCore::Id {
                     lit: String::from("arg2")
                 }),
                 ty: None,
                 default: None,
             }
         );
-        assert_eq!(*body, Core::Pass);
+        assert_eq!(*body, PythonCore::Pass);
     }
 
     #[test]
@@ -503,7 +509,7 @@ mod test {
         });
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
+            Ok(PythonCore::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {other:?}."),
         };
 
@@ -512,18 +518,18 @@ mod test {
         assert_eq!(args.len(), 1);
         assert_eq!(
             args[0],
-            Core::FunArg {
+            PythonCore::FunArg {
                 vararg: false,
-                var: Box::from(Core::Id {
+                var: Box::from(PythonCore::Id {
                     lit: String::from("arg1")
                 }),
                 ty: None,
-                default: Some(Box::from(Core::Str {
+                default: Some(Box::from(PythonCore::Str {
                     string: String::from("asdf")
                 })),
             }
         );
-        assert_eq!(*body, Core::Pass);
+        assert_eq!(*body, PythonCore::Pass);
     }
 
     #[test]
@@ -549,7 +555,7 @@ mod test {
         });
 
         let (id, args, body) = match gen(&ASTTy::from(&definition)) {
-            Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
+            Ok(PythonCore::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {other:?}."),
         };
 
@@ -558,19 +564,19 @@ mod test {
         assert_eq!(args.len(), 2);
         assert_eq!(
             args[0],
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("arg1")
             }
         );
         assert_eq!(
             args[1],
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("arg2")
             }
         );
         assert_eq!(
             *body,
-            Core::Float {
+            PythonCore::Float {
                 float: String::from("2.4")
             }
         );
@@ -594,26 +600,26 @@ mod test {
         });
 
         let (args, body) = match gen(&ASTTy::from(&anon_fun)) {
-            Ok(Core::AnonFun { args, body }) => (args, body),
+            Ok(PythonCore::AnonFun { args, body }) => (args, body),
             other => panic!("Expected anon fun but got: {other:?}."),
         };
 
         assert_eq!(args.len(), 2);
         assert_eq!(
             args[0],
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("first")
             }
         );
         assert_eq!(
             args[1],
-            Core::Id {
+            PythonCore::Id {
                 lit: String::from("second")
             }
         );
         assert_eq!(
             *body,
-            Core::Str {
+            PythonCore::Str {
                 string: String::from("this_string")
             }
         );

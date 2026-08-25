@@ -1,20 +1,20 @@
 use itertools::Itertools;
 
+use crate::backend::python::ast::node::PythonCore;
+use crate::backend::python::convert::state::Imports;
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::check::context::clss::python::{ANY, CALLABLE, TUPLE, UNION};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::name::{Empty, Name, Nullable, Union};
-use crate::generate::ast::node::Core;
-use crate::generate::convert::state::Imports;
 
 pub trait ToPy {
-    fn to_py(&self, imp: &mut Imports) -> Core;
+    fn to_py(&self, imp: &mut Imports) -> PythonCore;
 }
 
 impl ToPy for Name {
-    fn to_py(&self, imp: &mut Imports) -> Core {
+    fn to_py(&self, imp: &mut Imports) -> PythonCore {
         if self.names.len() > 1 {
             imp.add_from_import("typing", UNION);
             let generics: Vec<Name> = self.names.iter().sorted().map(Name::from).collect();
@@ -22,13 +22,13 @@ impl ToPy for Name {
         } else if let Some(name) = self.names.iter().next() {
             name.to_py(imp)
         } else {
-            Core::Empty
+            PythonCore::Empty
         }
     }
 }
 
 impl ToPy for TrueName {
-    fn to_py(&self, imp: &mut Imports) -> Core {
+    fn to_py(&self, imp: &mut Imports) -> PythonCore {
         if self.is_nullable() {
             imp.add_from_import("typing", "Optional");
             core_type("Optional", &[Name::from(&self.variant)], imp)
@@ -39,7 +39,7 @@ impl ToPy for TrueName {
 }
 
 impl ToPy for StringName {
-    fn to_py(&self, imp: &mut Imports) -> Core {
+    fn to_py(&self, imp: &mut Imports) -> PythonCore {
         match self.name.as_str() {
             clss::UNION => self
                 .generics
@@ -69,8 +69,8 @@ impl ToPy for StringName {
     }
 }
 
-fn core_type(lit: &str, generics: &[Name], imp: &mut Imports) -> Core {
-    Core::Type {
+fn core_type(lit: &str, generics: &[Name], imp: &mut Imports) -> PythonCore {
+    PythonCore::Type {
         lit: String::from(lit),
         generics: generics.iter().map(|core| core.to_py(imp)).collect(),
     }
