@@ -151,12 +151,12 @@ body (`gen_class` in `src/check/constrain/generate/class.rs`), the same way a me
 A class-body statement referencing `self` (a field initializer using another field, or a bare statement like
 `print(self.a)`) can't stay at class level in the generated Python — `self` only exists inside a method — so
 `src/generate/convert/class.rs`'s `hoist_constructor_dependent_stmts` moves it into a generated `__init__`
-(field initializers keep their class-level slot with `None` in place of the real value).
+(field initializers keep their class-level slot with `None` in place of the real value). Hoisted statements
+are then ordered by dependency (`order_by_self_field_deps`), not just declaration order — a field can read
+another hoisted field declared later in the body, which would still be `None` at that point otherwise.
 
 ## Known incomplete work (branch `feat-remove-indent-dedent`, as of 2026-08-25)
 
-- `tests/resource/valid/class/class_super_one_line_init.mamba`: a constructor arg and a field share the name
-  `other_field`; `def other_field: Int := z + other_field` fails to resolve the self-reference.
 - `tests/resource/valid/class/top_level_unassigned_but_nullable.mamba`: a bare statement (e.g. `print(...)`)
   in a class body fails during context building ("Expected function or variable definition"), before the
   `self`-reference hoisting above ever gets a chance to run.

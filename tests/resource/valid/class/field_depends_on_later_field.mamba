@@ -1,0 +1,7 @@
+class Point(x: Int) where
+    def sum: Int := self.x + self.doubled
+    def doubled: Int := self.x * 2
+end
+
+def p := Point(3)
+print(p.sum)

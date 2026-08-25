@@ -12,6 +12,7 @@ use test_case::test_case;
 #[test_case("call", "input")]
 #[test_case("class", "assign_to_nullable_field")]
 #[test_case("class", "generics")]
+#[test_case("class", "field_depends_on_later_field")]
 #[test_case("class", "assign_types_nested")]
 #[test_case("class", "class_super_one_line_init")]
 #[test_case("class", "assign_types_double_nested")]

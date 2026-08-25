@@ -210,7 +210,8 @@ fn extract_class(
     }
 }
 
-/// Move class-body statements referencing `self` into `__init__`, in original order.
+/// Move class-body statements referencing `self` into `__init__`, ordered by dependency
+/// (see `order_by_self_field_deps`).
 ///
 /// A field declaration keeps its class-level slot with `None` in place of the initializer;
 /// any other statement (e.g. a bare `print(self.a)`) is moved wholesale.
@@ -260,27 +261,93 @@ fn hoist_constructor_dependent_stmts(
         body_name_stmts.remove(&key);
     }
 
-    hoisted.sort_by_key(|(pos, _)| *pos);
-    hoisted.into_iter().map(|(_, stmt)| stmt).collect()
+    order_by_self_field_deps(hoisted)
 }
 
-/// Whether `core` contains a free reference to any name in `names`. Not exhaustive over every
-/// `Core` variant; a missed variant just leaves a statement un-hoisted, never a false positive.
-fn references_free_var(core: &Core, names: &HashSet<String>) -> bool {
+/// Order hoisted statements so a field's assignment comes after any other hoisted field it reads via `self.<field>`.
+/// Declaration order alone isn't enough: a field may read another hoisted field declared later in the class body.
+/// This could still be `None` at that point.
+///
+/// A statement referencing its *own* field is exempt, since that reads the constructor-arg auto-assignment, not a hoisted default.
+fn order_by_self_field_deps(mut hoisted: Vec<(usize, Core)>) -> Vec<Core> {
+    hoisted.sort_by_key(|(pos, _)| *pos);
+
+    let names: Vec<Option<String>> = hoisted
+        .iter()
+        .map(|(_, stmt)| assigned_self_field(stmt))
+        .collect();
+    let deps: Vec<Vec<usize>> = hoisted
+        .iter()
+        .enumerate()
+        .map(|(i, (_, stmt))| {
+            names
+                .iter()
+                .enumerate()
+                .filter(|(j, name)| {
+                    *j != i
+                        && name
+                            .as_deref()
+                            .is_some_and(|field| references_self_field(stmt, field))
+                })
+                .map(|(j, _)| j)
+                .collect()
+        })
+        .collect();
+
+    let n = hoisted.len();
+    let mut order = vec![];
+    let mut emitted = vec![false; n];
+    while order.len() < n {
+        let before = order.len();
+        for i in 0..n {
+            if !emitted[i] && deps[i].iter().all(|&d| emitted[d]) {
+                order.push(i);
+                emitted[i] = true;
+            }
+        }
+        if order.len() == before {
+            // cycle: emit whatever's left in declaration order rather than looping forever
+            for (i, emitted) in emitted.iter_mut().enumerate() {
+                if !*emitted {
+                    order.push(i);
+                    *emitted = true;
+                }
+            }
+        }
+    }
+
+    order.into_iter().map(|i| hoisted[i].1.clone()).collect()
+}
+
+/// The field name of a hoisted `self.<field> = ...` assignment, if `stmt` is one.
+fn assigned_self_field(stmt: &Core) -> Option<String> {
+    match stmt {
+        Core::Assign { left, .. } => match left.as_ref() {
+            Core::PropertyCall { object, property } => match (object.as_ref(), property.as_ref()) {
+                (Core::Id { lit: obj }, Core::Id { lit: prop }) if obj == arg::python::SELF => {
+                    Some(prop.clone())
+                }
+                _ => None,
+            },
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Applies `test` to `core` and every sub-expression, depth-first. Not exhaustive over every
+/// `Core` variant; a missed variant just means a match goes undetected.
+fn any_node(core: &Core, test: &impl Fn(&Core) -> bool) -> bool {
+    if test(core) {
+        return true;
+    }
     match core {
-        Core::Id { lit } => names.contains(lit),
-        // `property` is an attribute name (e.g. `.field`), not a variable reference
-        Core::PropertyCall { object, .. } => references_free_var(object, names),
+        Core::PropertyCall { object, .. } => any_node(object, test),
         Core::FunctionCall { function, args } => {
-            references_free_var(function, names)
-                || args.iter().any(|a| references_free_var(a, names))
+            any_node(function, test) || args.iter().any(|a| any_node(a, test))
         }
-        Core::Index { item, range } => {
-            references_free_var(item, names) || references_free_var(range, names)
-        }
-        Core::KeyValue { key, value } => {
-            references_free_var(key, names) || references_free_var(value, names)
-        }
+        Core::Index { item, range } => any_node(item, test) || any_node(range, test),
+        Core::KeyValue { key, value } => any_node(key, test) || any_node(value, test),
         Core::Ge { left, right }
         | Core::Geq { left, right }
         | Core::Le { left, right }
@@ -299,37 +366,50 @@ fn references_free_var(core: &Core, names: &HashSet<String>) -> bool {
         | Core::Pow { left, right }
         | Core::Div { left, right }
         | Core::FDiv { left, right }
-        | Core::In { left, right } => {
-            references_free_var(left, names) || references_free_var(right, names)
-        }
+        | Core::In { left, right } => any_node(left, test) || any_node(right, test),
         Core::Not { expr }
         | Core::AddU { expr }
         | Core::SubU { expr }
         | Core::Sqrt { expr }
         | Core::Return { expr }
-        | Core::Raise { error: expr } => references_free_var(expr, names),
-        Core::If { cond, then } => {
-            references_free_var(cond, names) || references_free_var(then, names)
-        }
+        | Core::Raise { error: expr } => any_node(expr, test),
+        Core::If { cond, then } => any_node(cond, test) || any_node(then, test),
         Core::IfElse { cond, then, el } | Core::Ternary { cond, then, el } => {
-            references_free_var(cond, names)
-                || references_free_var(then, names)
-                || references_free_var(el, names)
+            any_node(cond, test) || any_node(then, test) || any_node(el, test)
         }
         Core::Tuple { elements }
         | Core::TupleLiteral { elements }
         | Core::Set { elements }
-        | Core::List { elements } => elements.iter().any(|e| references_free_var(e, names)),
+        | Core::List { elements } => elements.iter().any(|e| any_node(e, test)),
         Core::Dictionary { elements } => elements
             .iter()
-            .any(|(k, v)| references_free_var(k, names) || references_free_var(v, names)),
-        Core::Assign { right, .. } => references_free_var(right, names),
+            .any(|(k, v)| any_node(k, test) || any_node(v, test)),
+        Core::Assign { right, .. } => any_node(right, test),
         Core::VarDef {
             expr: Some(expr), ..
-        } => references_free_var(expr, names),
-        Core::Block { statements } => statements.iter().any(|s| references_free_var(s, names)),
+        } => any_node(expr, test),
+        Core::Block { statements } => statements.iter().any(|s| any_node(s, test)),
         _ => false,
     }
+}
+
+/// Whether `core` contains a free reference to any name in `names`.
+fn references_free_var(core: &Core, names: &HashSet<String>) -> bool {
+    any_node(
+        core,
+        &|c| matches!(c, Core::Id { lit } if names.contains(lit)),
+    )
+}
+
+/// Whether `core` reads `self.<field>` anywhere.
+fn references_self_field(core: &Core, field: &str) -> bool {
+    any_node(core, &|c| match c {
+        Core::PropertyCall { object, property } => {
+            matches!(object.as_ref(), Core::Id { lit } if lit == arg::python::SELF)
+                && matches!(property.as_ref(), Core::Id { lit } if lit == field)
+        }
+        _ => false,
+    })
 }
 
 fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
