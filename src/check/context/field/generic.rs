@@ -38,29 +38,14 @@ impl PartialEq for GenericField {
     }
 }
 
+/// Only ever built from a class constructor argument (`Node::FunArg`, see `ClassArgument`) — a
+/// bare `Node::VariableDef` becomes a field through `GenericFields` (below) instead, which
+/// additionally supports tuple-destructuring assignment.
 impl TryFrom<&AST> for GenericField {
     type Error = Vec<TypeErr>;
 
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
-            Node::VariableDef {
-                var,
-                mutable,
-                ty,
-                expr,
-                ..
-            } => Ok(GenericField {
-                is_py_type: false,
-                name: field_name(var.deref())?,
-                mutable: *mutable,
-                pos: ast.pos,
-                in_class: None,
-                ty: match ty {
-                    Some(ty) => Some(Name::try_from(ty.deref())?),
-                    None => None,
-                },
-                assigned_to: expr.is_some(),
-            }),
             // Class arguments are fields too, see `ClassArgument`.
             Node::FunArg {
                 var,
@@ -80,7 +65,7 @@ impl TryFrom<&AST> for GenericField {
                 },
                 assigned_to: default.is_some(),
             }),
-            _ => Err(vec![TypeErr::new(ast.pos, "Expected variable")]),
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected function argument")]),
         }
     }
 }
@@ -137,22 +122,12 @@ impl TryFrom<&AST> for GenericFields {
 }
 
 impl GenericField {
-    pub fn in_class(
-        self,
-        class: Option<&StringName>,
-        _type_def: bool,
-        pos: Position,
-    ) -> TypeResult<GenericField> {
-        if class.is_some() {
-            Ok(GenericField {
-                in_class: class.cloned(),
-                ..self
-            })
-        } else {
-            Err(vec![TypeErr::new(
-                pos,
-                &String::from("Field must be in class"),
-            )])
+    /// Every caller already has a class to attach (see `check/context/clss/{generic,python}.rs`),
+    /// so this is infallible.
+    pub fn in_class(self, class: &StringName, _type_def: bool, _pos: Position) -> GenericField {
+        GenericField {
+            in_class: Some(class.clone()),
+            ..self
         }
     }
 
