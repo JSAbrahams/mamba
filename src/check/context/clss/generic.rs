@@ -326,11 +326,9 @@ fn get_fields_and_functions(
 
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
-            Node::DocStr { .. } => {}
-            _ => {
-                let msg = "Expected function or variable definition";
-                return Err(vec![TypeErr::new(statement.pos, msg)]);
-            }
+            // Anything else (e.g. a bare `print(...)`) is an executable statement, not part of
+            // the class's signature — it's handled later, once we're checking the class body.
+            _ => {}
         }
     }
 

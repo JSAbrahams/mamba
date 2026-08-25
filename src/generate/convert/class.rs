@@ -217,12 +217,8 @@ fn extract_class(
 /// any other statement (e.g. a bare `print(self.a)`) is moved wholesale.
 fn hoist_constructor_dependent_stmts(
     body_name_stmts: &mut HashMap<Core, (usize, Core)>,
-    arg_names: &HashSet<String>,
+    self_name: &HashSet<String>,
 ) -> Vec<Core> {
-    if arg_names.is_empty() {
-        return vec![];
-    }
-
     let mut hoisted: Vec<(usize, Core)> = vec![];
     let mut to_remove = vec![];
 
@@ -232,7 +228,7 @@ fn hoist_constructor_dependent_stmts(
                 var,
                 expr: Some(expr),
                 ..
-            } if references_free_var(expr, arg_names) => {
+            } if references_free_var(expr, self_name) => {
                 hoisted.push((
                     *pos,
                     Core::Assign {
@@ -248,12 +244,19 @@ fn hoist_constructor_dependent_stmts(
                 ));
                 *expr = Box::from(Core::None);
             }
-            Core::FunDef { .. } | Core::FunDefOp { .. } | Core::VarDef { .. } => {}
-            other if references_free_var(other, arg_names) => {
+            // A docstring must stay a literal first statement in the class body, not move into
+            // `__init__`.
+            Core::FunDef { .. }
+            | Core::FunDefOp { .. }
+            | Core::VarDef { .. }
+            | Core::DocStr { .. } => {}
+            // Any other class-body statement (e.g. a bare `print(...)`) runs once per instance,
+            // like the rest of the constructor — not once at class-definition time — so it
+            // always moves into `__init__`, whether or not it happens to reference `self`.
+            other => {
                 hoisted.push((*pos, other.clone()));
                 to_remove.push(key.clone());
             }
-            _ => {}
         }
     }
 

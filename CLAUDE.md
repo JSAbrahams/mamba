@@ -148,18 +148,16 @@ Class constructor arguments are always fields, stored on `self` — no `def` pre
 must be accessed via `self.a`, never bare `a` — `self` is bound (typed as the class) while checking a class
 body (`gen_class` in `src/check/constrain/generate/class.rs`), the same way a method's own `self` argument is.
 
-A class-body statement referencing `self` (a field initializer using another field, or a bare statement like
-`print(self.a)`) can't stay at class level in the generated Python — `self` only exists inside a method — so
-`src/generate/convert/class.rs`'s `hoist_constructor_dependent_stmts` moves it into a generated `__init__`
-(field initializers keep their class-level slot with `None` in place of the real value). Hoisted statements
-are then ordered by dependency (`order_by_self_field_deps`), not just declaration order — a field can read
-another hoisted field declared later in the body, which would still be `None` at that point otherwise.
-
-## Known incomplete work (branch `feat-remove-indent-dedent`, as of 2026-08-25)
-
-- `tests/resource/valid/class/top_level_unassigned_but_nullable.mamba`: a bare statement (e.g. `print(...)`)
-  in a class body fails during context building ("Expected function or variable definition"), before the
-  `self`-reference hoisting above ever gets a chance to run.
+A class body runs once per instance, like a constructor — not once at class-definition time like a real
+Python class body — so `src/generate/convert/class.rs`'s `hoist_constructor_dependent_stmts` moves anything
+that isn't a field/method declaration into a generated `__init__`: a field initializer referencing `self`
+(keeping its class-level slot with `None` in place of the real value) or any other bare statement (e.g.
+`print(self.a)`), unconditionally, whether or not it references `self` — a docstring is the one exception,
+which must stay a literal first statement in the class body. Hoisted statements are then ordered by
+dependency (`order_by_self_field_deps`), not just declaration order — a field can read another hoisted field
+declared later in the body, which would still be `None` at that point otherwise. `get_fields_and_functions`
+in `src/check/context/clss/generic.rs` (context building, runs before any of this) must likewise treat a bare
+statement as "not part of the signature" rather than rejecting it.
 
 ## Documentation
 
