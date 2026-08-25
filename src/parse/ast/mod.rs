@@ -274,27 +274,11 @@ pub enum Node {
         left: Box<AST>,
         right: Box<AST>,
     },
-    Is {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsN {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
     Eq {
         left: Box<AST>,
         right: Box<AST>,
     },
     Neq {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsA {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsNA {
         left: Box<AST>,
         right: Box<AST>,
     },

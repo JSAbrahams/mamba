@@ -1,0 +1,7 @@
+class MyClass(a: Int) where
+    def f(self) -> Bool := self.a <= 10
+end
+
+def a := MyClass(10)
+
+a.f()

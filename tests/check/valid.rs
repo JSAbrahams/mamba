@@ -124,6 +124,7 @@ use test_case::test_case;
 #[test_case("operation", "assign_types_no_annotation" => ignore["See if we can modify type checker so it takes largest common"])]
 #[test_case("operation", "assign_types_nested")]
 #[test_case("operation", "greater_than_int")]
+#[test_case("operation", "less_than_equal_int")]
 #[test_case("operation", "greater_than_other_int")]
 #[test_case("operation", "in_set_is_bool")]
 #[test_case("operation", "multiply_other_int")]

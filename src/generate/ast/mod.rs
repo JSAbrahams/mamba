@@ -299,20 +299,6 @@ fn to_py(core: &Core, ind: usize) -> String {
                 to_py(right.as_ref(), ind)
             )
         }
-        Core::Is { left, right } => {
-            format!(
-                "{} is {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        Core::IsN { left, right } => {
-            format!(
-                "{} is not {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
         Core::Eq { left, right } => {
             format!(
                 "{} == {}",
@@ -327,14 +313,6 @@ fn to_py(core: &Core, ind: usize) -> String {
                 to_py(right.as_ref(), ind)
             )
         }
-        Core::IsA { left, right } => {
-            format!(
-                "isinstance({},{})",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-
         Core::AddU { expr } => format!("+{}", to_py(expr, ind)),
         Core::Add { left, right } => {
             format!(

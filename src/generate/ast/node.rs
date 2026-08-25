@@ -144,23 +144,11 @@ pub enum Core {
     Not {
         expr: Box<Core>,
     },
-    Is {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    IsN {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
     Eq {
         left: Box<Core>,
         right: Box<Core>,
     },
     Neq {
-        left: Box<Core>,
-        right: Box<Core>,
-    },
-    IsA {
         left: Box<Core>,
         right: Box<Core>,
     },
