@@ -43,10 +43,10 @@ reasons, and they should be treated differently:
      lookup — was never finished being wired in. The fix there is to finish the feature, then add
      the fixture that exercises it; deleting the code would just trade an honest 0% for silently
      losing the half-built feature.
-   - A smaller amount is genuinely **redundant leftover code** (a duplicate impl superseded by
-     another one, e.g. the `Vec<Subscript>` `GenericParameters` impl) rather than an unfinished
-     feature — those *are* plain cleanup/deletion candidates, and are called out individually
-     below so the two categories don't get conflated.
+   - Genuinely redundant leftover code (duplicate impls superseded by another one, dead-by-
+     construction branches) gets deleted outright rather than tracked here — see recent git
+     history around this file's introduction for what was removed and why. This file only tracks
+     *remaining* gaps, so a deletion doesn't leave a stale entry behind.
 
 ## Python-stub files are also test surface, not just runtime data
 
@@ -91,39 +91,25 @@ accurate documentation of real Python builtins, and their presence alone (regard
 anything ever references them) already exercises those two parsing arms for every test that
 calls `check_all`, so no separate fixture is possible or needed for them.
 
-## Confirmed dead code (no caller anywhere in `src/`)
+## Remaining dead code (no caller anywhere in `src/`) — all feature-shaped, kept on purpose
 
-Found while chasing uncovered lines — grepped for every call site, none exist outside the
-defining module. Split into the two categories from above: finish-the-feature-then-cover vs.
-plain cleanup.
-
-**Unfinished feature — fix by implementing, then add the fixture:**
+Everything genuinely redundant (a duplicate impl superseded by another, a branch dead by
+construction) found while chasing uncovered lines has already been deleted. What's left is kept
+specifically because it reads like an unfinished feature, not leftover cruft — fix these by
+implementing the feature and adding the fixture that exercises it, not by deleting them:
 
 - `Function::args_compatible` and `Function::simple_fun` (`check/context/function/mod.rs`) —
   `args_compatible` reads like it was meant to be the call-site arity/type check for values of
   function type; see the "anonymous function arity" gap below, which is consistent with this
   never having been wired up. Implementing it (calling it from wherever an anonymous function or
   callable value is matched against an expected callable type) and adding an invalid fixture with
-  a mismatched arity is the way to close both this and that gap at once.
+  a mismatched arity is the way to close both this and that gap at once. `Display for Function`
+  in the same file is kept alongside these two for the same reason — it currently has no other
+  caller, but `args_compatible`'s error messages already format `{self}` (a whole `Function`),
+  so it stops being dead the moment `args_compatible` is wired in.
 - `Context`'s `LookupField` impl, i.e. `Context::field` (`check/context/field/mod.rs`) — see
   "Top-level fields are parsed but never looked up" below. Wiring identifier resolution to
   actually call this for a bare (non-local) name is the way to close that gap.
-
-**Genuine leftover cruft — plain deletion candidates, no feature behind them:**
-
-- `Display for Function` (`check/context/function/mod.rs`) — nothing formats a whole `Function`
-  value; other error messages format its `name`/individual arguments instead.
-- `StringName::match_name` / `match_name_helper` (`check/name/string_name/mod.rs`) and
-  `Name::match_name_helper` (`check/name/mod.rs`) — note the free function `check::name::match_name`
-  (lowercase, different item) *is* used (tuple-destructuring assignment) and does the equivalent
-  job; only the `StringName`/`Name`-associated versions are dead, apparently superseded.
-- `impl From<&Vec<Subscript>> for GenericParameters` (`check/context/parameter/python.rs`) — the
-  only call site (`check/context/clss/python.rs:49`) passes a `&Vec<Argument>`, always resolving
-  to the *other* `From` impl in the same file.
-- `GenericFunctionArg::in_class`'s `class.is_none()` error arm and its dead-by-construction
-  `else` branch right after it (`check/context/arg/generic.rs:49-62`) — its only caller
-  (`GenericFunction::in_class`) already guards `clss.is_some()` before calling it, so `class` can
-  never be `None` here.
 
 ## Top-level fields are parsed but never looked up
 

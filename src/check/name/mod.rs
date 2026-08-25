@@ -495,21 +495,6 @@ impl Name {
                 .try_fold(acc, |acc, o_n| s_n.temp_map(&o_n.variant, acc, pos))
         })
     }
-
-    pub(crate) fn match_name_helper(
-        &self,
-        other: &Name,
-        mapping: &mut NameMap,
-        pos: Position,
-    ) -> TypeResult<()> {
-        for name in &self.names {
-            for other_name in &other.names {
-                name.variant
-                    .match_name_helper(&other_name.variant, mapping, pos)?;
-            }
-        }
-        Ok(())
-    }
 }
 
 #[cfg(test)]

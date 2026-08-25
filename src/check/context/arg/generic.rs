@@ -44,26 +44,19 @@ impl Hash for GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&StringName>) -> TypeResult<GenericFunctionArg> {
-        if self.name.as_str() == SELF {
-            if class.is_none() {
-                let msg = "Cannot have self argument outside class";
-                return Err(vec![TypeErr::new(self.pos, msg)]);
+    /// Give a bare `self` argument the enclosing class as its type.
+    ///
+    /// Only ever called on an argument already known to belong to a class (see
+    /// `GenericFunction::in_class`), so `self` always has a class to take its type from here.
+    pub fn in_class(self, class: &StringName) -> GenericFunctionArg {
+        if self.name.as_str() == SELF && self.ty.is_none() {
+            GenericFunctionArg {
+                ty: Some(Name::from(class)),
+                ..self
             }
-
-            if self.ty.is_none() {
-                return if let Some(class) = class {
-                    Ok(GenericFunctionArg {
-                        ty: Some(Name::from(class)),
-                        ..self
-                    })
-                } else {
-                    Ok(self)
-                };
-            }
+        } else {
+            self
         }
-
-        Ok(self)
     }
 }
 

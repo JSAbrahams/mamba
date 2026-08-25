@@ -49,14 +49,14 @@ impl GenericFunction {
         _ty_def: bool,
         pos: Position,
     ) -> TypeResult<GenericFunction> {
-        if clss.is_some() {
+        if let Some(clss) = clss {
             let arguments = self
                 .arguments
                 .into_iter()
                 .map(|arg| arg.in_class(clss))
-                .collect::<Result<_, _>>()?;
+                .collect();
             Ok(GenericFunction {
-                in_class: clss.cloned(),
+                in_class: Some(clss.clone()),
                 arguments,
                 ..self
             })
