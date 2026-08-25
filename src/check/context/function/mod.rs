@@ -23,7 +23,6 @@ pub const SQRT: &str = "sqrt";
 
 pub mod generic;
 pub mod python;
-pub mod union;
 
 /// A Function, which may either be top-level, or optionally within a class.
 ///

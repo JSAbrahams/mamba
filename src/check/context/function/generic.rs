@@ -43,28 +43,18 @@ impl GenericFunction {
         }
     }
 
-    pub fn in_class(
-        self,
-        clss: Option<&StringName>,
-        _ty_def: bool,
-        pos: Position,
-    ) -> TypeResult<GenericFunction> {
-        if let Some(clss) = clss {
-            let arguments = self
-                .arguments
-                .into_iter()
-                .map(|arg| arg.in_class(clss))
-                .collect();
-            Ok(GenericFunction {
-                in_class: Some(clss.clone()),
-                arguments,
-                ..self
-            })
-        } else {
-            Err(Vec::from(TypeErr::new(
-                pos,
-                &String::from("Function must be in class."),
-            )))
+    /// Every caller already has a class to attach (see `check/context/clss/{generic,python}.rs`),
+    /// so this is infallible.
+    pub fn in_class(self, clss: &StringName, _ty_def: bool, _pos: Position) -> GenericFunction {
+        let arguments = self
+            .arguments
+            .into_iter()
+            .map(|arg| arg.in_class(clss))
+            .collect();
+        GenericFunction {
+            in_class: Some(clss.clone()),
+            arguments,
+            ..self
         }
     }
 }
