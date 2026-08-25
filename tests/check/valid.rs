@@ -106,6 +106,7 @@ use test_case::test_case;
 #[test_case("error", "with")]
 #[test_case("function", "callable_fun_arg")]
 #[test_case("function", "divmod")]
+#[test_case("function", "hello_world")]
 #[test_case("function", "pure_function")]
 #[test_case("function", "infer_default_arg_type")]
 #[test_case("function", "calls")]
@@ -162,7 +163,7 @@ fn to_python(input_dir: &str, file_name: &str) -> OutTestRet {
     tests_util::test_directory(true, &[input_dir], &[input_dir, "target"], file_name)
 }
 
-#[test_case("collection", "tuple", Arguments { annotate: false })]
+#[test_case("collection", "tuple", Arguments { annotate: false, ..Arguments::default() })]
 fn to_python_with_args(input_dir: &str, file_name: &str, args: Arguments) -> OutTestRet {
     tests_util::test_directory_args(true, &[input_dir], &[input_dir, "target"], file_name, &args)
 }

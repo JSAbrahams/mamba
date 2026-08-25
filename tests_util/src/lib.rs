@@ -19,6 +19,28 @@ pub static PYTHON: &str = "python3";
 #[cfg(target_os = "windows")]
 pub static PYTHON: &str = "python";
 
+/// Run a Python file with [PYTHON] and return its captured stdout.
+///
+/// Unlike [test_directory]/[fallable], which only diff the generated Python's *AST* against a
+/// reference, this actually executes the file -- for asserting on runtime behavior (e.g. what a
+/// program actually prints), not just structural equivalence to a reference.
+pub fn run_python(path: &Path) -> Result<String, String> {
+    let output = Command::new(PYTHON)
+        .arg(path)
+        .output()
+        .map_err(|e| format!("Could not run '{PYTHON} {}': {e}", path.display()))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    } else {
+        Err(format!(
+            "'{PYTHON} {}' exited with an error:\n{}",
+            path.display(),
+            String::from_utf8_lossy(&output.stderr)
+        ))
+    }
+}
+
 pub struct OutTestErr(Vec<String>);
 
 pub type OutTestRet<T = ()> = Result<T, OutTestErr>;

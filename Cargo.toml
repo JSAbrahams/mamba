@@ -12,23 +12,24 @@ repository = "https://github.com/JSAbrahams/mamba"
 keywords = ["python", "transpiler", "compiler"]
 categories = ["parsing"]
 
-[features]
-default = ["machine-code"]
-machine-code = ["inkwell"]
-
 [dependencies]
 ansi_term = "0.12.1"   # Colors in the terminal
 clap = { version = "4.5.40", features = ["derive"] } # Compiler frontend
+cranelift-codegen = "0.114.0" # Machine code IR, instruction selection and register allocation
+cranelift-frontend = "0.114.0" # Build Cranelift IR function bodies (SSA construction)
+cranelift-module = "0.114.0" # Function/data declaration shared across Cranelift backends
+cranelift-native = "0.114.0" # Detect the host target when --target is not given
+cranelift-object = "0.114.0" # Emit a native object file from compiled Cranelift IR
 glob = "0.3.0"          # Make traversing directories (Mamba projects) easier
-inkwell = { version = "0.6.0", features = ["llvm18-1"], optional = true } # Relevant for generating machine code
 itertools = "0.8.2"     # Tools to make iterating over collections easier
 log = "0.4"             # Log frontend
 loggerv = "0.7"         # Logger which accepts -vvv flag
 pathdiff = "0.1.0"      # Traverse directories (Mamba projects)
 python-parser = "0.1.0" # Parse Python, both in tests and to generate Mamba IR
+target-lexicon = "0.12.16" # Parse a --target triple for the Cranelift backend
+tempfile = "3.1.0"      # Stage object files before linking them into a --bin executable
 
 [dev-dependencies]
 assert_cmd = "0.10"     # Assert commands work
-tempfile = "3.1.0"      # Create temporary files for intermediate results
 test-case = "3.3.1"     # Parameterize tests
 tests_util = { path = "./tests_util" }

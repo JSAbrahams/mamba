@@ -2,6 +2,7 @@ use clap::Parser;
 use itertools::Itertools;
 use log::{self, error, info};
 
+use mamba::backend::Backend;
 use mamba::cli::Cli;
 use mamba::{transpile_dir, Arguments};
 
@@ -25,8 +26,17 @@ pub fn main() -> Result<(), String> {
         .init()
         .unwrap();
 
+    let backend = if cli_input.bin {
+        Backend::Bin {
+            target: cli_input.target.clone(),
+        }
+    } else {
+        Backend::Python
+    };
+
     let arguments = Arguments {
         annotate: cli_input.annotate,
+        backend,
     };
 
     info!("Mamba 🐍 {VERSION}");

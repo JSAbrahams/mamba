@@ -753,31 +753,23 @@ end
 ## 💻 The Command Line Interface
 
 ```
-USAGE:
-    mamba.exe [FLAGS] [OPTIONS]
+Transpile Mamba to Python code, or compile it to a native binary.
 
-FLAGS:
-    -a, --annotate          Enable type annotation of the output source.
-                            Currently still buggy feature.
-    -d, --debug             Add line numbers to log statements
-    -h, --help              Prints help information
-    -l, --level             Print log level
-        --no-module-path    Disable the module path in the log statements
-        --no-color          Disable colorized output
-    -v                      Set level of verbosity
-                            - v   : info, error, warning printed to stderr (Default)
-                            - vv  : debug messages are printed
-                            - vvv : trace messages are printed
-    -V, --version           Prints version information
+Usage: mamba [OPTIONS]
 
-OPTIONS:
-    -i, --input <INPUT>      Input file or directory.
-                             If file, file taken as input.
-                             If directory, recursively search all sub-directories for *.mamba files.
-                             If no input given, current directory used as input directory.
-    -o, --output <OUTPUT>    Output directory to store Python files.
-                             Output directory structure reflects input directory structure.
-                             If no output given, 'target' directory created in current directory.
+Options:
+  -i, --input <INPUT>    Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
+  -o, --output <OUTPUT>  Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory
+      --python           Output Python source (the default)
+      --bin              Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currentlysupported: literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
+      --target <TARGET>  Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`; defaults to the host triple)
+  -v...                  Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
+  -d, --debug            Add line numbers to log statements
+      --no-module-path   Disable the module path in the log statements
+      --no-color         Disable colorized output
+  -l, --level            Print log level
+  -a, --annotate         Enable type annotation of the output source. Currently still buggy feature
+  -h, --help             Print help
 ```
 
 You can type `mamba -help` for a message containing roughly the above information.
