@@ -29,12 +29,9 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::If, "if expressions")?;
     let cond = it.parse(&parse_expression, "if expression", start)?;
     it.eat(&Token::Then, "if expression")?;
-    let then = it.parse(&parse_expr_or_stmt, "if expression", start)?;
+    let then = it.parse(&parse_expr_or_stmt, "if then branch", start)?;
 
-    let el = if it.peek_if(&|lex| lex.token == Token::Else) {
-        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?
-    } else if it.peek_if_followed_by(&Token::NL, &Token::Else) {
-        it.eat(&Token::NL, "if else branch")?;
+    let el = if it.peek_if_skipping(&Token::NL, &|lex| lex.token == Token::Else) {
         it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?
     } else {
         None
@@ -54,7 +51,9 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
     let cond = it.parse(&parse_expression, "match", start)?;
-    it.eat(&Token::NL, "match")?;
+    it.eat_while(&Token::NL);
+    it.eat(&Token::With, "match")?;
+    it.eat_while(&Token::NL);
     let cases = it.parse_vec(&parse_match_cases, "match", start)?;
     let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
 
@@ -63,15 +62,18 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.eat(&Token::Indent, "match cases")?;
     let mut cases = vec![];
-    it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match case", start)?);
+    it.peek_while_not_token(&Token::End, &mut |it, _| {
+        cases.push(*it.parse(
+            &parse_match_case,
+            "match case",
+            crate::parse::Position::invisible(),
+        )?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
 
-    it.eat(&Token::Dedent, "match cases")?;
+    it.eat(&Token::End, "match cases")?;
     Ok(cases)
 }
 
@@ -143,7 +145,7 @@ mod test {
 
     #[test]
     fn match_verify() {
-        let source = String::from("match a\n    a => b\n    c => d");
+        let source = String::from("match a with\n    a => b\n    c => d\nend");
         let statements = parse_direct(&source).unwrap();
 
         let Node::Match { cond, cases } = &statements.first().expect("script empty.").node else {
@@ -227,10 +229,6 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
@@ -257,10 +255,6 @@ mod test {
                 lit: String::from("a")
             }
         );
-        let then = match &then.node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
             then.node,
             Node::Id {
@@ -268,12 +262,8 @@ mod test {
             }
         );
 
-        let el = match el.clone().unwrap().node {
-            Node::Block { statements } => statements[0].clone(),
-            _ => panic!("Expected then block, got {then:?}"),
-        };
         assert_eq!(
-            el.node,
+            el.clone().unwrap().node,
             Node::Id {
                 lit: String::from("c")
             }

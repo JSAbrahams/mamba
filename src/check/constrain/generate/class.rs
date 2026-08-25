@@ -23,8 +23,28 @@ pub fn gen_class(
             body: Some(body),
             ty,
             ..
+        } => match &body.node {
+            Node::Block { statements } => {
+                // Bind self so field initializers can reach class arguments via `self.<name>`.
+                let name = Some(Name::from(&StringName::try_from(ty)?));
+                let var = AST::new(
+                    ty.pos,
+                    Id {
+                        lit: String::from(SELF),
+                    },
+                );
+                let env = id_from_var(&var, &name, &None, true, ctx, constr, env)?;
+
+                constrain_class_body(statements, ty, &env, ctx, constr)
+            }
+            _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
+        },
+        Node::TypeDef {
+            body: Some(body),
+            ty,
+            ..
         }
-        | Node::TypeDef {
+        | Node::Trait {
             body: Some(body),
             ty,
             ..
@@ -32,7 +52,7 @@ pub fn gen_class(
             Node::Block { statements } => constrain_class_body(statements, ty, env, ctx, constr),
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
-        Node::Class { .. } | Node::TypeDef { .. } => Ok(env.clone()),
+        Node::Class { .. } | Node::TypeDef { .. } | Node::Trait { .. } => Ok(env.clone()),
 
         Node::TypeAlias {
             conditions,

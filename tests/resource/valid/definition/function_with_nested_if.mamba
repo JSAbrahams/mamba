@@ -1,8 +1,9 @@
 def f(x: Int) -> Int :=
     if x > 10 then
-        if x > 30 then
+        if x > 30 then do
             print("string")
-            x + 1
+            x + 1 
+            end
         else
             x - 1
     else

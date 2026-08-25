@@ -1,0 +1,11 @@
+def m := Matrix(1.0, 2.0, 3.0, 4.0)
+
+if m isa InvertibleMatrix then do
+    def m_inv := m.inverse()
+    print("Original matrix: {m}")
+    print("Inverse: {m_inv}")
+end else
+    print("Matrix is singular (not invertible).")
+
+def last_op = m.last_op()!
+print("Last operation was: {last_op}")

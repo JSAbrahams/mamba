@@ -21,6 +21,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("collection", "tuple")]
 #[test_case("class", "types")]
 #[test_case("class", "import")]
+#[test_case("class", "trait_and_type")]
 #[test_case("reamde_example", "builtin_trait" => ignore["rewrite parser"])]
 #[test_case("reamde_example", "class_with_constants" => ignore["rewrite parser"])]
 #[test_case("reamde_example", "class" => ignore["rewrite parser"])]

@@ -1,6 +1,6 @@
-class A
+class A where
     def fin my_num: Int := 10
-
+end
 
 def a := A()
 a.my_num := 20

@@ -1,5 +1,6 @@
-class X
+class X where
     def z: Int
 
     def __init__(self) :=
         def z: Int := self.z + 5
+end

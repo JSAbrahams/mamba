@@ -26,7 +26,7 @@ Or:
 
     def fin x := <expression>
 
-If `x` has to be immutable.
+Use this if `x` has to be immutable.
 
 ## Functions
 
@@ -51,7 +51,7 @@ A few things to note:
 
 We must always include the types of the argument of a function.
 We may however omit the return type of a function if it is inferrable from the body.
-The return type can also be ommitted if the function does not return anything.
+The return type can also be omitted if the function does not return anything.
 This is effectively the same as saying the function returns `None`.
 
 ### Default values
@@ -67,7 +67,7 @@ We can now call the method as such:
     def my_class := MyClass()
     my_class.my_method(10, 2)
 
-### Default behaviour (Language feature ommitted for now, under review)
+### Default behaviour (Language feature omitted for now, under review)
 
 We can assign default behaviour to a method or function.
 To demonstrate this, we will use a toy factorial example.
@@ -82,4 +82,4 @@ However, we could make this look much better with default behaviour.
     def factorial (n: Int): Int := n * self.factorial (n - 1)  # for all other values of n, this function is called
     def factorial (0): Int      := 1                           # if n is 0, then this function is called instead
 
-As long as a version exists of a function or method with arguments this is allowed.
+As long as a version exists of a function or method with arguments, this is allowed.

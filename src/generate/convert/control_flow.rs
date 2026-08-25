@@ -22,7 +22,10 @@ pub fn convert_cntrl_flow(
 
             match el {
                 Some(el) => {
-                    if ast.ty.is_some() && is_valid_in_ternary(then, el) {
+                    if !state.is_last_must_be_ret
+                        && ast.ty.is_some()
+                        && is_valid_in_ternary(then, el)
+                    {
                         let state = state
                             .is_last_must_be_ret(false)
                             .remove_ret(true)
@@ -96,8 +99,26 @@ pub fn convert_cntrl_flow(
 }
 
 fn is_valid_in_ternary(then: &ASTTy, el: &ASTTy) -> bool {
-    !matches!(then.node, NodeTy::Block { .. } | NodeTy::Raise { .. })
-        && !matches!(el.node, NodeTy::Block { .. } | NodeTy::Raise { .. })
+    is_expr_valid_in_ternary(then) && is_expr_valid_in_ternary(el)
+}
+
+/// Whether `node` can be rendered as a Python expression (needed for it to
+/// appear as an arm of a ternary). `Block`/`Raise`/`Match`/`Handle` only have
+/// statement forms in generated Python, and a nested `IfElse` is only OK if
+/// both of *its* arms are themselves expressible (recurse, since the do/end
+/// grammar no longer wraps single-statement arms in a `Block`, so a nested
+/// `IfElse` whose arm is a multi-statement block is otherwise invisible here).
+fn is_expr_valid_in_ternary(node: &ASTTy) -> bool {
+    match &node.node {
+        NodeTy::Block { .. }
+        | NodeTy::Raise { .. }
+        | NodeTy::Match { .. }
+        | NodeTy::Handle { .. } => false,
+        NodeTy::IfElse { then, el, .. } => {
+            el.as_ref().is_some_and(|el| is_valid_in_ternary(then, el))
+        }
+        _ => true,
+    }
 }
 
 #[cfg(test)]

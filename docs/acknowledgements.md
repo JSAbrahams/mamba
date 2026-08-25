@@ -12,4 +12,4 @@ I would like to thank, in no particular order,
 
 For engaging in discussions, and challenging me on some of my ideas.
 
-I'd also like to thank [Jeff](https://github.com/Apanatshka) for introducitng me to Rust, providing some feedback one some of my ideas, and sharing his knowledge about language designs and type systems.
+I'd also like to thank [Jeff](https://github.com/Apanatshka) for introducing me to Rust, providing some feedback on some of my ideas, and sharing his knowledge about language designs and type systems.

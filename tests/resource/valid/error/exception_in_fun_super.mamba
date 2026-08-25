@@ -1,8 +1,7 @@
 class MyException(msg: Str): Exception(msg)
 
-def g() -> Int ! MyException :=
-    ! MyException("A")
+def g() -> Int ! MyException := ! MyException("A")
 
-def f(x: Int) -> Int :=
-    g()
-        err: Exception => x + 10
+def f(x: Int) -> Int := g() ! where
+    err: Exception => x + 10
+end

@@ -1,6 +1,6 @@
 ⬅ [🏠 Home](../README.md)
 
-⬅ [1 💭 Philsophy of the Language](README.md)
+⬅ [1 💭 Philosophy of the Language](README.md)
 
 # 1.1 Inspirations of the Language
 
@@ -26,17 +26,17 @@ Ruby      | Portions of the syntax of the language.
 Swift     | Elegant error handling mechanisms.
 Go        | Error handling mechanisms, which encourage error handling on site.
 MATLAB    | Small portions of the syntax.
-SmallTalk | OOP concepts, with a large emphasis on program state.
+Smalltalk | OOP concepts, with a large emphasis on program state.
 JavaScript| Interchangeability of variables and functions, and a reliance on higher-order functions.
 Perl      | The `forward` keyword.
 
-My experience with each language varies greatly, from having used it on a near daily basis, to only having read about it online and only have a conceptual understanding of its workings.
+My experience with each language varies greatly, from having used it on a near daily basis, to only having read about it online and only having a conceptual understanding of its workings.
 Below I outline a bit what each language aims to do, and how well I believe that it achieves these goals.
 The groupings might seem somewhat arbitrary to the reader, and to some extent it is.
 I grouped them mostly by what I perceived to be their intended design goals.
-Though their grouping depends heavily on the narrative, I'm sure that someone
+Though their grouping depends heavily on the narrative, I'm sure that someone will disagree.
 
-## The Pure OOP's: Java, SmallTalk, C#, C++, Eiffel
+## The Pure OOPs: Java, Smalltalk, C#, C++, Eiffel
 
 ## The Pure Functionals: Haskell
 

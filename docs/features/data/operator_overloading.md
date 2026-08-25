@@ -21,14 +21,14 @@ We cannot overload the following operators, as these are used to compare instanc
 - `isa`
 
 Overloading operators gives us the ability to more concisely work with more complex objects.
-To demonstrate the concept of operator overloading we will use the (incomplete) `Complex` class, which represent complex numbers.
+To demonstrate the concept of operator overloading we will use the (incomplete) `Complex` class, which represents complex numbers.
 
 Say we define a stateless `Complex` as such:
 
      stateless Complex(def real: Int, def imaginary: Int)     
          def + (other: Complex) := Complex(self real + other real, self imaginary + other imaginary)
          
-         # we can also overload an unary opeator
+         # we can also overload a unary operator
          # when overloading, the default return value is the type itself, in this case Complex
          def sqrt () :=
             real      := sqrt (self real ^ 2 + self imaginary ^ 2)

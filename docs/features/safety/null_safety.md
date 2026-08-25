@@ -6,7 +6,7 @@
 
 # 2.4.3 Null Safety
 
-We wish to be explicit about a function which may return nothing, as the user of the function might expect a  value.
+We wish to be explicit about a function which may return nothing, as the user of the function might expect a value.
 For this we use the question mark symbol: `?`
 
 Take the following:
@@ -19,8 +19,8 @@ the return type of the function nullable.
 
     def my_function(set: Set[String], str: String): String? := set get str
     
-Now when calling my function, I will either get an `Int` or a `undefined`. Because this is explicit, we know this at compile time.
-To cal a function on the resulting value, we may use the `?and` operator.
+Now when calling my function, I will either get an `Int` or an `undefined`. Because this is explicit, we know this at compile time.
+To call a function on the resulting value, we may use the `?and` operator.
 
     def set ofmut <- { "hello" }
     def str_1 <- "hello"
@@ -45,7 +45,7 @@ of the operator must be of the same type.
     
     def other <- my_function(set, "other")
     
-    # here, other is of type String?, as we do not know whehter it is a String or undefined
+    # here, other is of type String?, as we do not know whether it is a String or undefined
 
 You can also return `undefined` in a function:
 

@@ -1,11 +1,9 @@
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
-use crate::parse::expr_or_stmt::parse_expr_or_stmt;
+use crate::parse::ast::{Node, AST};
+use crate::parse::block::parse_block;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::expected_one_of;
-use crate::parse::result::ParseResult;
+use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_id;
 
 pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
@@ -35,9 +33,8 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
 fn parse_while(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("while statement")?;
     it.eat(&Token::While, "while statement")?;
-    let cond = it.parse(&parse_expression, "while statement", start)?;
-    it.eat(&Token::Do, "while")?;
-    let body = it.parse(&parse_expr_or_stmt, "while statement", start)?;
+    let cond = it.parse(&parse_expression, "while statement condition", start)?;
+    let body = it.parse(&parse_block, "while statement block", start)?;
 
     let node = Node::While {
         cond,
@@ -52,8 +49,7 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
     let expr = it.parse(&parse_id, "for statement", start)?;
     it.eat(&Token::In, "for statement")?;
     let col = it.parse(&parse_expression, "for statement", start)?;
-    it.eat(&Token::Do, "for statement")?;
-    let body = it.parse(&parse_expr_or_stmt, "for statement", start)?;
+    let body = it.parse(&parse_block, "for body", start)?;
 
     let node = Node::For {
         expr,
@@ -70,7 +66,7 @@ mod test {
 
     #[test]
     fn for_statement_verify() {
-        let source = String::from("for a in c do d");
+        let source = String::from("for a in c do d end");
         let statements = parse_direct(&source).unwrap();
 
         let (expr, collection, body) = match &statements.first().expect("script empty.").node {
@@ -90,8 +86,14 @@ mod test {
                 lit: String::from("c")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("d")
             }
@@ -100,7 +102,7 @@ mod test {
 
     #[test]
     fn for_range_step_verify() {
-        let source = String::from("for a in c .. d .. e do f");
+        let source = String::from("for a in c .. d .. e do f end");
         let statements = parse_direct(&source).unwrap();
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
@@ -144,8 +146,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("f")
             }
@@ -154,7 +162,7 @@ mod test {
 
     #[test]
     fn for_range_incl_verify() {
-        let source = String::from("for a in c ..= d do f");
+        let source = String::from("for a in c ..= d do f end");
         let statements = parse_direct(&source).unwrap();
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
@@ -193,8 +201,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("f")
             }
@@ -228,7 +242,7 @@ mod test {
 
     #[test]
     fn if_with_block_verify() {
-        let source = String::from("if a then\n    c\n    d");
+        let source = String::from("if a then do\n    c\n    d\nend");
         let statements = parse_direct(&source).unwrap();
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
@@ -266,7 +280,7 @@ mod test {
 
     #[test]
     fn while_verify() {
-        let source = String::from("while a do d");
+        let source = String::from("while a do d end");
         let statements = parse_direct(&source).unwrap();
 
         let (cond, body) = match &statements.first().expect("script empty.").node {
@@ -280,8 +294,14 @@ mod test {
                 lit: String::from("a")
             }
         );
+
+        let Node::Block { statements } = body.node else {
+            panic!("expected block: {body:#?}");
+        };
+
+        assert_eq!(statements.len(), 1);
         assert_eq!(
-            body.node,
+            statements[0].node,
             Node::Id {
                 lit: String::from("d")
             }

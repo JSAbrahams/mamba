@@ -1,6 +1,6 @@
 ⬅ [🏠 Home](../README.md)
 
-⬅ [1 💭 Philsophy of the Language](README.md)
+⬅ [1 💭 Philosophy of the Language](README.md)
 
 # 1.2 Readability
 
@@ -22,12 +22,12 @@ A few examples are shown below:
 - The negation of equality `=` is `/=`, instead of having to negate the entire equality using `not`.
 
 As stated before, we also decrease the reliance on symbols, which may be another source of syntax noise.
-This should make the language more closely map to the english language, but not so close as to introduce ambiguity into the language.
+This should make the language more closely map to the English language, but not so close as to introduce ambiguity into the language.
 A few examples are given below:
 
 - Use `and` instead of `&&`, i.e. `alice.is_online and bob.is_online` instead of `alice.is_online && bob.is_online`.
   We can even write `alice is_online and bob is_online`.
-- Use `or` instead of `||`, i.e.  `foo() or bar()` instead of `foo() || bar()`.
+- Use `or` instead of `||`, i.e. `foo() or bar()` instead of `foo() || bar()`.
 - Use `not` instead of `!`, which can easily be missed when read.
   So we write `if not productive then drink_coffee()` instead of `if !productive then drink_coffee()`.
 - Use indentation to denote code blocks instead of `{` and `}`, just as in Python.
@@ -37,7 +37,7 @@ Mamba also uses arrow notation to more clearly denote the flow of data:
   It denotes data flowing from the expression on the right to the identifier on the left.
 - `->` is used within type definitions of functions and methods.
 - `=>` is used to denote the control flow of the application.
-  This is partially to more clearly differentiates data manipulation from application control flow.
+  This is partially to more clearly differentiate data manipulation from application control flow.
 
 This, combined with (sparing) use of syntax sugar, should ideally make the language easier to read.
 Take for instance the following piece of code:

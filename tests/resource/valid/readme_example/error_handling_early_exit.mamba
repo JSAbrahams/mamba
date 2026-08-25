@@ -1,0 +1,3 @@
+def a := function_may_throw_err() !
+# if `function_may_throw_err` returned an exception, we will never reach this point
+print("a has value {a}.")

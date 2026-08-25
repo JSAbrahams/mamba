@@ -1,4 +1,4 @@
-class X(def a: Float)
+class X(a: Float)
 
 def x := X(10)
 

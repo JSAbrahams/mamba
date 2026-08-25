@@ -1,4 +1,4 @@
-class X(def a: Int)
+class X(a: Int)
 
 def x := X(10)
 x.self

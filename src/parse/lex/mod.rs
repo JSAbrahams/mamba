@@ -29,7 +29,6 @@ pub fn tokenize(input: &str) -> LexResult {
     while let Some(c) = it.next() {
         tokens.append(&mut into_tokens(c, &mut it, &mut state)?);
     }
-    tokens.append(&mut state.flush_indents());
 
     let tokens = pass(&tokens);
     Ok(tokens)
@@ -43,7 +42,6 @@ fn tokenize_direct(input: &str) -> LexResult {
     while let Some(c) = it.next() {
         tokens.append(&mut into_tokens(c, &mut it, &mut state)?);
     }
-    tokens.append(&mut state.flush_indents());
 
     let tokens = pass(&tokens);
     Ok(tokens)

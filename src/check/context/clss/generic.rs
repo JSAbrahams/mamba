@@ -229,7 +229,7 @@ impl TryFrom<&AST> for GenericClass {
                     parents: parents.into_iter().map(Result::unwrap).collect(),
                 })
             }
-            Node::TypeDef { ty, isa, body, .. } => {
+            Node::TypeDef { ty, isa, body, .. } | Node::Trait { ty, isa, body, .. } => {
                 let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
@@ -326,11 +326,9 @@ fn get_fields_and_functions(
 
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
-            Node::DocStr { .. } => {}
-            _ => {
-                let msg = "Expected function or variable definition";
-                return Err(vec![TypeErr::new(statement.pos, msg)]);
-            }
+            // Anything else (e.g. a bare `print(...)`) is an executable statement, not part of
+            // the class's signature — it's handled later, once we're checking the class body.
+            _ => {}
         }
     }
 
@@ -352,7 +350,8 @@ mod test {
 
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass(def fin a: Int, b: Int): Parent(b)\n    def c: Int := a + b\n";
+        let source =
+            "class MyClass(fin a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -392,7 +391,7 @@ mod test {
         assert!(!generic_class.args[2].is_py_type);
         assert!(!generic_class.args[2].has_default);
 
-        assert_eq!(generic_class.fields.len(), 2);
+        assert_eq!(generic_class.fields.len(), 3);
         let mut fields = generic_class
             .fields
             .iter()
@@ -404,6 +403,15 @@ mod test {
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
         assert!(!field.mutable);
+
+        // `b` is a bare (non-`def`) constructor argument, which is still instance state stored
+        // on `self` (just without an explicit field declaration), so it is a field too.
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "b");
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
@@ -417,7 +425,7 @@ mod test {
 
     #[test]
     fn from_class() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass\n    def c: Int := a + b\n";
+        let source = "class MyClass where\n    def c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -457,7 +465,7 @@ mod test {
 
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass[T]\n    def c: T\n";
+        let source = "class MyClass[T] where\n    def c: T\nend";
         let ast = parse_direct(source)
             .expect("valid type syntax")
             .into_iter()
@@ -498,7 +506,7 @@ mod test {
 
     #[test]
     fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
-        let source = "type MyType[T]\n    def c: T\n";
+        let source = "type MyType[T] where\n    def c: T\nend";
         let ast = parse_direct(source)
             .expect("valid type syntax")
             .into_iter()
@@ -539,7 +547,7 @@ mod test {
 
     #[test]
     fn from_type_def() -> Result<(), Vec<TypeErr>> {
-        let source = "type MyType\n    def c: String\n";
+        let source = "type MyType where\n    def c: String\nend";
         let ast = parse_direct(source)
             .expect("valid type syntax")
             .into_iter()

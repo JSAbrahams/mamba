@@ -1,11 +1,14 @@
-class MyClass1
+class MyClass1 where
     def f1(self) := pass
-class MyClass2
+end
+class MyClass2 where
     def f2(self) := pass
+end
 
 def x := MyClass2()
 if True then
     x.f2()
-else
+else do
     def x := MyClass1()
     x.f1()
+end

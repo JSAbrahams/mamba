@@ -1,5 +1,6 @@
-class MyType(a: Str)
-class MyType2(b: Str)
+trait MyType
+trait MyType2
 
-class MyClass1: MyType("asdf"), MyType2("qwerty")
+class MyClass1: MyType, MyType2 where
     def other: Int
+end

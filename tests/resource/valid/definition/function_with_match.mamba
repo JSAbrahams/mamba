@@ -1,5 +1,7 @@
 def f(x: Int) -> Int :=
-    match x
+    match x with
         2 => 3
         4 => 30
         _ => 300
+    end
+    

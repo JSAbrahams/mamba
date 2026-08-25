@@ -27,7 +27,7 @@ And then we define the `my_function` as such:
     
 Now, in the body of the function, we can rest easy knowing that the passed variable is indeed a composer.
 It is actually now impossible to pass another variable type to the function, as this is statically checked by the type checker.
-If it sees that we try to pass something that is not a composer, will give an error, meaning that the program wil not run.
+If it sees that we try to pass something that is not a composer, it will give an error, meaning that the program will not run.
 
 In some programming languages, we have to explicitly state the type of each variable. 
 This however makes the application rather verbose.
@@ -104,7 +104,7 @@ The above seems simple, but there are two issues:
 
 * At a glance, we cannot know what covered symbolises. Kilometers, meters? We can of course rename the variable, but in certain situations this makes the code rather verbose.
 * We do no bounds checking here. What if covered is more than the total, or negative? We could add these bounds checks to the method.
-  However, this makes the method more verbose. Ideally, we want to method to express in a concise manner what it does without having a majority of the method being error handling code.
+  However, this makes the method more verbose. Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
   
 To solve the above two issues, we can use type aliases. Observe the following:
 
@@ -118,7 +118,7 @@ code ideally should speak for itself without relying heavily on documentation.) 
 
 ## Type Refinement
 
-Type refinement expands upon type aliases by defining certain conditions an object must adhere to to be considered that type.
+Type refinement expands upon type aliases by defining certain conditions an object must adhere to, to be considered that type.
 This can also be used to enforce pre-conditions of a function or method when used as a parameter, and post-conditions when used as the return type. This is akin to the philosophy of Design by Contract.
 
 Say we have a function:
@@ -129,7 +129,7 @@ Say we have a function:
     
 In some situations, this function does not behave as we expect it to. It may print an uneven number.
 In such a situation, we often turn to the design by contract philosophy, where a function has pre and post-conditions.
-There are several traditional approaches to solving this problem, both if which are valid, though the preferred approach does depend on context:
+There are several traditional approaches to solving this problem, both of which are valid, though the preferred approach does depend on context:
 
 Just return `x` if it is uneven and don't print anything using a simple `if`:
 
@@ -147,8 +147,8 @@ Raise and error if `x` is uneven:
     
 However, in the above code, we see that writing pre-conditions can get out of hand, and we might want to use the same pre-conditions for multiple functions, which results in duplicate code.
 This is a situation where type aliases with conditions can come in handy.
-Type aliases encourages decentralisation.
-The logic of a type is closely linked to the type itself, instead of having to manually check the a type adheres to certain conditions every time it is used.
+Type aliases encourage decentralisation.
+The logic of a type is closely linked to the type itself, instead of having to manually check that a type adheres to certain conditions every time it is used.
 
 We can use a trivial type `EvenNum` to demonstrate how one would use conditions in a type alias. Say we define the
 type-alias `EvenNum`:
@@ -161,13 +161,13 @@ Which is the same as:
     type EvenNum: Int when
         self mod 2 = 0
         
-We may also chooose to add a descriptive error message:
+We may also choose to add a descriptive error message:
 
     type EvenNum: Int when
         self mod 2 = 0 else "{self} is an uneven number"
 
 This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. This is similar to creating
-a new class `EvenNum` which is a `Int`, and verifying that these properties hold.
+a new class `EvenNum` which is an `Int`, and verifying that these properties hold.
 
 We can now redefine the function as follows:
 
@@ -202,7 +202,7 @@ is thrown if a condition does not hold:
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
     fourth := if a isa EvenNum then g(a) else 0
     
-    # If it can be statically verified that the propties hold, it is not necessary to handle any type specific errors
+    # If it can be statically verified that the properties hold, it is not necessary to handle any type specific errors
     def c := 2
     def fifth := g(c)
     

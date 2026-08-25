@@ -124,11 +124,7 @@ pub fn fallable(
     let cmd1 = Command::new(PYTHON)
         .arg("-m")
         .arg("py_compile")
-        .arg(&resource_path(
-            valid,
-            input,
-            &format!("{}_check.py", file_name),
-        ))
+        .arg(&resource_path(valid, input, &format!("{file_name}.py",)))
         .output()
         .expect("Could not run Python command.");
 
@@ -140,7 +136,7 @@ pub fn fallable(
         .output()
         .expect("Could not run Python command.");
 
-    let check_src = resource_content(true, input, &format!("{}_check.py", file_name))?;
+    let check_src = resource_content(true, input, &format!("{}.py", file_name))?;
     // Replace CRLF with LF line endings
     let check_ast = python_src_to_stmts(&check_src.replace("\r\n", "\n"));
 
@@ -156,7 +152,7 @@ pub fn fallable(
         {}\n\
         ----------",
             String::from_utf8(cmd1.stderr).unwrap().trim(),
-            resource_path(valid, input, &format!("{}_check.py", file_name)),
+            resource_path(valid, input, &format!("{file_name}.py")),
             check_src
                 .lines()
                 .enumerate()

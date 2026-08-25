@@ -1,10 +1,12 @@
-class MyErr(def message: Str): Exception
+class MyErr(message: Str): Exception
 
 def function_may_throw_err() -> Int ! MyErr := 10
 
-def a := function_may_throw_err()
-    err: MyErr =>
+def a := function_may_throw_err() ! where
+    err: MyErr => do
         print("We have a problem: {err.message}.")
         20
+    end
+end
 
 print("a has value {a}.")

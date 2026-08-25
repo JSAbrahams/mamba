@@ -1,5 +1,6 @@
-class MyClass
+class MyClass where
     def a: Int := 10
     def b: Int := self.a + 1
+end
 
 def my_class := MyClass()

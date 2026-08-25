@@ -473,7 +473,7 @@ impl Name {
 
     pub fn as_name(&self, true_name: &TrueName, pos: Position) -> TypeResult<Name> {
         self.names.get(true_name).map(Name::from).ok_or_else(|| {
-            let msg = format!("{self} does not define {true_name}");
+            let msg = format!("Type '{self}' does not define '{true_name}'");
             vec![TypeErr::new(pos, &msg)]
         })
     }

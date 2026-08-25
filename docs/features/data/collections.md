@@ -14,9 +14,9 @@ We have three types of collections:
 
 We can also create key-value pairs as such:
 `<expression> => <expression or statement>`
-If Mamba detects we are building a data-structure which only such values, it becomes a dictionary.
+If Mamba detects we are building a data-structure which only contains such values, it becomes a dictionary.
 
-By default, a collection is immutable, meaning that we cannot add or remove items, or make changes to the contained
+By default, a collection is immutable, meaning that we cannot add or remove items, or make changes to the contained items.
 A collection may be mutable.
 
 ## Set
@@ -50,9 +50,9 @@ A list may be ordered.
 ## Tuple
 
 A tuple is created using `(` ... `)`.
-A tuple a collection of named items.
+A tuple is a collection of named items.
 
 ## Dictionary
 
 A map is created using `{` ... `}`, where each mapping is represented as such: `key => value`.
-A map is a collection of unordered set of items.
+A map is an unordered collection of items.

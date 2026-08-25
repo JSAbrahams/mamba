@@ -1,11 +1,14 @@
-class MyClass1
+class MyClass1 where
     def f1(self) := print("1")
-class MyClass2
+end
+class MyClass2 where
     def f2(self) := print("2")
+end 
 
-if True then
+if True then do
     def x := MyClass1()
     x.f1()
-else
+end else do
     def x := MyClass2()
     x.f2()
+end

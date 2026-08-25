@@ -20,5 +20,5 @@ We also have type refinement features to further enhance function definitions.
 We can also specify what type of object they return.
 To extend this we have also added generics to the language, which can be useful when for instance defining collections of objects.
 
-We have certain error handling mechanisms built in, which encourage error handling on site help to make it clear visually where errors might occur.
+We have certain error handling mechanisms built in, which encourage error handling on site to help make it clear visually where errors might occur.
 To avoid undefined behaviour, we also baked null safety features into the language.

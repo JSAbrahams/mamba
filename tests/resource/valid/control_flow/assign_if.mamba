@@ -1,6 +1,7 @@
-def my_var := if True then
+def my_var := if True then do
     print("then")
     10
-else
+end else do
     print("else")
     20
+end

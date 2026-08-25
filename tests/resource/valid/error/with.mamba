@@ -4,9 +4,12 @@ def my_resource := 10
 
 with my_resource as other do
     do_something(other)
+end
 
 with my_resource as yet_another: Int do
     do_something(yet_another)
+end
 
 with my_resource do
     do_something(my_resource)
+end
