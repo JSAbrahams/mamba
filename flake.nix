@@ -82,6 +82,9 @@
             # make sure to configure githooks path
             git config core.hooksPath .githooks
 
+            # push a new branch without needing --set-upstream every time
+            git config push.autoSetupRemote true
+
             if [ -z "$NU_VERSION" ]; then
                 # workspace is where we called flake from
                 export WORKSPACE="$PWD"
