@@ -107,6 +107,7 @@ use test_case::test_case;
 #[test_case("function", "callable_fun_arg")]
 #[test_case("function", "divmod")]
 #[test_case("function", "pure_function")]
+#[test_case("function", "infer_default_arg_type")]
 #[test_case("function", "calls")]
 #[test_case("function", "definition")]
 #[test_case("function", "function_with_defaults")]

@@ -6,11 +6,16 @@ structure and conventions (fixture layout, `test_case` tables, how `to_python` d
 the root `CLAUDE.md` — this file is specifically about *what to test next* and *why some things
 can't be*.
 
-Regenerate coverage with:
+Regenerate coverage with the same exclusions CI/Codecov use (`.github/workflows/coverage.yml`),
+so your local numbers match what you see on the dashboard — without `--ignore-filename-regex`,
+`tests/*.rs` and `tests_util/src/lib.rs` count toward the total too, which inflates/dilutes the
+percentage in a way that doesn't reflect actual compiler coverage:
 
 ```sh
-cargo llvm-cov --package mamba --lcov --output-path target/lcov.info
-cargo llvm-cov --package mamba --summary-only --json --output-path target/cov.json
+cargo llvm-cov --package mamba --lcov --output-path target/lcov.info \
+  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
+cargo llvm-cov --package mamba --summary-only --json --output-path target/cov.json \
+  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
 ```
 
 `target/lcov.info` has per-line `DA:<line>,<hit-count>` records per file if you need to find
@@ -166,6 +171,63 @@ methods are invoked only through a compiler-inserted bound (`Termination`, but t
 to `Drop`, operator traits reached only through their operator syntax, etc.) needs the deletion
 verified with a real `cargo build --tests`/`cargo test`, not just a caller-count heuristic —
 which is exactly why every deletion in this file went through that verification before landing.
+
+## A whole dead module the sweep's `\bname\b` heuristic couldn't see: `FunUnion`
+
+`check/context/function/union.rs` (`FunUnion`, a "set of overloaded `Function`s" wrapper, plus
+`PartialEq`/`Hash`/two `From` impls/`Display`/`TryFromPos<&FunUnion> for Function` — 40 lines)
+had zero callers anywhere outside its own file, and its `pub mod union;` declaration
+(`check/context/function/mod.rs`) had zero importers anywhere — but the original sweep missed it
+entirely, because `FunUnion` is mentioned *many* times within its own file (once per impl target),
+so `\bFunUnion\b`'s occurrence count was never close to 1. The type-level sweep needs to count
+occurrences *outside the defining file*, not anywhere at all, to catch a type that's heavily
+self-referential (lots of impls for itself) while being globally unused. Deleting it also orphaned
+`check/result.rs`'s `TryFromPos` trait (its only impl was in `union.rs`), which came out too.
+`git log` on the file showed its last real change was in a `Streamline Name logic` commit, well
+before this project's current state — consistent with overload resolution having moved to the
+`Name`-as-set-of-types system and this wrapper simply never being deleted at the time.
+
+## Two more `in_class` methods with the same dead-by-construction branch as before
+
+`GenericField::in_class` (`check/context/field/generic.rs`) and `GenericFunction::in_class`
+(`check/context/function/generic.rs`) both had the identical shape already fixed once for
+`GenericFunctionArg::in_class`: an `Option<&StringName>` parameter with a `class.is_none()` (or
+`else`) arm returning an error, where *every* call site (`check/context/clss/generic.rs`,
+`check/context/clss/python.rs`) already only ever passes `Some(...)`. Simplified both to take
+`&StringName` directly and return the plain value instead of a `TypeResult`, updating all 5 call
+sites accordingly. Worth checking for this exact shape (`Option<&T>` param + "not in class" style
+error + every caller passing `Some`) elsewhere if a similar refactor comes up again — it seems to
+have been a repeated pattern across this module rather than a one-off.
+
+`GenericField::try_from`'s `Node::VariableDef` arm (in the same file) turned out to be dead too,
+for a related reason: its only caller (`ClassArgument::try_from` in
+`check/context/arg/generic.rs`) only ever passes a `Node::FunArg`. Removed that arm; a bare
+`Node::VariableDef` still becomes a field correctly through the *separate* `GenericFields`
+`TryFrom` impl in the same file (which additionally handles tuple-destructuring, which
+`GenericField`, singular, never needed to).
+
+## A real bug found by testing the poorly-covered parts: default-argument type inference
+
+`check/context/arg/generic.rs`'s `GenericFunctionArg::try_from` infers a parameter's type from its
+default value when no explicit annotation is given (`def f(a := 5)` infers `Int` for `a`). This
+whole branch (`Node::Str`/`Node::Int`/`Node::Real`/`Node::ENum`/boolean-`Node::Id` arms) was
+completely uncovered — and turned out to be broken: it built the inferred type from
+`clss::python::STRING_PRIMITIVE`/`BOOL_PRIMITIVE`/`INT_PRIMITIVE`/`FLOAT_PRIMITIVE` (the *Python*-side
+primitive names — `"str"`, `"bool"`, `"int"`, `"float"`, lowercase), not the Mamba-side names
+`clss::STRING`/`BOOL`/`INT`/`FLOAT` (`"Str"`, `"Bool"`, `"Int"`, `"Float"`). The bug was silent as
+long as the inferred type was only ever used as the parameter's own default (nothing looks the
+type name up in that case) — it only surfaced once something needed to *resolve* that type name,
+e.g. checking a call-site argument against it (`f("hi")` erroring with `Type 'str' is undefined.`,
+since only the capitalized Mamba name is a registered class in `Context`). Fixed to use the
+Mamba-side constants; `tests/resource/valid/function/infer_default_arg_type.mamba` now exercises
+all four literal kinds through an actual call site with explicit overrides (not just relying on
+the defaults, which is exactly what would have kept this bug hidden), and
+`tests/resource/invalid/type/function/arg_default_not_literal.mamba` covers the sibling
+"can only infer type of literals" error arm (a non-literal default with no annotation). This is
+the clearest example so far of coverage work finding a real correctness bug rather than just
+padding a percentage — worth remembering when a "poorly covered" branch looks like real, reachable
+logic rather than a dead/defensive one: write the fixture and see what actually happens before
+assuming the branch is merely undertested.
 
 ## Top-level fields are parsed but never looked up
 

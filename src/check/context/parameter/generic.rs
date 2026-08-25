@@ -24,3 +24,30 @@ impl Display for GenericParameter {
         )
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::GenericParameter;
+    use crate::check::name::string_name::StringName;
+    use crate::check::name::true_name::TrueName;
+
+    #[test]
+    fn display_without_parent() {
+        let param = GenericParameter {
+            is_py_type: true,
+            name: StringName::from("T"),
+            parent: None,
+        };
+        assert_eq!(param.to_string(), "T");
+    }
+
+    #[test]
+    fn display_with_parent() {
+        let param = GenericParameter {
+            is_py_type: true,
+            name: StringName::from("T"),
+            parent: Some(TrueName::from(&StringName::from("Comparable"))),
+        };
+        assert_eq!(param.to_string(), "T isa Comparable");
+    }
+}

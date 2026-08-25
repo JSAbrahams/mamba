@@ -9,10 +9,6 @@ use crate::common::result::{format_err, Cause, WithCause, WithSource};
 
 pub type TypeResult<T = ASTTy> = Result<T, Vec<TypeErr>>;
 
-pub trait TryFromPos<T>: Sized {
-    fn try_from_pos(value: T, pos: Position) -> TypeResult<Self>;
-}
-
 #[derive(Debug, Clone, Eq)]
 pub struct TypeErr {
     pub pos: Option<Position>,
