@@ -1,0 +1,2 @@
+class MyClass: 5 where
+end

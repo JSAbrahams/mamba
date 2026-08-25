@@ -1,0 +1,2 @@
+class MyClass: Parent(123) where
+end

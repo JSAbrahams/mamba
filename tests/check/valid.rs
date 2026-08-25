@@ -11,6 +11,8 @@ use test_case::test_case;
 #[test_case("call", "call_with_class_child")]
 #[test_case("call", "input")]
 #[test_case("class", "assign_to_nullable_field")]
+#[test_case("class", "cyclic_field_dependency")]
+#[test_case("class", "type_bare_parent")]
 #[test_case("class", "generics")]
 #[test_case("class", "field_depends_on_later_field")]
 #[test_case("class", "assign_types_nested")]
