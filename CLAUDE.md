@@ -118,25 +118,55 @@ The call-site "handle" construct for a call that may raise is `<expr> ! where <c
 `f(10) ! where err: MyErr => do ... end end` — the `!` marks the call as fallible and must be consumed before
 looking for `where` (`parse_expr_or_stmt` in `expr_or_stmt.rs`).
 
-`type X: Parent when <cond>` (single-line) / `type X: Parent when\n <cond>\n...\nend` (multi-line, terminated
-by `end`) is the *conditional type alias* form (produces `Node::TypeAlias`, binds `self` to `Parent` while
-checking the conditions). `type X where <defs> end` is a different form — an interface/type body of field and
-function *signatures* (produces `Node::TypeDef`, does **not** bind `self`). These two are easy to conflate
-(`when` vs `where`) since both start with `type X: Parent`; picking the wrong one either fails to parse or fails
-type-checking with a confusing "Undefined variable: self".
+### `type` vs `trait`
 
-## Known incomplete work (branch `feat-remove-indent-dedent`, as of 2026-08-24)
+Mamba has two, deliberately separate, keywords that both start with `<keyword> X: Parent` and are easy to
+conflate:
+
+- **`type`** is **type refinement**: narrowing a type by a boolean predicate over `self`.
+  `type X: Parent when <cond>` (single-line) / `type X: Parent when\n <cond>\n...\nend` (multi-line, terminated
+  by `end`) is the *conditional type alias* form (produces `Node::TypeAlias`, binds `self` to `Parent` while
+  checking the conditions). `type X where <defs> end` (no `when`) is a different, simpler form — an
+  interface-shaped body of field and function *signatures* with no refinement condition (produces
+  `Node::TypeDef`, does **not** bind `self`).
+- **`trait`** is an **interface**, à la Java interfaces or Rust traits: a named set of function
+  signatures (optionally with default bodies) that a `class` can implement. `trait X where <defs> end` /
+  `trait X: Parent where <defs> end` produces `Node::Trait`, parsed identically to the signature form of
+  `type` (see `parse_trait_def` next to `parse_type_def` in `src/parse/class.rs`) but kept as its own AST/
+  `NodeTy` variant. **`trait` has no `when` form** — refinement conditions don't apply to interfaces, so
+  `trait X when ...` is a parse error (use `type` instead).
+
+Picking the wrong keyword, or `when` vs `where`, either fails to parse or fails type-checking with a confusing
+"Undefined variable: self".
+
+**⚠️ Experimental / unsound today.** The checker currently treats `Trait` exactly like `TypeDef` (same
+constraint-generation and codegen paths — see the `Node::TypeDef { .. } | Node::Trait { .. }` patterns
+throughout `src/check` and `src/generate`), which is fine since `trait` really is structurally identical to
+the signature form of `type`. But type *refinement* itself (the `when <cond>` form) is little more than a
+label today: `src/generate/convert/class.rs`'s `TypeAlias` codegen emits a plain `typing.NewType(...)` and
+**silently drops the condition** — nothing enforces `self >= 0` (say) at compile time or runtime. Doing this
+properly needs either abstract-interpretation/theorem-proving at compile time (hard) or inserting runtime
+checks at every call site accepting the refined type (which the language explicitly avoids desugaring to,
+per the README, to not clash with user-defined functions) — it is not obvious this is fully achievable in
+general. Treat `type ... when` as a design sketch / aspiration, not a working feature, until this is revisited.
+
+## Known incomplete work (branch `feat-remove-indent-dedent`, as of 2026-08-25)
 
 This branch is mid-refactor from indentation-based blocks to the `do`/`end` scheme above, and several
 `tests/resource/valid/**` fixtures were rewritten ahead of the features they exercise:
 
-- **`trait` is unimplemented.** It's a real, documented keyword (see the README's "traits" section and
-  `docs/spec/trait-def` in `docs/spec/grammar.md`) but the lexer/parser has zero support for it today. A few
-  fixtures (`tests/resource/valid/class/parent.mamba`, `multiple_parent.mamba`,
-  `fun_with_body_in_interface.mamba`, `class_super_one_line_init.mamba`, and transitively `types.mamba` via a
-  dropped parent class) were rewritten to use `trait` and no longer parse. Fixing these needs either
-  implementing `trait` as a real parser+checker+codegen feature, or reverting them to the `class`/`type`-based
-  syntax their paired `.py` reference files still expect.
+- **`trait` is now implemented** (lexer `Token::Trait`, parser `Node::Trait` via `parse_trait_def` in
+  `src/parse/class.rs`, `NodeTy::Trait` in the checker, shared codegen with `TypeDef` — see the `type` vs
+  `trait` section above). Two fixtures in the same originally-affected batch still don't pass, for reasons
+  unrelated to the keyword itself:
+  - `tests/resource/valid/class/multiple_parent.mamba` uses `class MyClass1: { MyType, MyType2 } where` —
+    brace-set syntax for multiple parents that `parse_class`'s parent-list parsing (`src/parse/class.rs`)
+    doesn't support (it only accepts a bare comma-separated list after `:`, no `{ }`).
+  - `tests/resource/valid/class/class_super_one_line_init.mamba` has a constructor arg and a field share the
+    literal name `other_field`, with the field initializer (`def other_field: Int := z + other_field`)
+    self-referencing that name — this goes beyond the constructor-state field-initializer gap described next
+    (the next bullet's example uses different names and resolves fine at the type-check level; same-name
+    shadowing here does not).
 - **Class-body statements/field-initializers that depend on constructor state are never moved into a generated
   `__init__`.** E.g. `class X(a: Float) where\n def y: Y := Y(a)\nend` (a bare, non-`def` constructor arg used
   in a field initializer) or a bare executable statement in a class body (e.g. a `print(...)` call) — Python

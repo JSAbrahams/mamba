@@ -60,6 +60,7 @@ impl Display for Node {
             Node::Id { lit } => lit.clone(),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),
+            Node::Trait { .. } => String::from("trait definition"),
             Node::TypeAlias { .. } => String::from("type alias"),
             Node::TypeTup { .. } => String::from("type tuple"),
             Node::TypeUnion { .. } => String::from("type union"),
@@ -274,6 +275,11 @@ impl Node {
                 ty: ty.map(|ty| Box::from(ty.map(mapping))),
             },
             Node::TypeDef { ty, isa, body } => Node::TypeDef {
+                ty: Box::from(ty.map(mapping)),
+                isa: isa.map(|isa| Box::from(isa.map(mapping))),
+                body: body.map(|body| Box::from(body.map(mapping))),
+            },
+            Node::Trait { ty, isa, body } => Node::Trait {
                 ty: Box::from(ty.map(mapping)),
                 isa: isa.map(|isa| Box::from(isa.map(mapping))),
                 body: body.map(|body| Box::from(body.map(mapping))),
@@ -654,6 +660,18 @@ impl Node {
                     body: lb,
                 },
                 Node::TypeDef {
+                    ty: rt,
+                    isa: ri,
+                    body: rb,
+                },
+            ) => lt.same_value(rt) && equal_optional(li, ri) && equal_optional(lb, rb),
+            (
+                Node::Trait {
+                    ty: lt,
+                    isa: li,
+                    body: lb,
+                },
+                Node::Trait {
                     ty: rt,
                     isa: ri,
                     body: rb,
@@ -1527,6 +1545,11 @@ mod test {
         let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
         two_ast!(Node::TypeDef {
+            ty: first.clone(),
+            isa: Some(second.clone()),
+            body: Some(third.clone())
+        });
+        two_ast!(Node::Trait {
             ty: first.clone(),
             isa: Some(second.clone()),
             body: Some(third.clone())

@@ -25,6 +25,7 @@ use test_case::test_case;
 #[test_case("class", "shadow")]
 #[test_case("class", "parent")]
 #[test_case("class", "types")]
+#[test_case("class", "trait_and_type")]
 #[test_case("class", "top_level_tuple")]
 #[test_case("class", "with_generics" => ignore["why is Outerclass undefined?"])]
 #[test_case("class", "top_level_unassigned_but_nullable")]

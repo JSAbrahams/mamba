@@ -29,6 +29,7 @@ impl Lex {
 pub enum Token {
     From,
     Type,
+    Trait,
     Class,
     Pure,
 
@@ -159,6 +160,7 @@ impl fmt::Display for Token {
             Token::From => write!(f, "from"),
             Token::Pure => write!(f, "pure"),
             Token::Type => write!(f, "type"),
+            Token::Trait => write!(f, "trait"),
             Token::Class => write!(f, "class"),
 
             Token::As => write!(f, "as"),

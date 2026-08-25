@@ -154,6 +154,13 @@ pub enum NodeTy {
         isa: OptName,
         body: OptASTTy,
     },
+    /// See `parse::ast::Node::Trait`.
+    /// Treated identically to `TypeDef` by the checker for now.
+    Trait {
+        ty: StringName,
+        isa: OptName,
+        body: OptASTTy,
+    },
     TypeAlias {
         ty: StringName,
         isa: Name,

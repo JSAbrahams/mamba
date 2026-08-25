@@ -284,6 +284,14 @@ These are similar to interfaces in Java and Kotlin, and near identical to traits
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
 For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
 
+> **Status:** the basic shape works today — `trait Named where def name(self) -> Str end` plus
+> `class Person(def name: Str): Named where end` parses, type-checks, and transpiles to an `abc.ABC`-based
+> Python class, exactly like the signature form of `type` (the checker currently treats `trait` and `type`
+> identically, since a trait really is structurally a type interface). Generics (`trait Iterator[T]`), the
+> `def <Trait> for <Class> where ...` external-implementation syntax, composing multiple parent traits, and
+> `meta`/`fin` modifiers — all shown in the examples below — are not implemented yet; only a single optional
+> parent trait via `trait X: Parent where ... end` works.
+
 Consider example with iterators (which briefly showcases language generics):
 
 ```mamba
@@ -322,6 +330,16 @@ trait Ordered[T]: Equality, Comparable
 ```
 
 ### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
+
+> **Status:** this section describes a design, not a shipped feature. Today, `type X: Y when <cond>` parses
+> and type-checks, but the transpiler **silently drops `<cond>` at codegen time** — it currently just emits a
+> plain `typing.NewType("X", Y)`, with no compile-time proof and no runtime check anywhere. None of the
+> `isa PosInt` / `isa InvertibleMatrix` flow-typing examples below are checked or enforced by the compiler
+> yet. We're deliberately keeping `type` (refinement) and `trait` (interfaces, see above) as separate
+> keywords/AST nodes so refinement can grow into this design later without disturbing traits, but whether
+> refinement can be done *well* — soundly, without either a real theorem prover or scattering runtime checks
+> through every call site — is genuinely an open question, and it's possible the honest answer ends up being
+> "no, not in general." Treat everything below as a sketch of where the language might go, not a guarantee.
 
 Mamba also has type refinement features to assign additional properties to types.
 

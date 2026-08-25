@@ -17,7 +17,7 @@ use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::name::{Any, Empty, Name, Substitute};
+use crate::check::name::{Any, Empty, IsSuperSet, Name, Substitute};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -91,9 +91,8 @@ impl HasParent<&StringName> for Class {
             // Tuple check is necessary evil, no way to specify variable generics for tuples
             let mut all_generic_super = true;
             for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
-                for s_name in &s_name.names {
-                    all_generic_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
-                }
+                // `o_name` is the expected (parent) slot, `s_name` the actual (child) slot
+                all_generic_super &= o_name.is_superset_of(s_name, ctx, pos)?;
             }
             if all_generic_super {
                 return Ok(all_generic_super);

@@ -1,6 +1,6 @@
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
-use crate::parse::class::{parse_class, parse_type_def};
+use crate::parse::class::{parse_class, parse_trait_def, parse_type_def};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -21,6 +21,10 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
         }
         Token::Type => {
             statements.push(*it.parse(&parse_type_def, "file", start)?);
+            Ok(())
+        }
+        Token::Trait => {
+            statements.push(*it.parse(&parse_trait_def, "file", start)?);
             Ok(())
         }
         Token::Class => {

@@ -229,7 +229,7 @@ impl TryFrom<&AST> for GenericClass {
                     parents: parents.into_iter().map(Result::unwrap).collect(),
                 })
             }
-            Node::TypeDef { ty, isa, body, .. } => {
+            Node::TypeDef { ty, isa, body, .. } | Node::Trait { ty, isa, body, .. } => {
                 let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {

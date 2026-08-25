@@ -235,6 +235,7 @@ fn as_op_or_id(string: String) -> Token {
 
         "from" => Token::From,
         "type" => Token::Type,
+        "trait" => Token::Trait,
         "class" => Token::Class,
         "pure" => Token::Pure,
         "as" => Token::As,

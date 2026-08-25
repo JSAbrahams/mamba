@@ -18,10 +18,11 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`type`  | When constructing an interface (abstract base class) or type alias
+`type`  | Type refinement: a conditional type alias (`when`), or a plain interface-signature body (experimental — see README "Type refinement")
+`trait` | Denote an interface (à la Java interfaces / Rust traits), which a `class` can implement
 `class` | Denote a class
 `isa`   | Check whether an object is an instance of a class
-`when`  | Conditional types
+`when`  | Conditional types (used with `type`, not `trait`)
 
 ## Classes and Utils
 

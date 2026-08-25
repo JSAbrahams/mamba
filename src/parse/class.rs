@@ -156,6 +156,34 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     )
 }
 
+/// Parse a trait definition: `trait <id> [: <parent>] [where <defs> end]`.
+///
+/// Unlike `type` (see `parse_type_def`), a trait has no `when <conditions>` form: traits are interface-like building blocks (as in Java/Rust),
+/// not type refinement, so there is nothing to attach a runtime condition to.
+pub fn parse_trait_def(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("trait definition")?;
+    it.eat(&Token::Trait, "trait definition")?;
+    let ty = it.parse(&parse_type, "trait definition", start)?;
+    let isa = it.parse_if(&Token::DoublePoint, &parse_parent, "trait parent", start)?;
+
+    if it.peek_if(&|lex: &Lex| lex.token == Token::Where) {
+        let body = it.parse(&parse_set, "trait definition", start)?;
+        let node = Node::Trait {
+            ty: ty.clone(),
+            isa,
+            body: Some(body.clone()),
+        };
+        Ok(Box::from(AST::new(start.union(body.pos), node)))
+    } else {
+        let node = Node::Trait {
+            ty: ty.clone(),
+            isa,
+            body: None,
+        };
+        Ok(Box::from(AST::new(start.union(ty.pos), node)))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::common::result::WithSource;

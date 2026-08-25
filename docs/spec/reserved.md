@@ -20,10 +20,10 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`type`  | Denote start of type definition or type alias
-`when`  | Conditionals of a type definition
+`type`  | Denote start of a type refinement / conditional type alias, or interface-signature body (experimental)
+`when`  | Conditionals of a type definition (`type` only, not `trait`)
 `class` | Denote start of class definition
-`trait` | Denote start of trait definition
+`trait` | Denote start of trait (interface) definition
 
 ## Classes and Utils
 

@@ -40,7 +40,7 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
                 op: CoreOp::Assign,
             })
         }
-        NodeTy::TypeDef { ty, body, isa } => {
+        NodeTy::TypeDef { ty, body, isa } | NodeTy::Trait { ty, body, isa } => {
             let parents = isa
                 .as_ref()
                 .map_or_else(Vec::new, |isa| vec![isa.to_py(imp)]);

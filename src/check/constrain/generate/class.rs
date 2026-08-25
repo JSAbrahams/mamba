@@ -28,11 +28,16 @@ pub fn gen_class(
             body: Some(body),
             ty,
             ..
+        }
+        | Node::Trait {
+            body: Some(body),
+            ty,
+            ..
         } => match &body.node {
             Node::Block { statements } => constrain_class_body(statements, ty, env, ctx, constr),
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
-        Node::Class { .. } | Node::TypeDef { .. } => Ok(env.clone()),
+        Node::Class { .. } | Node::TypeDef { .. } | Node::Trait { .. } => Ok(env.clone()),
 
         Node::TypeAlias {
             conditions,

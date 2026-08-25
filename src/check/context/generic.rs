@@ -26,7 +26,10 @@ pub fn generics(
             Node::Block { statements } => {
                 for module in statements {
                     match &module.node {
-                        Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
+                        Node::Class { .. }
+                        | Node::TypeDef { .. }
+                        | Node::Trait { .. }
+                        | Node::TypeAlias { .. } => {
                             types.insert(GenericClass::try_from(module)?);
                         }
                         Node::FunDef { .. } => {

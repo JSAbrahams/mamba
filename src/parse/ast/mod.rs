@@ -122,6 +122,14 @@ pub enum Node {
         isa: OptAST,
         body: OptAST,
     },
+    /// A trait definition: an interface-like construct (Java interfaces,
+    /// Rust traits), as opposed to `TypeDef`/`TypeAlias` (type refinement).
+    /// The type checker currently treats `Trait` and `TypeDef` identically.
+    Trait {
+        ty: Box<AST>,
+        isa: OptAST,
+        body: OptAST,
+    },
     TypeAlias {
         ty: Box<AST>,
         isa: Box<AST>,

@@ -173,6 +173,16 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .map(|ast| ASTTy::from((ast, finished)))
                     .map(Box::from),
             },
+            Node::Trait { ty, isa, body } => NodeTy::Trait {
+                ty: StringName::try_from(ty)
+                    .ok()
+                    .unwrap_or_else(StringName::empty),
+                isa: isa.as_ref().and_then(|isa| Name::try_from(isa).ok()),
+                body: body
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
+            },
             Node::TypeAlias {
                 ty,
                 isa,

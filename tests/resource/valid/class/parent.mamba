@@ -1,4 +1,4 @@
-trait MyType when
+trait MyType where
     def fun_a(self)
     def factorial(self, x: Int) -> Int
 end
@@ -6,6 +6,6 @@ end
 class MyClass1: MyType where
     def other: Int
 
-    def fun_a(self) := print("hello)
+    def fun_a(self) := print("hello")
     def factorial(self, x: Int) -> Int := x * 1
 end

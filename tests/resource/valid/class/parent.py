@@ -13,4 +13,10 @@ class MyClass1(MyType):
     other: int = None
 
     def __init__(self):
-        MyType.__init__(self, "asdf")
+        MyType.__init__(self)
+
+    def fun_a(self):
+        print("hello")
+
+    def factorial(self, x: int) -> int:
+        return x * 1
