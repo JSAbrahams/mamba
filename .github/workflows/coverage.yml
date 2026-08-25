@@ -39,7 +39,7 @@ jobs:
       - name: Generate LCOV report using default testrunner
         run: |
           cargo llvm-cov --lcov --output-path ./target/lcov.info \
-          --ignore-filename-regex '(^|/)tests?/.*|.*_tests\.rs$'
+          --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
