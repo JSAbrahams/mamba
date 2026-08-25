@@ -25,3 +25,6 @@ venv
 
 # custom dirs
 tests/resource/valid/dummy/proj1/custom_target
+
+# line coverage file
+lcov.info
