@@ -138,12 +138,8 @@ impl Display for Node {
             Node::Ge { left, right } => format!("{} > {}", left.node, right.node),
             Node::Leq { left, right } => format!("{} <= {}", left.node, right.node),
             Node::Geq { left, right } => format!("{} >= {}", left.node, right.node),
-            Node::Is { left, right } => format!("{} is {}", left.node, right.node),
-            Node::IsN { left, right } => format!("{} isnt {}", left.node, right.node),
             Node::Eq { left, right } => format!("{} = {}", left.node, right.node),
             Node::Neq { left, right } => format!("{} != {}", left.node, right.node),
-            Node::IsA { left, right } => format!("{} isa {}", left.node, right.node),
-            Node::IsNA { left, right } => format!("{} isna {}", left.node, right.node),
             Node::Not { expr } => format!("not {}", expr.node),
             Node::And { left, right } => format!("{} and {}", left.node, right.node),
             Node::Or { left, right } => format!("{} or {}", left.node, right.node),
@@ -408,27 +404,11 @@ impl Node {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
             },
-            Node::Is { left, right } => Node::Is {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::IsN { left, right } => Node::IsN {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
             Node::Eq { left, right } => Node::Eq {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
             },
             Node::Neq { left, right } => Node::Neq {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::IsA { left, right } => Node::IsA {
-                left: Box::from(left.map(mapping)),
-                right: Box::from(right.map(mapping)),
-            },
-            Node::IsNA { left, right } => Node::IsNA {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
             },
@@ -884,31 +864,11 @@ impl Node {
                 },
             ) => ll.same_value(rl) && lr.same_value(rr),
             (
-                Node::IsN {
-                    left: ll,
-                    right: lr,
-                },
-                Node::IsN {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
                 Node::Neq {
                     left: ll,
                     right: lr,
                 },
                 Node::Neq {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
-                Node::IsA {
-                    left: ll,
-                    right: lr,
-                },
-                Node::IsA {
                     left: rl,
                     right: rr,
                 },
@@ -934,31 +894,11 @@ impl Node {
                 },
             ) => ll.same_value(rl) && lr.same_value(rr),
             (
-                Node::Is {
-                    left: ll,
-                    right: lr,
-                },
-                Node::Is {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
                 Node::Eq {
                     left: ll,
                     right: lr,
                 },
                 Node::Eq {
-                    left: rl,
-                    right: rr,
-                },
-            ) => ll.same_value(rl) && lr.same_value(rr),
-            (
-                Node::IsNA {
-                    left: ll,
-                    right: lr,
-                },
-                Node::IsNA {
                     left: rl,
                     right: rr,
                 },
@@ -1111,12 +1051,8 @@ impl Node {
                 | Node::Ge { .. }
                 | Node::Leq { .. }
                 | Node::Geq { .. }
-                | Node::Is { .. }
-                | Node::IsN { .. }
                 | Node::Eq { .. }
                 | Node::Neq { .. }
-                | Node::IsA { .. }
-                | Node::IsNA { .. }
                 | Node::Not { .. }
                 | Node::And { .. }
                 | Node::Or { .. }
@@ -1736,27 +1672,11 @@ mod test {
             left: left.clone(),
             right: right.clone()
         });
-        two_ast!(Node::Is {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::IsN {
-            left: left.clone(),
-            right: right.clone()
-        });
         two_ast!(Node::Eq {
             left: left.clone(),
             right: right.clone()
         });
         two_ast!(Node::Neq {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::IsA {
-            left: left.clone(),
-            right: right.clone()
-        });
-        two_ast!(Node::IsNA {
             left: left.clone(),
             right: right.clone()
         });
@@ -2093,32 +2013,12 @@ mod test {
             right: right.clone()
         }
         .is_expression());
-        assert!(Node::Is {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::IsN {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
         assert!(Node::Eq {
             left: left.clone(),
             right: right.clone()
         }
         .is_expression());
         assert!(Node::Neq {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::IsA {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_expression());
-        assert!(Node::IsNA {
             left: left.clone(),
             right: right.clone()
         }
@@ -2223,32 +2123,12 @@ mod test {
             right: right.clone()
         }
         .is_operator());
-        assert!(Node::Is {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::IsN {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
         assert!(Node::Eq {
             left: left.clone(),
             right: right.clone()
         }
         .is_operator());
         assert!(Node::Neq {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::IsA {
-            left: left.clone(),
-            right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::IsNA {
             left: left.clone(),
             right: right.clone()
         }

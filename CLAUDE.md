@@ -100,6 +100,9 @@ has its own README worth reading before making non-trivial changes there (`src/p
 - `tests_util` (a separate crate, path-dependency of `mamba`'s dev-dependencies) holds shared test helpers:
   fixture path resolution, randomized temp output dirs, and the Python-AST-diff assertion logic used by
   `test_directory`/`test_directory_args`.
+- `tests/README.md`: coverage-archaeology notes — confirmed dead code, which checker branches are gated by
+  Python-stub-file content rather than `.mamba` fixtures, known type-checker gaps found while chasing coverage,
+  and a flaky-test note. Read before assuming an uncovered line is just a missing test.
 
 ## Block syntax (post indent/dedent removal)
 

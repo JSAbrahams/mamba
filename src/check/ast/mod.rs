@@ -313,27 +313,11 @@ pub enum NodeTy {
         left: Box<ASTTy>,
         right: Box<ASTTy>,
     },
-    Is {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    IsN {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
     Eq {
         left: Box<ASTTy>,
         right: Box<ASTTy>,
     },
     Neq {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    IsA {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    IsNA {
         left: Box<ASTTy>,
         right: Box<ASTTy>,
     },

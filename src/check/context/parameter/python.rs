@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use python_parser::ast::Subscript::Simple;
-use python_parser::ast::{Argument, Expression, Subscript};
+use python_parser::ast::{Argument, Expression};
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parameter::generic::GenericParameter;
@@ -34,24 +34,6 @@ impl From<&Vec<Argument>> for GenericParameters {
             Argument::Starargs(_) => {}
             Argument::Keyword(..) => {}
             Argument::Kwargs(_) => {}
-        });
-
-        GenericParameters { parameters }
-    }
-}
-
-impl From<&Vec<Subscript>> for GenericParameters {
-    fn from(args: &Vec<Subscript>) -> Self {
-        let mut parameters = vec![];
-        args.iter().for_each(|subscript| {
-            if let Subscript::Simple(Expression::Name(name)) = subscript {
-                let name = StringName::from(python_to_concrete(name).as_str());
-                parameters.push(GenericParameter {
-                    is_py_type: true,
-                    name,
-                    parent: None,
-                })
-            }
         });
 
         GenericParameters { parameters }

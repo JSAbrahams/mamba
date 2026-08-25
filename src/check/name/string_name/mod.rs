@@ -288,38 +288,6 @@ impl StringName {
             Some(StringName::new(&self.name, generics.as_slice()))
         }
     }
-
-    pub fn match_name(&self, other: &StringName, pos: Position) -> TypeResult<NameMap> {
-        let mut mapping = HashMap::new();
-        self.match_name_helper(other, &mut mapping, pos)?;
-        Ok(mapping)
-    }
-
-    pub(crate) fn match_name_helper(
-        &self,
-        other: &StringName,
-        mapping: &mut NameMap,
-        pos: Position,
-    ) -> TypeResult<()> {
-        mapping.insert(
-            Name::from(self.name.as_str()),
-            Name::from(other.name.as_str()),
-        );
-        for either in self.generics.iter().zip_longest(&other.generics) {
-            match either {
-                Both(self_generic, other_generic) => {
-                    self_generic.match_name_helper(other_generic, mapping, pos)?;
-                }
-                _ => {
-                    return Err(vec![TypeErr::new(
-                        pos,
-                        &format!("Cannot unify {self} and {other}"),
-                    )]);
-                }
-            }
-        }
-        Ok(())
-    }
 }
 
 #[cfg(test)]

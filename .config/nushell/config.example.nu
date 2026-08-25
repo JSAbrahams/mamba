@@ -41,7 +41,7 @@ $env.PROMPT_MULTILINE_INDICATOR = "::: "
 
 # ssh agent
 
-def start-ssh-agent [] {
+def --env start-ssh-agent [] {
   ^ssh-agent -c
       | lines
       | first 2

@@ -10,6 +10,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("error", "handle")]
 #[test_case("error", "raise")]
 #[test_case("function", "definition")]
+#[test_case("definition", "forward")]
 #[test_case("function", "calls")]
 #[test_case("control_flow", "while")]
 #[test_case("control_flow", "for_statements")]

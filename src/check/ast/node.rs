@@ -338,27 +338,11 @@ impl From<(&Node, &Finished)> for NodeTy {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
-            Node::Is { left, right } => NodeTy::Is {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::IsN { left, right } => NodeTy::IsN {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
             Node::Eq { left, right } => NodeTy::Eq {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::Neq { left, right } => NodeTy::Neq {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::IsA { left, right } => NodeTy::IsA {
-                left: Box::from(ASTTy::from((left, finished))),
-                right: Box::from(ASTTy::from((right, finished))),
-            },
-            Node::IsNA { left, right } => NodeTy::IsNA {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },

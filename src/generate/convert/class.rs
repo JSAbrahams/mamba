@@ -355,11 +355,8 @@ fn any_node(core: &Core, test: &impl Fn(&Core) -> bool) -> bool {
         | Core::Geq { left, right }
         | Core::Le { left, right }
         | Core::Leq { left, right }
-        | Core::Is { left, right }
-        | Core::IsN { left, right }
         | Core::Eq { left, right }
         | Core::Neq { left, right }
-        | Core::IsA { left, right }
         | Core::And { left, right }
         | Core::Or { left, right }
         | Core::Add { left, right }

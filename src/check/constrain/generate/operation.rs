@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
@@ -12,9 +10,8 @@ use crate::check::context::function::python::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB,
 };
 use crate::check::context::function::SQRT;
-use crate::check::context::{Context, LookupClass};
+use crate::check::context::Context;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
 use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
@@ -90,30 +87,6 @@ pub fn gen_op(
 
             constr.add("square root", &Expected::from(ast), &access, env);
             generate(expr, env, ctx, constr)
-        }
-
-        Node::Is { left, right } | Node::IsN { left, right } => {
-            let bool = Expected::new(
-                ast.pos,
-                &Type {
-                    name: Name::from(BOOL),
-                },
-            );
-            constr.add("and", &Expected::from(ast), &bool, env);
-            bin_op(left, right, env, ctx, constr)
-        }
-        Node::IsA { left, right } | Node::IsNA { left, right } => {
-            if let Node::Id { .. } = right.node {
-                let class_name = TrueName::try_from(right)?;
-                ctx.class(&class_name, right.pos)?;
-
-                generate(left, env, ctx, constr)?;
-                generate(right, &env.is_def_mode(true), ctx, constr)?;
-                Ok(env.clone())
-            } else {
-                let msg = format!("Expected identifier: '{}'", right.node);
-                Err(vec![TypeErr::new(ast.pos, &msg)])
-            }
         }
 
         Node::Not { expr } => {

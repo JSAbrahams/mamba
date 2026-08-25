@@ -1,0 +1,3 @@
+def pure square(x: Int) -> Int := x * x
+
+print(square(4))

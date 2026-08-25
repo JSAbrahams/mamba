@@ -1,0 +1,7 @@
+class Cyclic(x: Int) where
+    def a: Int := self.b + self.x
+    def b: Int := self.a + self.x
+end
+
+def c := Cyclic(3)
+print(c.a)

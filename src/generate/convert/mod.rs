@@ -152,14 +152,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Is { left, right } => Core::Is {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::IsN { left, right } => Core::IsN {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
         NodeTy::Eq { left, right } => Core::Eq {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -168,17 +160,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::IsA { left, right } => Core::IsA {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
-            right: Box::from(convert_node(right, imp, state, ctx)?),
-        },
-        NodeTy::IsNA { left, right } => Core::Not {
-            expr: Box::from(Core::IsA {
-                left: Box::from(convert_node(left, imp, state, ctx)?),
-                right: Box::from(convert_node(right, imp, state, ctx)?),
-            }),
-        },
-
         NodeTy::Add { left, right } => Core::Add {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -667,11 +648,6 @@ mod tests {
     #[test]
     fn neq_verify() {
         verify!(Neq);
-    }
-
-    #[test]
-    fn is_verify() {
-        verify!(Is);
     }
 
     #[test]

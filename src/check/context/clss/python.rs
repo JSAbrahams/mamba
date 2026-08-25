@@ -69,14 +69,17 @@ impl TryFrom<&Classdef> for GenericClass {
         let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
-            .map(|f| f.in_class(Some(&class), false, Position::invisible()))
-            .collect::<Result<_, _>>()?;
+            .map(|f| f.in_class(&class, false, Position::invisible()))
+            .collect();
         let args = functions
             .iter()
             .find(|f| f.name == StringName::from(INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
-        Ok(GenericClass {
+        // Every method on a built-in primitive/stdlib class is a deterministic, side-effect-free
+        // operation from Mamba's perspective (e.g. `int.__add__`, `str.__eq__`), so mark them all
+        // pure rather than requiring every stub signature to spell out `pure` individually.
+        GenericClass {
             is_py_type: true,
             name: class.clone(),
             pos: Position::invisible(),
@@ -84,13 +87,12 @@ impl TryFrom<&Classdef> for GenericClass {
             args,
             fields: fields
                 .into_iter()
-                .flat_map(|f| f.in_class(Some(&class.clone()), false, Position::invisible()))
+                .map(|f| f.in_class(&class.clone(), false, Position::invisible()))
                 .collect(),
             functions: functions
                 .into_iter()
                 .filter(|f| f.name != StringName::from(INIT))
-                .map(|f| f.in_class(Some(&class), false, Position::invisible()))
-                .filter_map(Result::ok)
+                .map(|f| f.in_class(&class, false, Position::invisible()))
                 .collect(),
             parents: class_def
                 .arguments
@@ -98,7 +100,8 @@ impl TryFrom<&Classdef> for GenericClass {
                 .map(GenericParent::from)
                 .filter(|parent| StringName::from(&parent.name).name != "Generic")
                 .collect(),
-        })
+        }
+        .all_pure(true)
     }
 }
 
@@ -233,7 +236,7 @@ mod test {
         assert_eq!(function.name, StringName::from("g"));
         assert_eq!(function.in_class, Some(StringName::from("MyClass")));
         assert!(function.is_py_type);
-        assert!(!function.pure);
+        assert!(function.pure);
         assert_eq!(function.raises, Name::empty());
 
         assert_eq!(function.arguments.len(), 1);

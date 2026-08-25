@@ -43,28 +43,18 @@ impl GenericFunction {
         }
     }
 
-    pub fn in_class(
-        self,
-        clss: Option<&StringName>,
-        _ty_def: bool,
-        pos: Position,
-    ) -> TypeResult<GenericFunction> {
-        if clss.is_some() {
-            let arguments = self
-                .arguments
-                .into_iter()
-                .map(|arg| arg.in_class(clss))
-                .collect::<Result<_, _>>()?;
-            Ok(GenericFunction {
-                in_class: clss.cloned(),
-                arguments,
-                ..self
-            })
-        } else {
-            Err(Vec::from(TypeErr::new(
-                pos,
-                &String::from("Function must be in class."),
-            )))
+    /// Every caller already has a class to attach (see `check/context/clss/{generic,python}.rs`),
+    /// so this is infallible.
+    pub fn in_class(self, clss: &StringName, _ty_def: bool, _pos: Position) -> GenericFunction {
+        let arguments = self
+            .arguments
+            .into_iter()
+            .map(|arg| arg.in_class(clss))
+            .collect();
+        GenericFunction {
+            in_class: Some(clss.clone()),
+            arguments,
+            ..self
         }
     }
 }
@@ -179,6 +169,20 @@ mod test {
         assert!(generic_function.arguments[1].mutable);
         assert!(!generic_function.arguments[1].vararg);
 
+        Ok(())
+    }
+
+    #[test]
+    fn from_fundef_pure() -> Result<(), Vec<TypeErr>> {
+        let source = "def pure f(x: Int) -> Int := x";
+        let ast = parse_direct(source)
+            .expect("valid function syntax")
+            .into_iter()
+            .next()
+            .expect("function AST");
+
+        let generic_function = GenericFunction::try_from(&ast)?;
+        assert!(generic_function.pure);
         Ok(())
     }
 

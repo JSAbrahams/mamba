@@ -126,11 +126,7 @@ impl TryFrom<&AST> for GenericClass {
                         Ok(ClassArgument { field, fun_arg }) => {
                             if let Some(field) = field {
                                 class_args.push(fun_arg);
-                                argument_fields.insert(field.in_class(
-                                    Some(&name),
-                                    false,
-                                    arg.pos,
-                                )?);
+                                argument_fields.insert(field.in_class(&name, false, arg.pos));
                             } else {
                                 class_args.push(fun_arg);
                             }
@@ -304,15 +300,15 @@ fn get_fields_and_functions(
         match &statement.node {
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
-                let function = function.in_class(Some(class), type_def, statement.pos)?;
+                let function = function.in_class(class, type_def, statement.pos);
                 functions.insert(function);
             }
             Node::VariableDef { .. } => {
                 let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?
                     .fields
                     .into_iter()
-                    .map(|f| f.in_class(Some(class), type_def, statement.pos))
-                    .collect::<Result<_, _>>()?;
+                    .map(|f| f.in_class(class, type_def, statement.pos))
+                    .collect();
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
