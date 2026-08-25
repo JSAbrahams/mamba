@@ -69,7 +69,7 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
         "Expected one of [{}] while parsing {}{parsing}, but found token '{}' ({})",
         comma_delm(tokens.iter().map(|t| {
             // if token tempty, or name is equal to token itself, print as normal
-            if t.to_string().is_empty() || t.to_string() == t.name().to_string() {
+            if t.to_string().is_empty() || t.equals_name() {
                 t.name().to_string()
             } else {
                 format!("'{t}' ({})", t.name())

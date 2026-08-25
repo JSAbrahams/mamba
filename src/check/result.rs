@@ -78,13 +78,6 @@ impl TypeErr {
             causes: vec![],
         }
     }
-
-    pub fn append_msg(&self, msg: &str) -> Self {
-        TypeErr {
-            msg: format!("{} {msg}", self.msg),
-            ..self.clone()
-        }
-    }
 }
 
 impl WithSource for TypeErr {

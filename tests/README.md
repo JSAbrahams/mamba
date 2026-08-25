@@ -111,6 +111,62 @@ implementing the feature and adding the fixture that exercises it, not by deleti
   "Top-level fields are parsed but never looked up" below. Wiring identifier resolution to
   actually call this for a bare (non-local) name is the way to close that gap.
 
+## Two "dead" items that turned out to be real, unfinished wiring, not cruft
+
+Two items originally flagged and deleted in a dead-code sweep were restored once a genuine
+production use was found for each, instead of staying deleted:
+
+- **`GenericClass::all_pure` / `GenericFunction::pure`** (`check/context/{clss,function}/generic.rs`):
+  `pure` on a function was already a fully-working *parsed* flag (`def pure f(...)` sets
+  `GenericFunction.pure` correctly, see `from_fundef_pure` in `check/context/function/generic.rs`'s
+  tests, and `tests/resource/valid/function/pure_function.mamba` exercises it end-to-end through
+  `check_all` and codegen) — but `pure`/`all_pure` themselves genuinely had zero callers, because
+  nothing bulk-marks a whole class pure from Mamba syntax (there's no such construct — `pure` is
+  strictly per-function). The real use was on the *Python-stub* side instead: every method built
+  from a primitive/stdlib `.py` class (`check/context/clss/python.rs`'s `TryFrom<&Classdef> for
+  GenericClass`) is now marked pure via `.all_pure(true)`, since a built-in operation like
+  `int.__add__` or `str.__eq__` is, definitionally, a deterministic operation with no observable
+  side effect from Mamba's perspective. This is deliberately *not* applied to top-level Python
+  functions (`check/context/function/python.rs`'s `GenericFunction::from`) — `input()` is a real
+  counter-example, a top-level builtin that is emphatically not pure — so that path still starts
+  functions as impure by default. Note the check/constrain stage still doesn't *enforce* any of
+  the `pure` restrictions described in `README.md` (self must be `fin`, no calling impure
+  functions, etc. — see the correctness gap noted further down); this only fixed the dead-code
+  problem, not that separate, larger gap.
+- **`Token::equals_name`** (`parse/lex/token.rs`): was flagged dead, then wired into
+  `parse/result.rs::expected_one_of` to replace a duplicated inline
+  `t.to_string() == t.name().to_string()` comparison that already existed right next to it.
+
+The lesson for next time: before deleting something that reads like it should obviously be used
+for X, check whether X actually has a call site anywhere near the definition (same file, sibling
+module) rather than only searching from the *feature* end (`def pure ...` fixtures) inward.
+
+## Dead-code sweep methodology (and one sharp edge)
+
+A whole-tree sweep of every `fn`/`struct`/`enum`/`trait`/`type` definition under `src/parse`,
+`src/check`, `src/generate`, and `src/common` — grepping the entire tree (`src/`, `tests/`,
+`tests_util/`) for `\bname\b` and flagging anything appearing only at its own definition site —
+found and removed three genuinely dead items with no caller and no feature-shape to them:
+`TypeErr::append_msg` (`check/result.rs`) and `CaretPos`'s manual `lt`/`le`/`gt`/`ge` overrides
+(`common/position.rs` — redundant even had they been called: `PartialOrd`'s default-provided
+versions already delegate to `partial_cmp` identically). (Two other items the same sweep flagged,
+`GenericFunction::pure`/`GenericClass::all_pure` and `Token::equals_name`, turned out to have real
+uses once looked at from the feature side rather than the caller-count side — see above.)
+Re-running the same sweep afterwards with no exceptions found nothing further in this category.
+
+**One false positive worth remembering for next time**: `impl Termination for AST`
+(`parse/ast/mod.rs`) looked identically dead by this method — zero textual references to
+`.report(` anywhere — but deleting it broke the build. `tests/parse/valid.rs`'s `syntax` test
+functions return `ParseResult<AST>`, and the standard test harness requires a `#[test]` fn's
+return type to implement `Termination`; `Result<T, E>`'s blanket impl needs `T: Termination`,
+which only `AST`'s manual impl provides. Nothing in the source text ever spells out `Termination`
+or `report` at a call site — the requirement comes entirely from the test harness's generated
+code — so a pure grep-for-callers sweep can't see it. The general lesson: a trait impl whose
+methods are invoked only through a compiler-inserted bound (`Termination`, but the same applies
+to `Drop`, operator traits reached only through their operator syntax, etc.) needs the deletion
+verified with a real `cargo build --tests`/`cargo test`, not just a caller-count heuristic —
+which is exactly why every deletion in this file went through that verification before landing.
+
 ## Top-level fields are parsed but never looked up
 
 `check/context/generic.rs::generics` and `check/context/python.rs::python_files` both parse

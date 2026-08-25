@@ -76,7 +76,10 @@ impl TryFrom<&Classdef> for GenericClass {
             .find(|f| f.name == StringName::from(INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
-        Ok(GenericClass {
+        // Every method on a built-in primitive/stdlib class is a deterministic, side-effect-free
+        // operation from Mamba's perspective (e.g. `int.__add__`, `str.__eq__`), so mark them all
+        // pure rather than requiring every stub signature to spell out `pure` individually.
+        GenericClass {
             is_py_type: true,
             name: class.clone(),
             pos: Position::invisible(),
@@ -98,7 +101,8 @@ impl TryFrom<&Classdef> for GenericClass {
                 .map(GenericParent::from)
                 .filter(|parent| StringName::from(&parent.name).name != "Generic")
                 .collect(),
-        })
+        }
+        .all_pure(true)
     }
 }
 
@@ -233,7 +237,7 @@ mod test {
         assert_eq!(function.name, StringName::from("g"));
         assert_eq!(function.in_class, Some(StringName::from("MyClass")));
         assert!(function.is_py_type);
-        assert!(!function.pure);
+        assert!(function.pure);
         assert_eq!(function.raises, Name::empty());
 
         assert_eq!(function.arguments.len(), 1);

@@ -40,22 +40,6 @@ impl PartialOrd for CaretPos {
             Some(Ordering::Greater)
         }
     }
-
-    fn lt(&self, other: &Self) -> bool {
-        self.line < other.line || (self.line == other.line && self.pos < other.pos)
-    }
-
-    fn le(&self, other: &Self) -> bool {
-        self.line < other.line || (self.line == other.line && self.pos <= other.pos)
-    }
-
-    fn gt(&self, other: &Self) -> bool {
-        self.line > other.line || (self.line == other.line && self.pos > other.pos)
-    }
-
-    fn ge(&self, other: &Self) -> bool {
-        self.line > other.line || (self.line == other.line && self.pos >= other.pos)
-    }
 }
 
 impl Display for CaretPos {

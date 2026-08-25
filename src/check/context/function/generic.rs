@@ -183,6 +183,20 @@ mod test {
     }
 
     #[test]
+    fn from_fundef_pure() -> Result<(), Vec<TypeErr>> {
+        let source = "def pure f(x: Int) -> Int := x";
+        let ast = parse_direct(source)
+            .expect("valid function syntax")
+            .into_iter()
+            .next()
+            .expect("function AST");
+
+        let generic_function = GenericFunction::try_from(&ast)?;
+        assert!(generic_function.pure);
+        Ok(())
+    }
+
+    #[test]
     fn from_fundef_no_ret() -> Result<(), Vec<TypeErr>> {
         let source = "def f() := pass";
         let ast = parse_direct(source)
