@@ -330,7 +330,7 @@ impl GetField<Field> for Class {
         }
         Err(vec![TypeErr::new(
             pos,
-            &format!("'{self}' does not define '{name}'"),
+            &format!("Type '{self}' does not define '{name}'"),
         )])
     }
 }
@@ -346,7 +346,7 @@ impl GetFun<Function> for Class {
         }
         Err(vec![TypeErr::new(
             pos,
-            &format!("'{self}' does not define '{name}'"),
+            &format!("Type '{self}' does not define '{name}'"),
         )])
     }
 }

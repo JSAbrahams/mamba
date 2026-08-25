@@ -153,7 +153,7 @@ fn field_access(
     total: usize,
 ) -> Unified {
     if entity_name.is_empty() {
-        let msg = format!("{entity_name} does not define {name}");
+        let msg = format!("Entity '{entity_name}' does not define '{name}'");
         return Err(vec![TypeErr::new(accessed.pos, &msg)]);
     }
 
@@ -187,7 +187,7 @@ fn function_access(
     total: usize,
 ) -> Unified {
     if entity_name.is_empty() {
-        let msg = format!("{entity_name} does not define {name}");
+        let msg = format!("Entity '{entity_name}' does not define '{name}'");
         return Err(vec![TypeErr::new(accessed.pos, &msg)]);
     }
 
@@ -336,7 +336,9 @@ fn access_field_cause(
     field_name: &str,
     cause: &str,
 ) -> Vec<TypeErr> {
-    let msg = format!("We expect {other}, but {entity_name} does not define {field_name}");
+    let msg = format!(
+        "We expect '{other}' type, but entity '{entity_name}' does not define '{field_name}'"
+    );
     access_cause(errs, other, &msg, cause)
 }
 
@@ -350,7 +352,7 @@ fn access_fun_cause(
 ) -> Vec<TypeErr> {
     let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
     let msg = format!(
-        "We expect {other}, but {entity_name} does not define {fun_name}({})",
+        "We expect '{other}' type, but entity '{entity_name}' does not define '{fun_name}({})'",
         comma_delm(args)
     );
     access_cause(errs, other, &msg, cause)
