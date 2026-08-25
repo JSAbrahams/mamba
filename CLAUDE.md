@@ -120,64 +120,46 @@ looking for `where` (`parse_expr_or_stmt` in `expr_or_stmt.rs`).
 
 ### `type` vs `trait`
 
-Mamba has two, deliberately separate, keywords that both start with `<keyword> X: Parent` and are easy to
-conflate:
+Both start with `<keyword> X: Parent`, easy to conflate:
 
-- **`type`** is **type refinement**: narrowing a type by a boolean predicate over `self`.
-  `type X: Parent when <cond>` (single-line) / `type X: Parent when\n <cond>\n...\nend` (multi-line, terminated
-  by `end`) is the *conditional type alias* form (produces `Node::TypeAlias`, binds `self` to `Parent` while
-  checking the conditions). `type X where <defs> end` (no `when`) is a different, simpler form — an
-  interface-shaped body of field and function *signatures* with no refinement condition (produces
-  `Node::TypeDef`, does **not** bind `self`).
-- **`trait`** is an **interface**, à la Java interfaces or Rust traits: a named set of function
-  signatures (optionally with default bodies) that a `class` can implement. `trait X where <defs> end` /
-  `trait X: Parent where <defs> end` produces `Node::Trait`, parsed identically to the signature form of
-  `type` (see `parse_trait_def` next to `parse_type_def` in `src/parse/class.rs`) but kept as its own AST/
-  `NodeTy` variant. **`trait` has no `when` form** — refinement conditions don't apply to interfaces, so
-  `trait X when ...` is a parse error (use `type` instead).
+- **`type`** is type refinement: narrowing a type by a boolean predicate over `self`.
+  `type X: Parent when <cond>` (or multi-line `when\n <cond>\n...\nend`) is the conditional type alias form
+  (`Node::TypeAlias`, binds `self` to `Parent`). `type X where <defs> end` (no `when`) is the plain
+  interface-signature form (`Node::TypeDef`, no `self`).
+- **`trait`** is an interface (Java/Rust-style): `trait X where <defs> end` / `trait X: Parent where <defs>
+  end` → `Node::Trait` (`parse_trait_def` in `src/parse/class.rs`), parsed like the signature form of `type`
+  but its own AST/`NodeTy` variant. No `when` form — `trait X when ...` is a parse error, use `type` instead.
 
-Picking the wrong keyword, or `when` vs `where`, either fails to parse or fails type-checking with a confusing
-"Undefined variable: self".
+Wrong keyword, or `when` vs `where`, fails to parse or fails type-checking with a confusing "Undefined
+variable: self".
 
-**⚠️ Experimental / unsound today.** The checker currently treats `Trait` exactly like `TypeDef` (same
-constraint-generation and codegen paths — see the `Node::TypeDef { .. } | Node::Trait { .. }` patterns
-throughout `src/check` and `src/generate`), which is fine since `trait` really is structurally identical to
-the signature form of `type`. But type *refinement* itself (the `when <cond>` form) is little more than a
-label today: `src/generate/convert/class.rs`'s `TypeAlias` codegen emits a plain `typing.NewType(...)` and
-**silently drops the condition** — nothing enforces `self >= 0` (say) at compile time or runtime. Doing this
-properly needs either abstract-interpretation/theorem-proving at compile time (hard) or inserting runtime
-checks at every call site accepting the refined type (which the language explicitly avoids desugaring to,
-per the README, to not clash with user-defined functions) — it is not obvious this is fully achievable in
-general. Treat `type ... when` as a design sketch / aspiration, not a working feature, until this is revisited.
+**⚠️ Experimental.** The checker treats `Trait` and `TypeDef` identically (`Node::TypeDef { .. } |
+Node::Trait { .. }` throughout `src/check`/`src/generate`). Type *refinement* (`when <cond>`) is unenforced:
+`src/generate/convert/class.rs`'s `TypeAlias` codegen emits a plain `typing.NewType(...)` and silently drops
+the condition — nothing checks it at compile time or runtime. Doing this properly needs either
+abstract-interpretation at compile time or runtime checks at every call site (which the language explicitly
+avoids desugaring to); it's not obvious this is achievable in general. Treat `type ... when` as a sketch, not
+a working feature.
+
+### Class arguments
+
+Class constructor arguments are always fields, stored on `self` — no `def` prefix (`class X(a: Int)`, not
+`class X(def a: Int)`; `parse_class` in `src/parse/class.rs` rejects the latter). Inside the class body they
+must be accessed via `self.a`, never bare `a` — `self` is bound (typed as the class) while checking a class
+body (`gen_class` in `src/check/constrain/generate/class.rs`), the same way a method's own `self` argument is.
+
+A class-body statement referencing `self` (a field initializer using another field, or a bare statement like
+`print(self.a)`) can't stay at class level in the generated Python — `self` only exists inside a method — so
+`src/generate/convert/class.rs`'s `hoist_constructor_dependent_stmts` moves it into a generated `__init__`
+(field initializers keep their class-level slot with `None` in place of the real value).
 
 ## Known incomplete work (branch `feat-remove-indent-dedent`, as of 2026-08-25)
 
-This branch is mid-refactor from indentation-based blocks to the `do`/`end` scheme above, and several
-`tests/resource/valid/**` fixtures were rewritten ahead of the features they exercise:
-
-- **`trait` is now implemented** (lexer `Token::Trait`, parser `Node::Trait` via `parse_trait_def` in
-  `src/parse/class.rs`, `NodeTy::Trait` in the checker, shared codegen with `TypeDef` — see the `type` vs
-  `trait` section above). Two fixtures in the same originally-affected batch still don't pass, for reasons
-  unrelated to the keyword itself:
-  - `tests/resource/valid/class/multiple_parent.mamba` uses `class MyClass1: { MyType, MyType2 } where` —
-    brace-set syntax for multiple parents that `parse_class`'s parent-list parsing (`src/parse/class.rs`)
-    doesn't support (it only accepts a bare comma-separated list after `:`, no `{ }`).
-  - `tests/resource/valid/class/class_super_one_line_init.mamba` has a constructor arg and a field share the
-    literal name `other_field`, with the field initializer (`def other_field: Int := z + other_field`)
-    self-referencing that name — this goes beyond the constructor-state field-initializer gap described next
-    (the next bullet's example uses different names and resolves fine at the type-check level; same-name
-    shadowing here does not).
-- **Class-body statements/field-initializers that depend on constructor state are never moved into a generated
-  `__init__`.** E.g. `class X(a: Float) where\n def y: Y := Y(a)\nend` (a bare, non-`def` constructor arg used
-  in a field initializer) or a bare executable statement in a class body (e.g. a `print(...)` call) — Python
-  reference fixtures expect these to be hoisted into `__init__` (with a `None` placeholder left at class level
-  for fields), but `src/generate/convert/class.rs`'s `extract_class`/`init` only handles parent-`__init__`
-  calls and auto-generated `self.field = arg` assignments for constructor args, not general relocation. This
-  needs a free-variable analysis over `Core` expressions to detect which class-body statements reference
-  constructor-only names. The type checker itself does correctly resolve these now (see `constrain_class_body`
-  in `src/check/constrain/generate/class.rs`, which binds non-`def` constructor args into the class body's
-  environment) — it's specifically the codegen relocation that's missing, so affected programs type-check but
-  transpile to Python that references undefined names.
+- `tests/resource/valid/class/class_super_one_line_init.mamba`: a constructor arg and a field share the name
+  `other_field`; `def other_field: Int := z + other_field` fails to resolve the self-reference.
+- `tests/resource/valid/class/top_level_unassigned_but_nullable.mamba`: a bare statement (e.g. `print(...)`)
+  in a class body fails during context building ("Expected function or variable definition"), before the
+  `self`-reference hoisting above ever gets a chance to run.
 
 ## Documentation
 

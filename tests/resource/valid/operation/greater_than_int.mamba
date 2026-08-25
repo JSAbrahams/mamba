@@ -1,4 +1,4 @@
-class MyClass(def a: Int) where
+class MyClass(a: Int) where
     def f(self) -> Bool := self.a > 10
 end
 

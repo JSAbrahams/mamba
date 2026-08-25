@@ -16,13 +16,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          ( import-as | "{" import-as "," "}" | "{" import-as "," import-as { "," import-as } "}" )
     import-as        ::= id ( "as" id )
 
-    # type refinement (experimental, see README "Type refinement" section: the "when" form parses and
-    # type-checks, but its conditions are not enforced by the compiler at compile time or runtime yet)
-    # if "when" is present, ":" type-not-fun (the parent being refined) is required
+    # type refinement, experimental: "when" parses and type-checks but conditions go unenforced
     type-def         ::= "type" type-not-fun [ ":" type-not-fun ] ( "when" conditions | [ code-set ] )
     conditions       ::= expression | newline { expression newline } "end"
-    # interface, à la Java/Rust traits. Currently only a single, optional parent trait is supported
-    # (no comma-separated composition yet); type-checked identically to the signature form of type-def
+    # interface, a la Java/Rust traits; only a single optional parent for now
     trait-def        ::= "trait" type-not-fun [ ":" type-not-fun ] [ code-set ]
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ code-set ]
     

@@ -1,6 +1,6 @@
 use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_set;
-use crate::parse::definition::{parse_definition, parse_fun_arg};
+use crate::parse::definition::parse_fun_arg;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
@@ -13,19 +13,13 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Class, "class")?;
     let ty = it.parse(&parse_type, "class", start)?;
 
+    // Class arguments are always fields, never `def`-prefixed.
     let mut args = vec![];
     if it.eat_if(&Token::LRBrack).is_some() {
-        it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match lex.token {
-            Token::Def => {
-                args.push(*it.parse(&parse_definition, "constructor argument", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
-            _ => {
-                args.push(*it.parse(&parse_fun_arg, "constructor argument", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
+        it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+            args.push(*it.parse(&parse_fun_arg, "constructor argument", start)?);
+            it.eat_if(&Token::Comma);
+            Ok(())
         })?;
         it.eat(&Token::RRBrack, "class arguments")?;
     }

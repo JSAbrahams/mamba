@@ -61,6 +61,25 @@ impl TryFrom<&AST> for GenericField {
                 },
                 assigned_to: expr.is_some(),
             }),
+            // Class arguments are fields too, see `ClassArgument`.
+            Node::FunArg {
+                var,
+                mutable,
+                ty,
+                default,
+                ..
+            } => Ok(GenericField {
+                is_py_type: false,
+                name: field_name(var.deref())?,
+                mutable: *mutable,
+                pos: ast.pos,
+                in_class: None,
+                ty: match ty {
+                    Some(ty) => Some(Name::try_from(ty.deref())?),
+                    None => None,
+                },
+                assigned_to: default.is_some(),
+            }),
             _ => Err(vec![TypeErr::new(ast.pos, "Expected variable")]),
         }
     }

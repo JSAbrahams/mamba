@@ -72,40 +72,12 @@ impl TryFrom<&AST> for ClassArgument {
 
     fn try_from(ast: &AST) -> TypeResult<ClassArgument> {
         match &ast.node {
-            Node::VariableDef {
-                mutable,
-                var,
-                expr: expression,
-                ty,
-                ..
-            } => {
-                let fun_arg = GenericFunctionArg {
-                    is_py_type: false,
-                    name: argument_name(var)?,
-                    pos: ast.pos,
-                    has_default: expression.is_some(),
-                    vararg: false,
-                    mutable: *mutable,
-                    ty: if let Some(ty) = ty {
-                        Some(Name::try_from(ty)?)
-                    } else {
-                        None
-                    },
-                };
-
-                Ok(ClassArgument {
-                    field: Some(GenericField::try_from(ast)?),
-                    fun_arg,
-                })
-            }
+            // Class arguments are always fields, stored on `self`.
             Node::FunArg { .. } => Ok(ClassArgument {
-                field: None,
+                field: Some(GenericField::try_from(ast)?),
                 fun_arg: GenericFunctionArg::try_from(ast)?,
             }),
-            _ => Err(vec![TypeErr::new(
-                ast.pos,
-                "Expected definition or function argument",
-            )]),
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected function argument")]),
         }
     }
 }

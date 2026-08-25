@@ -1,7 +1,7 @@
-class Y(def a: Float)
+class Y(a: Float)
 
 class X(a: Float) where
-    def y: Y := Y(a)
+    def y: Y := Y(self.a)
 end
 
 def x := X(10)

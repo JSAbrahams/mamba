@@ -1,4 +1,4 @@
-class MyType[A: MyGeneric, C](def super_field: Str)
+class MyType[A: MyGeneric, C](super_field: Str)
 
 class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey") where
     def some_function(self) -> Int := 10

@@ -19,7 +19,7 @@ def fun_e(m: Int, o: (Str, Str), r: (Int, (Str, Str)) -> Int) -> Int := return r
 
 def fun_v(y: Str, ab: Str -> Str -> Bool) -> Str -> Bool := return ab(y)
 
-class MyClass(def a: Int, def b: Int) where
+class MyClass(a: Int, b: Int) where
     def some_function(self, c: Int) -> Int := do
         def d := 20
         d := 10 + 30

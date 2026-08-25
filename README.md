@@ -206,9 +206,9 @@ We showcase this using a simple dummy `Matrix` object.
 You will also see some "pure" functions, these will be explained later.
 
 ```mamba
-class MatrixErr(def message: Str): Exception(message)
+class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(def a: Int, def b: Int, def c: Int, def d: Int) where
+class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
     # Accessor for matrix contents
     def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
@@ -241,12 +241,8 @@ _In general_, the notation of a class is:
 `class MyClass(<one-or-more-constructor-args>) := where <one-or-more-expressions> end`
 
 The body of the class is optional, i.e. one can create "just" a data class.
-As for constructor arguments:
-
-- If they are prefixed with `def`, then they are immediately accessible (e.g. `matrix.a`).
-- If they are **not** prefixed with `def`, then they are only constructor arguments.
-  They may be used at any point in the class, but they are (1) invariant and (2) may not be accessed from outside the class.
-- The body of the class is evaluated for each object we created, effectively making this the constructor body.
+Constructor arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`) — there is no `def` prefix; it's just shorthand for a field without a separate constructor.
+The body of the class is evaluated for each object we created, effectively making this the constructor body.
 
 As for the class body:
 
@@ -260,8 +256,8 @@ We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def x: Int := ORIGIN_X
-    def y: Int := ORIGIN_Y
+    def x: Int := self.ORIGIN_X
+    def y: Int := self.ORIGIN_Y
 
     def move(self, dx: Int, dy: Int) := do
         self.x := self.x + dx
@@ -270,12 +266,12 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
     def reset(self) := do
-        self.x := ORIGIN_X
-        self.y := ORIGIN_Y
+        self.x := self.ORIGIN_X
+        self.y := self.ORIGIN_Y
     end
 
     def info(fin self) -> Str := 
-        "Currently at ({self.x}, {self.y}), originally from ({ORIGIN_X}, {ORIGIN_Y})"
+        "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end
 ```
 
@@ -285,7 +281,7 @@ In Mamba, we aim to have many small traits for a more idiomatic way to express t
 For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
 
 > **Status:** the basic shape works today — `trait Named where def name(self) -> Str end` plus
-> `class Person(def name: Str): Named where end` parses, type-checks, and transpiles to an `abc.ABC`-based
+> `class Person(name: Str): Named where end` parses, type-checks, and transpiles to an `abc.ABC`-based
 > Python class, exactly like the signature form of `type` (the checker currently treats `trait` and `type`
 > identically, since a trait really is structurally a type interface). Generics (`trait Iterator[T]`), the
 > `def <Trait> for <Class> where ...` external-implementation syntax, composing multiple parent traits, and
@@ -300,7 +296,7 @@ trait Iterator[T] where
     def next(self) -> T? # syntax sugar for Option[T]
 end
 
-class RangeIter(def _start: Int, def _end: Int) where
+class RangeIter(_start: Int, _end: Int) where
     def _current: Int := _start
 end
 
@@ -398,10 +394,10 @@ Let's expand our matrix example from above, and rewrite it slightly:
 ```mamba
 type InvertibleMatrix: Matrix when self.determinant() != 0.0
 
-class MatrixErr(def message: Str): Exception(message)
+class MatrixErr(message: Str): Exception(message)
 
 ## Matrix, which now takes floats as argument
-class Matrix2x2(def a: Float, def b: Float, def c: Float, def d: Float) where
+class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
     def _last_op: Str? := None
 
     def determinant(fin self) -> Float := self.a * self.d - self.b * self.c

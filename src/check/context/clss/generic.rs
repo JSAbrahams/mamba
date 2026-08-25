@@ -353,7 +353,7 @@ mod test {
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
         let source =
-            "class MyClass(def fin a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
+            "class MyClass(fin a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -393,7 +393,7 @@ mod test {
         assert!(!generic_class.args[2].is_py_type);
         assert!(!generic_class.args[2].has_default);
 
-        assert_eq!(generic_class.fields.len(), 2);
+        assert_eq!(generic_class.fields.len(), 3);
         let mut fields = generic_class
             .fields
             .iter()
@@ -405,6 +405,15 @@ mod test {
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
         assert!(!field.mutable);
+
+        // `b` is a bare (non-`def`) constructor argument, which is still instance state stored
+        // on `self` (just without an explicit field declaration), so it is a field too.
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "b");
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");

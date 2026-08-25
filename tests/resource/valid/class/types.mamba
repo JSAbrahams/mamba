@@ -17,11 +17,11 @@ trait MyInterface: SuperInterface where
 end
 
 # some class
-class MyClass(def my_field: Int, other_field: Str := "Hello"): MyInterface where
+class MyClass(my_field: Int, other_field: Str := "Hello"): MyInterface where
     def required_field: Int := 100
     def private_field: Int := 20
 
-    def fun_a(self: SomeState) := self.required_field := "my field is {self.required_field}"
+    def fun_a(self: SomeState) := self.other_field := "my field is {self.required_field}"
     def fun_b(self) := print("this field is private: {self.private_field}!")
 
     def some_higher_order(self, fun: Int -> Int) -> Int := return fun(self.my_field)

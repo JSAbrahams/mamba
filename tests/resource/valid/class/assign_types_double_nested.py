@@ -7,7 +7,8 @@ class X:
     y: Y = None
 
     def __init__(self, a: float):
-        self.y = Y(a)
+        self.a = a
+        self.y = Y(self.a)
 
 
 x: X = X(10)

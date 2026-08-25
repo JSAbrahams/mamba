@@ -1,16 +1,17 @@
-class MyType:
-    def __init__(self, a: str):
-        self.a = a
+from abc import ABC
 
 
-class MyType2:
-    def __init__(self, b: str):
-        self.b = b
+class MyType(ABC):
+    pass
+
+
+class MyType2(ABC):
+    pass
 
 
 class MyClass1(MyType, MyType2):
     other: int = None
 
     def __init__(self):
-        MyType.__init__(self, "asdf")
-        MyType2.__init__(self, "qwerty")
+        MyType.__init__(self)
+        MyType2.__init__(self)

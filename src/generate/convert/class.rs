@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 
 use itertools::Itertools;
@@ -132,12 +132,18 @@ fn extract_class(
     .collect();
 
     let args = convert_vec(args, imp, &state.def_as_fun_arg(true), ctx)?;
+    let class = ctx.class(ty, Position::invisible()).ok();
+
+    // `self` is only in scope inside a method, so any class-body statement referencing it
+    // must move into `__init__`.
+    let self_name: HashSet<String> = HashSet::from([String::from(arg::python::SELF)]);
+    let hoisted = hoist_constructor_dependent_stmts(&mut body_name_stmts, &self_name);
 
     let old_init = body_name_stmts
         .iter()
         .find(|(name, _)| matches!(name, Core::Id { lit } if *lit == function::python::INIT))
         .map(|(_, (_, function))| function);
-    if let Some(new_init) = init(&old_init, &args, parents)? {
+    if let Some(new_init) = init(&old_init, &args, parents, hoisted)? {
         let init = Core::Id {
             lit: String::from(function::python::INIT),
         };
@@ -166,8 +172,6 @@ fn extract_class(
             other => panic!("Expected type in parent, was {other}"),
         })
         .collect::<GenResult<Vec<Core>>>()?;
-
-    let class = ctx.class(ty, Position::invisible()).ok();
 
     let parent_names = if state.interface && !has_abstract_parent(&class, ctx) {
         imp.add_from_import("abc", "ABC");
@@ -206,6 +210,128 @@ fn extract_class(
     }
 }
 
+/// Move class-body statements referencing `self` into `__init__`, in original order.
+///
+/// A field declaration keeps its class-level slot with `None` in place of the initializer;
+/// any other statement (e.g. a bare `print(self.a)`) is moved wholesale.
+fn hoist_constructor_dependent_stmts(
+    body_name_stmts: &mut HashMap<Core, (usize, Core)>,
+    arg_names: &HashSet<String>,
+) -> Vec<Core> {
+    if arg_names.is_empty() {
+        return vec![];
+    }
+
+    let mut hoisted: Vec<(usize, Core)> = vec![];
+    let mut to_remove = vec![];
+
+    for (key, (pos, stmt)) in body_name_stmts.iter_mut() {
+        match stmt {
+            Core::VarDef {
+                var,
+                expr: Some(expr),
+                ..
+            } if references_free_var(expr, arg_names) => {
+                hoisted.push((
+                    *pos,
+                    Core::Assign {
+                        left: Box::from(Core::PropertyCall {
+                            object: Box::from(Core::Id {
+                                lit: String::from(arg::python::SELF),
+                            }),
+                            property: var.clone(),
+                        }),
+                        right: expr.clone(),
+                        op: CoreOp::Assign,
+                    },
+                ));
+                *expr = Box::from(Core::None);
+            }
+            Core::FunDef { .. } | Core::FunDefOp { .. } | Core::VarDef { .. } => {}
+            other if references_free_var(other, arg_names) => {
+                hoisted.push((*pos, other.clone()));
+                to_remove.push(key.clone());
+            }
+            _ => {}
+        }
+    }
+
+    for key in to_remove {
+        body_name_stmts.remove(&key);
+    }
+
+    hoisted.sort_by_key(|(pos, _)| *pos);
+    hoisted.into_iter().map(|(_, stmt)| stmt).collect()
+}
+
+/// Whether `core` contains a free reference to any name in `names`. Not exhaustive over every
+/// `Core` variant; a missed variant just leaves a statement un-hoisted, never a false positive.
+fn references_free_var(core: &Core, names: &HashSet<String>) -> bool {
+    match core {
+        Core::Id { lit } => names.contains(lit),
+        // `property` is an attribute name (e.g. `.field`), not a variable reference
+        Core::PropertyCall { object, .. } => references_free_var(object, names),
+        Core::FunctionCall { function, args } => {
+            references_free_var(function, names)
+                || args.iter().any(|a| references_free_var(a, names))
+        }
+        Core::Index { item, range } => {
+            references_free_var(item, names) || references_free_var(range, names)
+        }
+        Core::KeyValue { key, value } => {
+            references_free_var(key, names) || references_free_var(value, names)
+        }
+        Core::Ge { left, right }
+        | Core::Geq { left, right }
+        | Core::Le { left, right }
+        | Core::Leq { left, right }
+        | Core::Is { left, right }
+        | Core::IsN { left, right }
+        | Core::Eq { left, right }
+        | Core::Neq { left, right }
+        | Core::IsA { left, right }
+        | Core::And { left, right }
+        | Core::Or { left, right }
+        | Core::Add { left, right }
+        | Core::Sub { left, right }
+        | Core::Mul { left, right }
+        | Core::Mod { left, right }
+        | Core::Pow { left, right }
+        | Core::Div { left, right }
+        | Core::FDiv { left, right }
+        | Core::In { left, right } => {
+            references_free_var(left, names) || references_free_var(right, names)
+        }
+        Core::Not { expr }
+        | Core::AddU { expr }
+        | Core::SubU { expr }
+        | Core::Sqrt { expr }
+        | Core::Return { expr }
+        | Core::Raise { error: expr } => references_free_var(expr, names),
+        Core::If { cond, then } => {
+            references_free_var(cond, names) || references_free_var(then, names)
+        }
+        Core::IfElse { cond, then, el } | Core::Ternary { cond, then, el } => {
+            references_free_var(cond, names)
+                || references_free_var(then, names)
+                || references_free_var(el, names)
+        }
+        Core::Tuple { elements }
+        | Core::TupleLiteral { elements }
+        | Core::Set { elements }
+        | Core::List { elements } => elements.iter().any(|e| references_free_var(e, names)),
+        Core::Dictionary { elements } => elements
+            .iter()
+            .any(|(k, v)| references_free_var(k, names) || references_free_var(v, names)),
+        Core::Assign { right, .. } => references_free_var(right, names),
+        Core::VarDef {
+            expr: Some(expr), ..
+        } => references_free_var(expr, names),
+        Core::Block { statements } => statements.iter().any(|s| references_free_var(s, names)),
+        _ => false,
+    }
+}
+
 fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
     if let Some(clss) = clss {
         clss.parents.iter().any(|parent| {
@@ -233,6 +359,7 @@ fn init(
     old_init: &Option<&Core>,
     class_args: &[Core],
     parents: &[Core],
+    mut extra_statements: Vec<Core>,
 ) -> GenResult<Option<Core>> {
     let (parent_inits, parent_args): (Vec<Core>, Vec<Vec<Core>>) = parents
         .iter()
@@ -308,6 +435,7 @@ fn init(
             })
             .collect(),
     );
+    statements.append(&mut extra_statements);
 
     let first_is_self = args
         .first()
