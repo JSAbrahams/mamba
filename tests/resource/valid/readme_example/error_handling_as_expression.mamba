@@ -1,12 +1,21 @@
-def a: Int := function_may_throw_err() ! where
-    err: MyErr => do
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
+class MyErr(message: Str): Exception(message)
+class MyOtherErr(message: Str): Exception(message)
+
+def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
+
+def with_error_handling() := do
+    def a: Int := function_may_throw_err() ! where
+        err: MyErr => do
+            print("We have a problem: {err.message}.")
+            return  # we return, halting execution
+        end
+        err: MyOtherErr => do
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
+        end
     end
-    err: MyOtherErr => do
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
-    end
+
+    print("a has value {a}.")
 end
 
-print("a has value {a}.")
+with_error_handling()

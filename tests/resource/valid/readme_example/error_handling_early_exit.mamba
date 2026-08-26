@@ -1,3 +1,8 @@
+class MyErr(message: Str): Exception(message)
+class MyOtherErr(message: Str): Exception(message)
+
+def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
+
 def a := function_may_throw_err() !
 # if `function_may_throw_err` returned an exception, we will never reach this point
 print("a has value {a}.")

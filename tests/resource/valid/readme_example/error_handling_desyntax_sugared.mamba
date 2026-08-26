@@ -1,3 +1,3 @@
 match m.last_op() with
-    err: MatrixErr(message) => print("Error where getting last op: \"{message}\"")
+    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
 end

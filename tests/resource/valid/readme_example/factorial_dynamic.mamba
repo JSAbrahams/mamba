@@ -2,7 +2,7 @@ def factorial(x: Int) -> Int := match x with
     0 => 1
     n => do
         def ans := 1
-        for i in 1 ..= n do ans := ans * i
+        for i in 1 ..= n do ans := ans * i end
         ans
     end
 end

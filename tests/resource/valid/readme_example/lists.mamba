@@ -1,8 +1,9 @@
 # lists
 def a := [0, 2, 51]
 def b := ["list", "of", "strings"]
-# lists of tuples, buidler syntax
+def empty_list := []
+# lists of tuples, builder syntax
 def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
-# Indexing is done using curly brackets!
+# Indexing is done using round brackets!
 print(a(0)) # prints '0'
