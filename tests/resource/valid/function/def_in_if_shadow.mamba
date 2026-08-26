@@ -1,0 +1,6 @@
+def x := 100
+if True then do
+    def x := 999
+    print(x)
+end
+print(x)

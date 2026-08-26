@@ -6,6 +6,21 @@ structure and conventions (fixture layout, `test_case` tables, how `to_python` d
 the root `CLAUDE.md` — this file is specifically about *what to test next* and *why some things
 can't be*.
 
+## `tests/execution.rs`: actually running the output, not just diffing its AST
+
+Every other Python-backend test (`tests_util::test_directory`, used throughout
+`tests/check/valid.rs`) only asserts that generated Python is *structurally* equivalent to a
+reference `.py` file (a parsed-AST diff) — it never executes the result. `tests/execution.rs` is
+deliberately different: it calls `transpile_dir` directly (both with the default `Backend::Python`
+and with `Backend::Bin`), then actually runs what comes out — `tests_util::run_python` shells out
+to `python3` and captures stdout; the `Backend::Bin` case runs the linked executable directly via
+`std::process::Command` — and asserts on the captured output. Both tests currently share one
+fixture, `tests/resource/valid/function/hello_world.mamba` (also registered as an ordinary
+AST-diff test in `tests/check/valid.rs`, for coverage of the plain `print` path) — pick a fixture
+within the Cranelift backend's supported subset (see `src/backend/cranelift/lower.rs`'s doc
+comment) if adding more of these, since unlike the Python backend, it doesn't aim to eventually
+support everything.
+
 Regenerate coverage with the same exclusions CI/Codecov use (`.github/workflows/coverage.yml`),
 so your local numbers match what you see on the dashboard — without `--ignore-filename-regex`,
 `tests/*.rs` and `tests_util/src/lib.rs` count toward the total too, which inflates/dilutes the

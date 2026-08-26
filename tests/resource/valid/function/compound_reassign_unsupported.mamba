@@ -1,0 +1,3 @@
+def total := 0
+total += 5
+print(total)

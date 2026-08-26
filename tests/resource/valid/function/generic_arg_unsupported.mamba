@@ -1,0 +1,5 @@
+def show(x: List[Int]) := do
+    print(1)
+end
+
+show([1, 2])

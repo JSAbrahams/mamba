@@ -1,32 +1,31 @@
 use std::convert::TryFrom;
-use std::fs::create_dir;
 use std::path::{Path, PathBuf};
 
 use log::{info, trace};
 
+use crate::backend::Backend;
 use crate::check::ast::ASTTy;
 use crate::check::check;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::common::result::WithSource;
-use crate::generate::{gen_arguments, GenArguments};
 use crate::parse::ast::AST;
 
 pub mod common;
 
+pub mod backend;
 pub mod check;
-pub mod generate;
 pub mod parse;
 
 pub mod cli;
 pub mod io;
 
-const TARGET: &str = "target";
 const SOURCE: &str = "src";
 
 #[derive(Default)]
 pub struct Arguments {
     pub annotate: bool,
+    pub backend: Backend,
 }
 
 /// Convert `*.mamba` files to `*.py`.
@@ -62,15 +61,8 @@ pub fn transpile_dir(
         return Err(vec![msg]);
     }
 
-    let out_dir = dir.join(target.unwrap_or(TARGET));
-    if !out_dir.exists() {
-        create_dir(&out_dir).map_err(|e| vec![e.to_string()])?;
-    }
-    info!("Input is '{}'", src_path.display());
-    info!("Output will be stored in '{}'", out_dir.display());
-
     let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
-    let in_absolute_paths = if src_path.is_dir() {
+    let in_absolute_paths: Vec<PathBuf> = if src_path.is_dir() {
         relative_paths
             .iter()
             .map(|os_string| src_path.join(os_string))
@@ -78,19 +70,11 @@ pub fn transpile_dir(
     } else {
         vec![src_path.clone()]
     };
-    let out_absolute_paths: Vec<PathBuf> = relative_paths
-        .iter()
-        .map(|os_string| out_dir.join(os_string))
-        .collect();
 
     info!(
-        "Transpiling {} file {}",
-        out_absolute_paths.len(),
-        if out_absolute_paths.len() > 1 {
-            "s"
-        } else {
-            ""
-        }
+        "Compiling {} file{}",
+        in_absolute_paths.len(),
+        if in_absolute_paths.len() > 1 { "s" } else { "" }
     );
 
     let mut sources = vec![];
@@ -104,15 +88,31 @@ pub fn transpile_dir(
         .map(|(source, path)| (source.clone(), Some(path.clone())))
         .collect();
 
-    let pipeline_arg = PipelineArguments::from(arguments);
-    let mamba_source = mamba_to_python(source_option_pairs.as_slice(), &src_path, &pipeline_arg)?;
-
-    for (source, out_path) in mamba_source.iter().zip(out_absolute_paths) {
-        let out_path = out_path.with_extension("py");
-        io::write_source(source, &out_path).map_err(|error| vec![error])?;
+    match &arguments.backend {
+        Backend::Python => backend::python::write_output(
+            dir,
+            target,
+            &relative_paths,
+            source_option_pairs.as_slice(),
+            &src_path,
+            &PipelineArguments::from(arguments),
+        ),
+        Backend::Bin { target: triple } => backend::cranelift::write_output(
+            dir,
+            target,
+            source_option_pairs.as_slice(),
+            &src_path,
+            triple.as_deref(),
+        ),
+        Backend::Asm { target: triple } => {
+            backend::cranelift::print_asm(
+                source_option_pairs.as_slice(),
+                &src_path,
+                triple.as_deref(),
+            )?;
+            Ok(dir.to_path_buf())
+        }
     }
-
-    Ok(out_dir)
 }
 
 pub struct PipelineArguments {
@@ -127,16 +127,11 @@ impl From<&Arguments> for PipelineArguments {
     }
 }
 
-/// Convert mamba source to python source.
-///
-/// For each mamba source, a path can optionally be given for display in error
-/// messages. This path is not necessary however.
-pub fn mamba_to_python(
+/// Strip each source's path down to be relative to `source_dir`, for nicer error messages.
+pub(crate) fn strip_source_paths(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,
-    pipeline_args: &PipelineArguments,
-) -> Result<Vec<String>, Vec<String>> {
-    // Strip until source
+) -> Vec<(String, Option<PathBuf>)> {
     let strip_prefix = |p: PathBuf| {
         p.strip_prefix(source_dir)
             .map(|p| {
@@ -144,11 +139,17 @@ pub fn mamba_to_python(
             })
             .unwrap_or(p)
     };
-    let source: Vec<(String, Option<PathBuf>)> = source
+    source
         .iter()
         .map(|(src, dir)| (src.clone(), dir.clone().map(strip_prefix)))
-        .collect();
+        .collect()
+}
 
+/// Parse and type-check `source`, shared by every backend -- parsing and type-checking don't
+/// depend on which backend eventually turns the result into output.
+pub(crate) fn check_sources(
+    source: &[(String, Option<PathBuf>)],
+) -> Result<(Context, Vec<ASTTy>), Vec<String>> {
     let (asts, parse_errs): (Vec<_>, Vec<_>) = source
         .iter()
         .map(|(src, path)| {
@@ -169,7 +170,7 @@ pub fn mamba_to_python(
         .map_err(|errs| errs.iter().map(|e| format!("{e}")).collect::<Vec<String>>())?;
     let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
         .iter()
-        .zip(&source)
+        .zip(source)
         .map(|(ast, (src, path))| {
             check(ast, &ctx).map_err(|errs| {
                 errs.iter()
@@ -193,25 +194,5 @@ pub fn mamba_to_python(
         .collect::<Vec<ASTTy>>();
 
     trace!("Checked {} files", typed_ast.len());
-
-    let gen_args = GenArguments::from(pipeline_args);
-    let (py_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
-        .iter()
-        .zip(&source)
-        .map(|(ast_ty, (src, path))| {
-            gen_arguments(ast_ty, &gen_args, &ctx)
-                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
-                .map(|core| format!("{core}"))
-        })
-        .partition(Result::is_ok);
-
-    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
-    if !gen_errs.is_empty() {
-        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
-    }
-
-    let py_sources: Vec<String> = py_sources.into_iter().map(Result::unwrap).collect();
-    trace!("Converted {} files to Python source", py_sources.len());
-
-    Ok(py_sources)
+    Ok((ctx, typed_ast))
 }

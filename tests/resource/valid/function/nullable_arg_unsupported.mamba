@@ -1,0 +1,5 @@
+def show(x: Int?) := do
+    print(1)
+end
+
+show(5)

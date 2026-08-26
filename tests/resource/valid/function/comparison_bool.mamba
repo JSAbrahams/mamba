@@ -1,0 +1,4 @@
+def a := True
+def b := False
+if a = b then print(1) else print(0)
+if a != b then print(1) else print(0)

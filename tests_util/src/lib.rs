@@ -1,14 +1,17 @@
 use std::cmp::max;
+use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::fs::{self, create_dir, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use assert_cmd::prelude::*;
 use itertools::{EitherOrBoth, Itertools};
 use python_parser::ast::Statement;
 use tempfile::tempdir_in;
 
+use mamba::backend::Backend;
 use mamba::common::delimit::newline_delimited;
 use mamba::{transpile_dir, Arguments};
 
@@ -18,6 +21,130 @@ pub static PYTHON: &str = "python3.10";
 pub static PYTHON: &str = "python3";
 #[cfg(target_os = "windows")]
 pub static PYTHON: &str = "python";
+
+/// A backend-driving test helper's signature -- [run_via_python] and [run_via_bin] both match it,
+/// so a test can be parameterized over which backend it runs a fixture through.
+pub type Runner = fn(&[&str], &str) -> Result<String, Box<dyn Error>>;
+
+/// Run a Python file with [PYTHON] and return its captured stdout.
+///
+/// Unlike [test_directory]/[fallable], which only diff the generated Python's *AST* against a
+/// reference, this actually executes the file -- for asserting on runtime behavior (e.g. what a
+/// program actually prints), not just structural equivalence to a reference.
+///
+/// Line endings always '\n', not the antiquated '\r\n` from Windows.
+pub fn run_python(path: &Path) -> Result<String, String> {
+    let output = Command::new(PYTHON)
+        .arg(path)
+        .output()
+        .map_err(|e| format!("Could not run '{PYTHON} {}': {e}", path.display()))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).replace("\r\n", "\n"))
+    } else {
+        Err(format!(
+            "'{PYTHON} {}' exited with an error:\n{}",
+            path.display(),
+            String::from_utf8_lossy(&output.stderr)
+        ))
+    }
+}
+
+/// Transpile `file` (relative to `subdirs`, under `tests/resource/valid`) to Python and run it,
+/// returning its captured stdout.
+///
+/// Unlike [run_python], which runs an already-generated Python file, this drives the whole
+/// pipeline from `.mamba` source, the way a user invoking the CLI would.
+pub fn run_via_python(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let out_dir = tempfile::tempdir()?;
+
+    let arguments = Arguments::default(); // backend defaults to `Backend::Python`
+    let output_dir = transpile_dir(
+        Path::new(&src_dir),
+        Some(file),
+        Some(out_dir.path().join("out").to_str().unwrap()),
+        &arguments,
+    )
+    .map_err(|errs| format!("{errs:?}"))?;
+
+    let py_file = Path::new(file).with_extension("py");
+    Ok(run_python(&output_dir.join(py_file))?)
+}
+
+/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to a native binary via
+/// the Cranelift backend and run it, returning its captured stdout.
+///
+/// The executable is placed a directory level below the temp dir (rather than directly in it) so
+/// that this also exercises `write_output`'s own `create_dir` of that not-yet-existing parent,
+/// the way a real `-o some/nested/path` invocation would.
+pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let out_dir = tempfile::tempdir()?;
+    let bin_path = out_dir.path().join("nested").join("bin_out");
+
+    let arguments = Arguments {
+        annotate: false,
+        backend: Backend::Bin { target: None },
+    };
+    let produced = transpile_dir(
+        Path::new(&src_dir),
+        Some(file),
+        Some(bin_path.to_str().unwrap()),
+        &arguments,
+    )
+    .map_err(|errs| format!("{errs:?}"))?;
+
+    let output = Command::new(&produced).output()?;
+    if !output.status.success() {
+        return Err(format!(
+            "executable exited with an error:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+    Ok(String::from_utf8(output.stdout)?.replace("\r\n", "\n"))
+}
+
+/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
+/// the Cranelift backend, targeting `triple` (`None` for the host), discarding the printed
+/// output but propagating any error.
+///
+/// Unlike [run_cli]'s black-box invocation of the `mamba` binary, this drives `transpile_dir` (and
+/// so `backend::cranelift::print_asm`/`disassemble`/`build_isa`) in-process -- needed for these to
+/// show up in coverage at all, since a separately-built subprocess isn't instrumented.
+pub fn run_via_asm(
+    subdirs: &[&str],
+    file: &str,
+    triple: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let arguments = Arguments {
+        annotate: false,
+        backend: Backend::Asm {
+            target: triple.map(String::from),
+        },
+    };
+    transpile_dir(Path::new(&src_dir), Some(file), None, &arguments)
+        .map_err(|errs| format!("{errs:?}"))?;
+    Ok(())
+}
+
+/// Run the `mamba` CLI binary itself with `args`, from within `cwd`, returning its captured
+/// stdout. Fails if the process exits with an error.
+pub fn run_cli(cwd: &Path, args: &[&str]) -> Result<String, Box<dyn Error>> {
+    let mut cmd = Command::main_binary()?;
+    let output = cmd.current_dir(cwd).args(args).output()?;
+    if !output.status.success() {
+        return Err(format!(
+            "mamba {} exited with an error:\n{}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+    Ok(String::from_utf8(output.stdout)?)
+}
 
 pub struct OutTestErr(Vec<String>);
 
@@ -37,7 +164,10 @@ impl Debug for OutTestErr {
 
 /// Test directory with default set to annotate output.
 pub fn test_directory(valid: bool, input: &[&str], output: &[&str], file_name: &str) -> OutTestRet {
-    let args = Arguments { annotate: true };
+    let args = Arguments {
+        annotate: true,
+        ..Arguments::default()
+    };
     test_directory_args(valid, input, output, file_name, &args)
 }
 
