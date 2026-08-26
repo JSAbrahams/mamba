@@ -16,6 +16,7 @@ use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
 use crate::check::name::Name;
 use crate::common::position::Position;
+use crate::parse::ast::node_op::NodeOp;
 
 /// A `FunDef`'s Cranelift signature, built from its declared argument types and return type.
 pub(super) fn fun_signature(
@@ -220,6 +221,34 @@ impl<'a> FnLower<'a> {
             other => Err(BackendErr::unimplemented(
                 ast,
                 &format!("{other:?} variable definition"),
+            )),
+        }
+    }
+
+    /// Lower a plain (`:=`) reassignment to an already-declared variable. Compound assignment
+    /// (`+=` and friends) is out of scope -- write `x := x + y` instead of `x += y`.
+    pub(super) fn lower_reassign(&mut self, ast: &ASTTy) -> BackendResult<()> {
+        match &ast.node {
+            NodeTy::Reassign {
+                left,
+                right,
+                op: NodeOp::Assign,
+            } => {
+                let name = fun_name(left)?;
+                let (var, _) = *self.vars.get(&name).ok_or_else(|| {
+                    BackendErr::new(ast.pos, &format!("Undefined variable '{name}'"))
+                })?;
+                let value = self.lower_expr(right)?;
+                self.builder.def_var(var, value);
+                Ok(())
+            }
+            NodeTy::Reassign { op, .. } => Err(BackendErr::unimplemented(
+                ast,
+                &format!("{op:?} compound reassignment"),
+            )),
+            other => Err(BackendErr::unimplemented(
+                ast,
+                &format!("{other:?} reassignment"),
             )),
         }
     }

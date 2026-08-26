@@ -122,7 +122,9 @@ impl<'a> FnLower<'a> {
     fn lower_stmt(&mut self, ast: &ASTTy) -> BackendResult<()> {
         match &ast.node {
             NodeTy::VariableDef { .. } => self.lower_variable_def(ast),
+            NodeTy::Reassign { .. } => self.lower_reassign(ast),
             NodeTy::IfElse { cond, then, el } => self.lower_if_else_stmt(cond, then, el.as_deref()),
+            NodeTy::For { expr, col, body } => self.lower_for(expr, col, body),
             NodeTy::Block { statements } => {
                 for statement in statements {
                     self.lower_stmt(statement)?;

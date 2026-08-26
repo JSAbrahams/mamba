@@ -12,16 +12,16 @@ impl<'a> FnLower<'a> {
     pub(super) fn lower_operation(&mut self, ast: &ASTTy) -> BackendResult<Value> {
         match &ast.node {
             NodeTy::Add { left, right } => {
-                self.lower_arith(ast, left, right, |b, a, c| b.ins().iadd(a, c))
+                self.lower_arith(left, right, |b, a, c| b.ins().iadd(a, c))
             }
             NodeTy::Sub { left, right } => {
-                self.lower_arith(ast, left, right, |b, a, c| b.ins().isub(a, c))
+                self.lower_arith(left, right, |b, a, c| b.ins().isub(a, c))
             }
             NodeTy::Mul { left, right } => {
-                self.lower_arith(ast, left, right, |b, a, c| b.ins().imul(a, c))
+                self.lower_arith(left, right, |b, a, c| b.ins().imul(a, c))
             }
             NodeTy::Div { left, right } => {
-                self.lower_arith(ast, left, right, |b, a, c| b.ins().sdiv(a, c))
+                self.lower_arith(left, right, |b, a, c| b.ins().sdiv(a, c))
             }
             NodeTy::Le { left, right } => self.lower_cmp(left, right, IntCC::SignedLessThan),
             NodeTy::Leq { left, right } => {
@@ -42,12 +42,15 @@ impl<'a> FnLower<'a> {
 
     fn lower_arith(
         &mut self,
-        ast: &ASTTy,
         left: &ASTTy,
         right: &ASTTy,
         op: impl Fn(&mut FunctionBuilder, Value, Value) -> Value,
     ) -> BackendResult<Value> {
-        cranelift_type(ast)?; // reject non-primitive-typed arithmetic early, with a clear error
+        // Reject non-primitive-typed arithmetic early, with a clear error. Checked against
+        // `left`'s own type rather than the whole expression's -- e.g. as a `print(...)` argument,
+        // the *expression*'s resolved type widens to whatever union `print` accepts, even though
+        // the operands (and thus the actual machine type produced) stay concretely typed.
+        cranelift_type(left)?;
         let l = self.lower_expr(left)?;
         let r = self.lower_expr(right)?;
         Ok(op(&mut self.builder, l, r))
