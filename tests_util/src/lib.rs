@@ -31,6 +31,8 @@ pub type Runner = fn(&[&str], &str) -> Result<String, Box<dyn Error>>;
 /// Unlike [test_directory]/[fallable], which only diff the generated Python's *AST* against a
 /// reference, this actually executes the file -- for asserting on runtime behavior (e.g. what a
 /// program actually prints), not just structural equivalence to a reference.
+///
+/// Line endings always '\n', not the antiquated '\r\n` from Windows.
 pub fn run_python(path: &Path) -> Result<String, String> {
     let output = Command::new(PYTHON)
         .arg(path)
@@ -38,7 +40,7 @@ pub fn run_python(path: &Path) -> Result<String, String> {
         .map_err(|e| format!("Could not run '{PYTHON} {}': {e}", path.display()))?;
 
     if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+        Ok(String::from_utf8_lossy(&output.stdout).replace("\r\n", "\n"))
     } else {
         Err(format!(
             "'{PYTHON} {}' exited with an error:\n{}",
@@ -101,7 +103,7 @@ pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error
         )
         .into());
     }
-    Ok(String::from_utf8(output.stdout)?)
+    Ok(String::from_utf8(output.stdout)?.replace("\r\n", "\n"))
 }
 
 /// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
