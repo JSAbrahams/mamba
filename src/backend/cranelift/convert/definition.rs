@@ -87,6 +87,9 @@ pub(super) fn declare_libc(
 }
 
 /// Define a top-level `FunDef`'s body as a real Cranelift function.
+///
+/// Returns the function's disassembly text when `want_asm` is set -- `None` otherwise, so callers
+/// that don't need it (e.g. [`super::compile`]) don't pay for [`ClifContext::set_disasm`].
 pub(super) fn define_function(
     module: &mut ObjectModule,
     func_id: FuncId,
@@ -94,8 +97,10 @@ pub(super) fn define_function(
     args: &[ASTTy],
     body: Option<&ASTTy>,
     funcs: &Funcs,
-) -> BackendResult<()> {
+    want_asm: bool,
+) -> BackendResult<Option<String>> {
     let mut ctx = ClifContext::new();
+    ctx.set_disasm(want_asm);
     ctx.func = Function::with_name_signature(UserFuncName::user(0, func_id.as_u32()), sig);
     let mut fb_ctx = FunctionBuilderContext::new();
 
@@ -134,18 +139,23 @@ pub(super) fn define_function(
 
     module
         .define_function(func_id, &mut ctx)
-        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))
+        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
+    Ok(want_asm.then(|| disasm_text(&ctx)))
 }
 
 /// Define the synthetic `main` collecting every top-level statement that isn't a `FunDef`.
+///
+/// Returns its disassembly text when `want_asm` is set -- see [`define_function`]'s doc comment.
 pub(super) fn define_main(
     module: &mut ObjectModule,
     func_id: FuncId,
     sig: Signature,
     statements: &[ASTTy],
     funcs: &Funcs,
-) -> BackendResult<()> {
+    want_asm: bool,
+) -> BackendResult<Option<String>> {
     let mut ctx = ClifContext::new();
+    ctx.set_disasm(want_asm);
     ctx.func = Function::with_name_signature(UserFuncName::user(0, func_id.as_u32()), sig);
     let mut fb_ctx = FunctionBuilderContext::new();
 
@@ -177,7 +187,17 @@ pub(super) fn define_main(
 
     module
         .define_function(func_id, &mut ctx)
-        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))
+        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
+    Ok(want_asm.then(|| disasm_text(&ctx)))
+}
+
+/// The disassembly text Cranelift collected while compiling `ctx.func`, if any -- empty when the
+/// backend couldn't produce one, which the `vcode` field's doc comment says can happen even with
+/// [`ClifContext::set_disasm`] on. Only call this when disasm was actually requested.
+fn disasm_text(ctx: &ClifContext) -> String {
+    ctx.compiled_code()
+        .and_then(|compiled| compiled.vcode.clone())
+        .unwrap_or_default()
 }
 
 impl<'a> FnLower<'a> {

@@ -6,6 +6,7 @@
 use std::path::Path;
 use std::process::Command;
 
+use assert_cmd::prelude::*;
 use mamba::backend::Backend;
 use mamba::{transpile_dir, Arguments};
 use tests_util::{resource_path, run_python};
@@ -54,5 +55,34 @@ fn bin_backend_prints_expected_output() -> Result<(), Box<dyn std::error::Error>
         String::from_utf8_lossy(&output.stderr)
     );
     assert_eq!(String::from_utf8(output.stdout)?, "hello world\n");
+    Ok(())
+}
+
+#[test]
+fn asm_backend_prints_disassembly_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
+    let src_dir = resource_path(true, &["function"], "");
+
+    let mut cmd = Command::main_binary()?;
+    let output = cmd
+        .current_dir(&src_dir)
+        .arg("--asm")
+        .arg("-i")
+        .arg("hello_world.mamba")
+        .output()?;
+
+    assert!(
+        output.status.success(),
+        "mamba --asm exited with an error:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8(output.stdout)?;
+    assert!(
+        stdout.contains("; -- main --") && stdout.contains("ret"),
+        "expected disassembly on stdout, got:\n{stdout}"
+    );
+
+    // No output directory/file should have been written -- `--asm` only prints.
+    assert!(!Path::new(&src_dir).join("target").exists());
+    assert!(!Path::new(&src_dir).join("a.out").exists());
     Ok(())
 }

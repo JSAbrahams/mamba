@@ -30,6 +30,10 @@ pub fn main() -> Result<(), String> {
         Backend::Bin {
             target: cli_input.target.clone(),
         }
+    } else if cli_input.asm {
+        Backend::Asm {
+            target: cli_input.target.clone(),
+        }
     } else {
         Backend::Python
     };

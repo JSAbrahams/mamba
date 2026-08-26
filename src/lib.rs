@@ -104,6 +104,14 @@ pub fn transpile_dir(
             &src_path,
             triple.as_deref(),
         ),
+        Backend::Asm { target: triple } => {
+            backend::cranelift::print_asm(
+                source_option_pairs.as_slice(),
+                &src_path,
+                triple.as_deref(),
+            )?;
+            Ok(dir.to_path_buf())
+        }
     }
 }
 

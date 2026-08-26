@@ -93,6 +93,52 @@ fn mamba_to_object(
     Ok(objects.into_iter().map(Result::unwrap).collect())
 }
 
+/// Compile `source` and print its disassembly to stdout, one function at a time.
+///
+/// No file is written -- pipe stdout (`> out.s`) if you want to save it. `triple`, if given, is a
+/// target triple passed on to Cranelift; if `None`, the host triple is used.
+pub fn print_asm(
+    source: &[(String, Option<PathBuf>)],
+    src_path: &Path,
+    triple: Option<&str>,
+) -> Result<(), Vec<String>> {
+    let asm_sources = mamba_to_asm(source, &src_path.to_path_buf(), triple)?;
+    for asm in &asm_sources {
+        println!("{asm}");
+    }
+    Ok(())
+}
+
+/// Compile mamba source to disassembly text, one string per source, via the Cranelift backend.
+///
+/// `target`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
+/// used. A path can optionally be given per source for error messages.
+fn mamba_to_asm(
+    source: &[(String, Option<PathBuf>)],
+    source_dir: &PathBuf,
+    target: Option<&str>,
+) -> Result<Vec<String>, Vec<String>> {
+    let source = strip_source_paths(source, source_dir);
+    let (ctx, typed_ast) = check_sources(&source)?;
+
+    let (asm_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
+        .iter()
+        .zip(&source)
+        .map(|(ast_ty, (src, path))| {
+            disassemble(ast_ty, target, &ctx)
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
+        })
+        .partition(Result::is_ok);
+
+    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
+    if !gen_errs.is_empty() {
+        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
+    }
+
+    trace!("Disassembled {} files", asm_sources.len());
+    Ok(asm_sources.into_iter().map(Result::unwrap).collect())
+}
+
 /// Compile a single checked Mamba file to the bytes of a native object file.
 ///
 /// `target`, if given, is a target triple (e.g. `x86_64-unknown-linux-gnu`).
@@ -104,12 +150,37 @@ pub fn compile(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> BackendRe
         .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))?;
     let mut module = ObjectModule::new(builder);
 
-    convert::lower_program(ast_ty, ctx, &mut module)?;
+    convert::lower_program(ast_ty, ctx, &mut module, false)?;
 
     module
         .finish()
         .emit()
         .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))
+}
+
+/// Compile a single checked Mamba file and return its disassembly text, one block per function
+/// (`main` last), instead of emitting an object file.
+///
+/// Printed in AT&T syntax (source operand before destination, e.g. `movq %rsp, %rbp`) -- that's
+/// what Cranelift's own disassembler (`CompiledCode::vcode`, via `Context::set_disasm`) always
+/// produces. Real Intel-syntax output would mean re-disassembling the emitted machine code with
+/// an external disassembler (e.g. capstone) instead, which isn't wired up here.
+///
+/// `target`, if given, is a target triple (e.g. `x86_64-unknown-linux-gnu`).
+/// If `None`, the host triple is used.
+pub fn disassemble(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> BackendResult<String> {
+    let isa = build_isa(target)?;
+
+    let builder = ObjectBuilder::new(isa, "mamba", default_libcall_names())
+        .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))?;
+    let mut module = ObjectModule::new(builder);
+
+    let asm = convert::lower_program(ast_ty, ctx, &mut module, true)?;
+    Ok(asm
+        .into_iter()
+        .map(|(name, text)| format!("; -- {name} --\n{text}"))
+        .collect::<Vec<_>>()
+        .join("\n"))
 }
 
 /// Create target which is understood by cranelift.

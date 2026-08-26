@@ -27,11 +27,16 @@ type Funcs = HashMap<String, FuncId>;
 /// collected into a synthetic `main`, mirroring how a `.mamba` file's top-level statements run
 /// top-to-bottom as a script in the Python backend -- machine code needs an explicit entry point,
 /// which Python's linear script execution doesn't.
+///
+/// When `want_asm` is set, returns each defined function's disassembly text, labeled by name
+/// (`main` last) -- otherwise the returned `Vec` is always empty, and the (otherwise pointless)
+/// cost of having Cranelift compute disassembly text is skipped entirely.
 pub(super) fn lower_program(
     ast_ty: &ASTTy,
     _ctx: &Context,
     module: &mut ObjectModule,
-) -> BackendResult<()> {
+    want_asm: bool,
+) -> BackendResult<Vec<(String, String)>> {
     let statements = match &ast_ty.node {
         NodeTy::Block { statements } => statements,
         _ => std::slice::from_ref(ast_ty),
@@ -55,6 +60,7 @@ pub(super) fn lower_program(
 
     // Pass 2: define each function's body, plus a synthetic `main` for everything else.
     let mut main_body = vec![];
+    let mut asm = vec![];
     for statement in statements {
         match &statement.node {
             NodeTy::FunDef {
@@ -67,7 +73,18 @@ pub(super) fn lower_program(
                 let name = common::fun_name(id)?;
                 let func_id = *funcs.get(&name).expect("declared in pass 1");
                 let sig = fun_signature(args, ret.as_ref(), call_conv, statement)?;
-                define_function(module, func_id, sig, args, body.as_deref(), &funcs)?;
+                let text = define_function(
+                    module,
+                    func_id,
+                    sig,
+                    args,
+                    body.as_deref(),
+                    &funcs,
+                    want_asm,
+                )?;
+                if let Some(text) = text {
+                    asm.push((name, text));
+                }
             }
             _ => main_body.push(statement.clone()),
         }
@@ -81,9 +98,12 @@ pub(super) fn lower_program(
     let main_id = module
         .declare_function("main", Linkage::Export, &main_sig)
         .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))?;
-    define_main(module, main_id, main_sig, &main_body, &funcs)?;
+    let main_text = define_main(module, main_id, main_sig, &main_body, &funcs, want_asm)?;
+    if let Some(main_text) = main_text {
+        asm.push((String::from("main"), main_text));
+    }
 
-    Ok(())
+    Ok(asm)
 }
 
 /// Per-function-body lowering state.
