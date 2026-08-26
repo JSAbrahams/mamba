@@ -409,6 +409,7 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
         }
         PythonCore::Continue => String::from("continue"),
         PythonCore::Break => String::from("break"),
+        PythonCore::Del { name } => format!("del {name}"),
 
         PythonCore::ClassDef {
             name,

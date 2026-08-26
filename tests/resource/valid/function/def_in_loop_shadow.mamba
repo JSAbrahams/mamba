@@ -1,0 +1,6 @@
+def x := 100
+for i in 0 ..= 2 do
+    def x := 999
+    print(x)
+end
+print(x)

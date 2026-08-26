@@ -5,7 +5,9 @@ use crate::backend::python::convert::builder::convert_builder;
 use crate::backend::python::convert::call::convert_call;
 use crate::backend::python::convert::class::convert_class;
 use crate::backend::python::convert::common::convert_vec;
-use crate::backend::python::convert::control_flow::convert_cntrl_flow;
+use crate::backend::python::convert::control_flow::{
+    convert_cntrl_flow, scope_guarded, wrap_scoped,
+};
 use crate::backend::python::convert::definition::convert_def;
 use crate::backend::python::convert::handle::convert_handle;
 use crate::backend::python::convert::range_slice::convert_range_slice;
@@ -251,15 +253,28 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             resource,
             alias: Some((alias, ..)),
             expr,
-        } => PythonCore::WithAs {
-            resource: Box::from(convert_node(resource, imp, state, ctx)?),
-            alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
-            expr: Box::from(convert_node(expr, imp, state, ctx)?),
-        },
-        NodeTy::With { resource, expr, .. } => PythonCore::With {
-            resource: Box::from(convert_node(resource, imp, state, ctx)?),
-            expr: Box::from(convert_node(expr, imp, state, ctx)?),
-        },
+        } => {
+            let expr_core = convert_node(expr, imp, state, ctx)?;
+            // The `as alias` binding is a fresh name too (like a for-loop's own control
+            // variable), not just whatever `expr` itself directly `def`s -- guard it the same
+            // way.
+            let expr_core = match &alias.node {
+                NodeTy::Id { lit } => wrap_scoped(std::slice::from_ref(lit), expr_core),
+                _ => expr_core,
+            };
+            PythonCore::WithAs {
+                resource: Box::from(convert_node(resource, imp, state, ctx)?),
+                alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
+                expr: Box::from(scope_guarded(expr, expr_core)),
+            }
+        }
+        NodeTy::With { resource, expr, .. } => {
+            let expr_core = convert_node(expr, imp, state, ctx)?;
+            PythonCore::With {
+                resource: Box::from(convert_node(resource, imp, state, ctx)?),
+                expr: Box::from(scope_guarded(expr, expr_core)),
+            }
+        }
 
         NodeTy::Raise { .. } | NodeTy::Handle { .. } => convert_handle(ast, imp, state, ctx)?,
 
@@ -409,7 +424,7 @@ fn skip_return(core: &PythonCore) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::python::ast::node::PythonCore;
+    use crate::backend::python::ast::node::{CoreOp, PythonCore};
     use crate::backend::python::gen;
     use crate::common::position::Position;
     use crate::parse::ast::Node;
@@ -831,11 +846,67 @@ mod tests {
                 lit: String::from("other")
             }
         );
+        // `alias` (`other`) is a fresh binding for the `with` block's own scope, so `expr` is
+        // wrapped the same way a shadowing `def` would be -- see `scope_guarded`/`wrap_scoped`.
+        let PythonCore::Block { statements } = *expr else {
+            panic!("Expected a scope-guarded with-as expr, was {expr:?}");
+        };
         assert_eq!(
-            *expr,
-            PythonCore::Int {
-                int: String::from("9")
-            }
+            statements.as_slice(),
+            &[
+                PythonCore::VarDef {
+                    var: Box::from(PythonCore::Id {
+                        lit: String::from("__mamba_other_existed")
+                    }),
+                    ty: None,
+                    expr: Some(Box::from(PythonCore::In {
+                        left: Box::from(PythonCore::Str {
+                            string: String::from("other")
+                        }),
+                        right: Box::from(PythonCore::FunctionCall {
+                            function: Box::from(PythonCore::Id {
+                                lit: String::from("locals")
+                            }),
+                            args: vec![],
+                        }),
+                    })),
+                },
+                PythonCore::VarDef {
+                    var: Box::from(PythonCore::Id {
+                        lit: String::from("__mamba_other_saved")
+                    }),
+                    ty: None,
+                    expr: Some(Box::from(PythonCore::Ternary {
+                        cond: Box::from(PythonCore::Id {
+                            lit: String::from("__mamba_other_existed")
+                        }),
+                        then: Box::from(PythonCore::Id {
+                            lit: String::from("other")
+                        }),
+                        el: Box::from(PythonCore::None),
+                    })),
+                },
+                PythonCore::Int {
+                    int: String::from("9")
+                },
+                PythonCore::IfElse {
+                    cond: Box::from(PythonCore::Id {
+                        lit: String::from("__mamba_other_existed")
+                    }),
+                    then: Box::from(PythonCore::Assign {
+                        left: Box::from(PythonCore::Id {
+                            lit: String::from("other")
+                        }),
+                        right: Box::from(PythonCore::Id {
+                            lit: String::from("__mamba_other_saved")
+                        }),
+                        op: CoreOp::Assign,
+                    }),
+                    el: Box::from(PythonCore::Del {
+                        name: String::from("other")
+                    }),
+                },
+            ]
         );
     }
 

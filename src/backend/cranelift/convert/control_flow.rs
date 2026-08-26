@@ -8,6 +8,23 @@ use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
 
 impl<'a> FnLower<'a> {
+    /// Lower `ast` as a statement within its own scope: any variable binding it introduces --
+    /// most directly a `def` that shadows an outer variable, but also a for-loop's own control
+    /// variable (`lower_for` relies on this for that) -- is undone once `ast` is done, so it
+    /// never persists past the block it belongs to.
+    ///
+    /// This is the whole mechanism behind Mamba having real block scoping for `def`, unlike
+    /// Python (which this backend must still *behave* like Python for everything else -- e.g.
+    /// reassigning an outer variable with `:=`, which isn't a new binding, still works exactly as
+    /// expected; only fresh bindings are undone here, since a `:=` never touches `self.vars`, only
+    /// the value already tracked by whichever `Variable` the name already resolves to).
+    fn lower_scoped_stmt(&mut self, ast: &ASTTy) -> BackendResult<()> {
+        let snapshot = self.vars.clone();
+        let result = self.lower_stmt(ast);
+        self.vars = snapshot;
+        result
+    }
+
     /// Lower an `IfElse` in statement position: both arms are lowered as statements, and control
     /// re-joins in a shared `merge_block` afterwards (or falls straight through to it when there
     /// is no `else`).
@@ -31,12 +48,12 @@ impl<'a> FnLower<'a> {
             .brif(cond_value, then_block, &[], else_block, &[]);
 
         self.builder.switch_to_block(then_block);
-        self.lower_stmt(then)?;
+        self.lower_scoped_stmt(then)?;
         self.builder.ins().jump(merge_block, &[]);
 
         if let Some(el) = el {
             self.builder.switch_to_block(else_block);
-            self.lower_stmt(el)?;
+            self.lower_scoped_stmt(el)?;
             self.builder.ins().jump(merge_block, &[]);
         }
 
@@ -50,25 +67,17 @@ impl<'a> FnLower<'a> {
     /// supported -- iterating a collection would need this backend to support collections at all,
     /// which is out of scope (see the module-level docs).
     ///
-    /// Rotated loop, entered through a pre-check: `entry_check` handles the (possibly empty
-    /// up-front) range and falls through to `exit` or into `body`; `body` runs the loop body,
-    /// computes the next value, and -- checking *that* -- either commits it and loops back into
-    /// `body` directly (skipping `entry_check` on every subsequent iteration) or falls through to
-    /// `exit` without committing it.
+    /// Classic three-block loop: `header` checks the bound and either enters `body` or falls
+    /// through to `exit`; `body` runs the loop body and increments before jumping back to
+    /// `header`.
     ///
-    /// Mamba (like Python, which this must match) has no block scoping, so the loop variable is
-    /// just an ordinary binding of its name -- if that name already existed, this loop
-    /// permanently overwrites it. Committing the next value only on the branch that's actually
-    /// going to use it (rather than unconditionally at the bottom of `body`, then discovering at
-    /// `header` that it was one too many and exiting anyway) is what makes the loop variable keep
-    /// whatever value it was last actually *used* with once the loop exits, instead of one past
-    /// it -- matching what Python's own `for` leaves its loop variable holding.
-    ///
-    /// One known gap: for a range that's empty from the start (e.g. `for i in 5 .. 5`), Python's
-    /// `i` never gets touched at all -- it keeps whatever it held *before* the loop -- whereas
-    /// this still binds it to `from` before the (never-taken) entry check. Shadowing an outer
-    /// variable with a loop that may run zero times is the only way this is observable, and isn't
-    /// worth the extra restructuring to close.
+    /// The loop variable is bound inside `body`'s own scope (see [`Self::lower_scoped_stmt`]), so
+    /// it's its own fresh Cranelift `Variable` (never the same one as any outer variable of the
+    /// same name) and never persists past the loop. So a `for` never touches an outer variable it
+    /// happens to shadow -- during the loop *or* after it -- unlike Python's own `for`, which has
+    /// no block scoping and would happily clobber it. (The Python backend has to work to emulate
+    /// this same guarantee, since generated Python doesn't get it for free -- see
+    /// `backend::python::convert::control_flow`.)
     pub(super) fn lower_for(
         &mut self,
         expr: &ASTTy,
@@ -108,39 +117,34 @@ impl<'a> FnLower<'a> {
 
         let loop_var = self.new_var(ty);
         self.builder.def_var(loop_var, from_value);
-        self.vars.insert(var_name, (loop_var, ty));
 
+        let header_block = self.builder.create_block();
+        let body_block = self.builder.create_block();
+        let exit_block = self.builder.create_block();
+        self.builder.ins().jump(header_block, &[]);
+
+        self.builder.switch_to_block(header_block);
+        let current = self.builder.use_var(loop_var);
         let cc = if inclusive {
             IntCC::SignedLessThanOrEqual
         } else {
             IntCC::SignedLessThan
         };
-
-        let entry_check_block = self.builder.create_block();
-        let body_block = self.builder.create_block();
-        let continue_block = self.builder.create_block();
-        let exit_block = self.builder.create_block();
-        self.builder.ins().jump(entry_check_block, &[]);
-
-        self.builder.switch_to_block(entry_check_block);
-        let current = self.builder.use_var(loop_var);
         let cond = self.builder.ins().icmp(cc, current, to_value);
         self.builder
             .ins()
             .brif(cond, body_block, &[], exit_block, &[]);
 
         self.builder.switch_to_block(body_block);
-        self.lower_stmt(body)?;
+        let snapshot = self.vars.clone();
+        self.vars.insert(var_name, (loop_var, ty));
+        let result = self.lower_stmt(body);
+        self.vars = snapshot;
+        result?;
         let current = self.builder.use_var(loop_var);
         let next = self.builder.ins().iadd(current, step_value);
-        let cond = self.builder.ins().icmp(cc, next, to_value);
-        self.builder
-            .ins()
-            .brif(cond, continue_block, &[], exit_block, &[]);
-
-        self.builder.switch_to_block(continue_block);
         self.builder.def_var(loop_var, next);
-        self.builder.ins().jump(body_block, &[]);
+        self.builder.ins().jump(header_block, &[]);
 
         self.builder.switch_to_block(exit_block);
         Ok(())

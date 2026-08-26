@@ -241,6 +241,12 @@ pub enum PythonCore {
     Return {
         expr: Box<PythonCore>,
     },
+    /// Python's `del <name>`, removing a name binding entirely.
+    /// Used to keep a generated `for` loop's variable from leaking into the enclosing scope when Mamba's own scoping says it shouldn't.
+    /// Generally, Mamba's scoping rules are stricter than Python's.
+    Del {
+        name: String,
+    },
     UnderScore,
     Pass,
     None,

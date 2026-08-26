@@ -6,32 +6,24 @@
 use std::error::Error;
 use std::path::Path;
 
-use test_case::test_case;
+use test_case::{test_case, test_matrix};
 use tests_util::{resource_path, run_cli, run_via_asm, run_via_bin, run_via_python, Runner};
 
 /// Fixtures whose output is identical across both backends -- the bulk of correctness coverage.
-#[test_case(run_via_python, &["function"], "hello_world.mamba" => "hello world\n")]
-#[test_case(run_via_bin, &["function"], "hello_world.mamba" => "hello world\n")]
-#[test_case(run_via_python, &["function"], "arithmetic_sum.mamba" => "14\n")]
-#[test_case(run_via_bin, &["function"], "arithmetic_sum.mamba" => "14\n")]
-#[test_case(run_via_python, &["function"], "arithmetic_ops.mamba" => "6\n40\n1\n")]
-#[test_case(run_via_bin, &["function"], "arithmetic_ops.mamba" => "6\n40\n1\n")]
-#[test_case(run_via_python, &["function"], "float_arithmetic.mamba" => "1\n")]
-#[test_case(run_via_bin, &["function"], "float_arithmetic.mamba" => "1\n")]
-#[test_case(run_via_python, &["function"], "comparison_int.mamba" => "0\n0\n1\n1\n0\n")]
-#[test_case(run_via_bin, &["function"], "comparison_int.mamba" => "0\n0\n1\n1\n0\n")]
-#[test_case(run_via_python, &["function"], "comparison_bool.mamba" => "0\n1\n")]
-#[test_case(run_via_bin, &["function"], "comparison_bool.mamba" => "0\n1\n")]
-#[test_case(run_via_python, &["function"], "if_no_else_stmt.mamba" => "5\n")]
-#[test_case(run_via_bin, &["function"], "if_no_else_stmt.mamba" => "5\n")]
-#[test_case(run_via_python, &["function"], "void_function_call_stmt.mamba" => "42\n")]
-#[test_case(run_via_bin, &["function"], "void_function_call_stmt.mamba" => "42\n")]
-#[test_case(run_via_python, &["function"], "for_loop_sum.mamba" => "10\n")]
-#[test_case(run_via_bin, &["function"], "for_loop_sum.mamba" => "10\n")]
-#[test_case(run_via_python, &["function"], "for_loop_exclusive_range.mamba" => "10\n")]
-#[test_case(run_via_bin, &["function"], "for_loop_exclusive_range.mamba" => "10\n")]
-#[test_case(run_via_python, &["function"], "for_loop_shadow.mamba" => "6\n3\n")]
-#[test_case(run_via_bin, &["function"], "for_loop_shadow.mamba" => "6\n3\n")]
+/// We use test matrix to emphaize that output should be the same for python and binary.
+#[test_matrix([run_via_python, run_via_bin], &["function"], "hello_world.mamba" => "hello world\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_sum.mamba" => "14\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_ops.mamba" => "6\n40\n1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "float_arithmetic.mamba" => "1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_int.mamba" => "0\n0\n1\n1\n0\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_bool.mamba" => "0\n1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "if_no_else_stmt.mamba" => "5\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "void_function_call_stmt.mamba" => "42\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_sum.mamba" => "10\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_exclusive_range.mamba" => "10\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_shadow.mamba" => "6\n100\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "def_in_if_shadow.mamba" => "999\n100\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "def_in_loop_shadow.mamba" => "999\n999\n999\n100\n")]
 fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
@@ -42,7 +34,7 @@ fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
 /// `implicit_last_expr_return.mamba` -- the Python backend has a real, pre-existing bug
 /// unrelated to the Cranelift backend under test here: without `--annotate` (off by default),
 /// it fails to emit a `return` for a function whose body is an implicit last-expression (no
-/// `return` keyword), so the function silently returns `None` instead. `run_via_python` uses
+/// `return` keyword), so the function silently returns `None` instead. `[run_via_python,  run_via_bin]` uses
 /// `Arguments::default()` (`annotate: false`), so pairing these against it would just be
 /// asserting on that separate, known-bad behavior.
 #[test_case(run_via_bin, &["function"], "print_bool.mamba" => "1\n0\n")]

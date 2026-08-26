@@ -11,6 +11,8 @@ cond: bool = True and False
 cond = True or False
 
 if cond:
+    __mamba_iii_existed = "iii" in locals()
+    __mamba_iii_saved = iii if __mamba_iii_existed else None
     "asdf"
     print("hello \"world\"")
 
@@ -24,6 +26,10 @@ if cond:
         "hhh"
     else:
         iii
+    if __mamba_iii_existed:
+        iii = __mamba_iii_saved
+    else:
+        del iii
 else:
     "other"
     print("hello \"world\"")
