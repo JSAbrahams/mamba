@@ -1,5 +1,4 @@
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{self, Display, Formatter};
 use std::path::PathBuf;
 
 use crate::check::ast::ASTTy;

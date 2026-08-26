@@ -1,9 +1,16 @@
+use std::ffi::OsString;
+use std::fs::create_dir;
+use std::path::{Path, PathBuf};
+
+use log::{info, trace};
+
 use crate::backend::python::ast::node::PythonCore;
 use crate::backend::python::convert::convert_node;
 use crate::backend::python::convert::state::{Imports, State};
 use crate::backend::python::result::GenResult;
 use crate::check::ast::ASTTy;
-use crate::{Context, PipelineArguments};
+use crate::common::result::WithSource;
+use crate::{check_sources, io, strip_source_paths, Context, PipelineArguments};
 
 mod convert;
 
@@ -11,6 +18,70 @@ pub mod ast;
 pub mod name;
 
 pub mod result;
+
+const TARGET: &str = "target";
+
+/// Transpile `source` to Python and write the result to disk under `dir`.
+///
+/// Output is written to `target` (relative to `dir`) if given, otherwise to a `target`
+/// directory created in `dir`; the output directory structure mirrors `relative_paths`.
+pub fn write_output(
+    dir: &Path,
+    target: Option<&str>,
+    relative_paths: &[OsString],
+    source: &[(String, Option<PathBuf>)],
+    src_path: &Path,
+    pipeline_args: &PipelineArguments,
+) -> Result<PathBuf, Vec<String>> {
+    let out_dir = dir.join(target.unwrap_or(TARGET));
+    if !out_dir.exists() {
+        create_dir(&out_dir).map_err(|e| vec![e.to_string()])?;
+    }
+    info!("Output will be stored in '{}'", out_dir.display());
+
+    let py_sources = mamba_to_python(source, &src_path.to_path_buf(), pipeline_args)?;
+
+    for (source, relative_path) in py_sources.iter().zip(relative_paths) {
+        let out_path = out_dir.join(relative_path).with_extension("py");
+        io::write_source(source, &out_path).map_err(|error| vec![error])?;
+    }
+
+    Ok(out_dir)
+}
+
+/// Convert mamba source to python source.
+///
+/// For each mamba source, a path can optionally be given for display in error
+/// messages. This path is not necessary however.
+fn mamba_to_python(
+    source: &[(String, Option<PathBuf>)],
+    source_dir: &PathBuf,
+    pipeline_args: &PipelineArguments,
+) -> Result<Vec<String>, Vec<String>> {
+    let source = strip_source_paths(source, source_dir);
+    let (ctx, typed_ast) = check_sources(&source)?;
+
+    let gen_args = GenArguments::from(pipeline_args);
+    let (py_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
+        .iter()
+        .zip(&source)
+        .map(|(ast_ty, (src, path))| {
+            gen_arguments(ast_ty, &gen_args, &ctx)
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
+                .map(|core| format!("{core}"))
+        })
+        .partition(Result::is_ok);
+
+    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
+    if !gen_errs.is_empty() {
+        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
+    }
+
+    let py_sources: Vec<String> = py_sources.into_iter().map(Result::unwrap).collect();
+    trace!("Converted {} files to Python source", py_sources.len());
+
+    Ok(py_sources)
+}
 
 #[derive(Default)]
 pub struct GenArguments {

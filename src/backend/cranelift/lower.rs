@@ -10,13 +10,12 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{DataDescription, FuncId, Linkage, Module};
 use cranelift_object::ObjectModule;
 
+use crate::backend::cranelift::primitive::{cranelift_type, cranelift_type_of_name};
+use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
 use crate::check::context::function::PRINT;
 use crate::check::name::Name;
 use crate::Context;
-
-use crate::backend::cranelift::result::{BackendErr, BackendResult};
-use crate::backend::cranelift::types::{cranelift_type, cranelift_type_of_name};
 
 /// Declared user functions, keyed by their Mamba name -- shared across every function body so
 /// forward references (function `a` calling function `b` defined later in the same file) work.

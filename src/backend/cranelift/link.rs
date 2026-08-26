@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::process::Command;
 
-/// Link the given object files into a single executable at `output`, by shelling out to the
-/// system `cc` -- the same approach `rustc` itself uses, rather than reimplementing a linker.
+/// Link the given object files into a single executable at `output`.
+/// By shelling out to the  system `cc` -- the same approach `rustc` itself uses, rather than reimplementing a linker.
 pub fn link(object_paths: &[impl AsRef<Path>], output: &Path) -> Result<(), String> {
     let mut cmd = Command::new("cc");
     cmd.args(object_paths.iter().map(AsRef::as_ref));
