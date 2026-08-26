@@ -15,7 +15,7 @@ categories = ["parsing"]
 [dependencies]
 ansi_term = "0.12.1"   # Colors in the terminal
 clap = { version = "4.5.40", features = ["derive"] } # Compiler frontend
-cranelift-codegen = "0.114.0" # Machine code IR, instruction selection and register allocation
+cranelift-codegen = { version = "0.114.0", features = ["all-native-arch"] } # Machine code IR, instruction selection and register allocation
 cranelift-frontend = "0.114.0" # Build Cranelift IR function bodies (SSA construction)
 cranelift-module = "0.114.0" # Function/data declaration shared across Cranelift backends
 cranelift-native = "0.114.0" # Detect the host target when --target is not given

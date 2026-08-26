@@ -114,7 +114,6 @@ struct FnLower<'a> {
     var_seq: u32,
     funcs: &'a Funcs,
     puts_id: FuncId,
-    printf_id: FuncId,
 }
 
 impl<'a> FnLower<'a> {
@@ -179,18 +178,14 @@ impl<'a> FnLower<'a> {
     /// Lower `ast` as a value-producing expression.
     fn lower_expr(&mut self, ast: &ASTTy) -> BackendResult<Value> {
         match &ast.node {
-            // Int/Bool/Real literals' own resolved `ty` can come back widened to a union (e.g. a
-            // literal argument to `print`, whose parameter accepts several printable types
-            // unifies to that broader union rather than staying just `Int`) -- but the node
-            // variant itself already tells us the literal's true type, so there's no need to
-            // consult `ast.ty` at all here. An Int-shaped literal that Mamba's numeric-literal
-            // adaptation means is really meant as a `Float` (e.g. `def x: Float := 2`, or `x >
-            // 0.0`) is *not* handled here -- it's handled contextually, by whichever caller
-            // ends up comparing this value's actual Cranelift type against a sibling value's
-            // (see `operation.rs`'s docs) -- since `ast.ty` turns out to be an unreliable signal
-            // for this even when it looks unambiguous (it can resolve to `Float` from unifying
-            // against an operator's own polymorphic parameter type, even when the concrete
-            // value everything else around it expects is `Int`).
+            // Int/Bool/Real literals' own resolved `ty` can come back widened to a union.
+            // E.g. a literal argument to `print`, whose parameter accepts several printable types unifies to that broader union rather than staying just `Int`).
+            // However,  the node  variant itself already tells us the literal's true type, so there's no need to consult `ast.ty` at all here.
+            // An Int-shaped literal that Mamba's numeric-literal daptation means is really meant as a `Float` (e.g. `def x: Float := 2`, or `x > 0.0`) is *not* handled here.
+            // Instead, it's handled contextually, by whichever caller ends up comparing this value's actual Cranelift type against a sibling value's (see `operation.rs`'s docs).
+            // Since `ast.ty` turns out to be an unreliable signal for this even when it looks unambiguous,
+            // it can resolve to `Float` from unifying against an operator's own polymorphic parameter type,
+            // even when the concrete value everything else around it expects is `Int`.
             NodeTy::Int { lit } => {
                 let value: i64 = lit.parse().map_err(|_| {
                     BackendErr::new(ast.pos, &format!("Invalid int literal '{lit}'"))

@@ -57,13 +57,22 @@ pub(super) fn arg_type(arg: &ASTTy) -> BackendResult<cranelift_codegen::ir::Type
     }
 }
 
-/// Declare the two external `libc` functions `print` may need. Declared lazily -- and re-declared
-/// per function via `Module::declare_function`, which is idempotent (merges with the existing
+/// Declare the one external `libc` function `print` needs. Declared lazily -- and re-declared per
+/// function via `Module::declare_function`, which is idempotent (merges with the existing
 /// declaration of the same name) -- rather than threading a single shared declaration through.
+///
+/// Deliberately just `puts` (a single fixed pointer argument) -- an `Int`/`Bool` value is
+/// formatted to a decimal string ourselves, in Cranelift IR, rather than going through `printf`.
+/// `printf` is variadic, and Cranelift has no notion of a variadic call at all: on standard SysV
+/// (Linux/Windows) that happened to not matter for plain integers (the first 6 integer args are
+/// register-passed either way), but Apple's aarch64 ABI has no register-based `va_list` at all --
+/// *every* variadic argument must be stack-passed, which a call built from an ordinary fixed-arg
+/// `Signature` never does, so the callee's `va_arg` reads garbage. Doing our own formatting sidesteps
+/// the whole class of problem, on every target, permanently -- see `lower_print`'s doc comment.
 pub(super) fn declare_libc(
     module: &mut ObjectModule,
     call_conv: CallConv,
-) -> BackendResult<(FuncId, FuncId)> {
+) -> BackendResult<FuncId> {
     let pointer_type = module.isa().pointer_type();
 
     let puts_sig = Signature {
@@ -71,20 +80,9 @@ pub(super) fn declare_libc(
         returns: vec![AbiParam::new(types::I32)],
         call_conv,
     };
-    let puts_id = module
+    module
         .declare_function("puts", Linkage::Import, &puts_sig)
-        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
-
-    let printf_sig = Signature {
-        params: vec![AbiParam::new(pointer_type), AbiParam::new(types::I64)],
-        returns: vec![AbiParam::new(types::I32)],
-        call_conv,
-    };
-    let printf_id = module
-        .declare_function("printf", Linkage::Import, &printf_sig)
-        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
-
-    Ok((puts_id, printf_id))
+        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))
 }
 
 /// Define a top-level `FunDef`'s body as a real Cranelift function.
@@ -111,7 +109,7 @@ pub(super) fn define_function(
         builder.append_block_params_for_function_params(entry);
         builder.switch_to_block(entry);
 
-        let (puts_id, printf_id) = declare_libc(module, builder.func.signature.call_conv)?;
+        let puts_id = declare_libc(module, builder.func.signature.call_conv)?;
         let mut lower = FnLower {
             builder,
             module,
@@ -119,7 +117,6 @@ pub(super) fn define_function(
             var_seq: 0,
             funcs,
             puts_id,
-            printf_id,
         };
 
         let block_params = lower.builder.block_params(entry).to_vec();
@@ -165,7 +162,7 @@ pub(super) fn define_main(
         let entry = builder.create_block();
         builder.switch_to_block(entry);
 
-        let (puts_id, printf_id) = declare_libc(module, builder.func.signature.call_conv)?;
+        let puts_id = declare_libc(module, builder.func.signature.call_conv)?;
         let mut lower = FnLower {
             builder,
             module,
@@ -173,7 +170,6 @@ pub(super) fn define_main(
             var_seq: 0,
             funcs,
             puts_id,
-            printf_id,
         };
 
         for statement in statements {
