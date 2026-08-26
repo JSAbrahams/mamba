@@ -25,22 +25,7 @@ use crate::{ASTTy, Context};
 /// We add arguments and calls to super for parents.
 pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     match &ast.node {
-        NodeTy::TypeAlias { ty, isa, .. } => {
-            imp.add_from_import("typing", "NewType");
-            let lit = ty.name.clone();
-
-            Ok(PythonCore::Assign {
-                left: Box::new(PythonCore::Id { lit: lit.clone() }),
-                right: Box::new(PythonCore::FunctionCall {
-                    function: Box::new(PythonCore::Id {
-                        lit: String::from("NewType"),
-                    }),
-                    args: vec![PythonCore::Str { string: lit }, isa.to_py(imp)],
-                }),
-                op: CoreOp::Assign,
-            })
-        }
-        NodeTy::TypeDef { ty, body, isa } | NodeTy::Trait { ty, body, isa } => {
+        NodeTy::Trait { ty, body, isa } => {
             let parents = isa
                 .as_ref()
                 .map_or_else(Vec::new, |isa| vec![isa.to_py(imp)]);

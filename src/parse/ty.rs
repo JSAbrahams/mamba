@@ -4,7 +4,6 @@ use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
-use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected_one_of};
 
@@ -122,35 +121,6 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
         Some(ast) => Ok(ast),
         None => Ok(ty),
     }
-}
-
-pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.start_pos("conditions")?;
-    let mut conditions = vec![];
-
-    if it.eat_if(&Token::NL).is_some() {
-        it.peek_while_not_token(&Token::End, &mut |it, _| {
-            conditions.push(*it.parse(&parse_condition, "conditions", start)?);
-            it.eat_if(&Token::NL);
-            Ok(())
-        })?;
-        it.eat(&Token::End, "conditions")?;
-    } else {
-        let start = it.start_pos("conditions")?;
-        conditions.push(*it.parse(&parse_condition, "conditions", start)?);
-    }
-
-    Ok(conditions)
-}
-
-fn parse_condition(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("condition")?;
-    let cond = it.parse(&parse_expression, "condition", start)?;
-    let el = it.parse_if(&Token::Raise, &parse_expression, "condition else", start)?;
-    let end = el.clone().map_or(cond.pos, |e| e.pos);
-
-    let node = Node::Condition { cond, el };
-    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 pub fn parse_type_set(it: &mut LexIterator) -> ParseResult {

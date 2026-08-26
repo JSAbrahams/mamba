@@ -4,5 +4,3 @@ end
 
 class Person(name: Str): Named where
 end
-
-type PosInt: Int when self >= 0

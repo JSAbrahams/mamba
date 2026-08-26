@@ -1,15 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable, NewType
+from typing import Callable
 
-
-class MyGeneric(str):
-    def __init__(self):
-        str.__init__(self)
-
-
-SomeState = NewType("SomeState", MyClass)
-OtherState = NewType("OtherState", MyClass)
-
+class MyGeneric(str):                                                          
+    def __init__(self):                                                      
+        str.__init__(self)  
 
 class SuperInterface(ABC):
     bar: int = None

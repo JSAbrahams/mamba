@@ -84,15 +84,6 @@ works (e.g. `tests/resource/valid/function/divmod.mamba` exercises the `divmod` 
 `src/check/resource/std/divmod.py`, whose `-> (int, int)` return annotation is what actually
 covers the bare-tuple-literal-as-type-annotation branch in `true_name/python.rs`).
 
-`type X: (Int) -> Int` / `type X: (Int, Str)` (a type alias whose parent is a callable or tuple
-type, see `tests/resource/valid/class/type_callable_parent.mamba` /
-`type_tuple_parent.mamba`) exercise the *Mamba-source* side of the same kind of thing
-(`check/name/true_name/generic.rs`'s `TypeFun`/`TypeTup` arms) — worth knowing these two arms
-were already covered by existing tests before these were added (via `callable_fun_arg` and
-`assign_tuples`-style fixtures), so those two new fixtures earn their keep on realism/breadth
-grounds (a class extending a callable-type alias is a real, previously-untested shape) rather
-than by moving that specific file's coverage number.
-
 ### `__debug__` / `__all__` (`src/check/resource/std/builtins.py`)
 
 Added purely to give context-building one typed and one untyped top-level (non-class) assignment

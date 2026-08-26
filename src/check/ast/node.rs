@@ -163,16 +163,6 @@ impl From<(&Node, &Finished)> for NodeTy {
                     pos_to_name.get(&expr.pos).cloned()
                 },
             },
-            Node::TypeDef { ty, isa, body } => NodeTy::TypeDef {
-                ty: StringName::try_from(ty)
-                    .ok()
-                    .unwrap_or_else(StringName::empty),
-                isa: isa.as_ref().and_then(|isa| Name::try_from(isa).ok()),
-                body: body
-                    .clone()
-                    .map(|ast| ASTTy::from((ast, finished)))
-                    .map(Box::from),
-            },
             Node::Trait { ty, isa, body } => NodeTy::Trait {
                 ty: StringName::try_from(ty)
                     .ok()
@@ -182,18 +172,6 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .clone()
                     .map(|ast| ASTTy::from((ast, finished)))
                     .map(Box::from),
-            },
-            Node::TypeAlias {
-                ty,
-                isa,
-                conditions,
-            } => NodeTy::TypeAlias {
-                ty: StringName::try_from(ty).unwrap_or_else(|_| StringName::empty()),
-                isa: Name::try_from(isa).unwrap_or_else(|_| Name::empty()),
-                conditions: conditions
-                    .iter()
-                    .map(|ast| ASTTy::from((ast, finished)))
-                    .collect(),
             },
             Node::Condition { cond, el } => NodeTy::Condition {
                 cond: Box::from(ASTTy::from((cond, finished))),
