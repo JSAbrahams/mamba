@@ -1,0 +1,5 @@
+def a := 10
+def b := 4
+print(a - b)
+print(a * b)
+if a / b = 2.5 then print(1) else print(0)

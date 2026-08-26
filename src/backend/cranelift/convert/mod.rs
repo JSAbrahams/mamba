@@ -134,7 +134,7 @@ impl<'a> FnLower<'a> {
             NodeTy::FunctionCall { name, .. } if name.name == PRINT => {
                 self.lower_print(ast).map(|_| ())
             }
-            NodeTy::FunctionCall { .. } => self.lower_expr(ast).map(|_| ()),
+            NodeTy::FunctionCall { .. } => self.lower_call_stmt(ast),
             other => Err(BackendErr::unimplemented(
                 ast,
                 &format!("{other:?} statement"),
@@ -183,7 +183,14 @@ impl<'a> FnLower<'a> {
             // literal argument to `print`, whose parameter accepts several printable types
             // unifies to that broader union rather than staying just `Int`) -- but the node
             // variant itself already tells us the literal's true type, so there's no need to
-            // consult `ast.ty` at all here.
+            // consult `ast.ty` at all here. An Int-shaped literal that Mamba's numeric-literal
+            // adaptation means is really meant as a `Float` (e.g. `def x: Float := 2`, or `x >
+            // 0.0`) is *not* handled here -- it's handled contextually, by whichever caller
+            // ends up comparing this value's actual Cranelift type against a sibling value's
+            // (see `operation.rs`'s docs) -- since `ast.ty` turns out to be an unreliable signal
+            // for this even when it looks unambiguous (it can resolve to `Float` from unifying
+            // against an operator's own polymorphic parameter type, even when the concrete
+            // value everything else around it expects is `Int`).
             NodeTy::Int { lit } => {
                 let value: i64 = lit.parse().map_err(|_| {
                     BackendErr::new(ast.pos, &format!("Invalid int literal '{lit}'"))
@@ -212,8 +219,10 @@ impl<'a> FnLower<'a> {
             | NodeTy::Ge { .. }
             | NodeTy::Geq { .. }
             | NodeTy::Eq { .. }
-            | NodeTy::Neq { .. } => self.lower_operation(ast),
-            NodeTy::FunctionCall { .. } => self.lower_call(ast),
+            | NodeTy::Neq { .. }
+            | NodeTy::AddU { .. }
+            | NodeTy::SubU { .. } => self.lower_operation(ast),
+            NodeTy::FunctionCall { .. } => self.lower_call_expr(ast),
             other => Err(BackendErr::unimplemented(
                 ast,
                 &format!("{other:?} expression"),

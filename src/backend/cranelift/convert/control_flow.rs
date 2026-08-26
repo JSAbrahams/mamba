@@ -50,10 +50,25 @@ impl<'a> FnLower<'a> {
     /// supported -- iterating a collection would need this backend to support collections at all,
     /// which is out of scope (see the module-level docs).
     ///
-    /// Classic three-block loop: `header` checks the bound and either enters `body` or falls
-    /// through to `exit`; `body` runs the loop body (with the loop variable shadowing any
-    /// outer binding of the same name for its duration) and increments before jumping back to
-    /// `header`.
+    /// Rotated loop, entered through a pre-check: `entry_check` handles the (possibly empty
+    /// up-front) range and falls through to `exit` or into `body`; `body` runs the loop body,
+    /// computes the next value, and -- checking *that* -- either commits it and loops back into
+    /// `body` directly (skipping `entry_check` on every subsequent iteration) or falls through to
+    /// `exit` without committing it.
+    ///
+    /// Mamba (like Python, which this must match) has no block scoping, so the loop variable is
+    /// just an ordinary binding of its name -- if that name already existed, this loop
+    /// permanently overwrites it. Committing the next value only on the branch that's actually
+    /// going to use it (rather than unconditionally at the bottom of `body`, then discovering at
+    /// `header` that it was one too many and exiting anyway) is what makes the loop variable keep
+    /// whatever value it was last actually *used* with once the loop exits, instead of one past
+    /// it -- matching what Python's own `for` leaves its loop variable holding.
+    ///
+    /// One known gap: for a range that's empty from the start (e.g. `for i in 5 .. 5`), Python's
+    /// `i` never gets touched at all -- it keeps whatever it held *before* the loop -- whereas
+    /// this still binds it to `from` before the (never-taken) entry check. Shadowing an outer
+    /// variable with a loop that may run zero times is the only way this is observable, and isn't
+    /// worth the extra restructuring to close.
     pub(super) fn lower_for(
         &mut self,
         expr: &ASTTy,
@@ -93,39 +108,39 @@ impl<'a> FnLower<'a> {
 
         let loop_var = self.new_var(ty);
         self.builder.def_var(loop_var, from_value);
+        self.vars.insert(var_name, (loop_var, ty));
 
-        let header_block = self.builder.create_block();
-        let body_block = self.builder.create_block();
-        let exit_block = self.builder.create_block();
-        self.builder.ins().jump(header_block, &[]);
-
-        self.builder.switch_to_block(header_block);
-        let current = self.builder.use_var(loop_var);
         let cc = if inclusive {
             IntCC::SignedLessThanOrEqual
         } else {
             IntCC::SignedLessThan
         };
+
+        let entry_check_block = self.builder.create_block();
+        let body_block = self.builder.create_block();
+        let continue_block = self.builder.create_block();
+        let exit_block = self.builder.create_block();
+        self.builder.ins().jump(entry_check_block, &[]);
+
+        self.builder.switch_to_block(entry_check_block);
+        let current = self.builder.use_var(loop_var);
         let cond = self.builder.ins().icmp(cc, current, to_value);
         self.builder
             .ins()
             .brif(cond, body_block, &[], exit_block, &[]);
 
         self.builder.switch_to_block(body_block);
-        let shadowed = self.vars.insert(var_name.clone(), (loop_var, ty));
         self.lower_stmt(body)?;
-        match shadowed {
-            Some(shadowed) => {
-                self.vars.insert(var_name, shadowed);
-            }
-            None => {
-                self.vars.remove(&var_name);
-            }
-        }
         let current = self.builder.use_var(loop_var);
         let next = self.builder.ins().iadd(current, step_value);
+        let cond = self.builder.ins().icmp(cc, next, to_value);
+        self.builder
+            .ins()
+            .brif(cond, continue_block, &[], exit_block, &[]);
+
+        self.builder.switch_to_block(continue_block);
         self.builder.def_var(loop_var, next);
-        self.builder.ins().jump(header_block, &[]);
+        self.builder.ins().jump(body_block, &[]);
 
         self.builder.switch_to_block(exit_block);
         Ok(())

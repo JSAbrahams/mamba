@@ -213,6 +213,16 @@ impl<'a> FnLower<'a> {
                 let name = fun_name(var)?;
                 let ty = cranelift_type(expr)?;
                 let value = self.lower_expr(expr)?;
+                // `ty` (from the checker) and `value`'s own Cranelift type can disagree for an
+                // Int-shaped literal initializing a declared-`Float` variable (e.g. `def x:
+                // Float := 2`) -- `lower_expr` always builds an Int-shaped literal as `Int`
+                // (see its own doc comment), so convert here if the declared type says
+                // otherwise.
+                let value = if ty == types::F64 && self.builder.func.dfg.value_type(value) != ty {
+                    self.builder.ins().fcvt_from_sint(ty, value)
+                } else {
+                    value
+                };
                 let var = self.new_var(ty);
                 self.builder.def_var(var, value);
                 self.vars.insert(name, (var, ty));

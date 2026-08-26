@@ -72,10 +72,14 @@ pub fn run_via_python(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Er
 
 /// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to a native binary via
 /// the Cranelift backend and run it, returning its captured stdout.
+///
+/// The executable is placed a directory level below the temp dir (rather than directly in it) so
+/// that this also exercises `write_output`'s own `create_dir` of that not-yet-existing parent,
+/// the way a real `-o some/nested/path` invocation would.
 pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
     let src_dir = resource_path(true, subdirs, "");
     let out_dir = tempfile::tempdir()?;
-    let bin_path = out_dir.path().join("bin_out");
+    let bin_path = out_dir.path().join("nested").join("bin_out");
 
     let arguments = Arguments {
         annotate: false,
@@ -98,6 +102,30 @@ pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error
         .into());
     }
     Ok(String::from_utf8(output.stdout)?)
+}
+
+/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
+/// the Cranelift backend, targeting `triple` (`None` for the host), discarding the printed
+/// output but propagating any error.
+///
+/// Unlike [run_cli]'s black-box invocation of the `mamba` binary, this drives `transpile_dir` (and
+/// so `backend::cranelift::print_asm`/`disassemble`/`build_isa`) in-process -- needed for these to
+/// show up in coverage at all, since a separately-built subprocess isn't instrumented.
+pub fn run_via_asm(
+    subdirs: &[&str],
+    file: &str,
+    triple: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let arguments = Arguments {
+        annotate: false,
+        backend: Backend::Asm {
+            target: triple.map(String::from),
+        },
+    };
+    transpile_dir(Path::new(&src_dir), Some(file), None, &arguments)
+        .map_err(|errs| format!("{errs:?}"))?;
+    Ok(())
 }
 
 /// Run the `mamba` CLI binary itself with `args`, from within `cwd`, returning its captured

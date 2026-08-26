@@ -1,0 +1,6 @@
+def show(x: Int) := do
+    print(x)
+    return
+end
+
+show(42)

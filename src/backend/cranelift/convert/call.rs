@@ -6,8 +6,26 @@ use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
 
 impl<'a> FnLower<'a> {
-    /// Lower a (non-`print`) `FunctionCall` to a user-defined function.
-    pub(super) fn lower_call(&mut self, ast: &ASTTy) -> BackendResult<Value> {
+    /// Lower a (non-`print`) `FunctionCall` to a user-defined function, in statement position:
+    /// any return value is discarded, so a call to a function with no return type (`None` here)
+    /// is perfectly fine -- unlike [`Self::lower_call_expr`], which needs one.
+    pub(super) fn lower_call_stmt(&mut self, ast: &ASTTy) -> BackendResult<()> {
+        self.lower_call(ast).map(|_| ())
+    }
+
+    /// Lower a (non-`print`) `FunctionCall` to a user-defined function, in expression position:
+    /// errors if the callee has no return type to produce a value with.
+    pub(super) fn lower_call_expr(&mut self, ast: &ASTTy) -> BackendResult<Value> {
+        self.lower_call(ast)?.ok_or_else(|| {
+            let name = match &ast.node {
+                NodeTy::FunctionCall { name, .. } => name.name.as_str(),
+                _ => unreachable!("only called for a FunctionCall node"),
+            };
+            BackendErr::new(ast.pos, &format!("'{name}' does not return a value"))
+        })
+    }
+
+    fn lower_call(&mut self, ast: &ASTTy) -> BackendResult<Option<Value>> {
         let (name, args) = match &ast.node {
             NodeTy::FunctionCall { name, args } => (name, args),
             other => {
@@ -27,13 +45,7 @@ impl<'a> FnLower<'a> {
             arg_values.push(self.lower_expr(arg)?);
         }
         let call = self.builder.ins().call(local, &arg_values);
-        self.builder
-            .inst_results(call)
-            .first()
-            .copied()
-            .ok_or_else(|| {
-                BackendErr::new(ast.pos, &format!("'{}' does not return a value", name.name))
-            })
+        Ok(self.builder.inst_results(call).first().copied())
     }
 
     /// `print(...)`: a string literal goes through `puts` (which appends its own newline, like

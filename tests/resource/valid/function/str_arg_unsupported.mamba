@@ -1,0 +1,3 @@
+def show(x: Str) := print(x)
+
+show("hi")
