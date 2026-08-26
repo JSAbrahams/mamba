@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use cranelift_codegen::isa::{self, OwnedTargetIsa};
-use cranelift_codegen::settings::{self};
+use cranelift_codegen::settings::{self, Configurable};
 use cranelift_module::default_libcall_names;
 use cranelift_object::{ObjectBuilder, ObjectModule};
 use log::{info, trace};
@@ -191,8 +191,17 @@ pub fn disassemble(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> Backe
 
 /// Create target which is understood by cranelift.
 /// If None, then default to host architecture as target.
+///
+/// Cranelift defaults to non-PIC (Position-Independent Code), which is direct/absolute addressing for calls and data.
+/// This is fine for `cc`-driven linking on Linux.
+/// However, it fails on macOS:
+/// modern `ld` rejects those as "illegal text-relocations" in a regular (non-`-static`) executable.
+/// PIC (RIP-relative/GOT addressing instead) links cleanly on both, so just always ask for it rather than branching on target OS.
 fn build_isa(target: Option<&str>) -> BackendResult<OwnedTargetIsa> {
-    let flag_builder = settings::builder();
+    let mut flag_builder = settings::builder();
+    flag_builder
+        .set("is_pic", "true")
+        .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
     let flags = settings::Flags::new(flag_builder);
 
     match target {
