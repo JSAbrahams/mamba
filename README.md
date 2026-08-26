@@ -750,6 +750,24 @@ end recover do
 end
 ```
 
+## 💽 Machine Output
+
+There is an experimental feature where we output a very small subset of the language to machine code.
+This is more of a 'fun' feature meant to explore a bit how compiler backends work to an extent.
+We mostly limit this to simple arithmetic for now.
+
+To use, us either the `--bin` flag to produce a binary, or `--asm` to print AT&T style assembly to stdout.
+We aim to make sure that:
+
+1. The output is identical to running and checking the output of the resulting Python (see `./tests/execution.rs`).
+2. That compilation works as is identical on the latest Windows, Linux, and Mac OS.
+   We verify this by making use of GitHub agents which run the test suite on each, see `./github/workflows/test.yml`.
+
+In general, we aim to stay within the Rust ecosystem as much as possible.
+We prefer writing our own boilerplate, or depending on rust crates, over depending on native C.
+The reasoning is that we want to reduce external dependencies, and more importantly, that this arguably improves the educational value this crate provides (for the author).
+Having to (re)-implement difficult compilation problems which have been solved in the past (and there are _many_, including edge cases) increases our exposure to them.
+
 ## 💻 The Command Line Interface
 
 ```
@@ -759,9 +777,9 @@ Usage: mamba [OPTIONS]
 
 Options:
   -i, --input <INPUT>    Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
-  -o, --output <OUTPUT>  Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with`--asm`, which always prints to stdout instead of writing a file
+  -o, --output <OUTPUT>  Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with `--asm`, which always prints to stdout instead of writing a file
       --python           Output Python source (the default)
-      --bin              Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported: literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
+      --bin              Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported:literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
       --asm              Compile via the Cranelift backend and print the resulting disassembly to stdout, instead of outputting Python source or linking an executable. No file is written -- pipe stdout (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help). Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own disassembler doesn't support switching to Intel syntax
       --target <TARGET>  Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`/`--asm`; defaults to the host triple)
   -v...                  Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
@@ -770,7 +788,7 @@ Options:
       --no-color         Disable colorized output
   -l, --level            Print log level
   -a, --annotate         Enable type annotation of the output source. Currently still buggy feature
-  -h, --help             Print help
+  -h, --help             Print help (see more with '--help')
 ```
 
 You can type `mamba -help` for a message containing roughly the above information.

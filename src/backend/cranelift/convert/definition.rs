@@ -57,18 +57,21 @@ pub(super) fn arg_type(arg: &ASTTy) -> BackendResult<cranelift_codegen::ir::Type
     }
 }
 
-/// Declare the one external `libc` function `print` needs. Declared lazily -- and re-declared per
-/// function via `Module::declare_function`, which is idempotent (merges with the existing
-/// declaration of the same name) -- rather than threading a single shared declaration through.
+/// Declare the one external `libc` function `print` needs.
+/// Declared lazily and re-declared per function via `Module::declare_function`.
+/// That is idempotent, meaning that it merges with the existing declaration of the same name, rather than threading a single shared declaration through.
 ///
-/// Deliberately just `puts` (a single fixed pointer argument) -- an `Int`/`Bool` value is
-/// formatted to a decimal string ourselves, in Cranelift IR, rather than going through `printf`.
-/// `printf` is variadic, and Cranelift has no notion of a variadic call at all: on standard SysV
-/// (Linux/Windows) that happened to not matter for plain integers (the first 6 integer args are
-/// register-passed either way), but Apple's aarch64 ABI has no register-based `va_list` at all --
-/// *every* variadic argument must be stack-passed, which a call built from an ordinary fixed-arg
-/// `Signature` never does, so the callee's `va_arg` reads garbage. Doing our own formatting sidesteps
-/// the whole class of problem, on every target, permanently -- see `lower_print`'s doc comment.
+/// Deliberately just `puts` (a single fixed pointer argument).
+/// An `Int`/`Bool` value is formatted to a decimal string ourselves, in Cranelift IR, rather than going through `printf`.
+/// `printf` is variadic, and Cranelift has no notion of a variadic call at all.
+/// On standard SysV (Linux/Windows) that happened to not matter for plain integers (the first 6 integer args are register-passed either way).
+///
+/// However, Apple's aarch64 ABI has no register-based `va_list` at all:
+/// *every* variadic argument must be stack-passed, which a call built from an ordinary fixed-arg `Signature` never does.
+/// Therefore, the callee's `va_arg` reads garbage.
+/// Doing our own formatting sidesteps this whole class of problem on every target.
+///
+/// See also `lower_print`'s doc comment.
 pub(super) fn declare_libc(
     module: &mut ObjectModule,
     call_conv: CallConv,
