@@ -48,8 +48,8 @@ pub fn generate(
     match &ast.node {
         Block { statements } => gen_vec(statements, env, true, ctx, constr),
 
-        Class { .. } | TypeDef { .. } | Trait { .. } => gen_class(ast, env, ctx, constr),
-        TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),
+        Class { .. } | Trait { .. } => gen_class(ast, env, ctx, constr),
+        Condition { .. } => gen_class(ast, env, ctx, constr),
 
         VariableDef { .. } | FunDef { .. } | FunArg { .. } => gen_def(ast, env, ctx, constr),
 

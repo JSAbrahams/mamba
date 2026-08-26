@@ -121,29 +121,6 @@ The call-site "handle" construct for a call that may raise is `<expr> ! where <c
 `f(10) ! where err: MyErr => do ... end end` — the `!` marks the call as fallible and must be consumed before
 looking for `where` (`parse_expr_or_stmt` in `expr_or_stmt.rs`).
 
-### `type` vs `trait`
-
-Both start with `<keyword> X: Parent`, easy to conflate:
-
-- **`type`** is type refinement: narrowing a type by a boolean predicate over `self`.
-  `type X: Parent when <cond>` (or multi-line `when\n <cond>\n...\nend`) is the conditional type alias form
-  (`Node::TypeAlias`, binds `self` to `Parent`). `type X where <defs> end` (no `when`) is the plain
-  interface-signature form (`Node::TypeDef`, no `self`).
-- **`trait`** is an interface (Java/Rust-style): `trait X where <defs> end` / `trait X: Parent where <defs>
-  end` → `Node::Trait` (`parse_trait_def` in `src/parse/class.rs`), parsed like the signature form of `type`
-  but its own AST/`NodeTy` variant. No `when` form — `trait X when ...` is a parse error, use `type` instead.
-
-Wrong keyword, or `when` vs `where`, fails to parse or fails type-checking with a confusing "Undefined
-variable: self".
-
-**⚠️ Experimental.** The checker treats `Trait` and `TypeDef` identically (`Node::TypeDef { .. } |
-Node::Trait { .. }` throughout `src/check`/`src/generate`). Type *refinement* (`when <cond>`) is unenforced:
-`src/generate/convert/class.rs`'s `TypeAlias` codegen emits a plain `typing.NewType(...)` and silently drops
-the condition — nothing checks it at compile time or runtime. Doing this properly needs either
-abstract-interpretation at compile time or runtime checks at every call site (which the language explicitly
-avoids desugaring to); it's not obvious this is achievable in general. Treat `type ... when` as a sketch, not
-a working feature.
-
 ### Class arguments
 
 Class constructor arguments are always fields, stored on `self` — no `def` prefix (`class X(a: Int)`, not

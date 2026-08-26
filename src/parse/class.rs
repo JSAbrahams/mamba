@@ -4,8 +4,8 @@ use crate::parse::definition::parse_fun_arg;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, expected, expected_one_of, ParseResult};
-use crate::parse::ty::{parse_conditions, parse_id, parse_type};
+use crate::parse::result::{expected, expected_one_of, ParseResult};
+use crate::parse::ty::{parse_id, parse_type};
 use crate::parse::Lex;
 
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
@@ -92,62 +92,6 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 
     let node = Node::Parent { ty, args };
     Ok(Box::from(AST::new(start.union(end), node)))
-}
-
-pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("type definition")?;
-    it.eat(&Token::Type, "type definition")?;
-    let ty = it.parse(&parse_type, "type definition", start)?;
-    let isa = it.parse_if(&Token::DoublePoint, &parse_parent, "type parent", start)?;
-
-    it.peek(
-        &|it, lex| match lex.token {
-            Token::When => {
-                it.eat(&Token::When, "conditional type")?;
-                let isa = isa
-                    .clone()
-                    .ok_or_else(|| custom("conditional type must have parent type", lex.pos))?;
-
-                let conditions = it.parse_vec(&parse_conditions, "conditional type", start)?;
-                let end = conditions.last().map_or(ty.pos, |cond| cond.pos);
-
-                let node = Node::TypeAlias {
-                    ty: ty.clone(),
-                    isa,
-                    conditions,
-                };
-                Ok(Box::from(AST::new(start.union(end), node)))
-            }
-            _ if it.peek_if(&|lex: &Lex| lex.token == Token::Where) => {
-                it.eat_if(&Token::NL);
-                let body = it.parse(&parse_set, "type definition", start)?;
-                let isa = isa.clone();
-                let node = Node::TypeDef {
-                    ty: ty.clone(),
-                    isa,
-                    body: Some(body.clone()),
-                };
-                Ok(Box::from(AST::new(start.union(body.pos), node)))
-            }
-            _ => {
-                let node = Node::TypeDef {
-                    ty: ty.clone(),
-                    isa: isa.clone(),
-                    body: None,
-                };
-                Ok(Box::from(AST::new(start.union(ty.pos), node)))
-            }
-        },
-        {
-            let isa = isa.clone();
-            let node = Node::TypeDef {
-                ty: ty.clone(),
-                isa,
-                body: None,
-            };
-            Ok(Box::from(AST::new(start.union(ty.pos), node)))
-        },
-    )
 }
 
 /// Parse a trait definition: `trait <id> [: <parent>] [where <defs> end]`.

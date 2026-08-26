@@ -241,9 +241,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::TypeDef { .. } | NodeTy::Trait { .. } | NodeTy::TypeAlias { .. } => {
-            convert_class(ast, imp, state, ctx)?
-        }
+        NodeTy::Trait { .. } => convert_class(ast, imp, state, ctx)?,
         NodeTy::Class { .. } => convert_class(ast, imp, state, ctx)?,
         NodeTy::Parent { .. } => convert_class(ast, imp, state, ctx)?,
 

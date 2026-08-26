@@ -1,4 +1,2 @@
-type MyType: Str
-
-def a: MyType := "my_string"
+def a: Str := "my_string"
 print(a)

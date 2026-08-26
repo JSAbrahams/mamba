@@ -149,22 +149,10 @@ pub enum NodeTy {
         mutable: bool,
         ty: OptName,
     },
-    TypeDef {
-        ty: StringName,
-        isa: OptName,
-        body: OptASTTy,
-    },
-    /// See `parse::ast::Node::Trait`.
-    /// Treated identically to `TypeDef` by the checker for now.
     Trait {
         ty: StringName,
         isa: OptName,
         body: OptASTTy,
-    },
-    TypeAlias {
-        ty: StringName,
-        isa: Name,
-        conditions: Vec<ASTTy>,
     },
     Condition {
         cond: Box<ASTTy>,

@@ -39,12 +39,7 @@ pub fn gen_class(
             }
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
-        Node::TypeDef {
-            body: Some(body),
-            ty,
-            ..
-        }
-        | Node::Trait {
+        Node::Trait {
             body: Some(body),
             ty,
             ..
@@ -52,25 +47,8 @@ pub fn gen_class(
             Node::Block { statements } => constrain_class_body(statements, ty, env, ctx, constr),
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
-        Node::Class { .. } | Node::TypeDef { .. } | Node::Trait { .. } => Ok(env.clone()),
+        Node::Class { .. } | Node::Trait { .. } => Ok(env.clone()),
 
-        Node::TypeAlias {
-            conditions,
-            isa,
-            ty,
-        } => {
-            // Self is defined top level in type alias
-            let var = AST::new(
-                ty.pos,
-                Id {
-                    lit: String::from(SELF),
-                },
-            );
-            let name = Some(Name::try_from(isa)?); // For now assume super
-            let env = id_from_var(&var, &name, &None, false, ctx, constr, env)?;
-
-            constrain_class_body(conditions, isa, &env, ctx, constr)
-        }
         Node::Condition { cond, el: Some(el) } => {
             generate(cond, env, ctx, constr)?;
             generate(el, env, ctx, constr)

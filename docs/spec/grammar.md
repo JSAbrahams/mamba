@@ -16,10 +16,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          ( import-as | "{" import-as "," "}" | "{" import-as "," import-as { "," import-as } "}" )
     import-as        ::= id ( "as" id )
 
-    # type refinement, experimental: "when" parses and type-checks but conditions go unenforced
-    type-def         ::= "type" type-not-fun [ ":" type-not-fun ] ( "when" conditions | [ code-set ] )
-    conditions       ::= expression | newline { expression newline } "end"
-    # interface, a la Java/Rust traits; only a single optional parent for now
     trait-def        ::= "trait" type-not-fun [ ":" type-not-fun ] [ code-set ]
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ code-set ]
     

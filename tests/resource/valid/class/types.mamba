@@ -1,12 +1,5 @@
 class MyGeneric: Str
 
-type SomeState: MyClass when self.private_field > 2
-type OtherState: MyClass when
-    self.private_field  > 10
-    self.private_field  < 200
-    self.required_field < 50
-end
-
 trait SuperInterface where
     def bar: Int
 end
@@ -21,7 +14,7 @@ class MyClass(my_field: Int, other_field: Str := "Hello"): MyInterface where
     def required_field: Int := 100
     def private_field: Int := 20
 
-    def fun_a(self: SomeState) := self.other_field := "my field is {self.required_field}"
+    def fun_a(self) := self.other_field := "my field is {self.required_field}"
     def fun_b(self) := print("this field is private: {self.private_field}!")
 
     def some_higher_order(self, fun: Int -> Int) -> Int := return fun(self.my_field)

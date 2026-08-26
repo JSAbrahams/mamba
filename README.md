@@ -28,7 +28,6 @@ This is the Mamba programming language.
 Mamba is similar to Python, but with a few key features:
 
 - Strict static typing rules, but with type inference so it doesn't get in the way too much
-- Type refinement features
 - Null safety
 - Explicit error handling
 - A distinction between mutability and immutability
@@ -280,13 +279,9 @@ These are similar to interfaces in Java and Kotlin, and near identical to traits
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
 For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
 
-> **Status:** the basic shape works today — `trait Named where def name(self) -> Str end` plus
-> `class Person(name: Str): Named where end` parses, type-checks, and transpiles to an `abc.ABC`-based
-> Python class, exactly like the signature form of `type` (the checker currently treats `trait` and `type`
-> identically, since a trait really is structurally a type interface). Generics (`trait Iterator[T]`), the
-> `def <Trait> for <Class> where ...` external-implementation syntax, composing multiple parent traits, and
-> `meta`/`fin` modifiers — all shown in the examples below — are not implemented yet; only a single optional
-> parent trait via `trait X: Parent where ... end` works.
+> **Note** Generics (`trait Iterator[T]`), the `def <Trait> for <Class> where ...` external-implementation syntax,
+> composing multiple parent traits, and `meta`/`fin` modifiers are not implemented yet;
+> only a single optional parent trait via `trait X: Parent where ... end` works.
 
 Consider example with iterators (which briefly showcases language generics):
 
@@ -324,130 +319,6 @@ E.g.
 ```mamba
 trait Ordered[T]: Equality, Comparable
 ```
-
-### 🗃 Type refinement (🇻 0.4.1+) (Experimental!)
-
-> **Status:** this section describes a design, not a shipped feature. Today, `type X: Y when <cond>` parses
-> and type-checks, but the transpiler **silently drops `<cond>` at codegen time** — it currently just emits a
-> plain `typing.NewType("X", Y)`, with no compile-time proof and no runtime check anywhere. None of the
-> `isa PosInt` / `isa InvertibleMatrix` flow-typing examples below are checked or enforced by the compiler
-> yet. We're deliberately keeping `type` (refinement) and `trait` (interfaces, see above) as separate
-> keywords/AST nodes so refinement can grow into this design later without disturbing traits, but whether
-> refinement can be done *well* — soundly, without either a real theorem prover or scattering runtime checks
-> through every call site — is genuinely an open question, and it's possible the honest answer ends up being
-> "no, not in general." Treat everything below as a sketch of where the language might go, not a guarantee.
-
-Mamba also has type refinement features to assign additional properties to types.
-
-Note: Having this as a first-class language feature and incorporating it into the grammar may have benefits, but does increase the complexity of the language.
-Arguably, it might detract from the elegance of the type system as well;
-A different solution could be to just have a dedicated interface baked into the standard library for this purpose.
-
-The general syntax is `type MyType: MainType when <expression>`.
-The expression can be of any form (and size), but **must** evaluate to a boolean.
-
-```mamba
-type SpecialInt: Int where self >= 0 and self <= 100 or self mod 2 = 0
-```
-
-_Note on performance: In terms of correctness, the order of the conjunctions obviously doesn't matter, but those who care about performance should know they are evaluated in order, so best to have simple ones first._
-
-```mamba
-type SpecialInt: Int when
-    self >= 0
-    self <= 100 or self mod 2 = 0
-end
-```
-
-Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
-
-```mamba
-# we list the conditions below, which are a list of boolean expressions.
-# this first-class language feature desugars to an list of checks which are done at the call site.
-# we avoid desugaring to a function (at least when transpiling to Python) as to not clash with existing functions.
-type PosInt: Int when self >= 0
-
-def factorial(x: PosInt) -> PosInt := match x with
-    0 => 1
-    n => n * factorial(n - 1)
-end
-```
-
-At the call site, one could do
-
-```mamba
-def x := -42 # some value
-
-# currently this is a compilation error, x is type Int
-# we cannot yet evaluate refined types at compile time, only runtime
-# factorial(x) # error: 'x' is type Int, but signature is factorial(PosInt)
-
-if x isa PosInt then
-    print(factorial(x))
-else
-    print("x must be positive")
-```
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `Str`.
-
-Let's expand our matrix example from above, and rewrite it slightly:
-
-```mamba
-type InvertibleMatrix: Matrix when self.determinant() != 0.0
-
-class MatrixErr(message: Str): Exception(message)
-
-## Matrix, which now takes floats as argument
-class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
-    def _last_op: Str? := None
-
-    def determinant(fin self) -> Float := self.a * self.d - self.b * self.c
-
-    def inverse(self: InvertibleMatrix) -> Matrix := do
-        def det := self.determinant()
-        self._last_op := "inverse"
-
-        Matrix(self.d / det, -self.b / det, -self.c / det, self.a / det)
-    end
-
-    def last_op(fin self) -> Str ! MatrixErr :=
-        if self._last_op != None then self._last_op
-        else ! MatrixErr("No operation performed")
-end
-```
-
-Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
-This is because we performed a check in the if condition.
-
-We now define the type of `self`.
-Each type effectively denotes another state that `self` can be in.
-For each type, we use `when` to show that it is a type refinement, which certain conditions.
-
-```mamba
-def m := Matrix(1.0, 2.0, 3.0, 4.0)
-
-if m isa InvertibleMatrix then do
-    def m_inv := m.inverse()
-    print("Original matrix: {m}")
-    print("Inverse: {m_inv}")
-end else
-    print("Matrix is singular (not invertible).")
-
-def last_op = m.last_op()!
-print("Last operation was: {last_op}")
-```
-
-Type refinement, in the context of object-oriented programming, thus allows us to also explicitly name the possible states of an object. 
-This means that we don't constantly have to check that certain conditions hold.
-We can simply ask whether a given object is a certain state by checking whether it is a certain type.
-
-In general, the goal of the compiler will become:
-
-- Limit the amount of checks that need to be done
-- Detect when it becomes impossible to raise an exception, i.e. if it is impossible to break an invariant then we will never raise an exception.
-
-Overall, the goal of type refinement is to allow us to express in greater detail the expected behaviour of functions in a more concise manner.
-This is somewhat similar to "design by contract", though baked more into the language itself.
-This should help us to express more clearly domains and codomains of functions.
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 

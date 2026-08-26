@@ -28,7 +28,6 @@ impl Lex {
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     From,
-    Type,
     Trait,
     Class,
     Pure,
@@ -159,7 +158,6 @@ impl fmt::Display for Token {
         match self.clone() {
             Token::From => write!(f, "from"),
             Token::Pure => write!(f, "pure"),
-            Token::Type => write!(f, "type"),
             Token::Trait => write!(f, "trait"),
             Token::Class => write!(f, "class"),
 

@@ -59,9 +59,7 @@ impl Display for Node {
             }
             Node::Id { lit } => lit.clone(),
             Node::ExpressionType { .. } => String::from("expression type"),
-            Node::TypeDef { .. } => String::from("type definition"),
             Node::Trait { .. } => String::from("trait definition"),
-            Node::TypeAlias { .. } => String::from("type alias"),
             Node::TypeTup { .. } => String::from("type tuple"),
             Node::TypeUnion { .. } => String::from("type union"),
             Node::Type { id, generics } => {
@@ -270,24 +268,10 @@ impl Node {
                 mutable,
                 ty: ty.map(|ty| Box::from(ty.map(mapping))),
             },
-            Node::TypeDef { ty, isa, body } => Node::TypeDef {
-                ty: Box::from(ty.map(mapping)),
-                isa: isa.map(|isa| Box::from(isa.map(mapping))),
-                body: body.map(|body| Box::from(body.map(mapping))),
-            },
             Node::Trait { ty, isa, body } => Node::Trait {
                 ty: Box::from(ty.map(mapping)),
                 isa: isa.map(|isa| Box::from(isa.map(mapping))),
                 body: body.map(|body| Box::from(body.map(mapping))),
-            },
-            Node::TypeAlias {
-                ty,
-                isa,
-                conditions,
-            } => Node::TypeAlias {
-                ty: Box::from(ty.map(mapping)),
-                isa: Box::from(isa.map(mapping)),
-                conditions: conditions.iter().map(|c| c.map(mapping)).collect(),
             },
             Node::TypeTup { types } => Node::TypeTup {
                 types: types.iter().map(|ty| ty.map(mapping)).collect(),
@@ -634,18 +618,6 @@ impl Node {
                 },
             ) => le.same_value(re) && lm == rm && equal_optional(lt, rt),
             (
-                Node::TypeDef {
-                    ty: lt,
-                    isa: li,
-                    body: lb,
-                },
-                Node::TypeDef {
-                    ty: rt,
-                    isa: ri,
-                    body: rb,
-                },
-            ) => lt.same_value(rt) && equal_optional(li, ri) && equal_optional(lb, rb),
-            (
                 Node::Trait {
                     ty: lt,
                     isa: li,
@@ -657,18 +629,6 @@ impl Node {
                     body: rb,
                 },
             ) => lt.same_value(rt) && equal_optional(li, ri) && equal_optional(lb, rb),
-            (
-                Node::TypeAlias {
-                    ty: lt,
-                    isa: li,
-                    conditions: lc,
-                },
-                Node::TypeAlias {
-                    ty: rt,
-                    isa: ri,
-                    conditions: rc,
-                },
-            ) => lt.same_value(rt) && li.same_value(ri) && equal_vec(lc, rc),
             (Node::TypeTup { types: l }, Node::TypeTup { types: r }) => equal_vec(l, r),
             (Node::TypeUnion { types: l }, Node::TypeUnion { types: r }) => equal_vec(l, r),
             (
@@ -1480,20 +1440,10 @@ mod test {
         let second = Box::from(AST::new(Position::invisible(), Node::Break));
         let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
-        two_ast!(Node::TypeDef {
-            ty: first.clone(),
-            isa: Some(second.clone()),
-            body: Some(third.clone())
-        });
         two_ast!(Node::Trait {
             ty: first.clone(),
             isa: Some(second.clone()),
             body: Some(third.clone())
-        });
-        two_ast!(Node::TypeAlias {
-            ty: first.clone(),
-            isa: second.clone(),
-            conditions: vec![*third.clone()]
         });
         two_ast!(Node::TypeTup {
             types: vec![*third.clone(), *second.clone()]
