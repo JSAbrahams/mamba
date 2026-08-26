@@ -15,10 +15,13 @@ use crate::common::position::Position;
 use crate::common::result::WithSource;
 use crate::{check_sources, strip_source_paths, Context};
 
+mod convert;
 mod link;
-mod lower;
 mod primitive;
+
 pub mod result;
+
+const TARGET: &str = "a.out";
 
 /// Compile `source` to native object code and link it into an executable, written to disk.
 ///
@@ -32,7 +35,7 @@ pub fn write_output(
     src_path: &Path,
     triple: Option<&str>,
 ) -> Result<PathBuf, Vec<String>> {
-    let out_file = dir.join(target.unwrap_or("a.out"));
+    let out_file = dir.join(target.unwrap_or(TARGET));
     if let Some(parent) = out_file.parent() {
         if !parent.exists() {
             create_dir(parent).map_err(|e| vec![e.to_string()])?;
@@ -76,7 +79,7 @@ fn mamba_to_object(
         .iter()
         .zip(&source)
         .map(|(ast_ty, (src, path))| {
-            compile(ast_ty, &ctx, target)
+            compile(ast_ty, target, &ctx)
                 .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
         })
         .partition(Result::is_ok);
@@ -94,14 +97,14 @@ fn mamba_to_object(
 ///
 /// `target`, if given, is a target triple (e.g. `x86_64-unknown-linux-gnu`).
 /// If `None`, the host triple is used.
-pub fn compile(ast_ty: &ASTTy, ctx: &Context, target: Option<&str>) -> BackendResult<Vec<u8>> {
+pub fn compile(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> BackendResult<Vec<u8>> {
     let isa = build_isa(target)?;
 
     let builder = ObjectBuilder::new(isa, "mamba", default_libcall_names())
         .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))?;
     let mut module = ObjectModule::new(builder);
 
-    lower::lower_program(ast_ty, ctx, &mut module)?;
+    convert::lower_program(ast_ty, ctx, &mut module)?;
 
     module
         .finish()

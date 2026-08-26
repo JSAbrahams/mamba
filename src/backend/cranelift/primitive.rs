@@ -10,7 +10,7 @@ use crate::backend::cranelift::result::{BackendErr, BackendResult};
 
 /// The Cranelift type a resolved Mamba primitive lowers to.
 ///
-/// Scoped to exactly the primitives the Cranelift backend supports (see `lower.rs`): `Int`,
+/// Scoped to exactly the primitives the Cranelift backend supports (see `convert/`): `Int`,
 /// `Bool`, and `Float`. Anything else (a class, a collection, a union of more than one name,
 /// an unresolved type) is out of scope for this backend.
 pub fn cranelift_type(ast: &ASTTy) -> BackendResult<Type> {
