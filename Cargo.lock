@@ -846,6 +846,7 @@ dependencies = [
 name = "tests_util"
 version = "0.0.0"
 dependencies = [
+ "assert_cmd",
  "itertools",
  "mamba",
  "python-parser",

@@ -1,14 +1,17 @@
 use std::cmp::max;
+use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::fs::{self, create_dir, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use assert_cmd::prelude::*;
 use itertools::{EitherOrBoth, Itertools};
 use python_parser::ast::Statement;
 use tempfile::tempdir_in;
 
+use mamba::backend::Backend;
 use mamba::common::delimit::newline_delimited;
 use mamba::{transpile_dir, Arguments};
 
@@ -18,6 +21,10 @@ pub static PYTHON: &str = "python3.10";
 pub static PYTHON: &str = "python3";
 #[cfg(target_os = "windows")]
 pub static PYTHON: &str = "python";
+
+/// A backend-driving test helper's signature -- [run_via_python] and [run_via_bin] both match it,
+/// so a test can be parameterized over which backend it runs a fixture through.
+pub type Runner = fn(&[&str], &str) -> Result<String, Box<dyn Error>>;
 
 /// Run a Python file with [PYTHON] and return its captured stdout.
 ///
@@ -39,6 +46,74 @@ pub fn run_python(path: &Path) -> Result<String, String> {
             String::from_utf8_lossy(&output.stderr)
         ))
     }
+}
+
+/// Transpile `file` (relative to `subdirs`, under `tests/resource/valid`) to Python and run it,
+/// returning its captured stdout.
+///
+/// Unlike [run_python], which runs an already-generated Python file, this drives the whole
+/// pipeline from `.mamba` source, the way a user invoking the CLI would.
+pub fn run_via_python(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let out_dir = tempfile::tempdir()?;
+
+    let arguments = Arguments::default(); // backend defaults to `Backend::Python`
+    let output_dir = transpile_dir(
+        Path::new(&src_dir),
+        Some(file),
+        Some(out_dir.path().join("out").to_str().unwrap()),
+        &arguments,
+    )
+    .map_err(|errs| format!("{errs:?}"))?;
+
+    let py_file = Path::new(file).with_extension("py");
+    Ok(run_python(&output_dir.join(py_file))?)
+}
+
+/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to a native binary via
+/// the Cranelift backend and run it, returning its captured stdout.
+pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
+    let src_dir = resource_path(true, subdirs, "");
+    let out_dir = tempfile::tempdir()?;
+    let bin_path = out_dir.path().join("bin_out");
+
+    let arguments = Arguments {
+        annotate: false,
+        backend: Backend::Bin { target: None },
+    };
+    let produced = transpile_dir(
+        Path::new(&src_dir),
+        Some(file),
+        Some(bin_path.to_str().unwrap()),
+        &arguments,
+    )
+    .map_err(|errs| format!("{errs:?}"))?;
+
+    let output = Command::new(&produced).output()?;
+    if !output.status.success() {
+        return Err(format!(
+            "executable exited with an error:\n{}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+    Ok(String::from_utf8(output.stdout)?)
+}
+
+/// Run the `mamba` CLI binary itself with `args`, from within `cwd`, returning its captured
+/// stdout. Fails if the process exits with an error.
+pub fn run_cli(cwd: &Path, args: &[&str]) -> Result<String, Box<dyn Error>> {
+    let mut cmd = Command::main_binary()?;
+    let output = cmd.current_dir(cwd).args(args).output()?;
+    if !output.status.success() {
+        return Err(format!(
+            "mamba {} exited with an error:\n{}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+    Ok(String::from_utf8(output.stdout)?)
 }
 
 pub struct OutTestErr(Vec<String>);
