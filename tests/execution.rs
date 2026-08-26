@@ -15,8 +15,21 @@ use tests_util::{resource_path, run_cli, run_via_bin, run_via_python, Runner};
 #[test_case(run_via_bin, &["function"], "arithmetic_sum.mamba" => "14\n")]
 #[test_case(run_via_python, &["function"], "for_loop_sum.mamba" => "10\n")]
 #[test_case(run_via_bin, &["function"], "for_loop_sum.mamba" => "10\n")]
+#[test_case(run_via_python, &["function"], "float_arithmetic.mamba" => "1\n")]
+#[test_case(run_via_bin, &["function"], "float_arithmetic.mamba" => "1\n")]
 fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
+}
+
+#[test]
+fn bin_backend_rejects_float_print_cleanly() -> Result<(), Box<dyn Error>> {
+    let err = run_via_bin(&["function"], "float_print_unsupported.mamba")
+        .expect_err("printing a Float isn't supported by the Cranelift backend yet");
+    assert!(
+        err.to_string().contains("print of a Float value"),
+        "expected a graceful 'not supported' error, got: {err}"
+    );
+    Ok(())
 }
 
 #[test]

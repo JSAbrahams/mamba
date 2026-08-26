@@ -179,7 +179,7 @@ impl<'a> FnLower<'a> {
     /// Lower `ast` as a value-producing expression.
     fn lower_expr(&mut self, ast: &ASTTy) -> BackendResult<Value> {
         match &ast.node {
-            // Int/Bool literals' own resolved `ty` can come back widened to a union (e.g. a
+            // Int/Bool/Real literals' own resolved `ty` can come back widened to a union (e.g. a
             // literal argument to `print`, whose parameter accepts several printable types
             // unifies to that broader union rather than staying just `Int`) -- but the node
             // variant itself already tells us the literal's true type, so there's no need to
@@ -191,6 +191,12 @@ impl<'a> FnLower<'a> {
                 Ok(self.builder.ins().iconst(types::I64, value))
             }
             NodeTy::Bool { lit } => Ok(self.builder.ins().iconst(types::I8, i64::from(*lit))),
+            NodeTy::Real { lit } => {
+                let value: f64 = lit.parse().map_err(|_| {
+                    BackendErr::new(ast.pos, &format!("Invalid float literal '{lit}'"))
+                })?;
+                Ok(self.builder.ins().f64const(value))
+            }
             NodeTy::Id { lit } => {
                 let (var, _) = self.vars.get(lit).ok_or_else(|| {
                     BackendErr::new(ast.pos, &format!("Undefined variable '{lit}'"))

@@ -1,0 +1,7 @@
+def compute(a: Float, b: Float) -> Float := do
+    def diff := a - b
+    def quot := a / b
+    return diff * quot
+end
+
+if compute(10.0, 4.0) = 15.0 then print(1) else print(0)

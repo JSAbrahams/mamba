@@ -166,6 +166,12 @@ pub fn compile(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> BackendRe
 /// produces. Real Intel-syntax output would mean re-disassembling the emitted machine code with
 /// an external disassembler (e.g. capstone) instead, which isn't wired up here.
 ///
+/// This is `vcode` text, not a full disassembly of the object: it covers instructions only, not
+/// the data section. A string literal (e.g. a `print("...")` argument) is emitted as a separate
+/// anonymous data blob, so it never appears in this output -- the instructions that use it only
+/// show an opaque symbol reference (e.g. `load_ext_name userextname0+0, %rdi`), the same way an
+/// import like `puts` shows up as a bare symbol rather than "the puts function".
+///
 /// `target`, if given, is a target triple (e.g. `x86_64-unknown-linux-gnu`).
 /// If `None`, the host triple is used.
 pub fn disassemble(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> BackendResult<String> {

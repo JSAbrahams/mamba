@@ -17,6 +17,10 @@ pub enum Backend {
     /// Printed in AT&T syntax -- Cranelift's own disassembler doesn't support switching to Intel
     /// syntax.
     ///
+    /// Only shows instructions, not the data section -- a string literal is compiled into the
+    /// object's data section, not the instruction stream, so it won't appear in this output at
+    /// all; the instructions will only show it being loaded by an opaque symbol name.
+    ///
     /// `target`, if given, is a target triple (e.g. `x86_64-unknown-linux-gnu`) passed on to
     /// Cranelift; if `None`, the host triple is used.
     Asm { target: Option<String> },

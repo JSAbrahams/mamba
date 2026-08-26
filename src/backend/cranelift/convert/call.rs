@@ -37,9 +37,14 @@ impl<'a> FnLower<'a> {
     }
 
     /// `print(...)`: a string literal goes through `puts` (which appends its own newline, like
-    /// Mamba/Python's `print`); a primitive value goes through `printf` with a fixed `%lld\n`
-    /// format. Anything else (interpolated strings, non-primitive values, multiple arguments) is
-    /// out of scope for this backend.
+    /// Mamba/Python's `print`); an `Int`/`Bool` value goes through `printf` with a fixed
+    /// `%lld\n` format. Anything else (interpolated strings, a `Float` value, non-primitive
+    /// values, multiple arguments) is out of scope for this backend.
+    ///
+    /// A `Float` is deliberately rejected rather than attempted: `%lld` would read raw float bits
+    /// as an integer (garbage, not a crash), and doing this properly means both a `%f`-style
+    /// format string and setting `%al` to the SysV-mandated vector-register count for a variadic
+    /// call passing a float -- printf-only ABI plumbing this backend doesn't have yet.
     pub(super) fn lower_print(&mut self, ast: &ASTTy) -> BackendResult<Option<Value>> {
         let args = match &ast.node {
             NodeTy::FunctionCall { args, .. } => args,
@@ -78,6 +83,9 @@ impl<'a> FnLower<'a> {
             )),
             _ => {
                 let value = self.lower_expr(arg)?;
+                if self.builder.func.dfg.value_type(value) == types::F64 {
+                    return Err(BackendErr::unimplemented(ast, "print of a Float value"));
+                }
                 let fmt = format!("{}\0", "%lld\n").into_bytes().into_boxed_slice();
                 let data_id = self
                     .module

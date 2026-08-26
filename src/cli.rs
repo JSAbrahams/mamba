@@ -41,6 +41,11 @@ pub struct Cli {
     /// (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help).
     /// Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own
     /// disassembler doesn't support switching to Intel syntax.
+    ///
+    /// Only shows instructions, not the data section: a string literal (e.g. a `print("...")`
+    /// argument) is compiled into the object's data section, not the instruction stream, so it
+    /// won't appear in this output at all -- the instructions will only show it being loaded by
+    /// an opaque symbol name (e.g. `load_ext_name userextname0+0, %rdi`).
     #[arg(long = "asm", action = ArgAction::SetTrue, conflicts_with_all = ["python", "bin"])]
     pub asm: bool,
 
