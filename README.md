@@ -108,7 +108,7 @@ def factorial(x: Int) -> Int := match x with
     0 => 1
     n => do
         def ans := 1
-        for i in 1 ..= n do ans := ans * i
+        for i in 1 ..= n do ans := ans * i end
         ans
     end
 end
@@ -359,6 +359,7 @@ def pure sin(x: Int) -> Int := do
     def ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
+    end
     ans
 end
 ```
