@@ -18,11 +18,21 @@ impl TryFrom<&AST> for GenericParent {
 
     fn try_from(ast: &AST) -> TypeResult<GenericParent> {
         match &ast.node {
-            Node::Parent { ty, .. } => Ok(GenericParent {
-                is_py_type: false,
-                name: TrueName::try_from(ty)?,
-                pos: ast.pos,
-            }),
+            Node::Parent { ty, .. } => match &ty.node {
+                Node::TypeFun { .. } => {
+                    let msg = "A class or trait cannot inherit from a function type";
+                    Err(vec![TypeErr::new(ty.pos, msg)])
+                }
+                Node::TypeTup { .. } => {
+                    let msg = "A class or trait cannot inherit from a tuple type";
+                    Err(vec![TypeErr::new(ty.pos, msg)])
+                }
+                _ => Ok(GenericParent {
+                    is_py_type: false,
+                    name: TrueName::try_from(ty)?,
+                    pos: ast.pos,
+                }),
+            },
             _ => {
                 let msg = format!("Expected parent, was {}", ast.node);
                 Err(vec![TypeErr::new(ast.pos, &msg)])
