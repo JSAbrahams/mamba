@@ -196,3 +196,20 @@ pub(crate) fn check_sources(
     trace!("Checked {} files", typed_ast.len());
     Ok((ctx, typed_ast))
 }
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use crate::{transpile_dir, Arguments};
+
+    #[test]
+    fn transpile_dir_reports_missing_source_directory() {
+        let dir = Path::new("/does/not/exist/anywhere");
+        let result = transpile_dir(dir, None, None, &Arguments::default());
+
+        let errs = result.unwrap_err();
+        assert_eq!(errs.len(), 1);
+        assert!(errs[0].contains("Source directory does not exist"));
+    }
+}

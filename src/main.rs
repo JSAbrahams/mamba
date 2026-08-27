@@ -8,13 +8,13 @@ use mamba::{transpile_dir, Arguments};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn main() -> Result<(), String> {
+pub fn main() {
     #[cfg(windows)]
     ansi_term::enable_ansi_support().unwrap();
 
     // if error, then defer printing error to clap
     let Ok(cli_input) = Cli::try_parse().map_err(|e| e.print()) else {
-        return Err(String::new());
+        std::process::exit(1);
     };
 
     loggerv::Logger::new()
@@ -44,23 +44,18 @@ pub fn main() -> Result<(), String> {
     };
 
     info!("Mamba 🐍 {VERSION}");
-    let current_dir = std::env::current_dir().map_err(|err| {
+    let current_dir = std::env::current_dir().unwrap_or_else(|err| {
         error!("Error while finding current directory: {err}");
-        format!("Error while finding current directory: {err}")
-    })?;
+        std::process::exit(1);
+    });
 
-    transpile_dir(
+    if let Err(errors) = transpile_dir(
         &current_dir,
         cli_input.input.as_deref(),
         cli_input.output.as_deref(),
         &arguments,
-    )
-    .map_err(|errors| {
+    ) {
         errors.iter().unique().for_each(|msg| eprintln!("{msg}"));
-        match errors.first() {
-            Some(msg) => msg.clone(),
-            None => String::new(),
-        }
-    })
-    .map(|_| ())
+        std::process::exit(1);
+    }
 }

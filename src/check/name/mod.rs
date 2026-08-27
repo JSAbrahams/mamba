@@ -511,8 +511,11 @@ mod tests {
     use crate::check::name::{
         match_name, Any, ColType, Empty, IsSuperSet, Name, Nullable, TupleCallable, Union,
     };
+    use std::convert::TryFrom;
+
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+    use crate::parse::ast::AST;
 
     #[test]
     fn trim_super_nullable() {
@@ -960,6 +963,59 @@ mod tests {
 
         let ctx = Context::default().into_with_primitives().unwrap();
         let collection_ty = range_name.col_type(&ctx, Position::invisible());
+        assert!(collection_ty.is_err());
+    }
+
+    #[test]
+    fn col_type_of_undefined_class() {
+        let ctx = Context::try_from(Vec::<AST>::new().as_slice()).unwrap();
+        let name = Name::from("TotallyUndefinedType");
+
+        let collection_ty = name.col_type(&ctx, Position::invisible());
+        assert!(collection_ty.is_err());
+    }
+
+    #[test]
+    fn name_tuple_is_tuple_not_callable() {
+        let name = Name::tuple(&[Name::from(INT), Name::from(BOOL)]);
+
+        assert_eq!(name.is_tuple(), HashSet::from([true]));
+        assert_eq!(name.is_callable(), HashSet::from([false]));
+        assert_eq!(
+            name.elements(Position::invisible()).unwrap(),
+            HashSet::from([vec![Name::from(INT), Name::from(BOOL)]])
+        );
+        assert!(name.args(Position::invisible()).is_err());
+        assert!(name.ret_ty(Position::invisible()).is_err());
+    }
+
+    #[test]
+    fn name_callable_is_callable_not_tuple() {
+        let name = Name::callable(&[Name::from(INT)], &Name::from(BOOL));
+
+        assert_eq!(name.is_callable(), HashSet::from([true]));
+        assert_eq!(name.is_tuple(), HashSet::from([false]));
+        assert_eq!(
+            name.args(Position::invisible()).unwrap(),
+            HashSet::from([vec![Name::from(INT)]])
+        );
+        assert_eq!(
+            name.ret_ty(Position::invisible()).unwrap(),
+            HashSet::from([Name::from(BOOL)])
+        );
+        assert!(name.elements(Position::invisible()).is_err());
+    }
+
+    #[test]
+    fn col_type_iter_return_type_not_a_class() {
+        // `__iter__` is defined, but its return type is never itself defined as a class, so
+        // there is no `__next__` to look up on it.
+        let source = "class HasIter(x: Int) where\n    def __iter__(self) -> Bogus := self\nend";
+        let file = source.parse::<AST>().unwrap();
+        let ctx = Context::try_from(vec![file].as_slice()).unwrap();
+        let name = Name::from("HasIter");
+
+        let collection_ty = name.col_type(&ctx, Position::invisible());
         assert!(collection_ty.is_err());
     }
 

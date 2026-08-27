@@ -14,6 +14,8 @@ use test_case::test_case;
 #[test_case("class", "cyclic_field_dependency")]
 #[test_case("class", "generics")]
 #[test_case("class", "field_depends_on_later_field")]
+#[test_case("class", "field_deps_operators")]
+#[test_case("class", "field_deps_collections")]
 #[test_case("class", "assign_types_nested")]
 #[test_case("class", "class_super_one_line_init")]
 #[test_case("class", "assign_types_double_nested")]

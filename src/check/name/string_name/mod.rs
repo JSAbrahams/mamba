@@ -295,7 +295,7 @@ mod test {
     use crate::check::context::clss::{HasParent, ANY, BOOL, INT, STRING};
     use crate::check::context::LookupClass;
     use crate::check::name::string_name::StringName;
-    use crate::check::name::IsSuperSet;
+    use crate::check::name::{IsSuperSet, Name, TupleCallable};
     use crate::common::position::Position;
     use crate::Context;
 
@@ -363,5 +363,47 @@ mod test {
         assert!(!name_1
             .is_superset_of(&name_2, &ctx, Position::invisible())
             .unwrap())
+    }
+
+    #[test]
+    fn tuple_is_tuple_not_callable() {
+        let name = StringName::tuple(&[Name::from(INT), Name::from(BOOL)]);
+
+        assert!(name.is_tuple());
+        assert!(!name.is_callable());
+        assert_eq!(
+            name.elements(Position::invisible()).unwrap(),
+            vec![Name::from(INT), Name::from(BOOL)]
+        );
+        assert!(name.args(Position::invisible()).is_err());
+        assert!(name.ret_ty(Position::invisible()).is_err());
+    }
+
+    #[test]
+    fn callable_is_callable_not_tuple() {
+        let name = StringName::callable(&[Name::from(INT)], &Name::from(BOOL));
+
+        assert!(name.is_callable());
+        assert!(!name.is_tuple());
+        assert_eq!(
+            name.args(Position::invisible()).unwrap(),
+            vec![Name::from(INT)]
+        );
+        assert_eq!(
+            name.ret_ty(Position::invisible()).unwrap(),
+            Name::from(BOOL)
+        );
+        assert!(name.elements(Position::invisible()).is_err());
+    }
+
+    #[test]
+    fn plain_name_is_neither_tuple_nor_callable() {
+        let name = StringName::from(INT);
+
+        assert!(!name.is_tuple());
+        assert!(!name.is_callable());
+        assert!(name.elements(Position::invisible()).is_err());
+        assert!(name.args(Position::invisible()).is_err());
+        assert!(name.ret_ty(Position::invisible()).is_err());
     }
 }
