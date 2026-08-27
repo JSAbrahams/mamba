@@ -1,20 +1,18 @@
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    # ORIGIN_X and ORIGIN_Y are constructor constants — they cannot be changed
-    # current x and y are mutable fields initialized from the constants
-    def x: Int := ORIGIN_X
-    def y: Int := ORIGIN_Y
+    def x: Int := self.ORIGIN_X
+    def y: Int := self.ORIGIN_Y
 
     def move(self, dx: Int, dy: Int) := do
         self.x := self.x + dx
         self.y := self.y + dy
     end
 
-    # Unlike the matrix before, reset resets this point to the value it was where it was instantiated.
+    # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
     def reset(self) := do
-        self.x := ORIGIN_X
-        self.y := ORIGIN_Y
+        self.x := self.ORIGIN_X
+        self.y := self.ORIGIN_Y
     end
 
-    def info(fin self) -> Str := 
-        "Currently at ({self.x}, {self.y}), originally from ({ORIGIN_X}, {ORIGIN_Y})"
+    def info(fin self) -> Str :=
+        "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end

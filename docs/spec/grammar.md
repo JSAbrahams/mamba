@@ -45,7 +45,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | code-block
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) expression
-    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" match-cases [ recover expression ] ]
+    call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" match-cases ]
     raise            ::= "!" id { "," id }
     
     # for all collections, we require one comma at least to avoid ambiguity

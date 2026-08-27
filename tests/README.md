@@ -272,6 +272,32 @@ gets disallowed in future (detecting the cycle and rejecting it at check time), 
 should move to `tests/resource/invalid/type/class/` and get a `matches Err(_)` test_case instead
 of being deleted outright, so the "was silently accepted" behavior isn't lost from history.
 
+## Known checker gap: multi-variable builder/comprehension syntax
+
+`[(x, y) | x in a, y in b]`-style builders (list, set, and dict alike) only resolve the *first*
+bound variable when constructing the head expression's scope — a second `in` generator, or a
+local `y = ...` binding, both produce "Undefined variable: y" even though the condition parses
+and checks fine on its own. Confirmed with minimal repros for list-, set-, and dict-builders; only
+a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`) currently works. This
+affects two of the `readme_example` fixtures (`lists`, `sets_maps` — see their `=> ignore[...]`
+reasons in `tests/check/valid.rs`) and is called out in the README's Collections section.
+
+## Known generator bug: `--annotate` can emit invalid Python for a shadowed loop variable in tail position
+
+`readme_example/factorial_dynamic` (`tests/check/valid.rs`) is ignored because `--annotate`
+(`Arguments { annotate: true, .. }`, which `tests_util::test_directory` always sets) generates
+syntactically invalid Python when a `def`-shadowed loop variable is *also* the trailing expression
+of a `match` case that becomes a function's return value. Root cause: `append_ret`
+(`src/backend/python/convert/mod.rs`) blindly recurses into the *last statement* of a `Block` to
+turn it into a `return`, but `wrap_scoped`'s (`src/backend/python/convert/control_flow.rs`)
+scope-restore `if/else` (`if __mamba_i_existed: i = ... else: del i`) is appended as that last
+statement for cleanup, not as the value — so `append_ret` recurses into the restore branches
+themselves, emitting `return i = __mamba_i_saved` / `return del i`. `--annotate` is already
+documented as "currently still buggy" in the CLI help (`src/cli.rs`); this is one concrete
+reproduction of that. Fixing it means either having `wrap_scoped` run outside/after `append_ret`,
+or teaching `append_ret` to skip over a trailing scope-restore `IfElse` and target the statement
+before it instead.
+
 ## Flaky test: `tests/main.rs` under parallel execution
 
 Seen once under `cargo llvm-cov` (which runs slower/instrumented) with default parallelism: one

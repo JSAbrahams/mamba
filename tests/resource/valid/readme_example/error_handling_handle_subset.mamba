@@ -1,7 +1,12 @@
+class MyErr(message: Str): Exception(message)
+class MyOtherErr(message: Str): Exception(message)
+
+def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
+
 def a: Result[Int, MyErr] := function_may_throw_err() ! where
-        err: MyOtherErr => do
-            print("We have another problem: {err.message}.")
-            0  # ... or we assign default value 0 to a
+    err: MyOtherErr => do
+        print("We have another problem: {err.message}.")
+        0  # ... or we assign default value 0 to a
     end
 end
 

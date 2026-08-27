@@ -1,8 +1,14 @@
+# lists
+def a := [0, 2, 51]
+def b := ["list", "of", "strings"]
+def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+
 # sets
 def c := { 10, 20 }
 def d := { 3 }
 # sets, builder syntax
 def cd := { x ^ y | x in c, y in d }
+def empty_set := {} # note: `{}` is always parsed as an empty set -- there is no empty mapping literal (yet)
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }

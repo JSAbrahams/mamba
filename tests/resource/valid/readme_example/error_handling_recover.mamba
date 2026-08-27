@@ -1,6 +1,0 @@
-def a: Result[Int, MyErr] := function_may_throw_err() ! where
-    err: MyOtherErr => print("We have a problem: {err.message}.")
-end recover do
-    print("cleaning up resource")
-    some_cleanup_function()
-end

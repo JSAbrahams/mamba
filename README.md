@@ -108,7 +108,7 @@ def factorial(x: Int) -> Int := match x with
     0 => 1
     n => do
         def ans := 1
-        for i in 1 ..= n do ans := ans * i
+        for i in 1 ..= n do ans := ans * i end
         ans
     end
 end
@@ -125,7 +125,7 @@ Lists make use of square brackets:
 # lists
 def a := [0, 2, 51]
 def b := ["list", "of", "strings"]
-def empty_list = []
+def empty_list := []
 # lists of tuples, builder syntax
 def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
@@ -141,13 +141,12 @@ def c := { 10, 20 }
 def d := { 3 }
 # sets, builder syntax
 def cd := { x ^ y | x in c, y in d }
-def empty_set := {,} # empty sets must have comma to distinguish from code block
+def empty_set := {}
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }
 # maps, builder syntax
 def ef := { x => y - 2 | x in e, y = x.len() }
-def empty_mapping := {=>}
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(ab(2)) # prints '(2, "list")'
@@ -279,10 +278,6 @@ These are similar to interfaces in Java and Kotlin, and near identical to traits
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
 For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
 
-> **Note** Generics (`trait Iterator[T]`), the `def <Trait> for <Class> where ...` external-implementation syntax,
-> composing multiple parent traits, and `meta`/`fin` modifiers are not implemented yet;
-> only a single optional parent trait via `trait X: Parent where ... end` works.
-
 Consider example with iterators (which briefly showcases language generics):
 
 ```mamba
@@ -296,7 +291,7 @@ class RangeIter(_start: Int, _end: Int) where
 end
 
 def Iterator[Int] for RangeIter where
-    def has_next(self) -> Bool := self._current < self._stop
+    def has_next(self) -> Bool := self._current < self._end
 
     def next(self) -> Int? := if self.has_next() then do
         def value := self._current
@@ -359,6 +354,7 @@ def pure sin(x: Int) -> Int := do
     def ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
+    end
     ans
 end
 ```
@@ -424,7 +420,7 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 ```mamba
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
-trait def StrictlyDecreases: Measurable where
+trait StrictlyDecreases: Measurable where
     def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
     def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
     def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
@@ -531,12 +527,12 @@ Instead, we now handle the error on-site:
 ```mamba
 def m := Matrix(1.0, 2.0, 3.0, 4.0)
 
-if m isa InvertibleMatrix then
+if m.is_invertible() then
     def inv := m.inverse()
 else
     print("Matrix is singular (not invertible).")
 
-def last_op = m.last_op() ! where
+def last_op := m.last_op() ! where
     err: MatrixErr(message) => do
         print("Error when getting last op: \"{message}\"")
         "N/A" # optionally we can also return, but here we assign default value
@@ -550,23 +546,42 @@ In the above script, we will always print an error (gracefully) and assign some 
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-This can also be combined with an assign.
-In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
-This is shown below:
+Under the hood, `<call> ! where <cases> end` desugars to a plain `match` on the call's result:
 
 ```mamba
-def a: Int := function_may_throw_err() ! where
-    err: MyErr => do
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
+match m.last_op() with
+    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
+end
+```
+
+This can also be combined with an assign.
+In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
+This is shown below, assuming the following error classes and fallible function are defined:
+
+```mamba
+class MyErr(message: Str): Exception(message)
+class MyOtherErr(message: Str): Exception(message)
+
+def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
+```
+
+```mamba
+def with_error_handling() := do
+    def a: Int := function_may_throw_err() ! where
+        err: MyErr => do
+            print("We have a problem: {err.message}.")
+            return  # we return, halting execution
+        end
+        err: MyOtherErr => do
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
+        end
     end
-    err: MyOtherErr => do
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
-    end
+
+    print("a has value {a}.")
 end
 
-print("a has value {a}.")
+with_error_handling()
 ```
 
 We can also opt to not do any error handling, making the type of `a`:
@@ -601,24 +616,6 @@ end
 a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised.
 
 print("a has value {a}.")
-```
-
-Finally, we also introduce the `recover` keyword.
-The intention is that instead of letting someone else up the stack perform cleanup, we can couple some of the cleanup at this site.
-For instance, de-allocating resources which we no longer need.
-This is similar to `drop` in Rust, though this applies only to errors/exceptions (as, generally speaking, we rely on garbage collection).
-This is also similar to `finally` in Python, though we don't always run this block, only when we encounter an error.
-
-The general syntax is `<expression-or-statement> recover <expression-or-statement>`
-So:
-
-```mamba
-def a: Result[Int, MyErr] := function_may_throw_err() ! where
-    err: MyOtherErr => print("We have a problem: {err.message}.")
-end recover do
-    print("cleaning up resource")
-    some_cleanup_function()
-end
 ```
 
 ## 💽 Machine Output

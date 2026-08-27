@@ -5,8 +5,8 @@ def factorial(x: Int) -> Int := match x with
 end
 
 def num := input("Compute factorial: ")
-if num.is_digit() then [
+if num.is_digit() then do
     def result := factorial(Int(num))
     print("Factorial {num} is: {result}.")
-] else
+end else
     print("Input was not an integer.")
