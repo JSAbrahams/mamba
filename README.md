@@ -375,6 +375,7 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
 
    a. If in the _call tree_ we call a different total function, the argument does not have to be strictly decreasing.
    b. However, it should still be globally decreasing, meaning that we amend the above:
+
       _"compared to the first parent of the node which is equal to said node, summing over all intermediate nodes"
       This does mean that we must be able to perform basic arithmetic on the types of the function for this (logic) system to work!
       **In some sense, basic (integer) arithmetic forms the logical bedrock of our system**
@@ -387,6 +388,51 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
    - `RangeInclusive` : `a..=b`
 
 Put another way, we sidestep the issue by ensuring that our system is still sound, but incomplete by acknowledging that we cannot prove termination for arbitrary functions!
+**Marking a function `total` does not ask the compiler to decide termination for the function as written.**
+It switches the checker into a stricter mode that only accepts the fixed, mechanically checkable subset described by the four rules above.
+Write something outside that shape, however obviously it halts to a human reader, and it is rejected.
+This is the same trade-off `const fn` makes in Rust or `constexpr` makes in C++.
+
+It's worth being explicit that this really is a strict subset, not a temporary gap we intend to close later.
+**Ackermann's function** is the classic example here.
+
+```mamba
+# some syntax here such as guard arms which are not in the language yet
+def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) with
+    (m, n) if m = 0 => n + 1
+    (m, n) if n = 0 => ackermann(m - 1, 1)
+    (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
+end
+```
+
+`ackermann` (referred to as `A` for brevity sake below) is, in fact, total;
+It will halt on all possible inputs.
+Its definition looks like an entirely ordinary pair of recursive calls.
+But `A` is the textbook example of a total, computable function that is **not primitive recursive**.
+
+Primitive recursion means the depth of the recursion is bounded in advance by a single value that strictly decreases toward a base case.
+A `for` loop over a `SizedIterator` is primitive recursive.
+Its iteration count is fixed by the collection's size before the loop even starts.
+Structural descent on a single `Measurable` value is primitive recursive too.
+Its number of recursive calls is bounded by the starting measure.
+This is exactly the expressive class `total` restricts you to.
+
+Concretely, our `StrictlyDecreases`/`Measurable` scheme cannot accept `A`.
+
+- The call `A(m, n - 1)` doesn't decrease `m` at all, only `n`.
+- The outer call `A(m - 1, A(m, n - 1))` decreases `m`, but its *second* argument is whatever the inner call returns.
+  This is vastly larger than the original `n`.
+  No single `Measurable` value of `(m, n)` shrinks on every call, because the "size" of the second argument is regenerated at each step rather than consumed.
+- Proving `A` terminates requires induction nested inside induction:
+  Induct on `m`, and for each `m` separately induct on `n`, reusing the outer hypothesis inside the inner one.
+  That's a stronger well-founded ordering than a single scalar `measure()` (or even a fixed-arity lexicographic tuple of them) can express.
+  This is, historically, precisely why Ackermann constructed the function:
+  To exhibit a total computable function outside the primitive recursive class.
+
+So a function shaped like Ackermann's can never be marked `total` in Mamba:
+No decidable `measure()`-based scheme can accept it while remaining decidable.
+Every function we accept as `total` truly halts; not every function that truly halts can be accepted.
+Agda, Idris, and Lean draw the same line, for the same reason.
 
 Take for instance this naive implementation of the Fibonacci sequence:
 
@@ -448,7 +494,26 @@ end
 
 Both of the above return an `Int`, which is part of the library and implements the `Measured` trait.
 This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
-This is because this forms the logical bedrock of our system of proving that functions are total, but in future we may relax this constraint.
+
+> **Flag:** `measure()` returning plain `Int` is, as specified above, actually unsound. Well-founded descent
+> needs the measure's codomain to have no infinite *descending* chain — true of `Nat`/`PosInt` (bounded below
+> by `0`), false of `Int` (`5, 4, 3, ..., -1, -2, ...` never bottoms out). `Measurable for Int` should measure
+> into `Nat`, e.g. `self.abs()`, not `self` directly — or `Measurable`'s signature should require the
+> `measure()` result to itself implement a "has a least element" trait, not just `Add, Sub, Eq, Comparable`.
+> Either way, this needs fixing before `Measurable for Int` is trustworthy, independent of anything else below.
+
+We think the "cannot be implemented for custom types" restriction can be relaxed, but only for `measure()`
+specifically, and only alongside a matching restriction on what a `measure()` body is allowed to contain: no
+recursion, no calls to other `meta` functions besides other `measure()` bodies, no loops — just a straight-line
+pure expression built from `Add`/`Sub`/`Eq`/`Comparable` operations and reads of `Measurable`-typed sub-fields
+(e.g. `self.left.measure() + self.right.measure()` for a tree). There is no fixed-point construct anywhere in
+that grammar, so there is no way to write a `measure()` that fails to terminate even in principle — that whole
+category of bug is excluded by construction, not merely checked for. Without opening this up, `total` is only
+ever useful for built-in numeric types, since a user can never give the checker a way to measure their own
+recursive types (trees, custom collections, etc.), which would make the feature far less valuable in practice.
+
+This is a materially different, and much safer, question than opening up general-purpose `meta` functions to
+user-defined recursion — see below.
 
 ```mamba
 # Trait measurable lives at the heart of this system, and by extension Mamba.
@@ -496,11 +561,38 @@ These functions have two constraints:
 
 Additionally:
 
-- A meta function is not enforced to be total, but it is recommended that it is!
-  This is because for the compiler to prove a function is meta, it must compile the application first.
-  Thus we have a circular dependency;
-  We are already compiling, so this is not an option (unless we have a meta-compiler, but that would require a meta-meta compiler, and so forth...).
+- A meta function **must** be total — not merely recommended, required. We resolve the circularity concern
+  above (proving a function is total normally means compiling and checking it, but we're mid-compile already)
+  by not proving it at all: a meta function's body is held to the same four restrictions as `total` functions
+  (see above). This is a syntactic well-formedness rule, not an evaluation — the checker never has to *run* a
+  meta function to know it terminates, any more than a borrow checker has to run a program to know it doesn't
+  alias. That sidesteps the meta-compiler regress entirely.
 - We may well place additional constraints on meta functions in future.
+
+**Should users be able to write general-purpose `meta` functions at all, given the above?** We think the
+honest answer for now is: not yet, or only in a closed form. Restrict `meta` to `@builtin`-gated definitions
+that ship with the standard library (reviewed by us, small in number) rather than something any Mamba user can
+write. The `Measurable`/`measure()` case above is the exception, because we found a restriction (straight-line,
+no-recursion-at-all) that's *safe to open up* precisely because it removes recursion from the picture entirely.
+General-purpose `meta` has no equivalent escape hatch — its whole value is running arbitrary compile-time
+computation — so the best we can offer a user-authored `meta` function is "restricted to structural recursion,
+checked," which is weaker than "cannot possibly fail to terminate." Given the README's own framing above (this
+is a niche, mostly-stdlib feature to begin with), the risk/benefit favors keeping it closed until there's a
+concrete case for opening it.
+
+Worth stating explicitly: even with the structural-recursion restriction, suppose we (or a future relaxation)
+get the checker's syntactic rule wrong and it lets through something that shouldn't have been accepted. The
+failure mode is the compiler hangs evaluating a `meta` function during `total`-checking. That is a **strictly
+preferable** failure to the one `total` exists to prevent — a hung compile happens on a developer's own
+machine or in CI, is attributable to a specific function, is interruptible, and blocks the broken code from
+ever being shipped; a hung `total` function at runtime is the exact production failure (denial of service,
+a stuck request thread, resource exhaustion) that the whole feature was built to rule out, except now dressed
+up with a false badge of having been proven safe. So while the goal is to make compile-time non-termination
+impossible by construction (per the structural restriction above), if we ever have to choose between an
+imperfect static check that occasionally hangs the compiler and a looser one that occasionally ships a
+non-terminating `total` function, we should choose the former without hesitation — and pair it with a
+recursion/step budget during meta evaluation (`error: meta evaluation exceeded N steps`), so the failure shows
+up as a diagnostic rather than a silent freeze.
 
 **Essentially, the main reason for Mamba having meta functions is to serve as the logical bedrock for provable total functions**.
 One other benefit is that compiled functions are evaluated at compile time and not runtime, potentially offering significant speed benefits.
