@@ -5,6 +5,7 @@ use tests_util::resource_content;
 
 use mamba::check::check_all;
 use mamba::check::result::TypeResult;
+use mamba::common::result::WithSource;
 use mamba::parse::ast::AST;
 
 #[test_case("access", "access_list_with_string" => matches Err(_))]
@@ -36,6 +37,8 @@ use mamba::parse::ast::AST;
 #[test_case("class", "one_tuple_not_assigned_to" => matches Err(_))]
 #[test_case("class", "reassign_to_unassigned_class_var" => matches Err(_))]
 #[test_case("class", "access_unassigned_class_var" => matches Err(_))]
+#[test_case("class", "parent_function_type" => matches Err(_))]
+#[test_case("class", "parent_tuple_type" => matches Err(_))]
 #[test_case("class", "same_parent_twice" => matches Err(_))]
 #[test_case("class", "top_level_class_not_assigned_to" => matches Err(_))]
 #[test_case("class", "wrong_generic_type" => matches Err(_))]
@@ -139,19 +142,28 @@ use mamba::parse::ast::AST;
 fn fail_check(input_dir: &str, file_name: &str) -> TypeResult<()> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(false, &["type", input_dir], &file_name).unwrap();
+    let path = PathBuf::new().join("type").join(input_dir).join(file_name);
 
     // except no parse error, but if we got one, print it.
     let ast = source
         .parse::<AST>()
         .map_err(|mut e| {
-            e.source = Some(source);
-            e.path = Some(PathBuf::new().join("type").join(input_dir).join(file_name));
+            e.source = Some(source.clone());
+            e.path = Some(path.clone());
 
             println!("{e}");
             e
         })
         .unwrap();
 
-    // expect error when type checking
-    check_all(&[ast]).map(|_| ())
+    // expect error when type checking; print it, exercising Display/with_source
+    check_all(&[ast]).map(|_| ()).map_err(|errs| {
+        errs.into_iter()
+            .map(|e| {
+                let e = e.with_source(&Some(source.clone()), &Some(path.clone()));
+                println!("{e}");
+                e
+            })
+            .collect()
+    })
 }

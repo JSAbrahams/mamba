@@ -272,6 +272,21 @@ gets disallowed in future (detecting the cycle and rejecting it at check time), 
 should move to `tests/resource/invalid/type/class/` and get a `matches Err(_)` test_case instead
 of being deleted outright, so the "was silently accepted" behavior isn't lost from history.
 
+## Fixed: a class could inherit from a function or tuple type
+
+`docs/spec/grammar.md`'s `class-def` rule restricts a parent to `type-not-fun`, but
+`parse_parent` (`src/parse/class.rs`) parses it with the unrestricted `parse_type`, so the parser
+alone never rejected `class Foo(a: Int): (Int) -> Int` or `class Foo(a: Int): (Int, Str)`. Before
+this fix, `StringName`/`TrueName`'s `TryFrom<&AST>` impls (`check/name/string_name/generic.rs`,
+`check/name/true_name/generic.rs`) both happily resolved a `Node::TypeFun`/`Node::TypeTup` parent
+to a callable/tuple `StringName`, so both examples type-checked and generated `class
+Foo(Callable[[int], int]): ...  Callable.__init__(self)` / `class Foo(Tuple[int, str]): ...
+Tuple.__init__(self)` — Python that would raise at runtime, since neither `typing.Callable` nor
+`typing.Tuple` has a real `__init__` to call this way. `GenericParent::try_from`
+(`check/context/parent/generic.rs`) now rejects a `Node::TypeFun`/`Node::TypeTup` parent directly
+(shared by both class and trait parent resolution), before ever reaching `TrueName::try_from`; see
+`tests/resource/invalid/type/class/parent_function_type.mamba` and `parent_tuple_type.mamba`.
+
 ## Known checker gap: multi-variable builder/comprehension syntax
 
 `[(x, y) | x in a, y in b]`-style builders (list, set, and dict alike) only resolve the *first*

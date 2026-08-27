@@ -97,7 +97,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // not sure if the check stage should pass as of yet
     fn it_stmt_as_expression_int_and_str() {
         let src = "def a := if True then 10 else \"asdf\"";
         let ast = src.parse::<AST>().unwrap();
@@ -114,9 +113,6 @@ mod tests {
             panic!("Expected variabledef: {:?}", statements[0].node)
         };
 
-        assert_eq!(
-            expr.ty,
-            Some(Name::from("Int").union(&Name::from("String")))
-        );
+        assert_eq!(expr.ty, Some(Name::from("Int").union(&Name::from("Str"))));
     }
 }

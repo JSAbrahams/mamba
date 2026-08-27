@@ -81,3 +81,65 @@ impl From<&Expression> for GenericFields {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use python_parser::ast::Statement;
+
+    use crate::check::context::field::generic::GenericFields;
+
+    fn assignment_targets(source: &str) -> (Vec<python_parser::ast::Expression>, bool) {
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        match statements.first().expect("non empty statements") {
+            Statement::Assignment(left, _) => (left.clone(), false),
+            Statement::TypedAssignment(left, _, _) => (left.clone(), true),
+            other => panic!("Not an assignment but {other:?}"),
+        }
+    }
+
+    #[test]
+    fn single_name() {
+        let (left, _) = assignment_targets("x = 0");
+        let fields = GenericFields::from((&left, &None)).fields;
+
+        assert_eq!(fields.len(), 1);
+        let field = fields.iter().next().expect("field");
+        assert_eq!(field.name, String::from("x"));
+        assert!(field.mutable);
+        assert!(field.ty.is_none());
+    }
+
+    #[test]
+    fn typed_single_name() {
+        let (left, _) = assignment_targets("x: int = 0");
+        let fields = GenericFields::from((
+            &left,
+            &Some(python_parser::ast::Expression::Name(String::from("int"))),
+        ))
+        .fields;
+
+        assert_eq!(fields.len(), 1);
+        let field = fields.iter().next().expect("field");
+        assert_eq!(field.name, String::from("x"));
+        assert!(field.ty.is_some());
+    }
+
+    #[test]
+    fn tuple_destructuring() {
+        // A single *parenthesized* tuple target (`(a, b) = 0, 0`) parses as one
+        // `Expression::TupleLiteral`, unlike the unparenthesized `a, b = 0, 0` (which the parser
+        // treats as two separate assignment targets, each going through the `Expression::Name`
+        // branch instead). A tuple target cannot be annotated in Python either way, so this
+        // always goes through the untyped `From<(&Vec<Expression>, &Option<Expression>)>` path.
+        let (left, _) = assignment_targets("(a, b) = 0, 0");
+        let fields = GenericFields::from((&left, &None)).fields;
+
+        assert_eq!(fields.len(), 2);
+        let mut names: Vec<&String> = fields.iter().map(|f| &f.name).collect();
+        names.sort();
+        assert_eq!(names, vec!["a", "b"]);
+        assert!(fields.iter().all(|f| !f.mutable));
+        assert!(fields.iter().all(|f| f.ty.is_none()));
+    }
+}

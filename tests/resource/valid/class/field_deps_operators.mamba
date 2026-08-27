@@ -1,0 +1,20 @@
+class Deps(x: Int) where
+    def cmp: Bool := self.x < self.later
+    def eqcmp: Bool := self.x = self.later
+    def geqcmp: Bool := self.x >= self.later
+    def logic: Bool := self.cmp or self.eqcmp
+    def logic2: Bool := self.cmp and self.eqcmp
+    def notv: Bool := not self.cmp
+    def negv: Int := -self.later
+    def posv: Int := +self.later
+    def subv: Int := self.x - self.later
+    def modv: Int := self.x mod self.later
+    def powv: Int := self.x ^ self.later
+    def divv: Float := self.x / self.later
+    def fdivv: Int := self.x // self.later
+    def inv: Bool := self.x in [self.later]
+    def later: Int := self.x * 2
+end
+
+def d := Deps(3)
+print(d.cmp)
