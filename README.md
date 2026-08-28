@@ -153,6 +153,8 @@ print(ab(2)) # prints '(2, "list")'
 print(ef(1)) # prints '1'
 ```
 
+Builder syntax with more than one `in` (like `y in b` above) isn't fully resolved by the checker yet.
+
 In a way, a list is a type of mapping where the keys are the indexes of each item.
 So:
 
@@ -303,6 +305,7 @@ end
 
 Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
 The syntax here is `trait <id> := where <one-or-more-definitions end` and we use it as `def <trait> for <class>`.
+Generics on traits, and implementing a trait for a class from outside the class body (as shown above), aren't implemented yet.
 
 Lastly, like Rust, types (traits) can also be used as generics.
 This would allow, for instance, for defining a `Hash` trait and enforcing for a hashmap that keys implement said trait.
