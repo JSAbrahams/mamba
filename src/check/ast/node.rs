@@ -130,11 +130,11 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .map(|ast| ASTTy::from((ast, finished)))
                     .collect(),
             },
-            Node::With {
+            Node::Using {
                 resource,
                 alias,
                 expr,
-            } => NodeTy::With {
+            } => NodeTy::Using {
                 resource: Box::from(ASTTy::from((resource, finished))),
                 alias: alias.clone().map(|(resource, alias, expr)| {
                     let resource = Box::from(ASTTy::from((resource, finished)));

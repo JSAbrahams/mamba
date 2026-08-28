@@ -52,7 +52,7 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Match, "match")?;
     let cond = it.parse(&parse_expression, "match", start)?;
     it.eat_while(&Token::NL);
-    it.eat(&Token::With, "match")?;
+    it.eat(&Token::Where, "match")?;
     it.eat_while(&Token::NL);
     let cases = it.parse_vec(&parse_match_cases, "match", start)?;
     let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
@@ -145,7 +145,7 @@ mod test {
 
     #[test]
     fn match_verify() {
-        let source = String::from("match a with\n    a => b\n    c => d\nend");
+        let source = String::from("match a where\n    a => b\n    c => d\nend");
         let statements = parse_direct(&source).unwrap();
 
         let Node::Match { cond, cases } = &statements.first().expect("script empty.").node else {
@@ -285,7 +285,7 @@ mod test {
 
     #[test]
     fn match_missing_arms() {
-        let source = String::from("match a with\n    ");
+        let source = String::from("match a where\n    ");
         parse_direct(&source).unwrap_err();
     }
 

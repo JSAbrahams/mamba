@@ -128,7 +128,7 @@ pub enum NodeTy {
         expr_or_stmt: Box<ASTTy>,
         cases: Vec<ASTTy>,
     },
-    With {
+    Using {
         resource: Box<ASTTy>,
         alias: Option<(Box<ASTTy>, bool, OptName)>,
         expr: Box<ASTTy>,

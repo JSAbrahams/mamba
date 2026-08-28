@@ -27,7 +27,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(lex.pos.union(error.pos), node)))
             }
             Token::Def => parse_definition(it),
-            Token::With => parse_with(it),
+            Token::Using => parse_using(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
             _ => Err(Box::from(expected_one_of(
@@ -35,7 +35,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                     Token::Pass,
                     Token::Raise,
                     Token::Def,
-                    Token::With,
+                    Token::Using,
                     Token::For,
                     Token::While,
                     Token::Ret,
@@ -48,7 +48,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::Pass,
             Token::Raise,
             Token::Def,
-            Token::With,
+            Token::Using,
             Token::For,
             Token::While,
             Token::Ret,
@@ -159,12 +159,12 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(right.pos), node)))
 }
 
-pub fn parse_with(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("with")?;
-    it.eat(&Token::With, "with")?;
-    let resource = it.parse(&parse_expression, "with", start)?;
+pub fn parse_using(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("using")?;
+    it.eat(&Token::Using, "using")?;
+    let resource = it.parse(&parse_expression, "using", start)?;
 
-    let alias = it.parse_if(&Token::As, &parse_expression_type, "with id", start)?;
+    let alias = it.parse_if(&Token::As, &parse_expression_type, "using id", start)?;
     let alias = if let Some(alias) = &alias {
         match alias.node.clone() {
             Node::ExpressionType { expr, mutable, ty } => Some((expr, mutable, ty)),
@@ -174,9 +174,9 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
         None
     };
 
-    let expr = it.parse(&parse_block, "with", start)?;
+    let expr = it.parse(&parse_block, "using", start)?;
 
-    let node = Node::With {
+    let node = Node::Using {
         resource,
         alias,
         expr: expr.clone(),
@@ -212,7 +212,7 @@ pub fn is_start_statement(tp: &Token) -> bool {
             | Token::While
             | Token::Pass
             | Token::Raise
-            | Token::With
+            | Token::Using
             | Token::Ret
     )
 }

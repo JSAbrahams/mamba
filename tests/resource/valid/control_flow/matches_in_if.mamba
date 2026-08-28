@@ -1,9 +1,9 @@
 def x:= if True then
-    match 10 with
+    match 10 where
         2 => 3
         _ => 4
     end
 else
-    match 20 with
+    match 20 where
         _ => 2
     end

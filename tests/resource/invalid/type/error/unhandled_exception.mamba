@@ -1,7 +1,7 @@
 class MyException1(msg: String): Exception(msg)
 class MyException2(msg: String): Exception(msg)
 
-def f(x: Int) -> Int ! { MyException1, MyException2 } := match x with
+def f(x: Int) -> Int ! { MyException1, MyException2 } := match x where
     0 => 20
     1 => ! MyException1()
     2 => ! MyException2()

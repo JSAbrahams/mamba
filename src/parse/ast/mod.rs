@@ -96,7 +96,7 @@ pub enum Node {
         expr_or_stmt: Box<AST>,
         cases: Vec<AST>,
     },
-    With {
+    Using {
         resource: Box<AST>,
         alias: Option<(Box<AST>, bool, Option<Box<AST>>)>,
         expr: Box<AST>,

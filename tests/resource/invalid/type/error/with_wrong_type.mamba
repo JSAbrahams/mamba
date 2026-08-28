@@ -1,5 +1,5 @@
 def my_string := "my string"
 
-with my_string as my_int: Int do
+using my_string as my_int: Int do
     print("error")
 end

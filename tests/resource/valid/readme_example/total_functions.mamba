@@ -1,5 +1,5 @@
 ## Fibonacci, implemented using recursion and not dynamic programming
-def total pure fibonacci(x: PosInt) -> Int := match x with
+def total pure fibonacci(x: PosInt) -> Int := match x where
     0 => 0
     1 => 1
     n => fibonacci(n - 1) + fibonacci(n - 2)
