@@ -421,18 +421,30 @@ Concretely, our `StrictlyDecreases`/`Measurable` scheme cannot accept `A`.
 
 - The call `A(m, n - 1)` doesn't decrease `m` at all, only `n`.
 - The outer call `A(m - 1, A(m, n - 1))` decreases `m`, but its *second* argument is whatever the inner call returns.
-  This is vastly larger than the original `n`.
-  No single `Measurable` value of `(m, n)` shrinks on every call, because the "size" of the second argument is regenerated at each step rather than consumed.
-- Proving `A` terminates requires induction nested inside induction:
-  Induct on `m`, and for each `m` separately induct on `n`, reusing the outer hypothesis inside the inner one.
-  That's a stronger well-founded ordering than a single scalar `measure()` (or even a fixed-arity lexicographic tuple of them) can express.
-  This is, historically, precisely why Ackermann constructed the function:
-  To exhibit a total computable function outside the primitive recursive class.
+  This can be vastly larger than the original `n`.
+- Proving `A` terminates does have a real measure behind it, to be precise.
+  Compare `(m, n)` lexicographically, with `m` as the dominant component.
+  `A(m, n - 1)` decreases in the second slot.
+  `A(m - 1, A(m, n - 1))` decreases in the first slot, no matter how large the second slot becomes.
+  This is a well-founded order, its order type is `ω²`.
+  So Ackermann's termination is not unprovable.
 
-So a function shaped like Ackermann's can never be marked `total` in Mamba:
-No decidable `measure()`-based scheme can accept it while remaining decidable.
-Every function we accept as `total` truly halts; not every function that truly halts can be accepted.
-Agda, Idris, and Lean draw the same line, for the same reason.
+What `A` lacks is a *flat* measure, which is what Mamba's scheme requires.
+`measure()` returns one comparable value.
+`decreases` is one comparison: `self.measure() < other.measure()`.
+There is no way to fold `(m, n)` into a single number so that "the pair got lexicographically smaller" becomes "the folded number got smaller".
+`n` can grow without any fixed bound in the very same step that `m` shrinks by one.
+No finite weighting of `m` and `n` into a single scalar survives that.
+
+So a function shaped like Ackermann's can never be marked `total` in Mamba today.
+Not because no well-founded measure exists for it.
+Instead, Mamba's well-founded order is deliberately flat, and Ackermann needs a lexicographic (or ordinal) one.
+This doesn't mean every practical termination checker rejects it outright.
+ACL2 admits Ackermann-shaped definitions directly, using measures into the ordinals below `ε₀` instead of plain naturals.
+Structural checkers built on multi-path call-graph analysis, the size-change principle (Lee, Jones, Ben-Amram, *The Size-Change Principle for Program Termination*, POPL 2001), can accept the ordinary two-clause Ackermann definition too, by tracking that some combination of argument positions decreases along every call path rather than one designated one.
+Agda's termination checker works this way.
+Generalising `Measurable` from a flat scalar to a lexicographic tuple, an ordinal, or a multi-argument call-graph analysis is a real, addressable extension.
+We don't implement any of that today, but it's worth keeping on the table, and it connects directly to the question of opening `Measurable` up to custom types at all, discussed below.
 
 Take for instance this naive implementation of the Fibonacci sequence:
 
@@ -481,39 +493,27 @@ Instead, ordering is reduced to numeric ordering, which is verifiable and depend
 It is for instance defined for the built-in primitive `Int`.
 
 ```mamba
-# Measure for int just returns self
+# Measure for Int returns abs(self), landing in PosInt, since a measure needs a bounded-below domain
 def StrictlyDecreases for Int where
-    def meta measure(self) -> Measurable := self
+    def meta measure(self) -> Measurable := self.abs()
 end
 
-# For string, we as an example use the length of the string (Which is also an integer)
+# For string, we as an example use the length of the string (also a PosInt)
 def StrictlyDecreases for Str where
     def meta measure(self) -> Measurable := self.len() 
 end
 ```
 
-Both of the above return an `Int`, which is part of the library and implements the `Measured` trait.
+Both of the above return a `PosInt`, which is part of the library and implements the `Measurable` trait.
 This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
 
-> **Flag:** `measure()` returning plain `Int` is, as specified above, actually unsound. Well-founded descent
-> needs the measure's codomain to have no infinite *descending* chain — true of `Nat`/`PosInt` (bounded below
-> by `0`), false of `Int` (`5, 4, 3, ..., -1, -2, ...` never bottoms out). `Measurable for Int` should measure
-> into `Nat`, e.g. `self.abs()`, not `self` directly — or `Measurable`'s signature should require the
-> `measure()` result to itself implement a "has a least element" trait, not just `Add, Sub, Eq, Comparable`.
-> Either way, this needs fixing before `Measurable for Int` is trustworthy, independent of anything else below.
-
-We think the "cannot be implemented for custom types" restriction can be relaxed, but only for `measure()`
-specifically, and only alongside a matching restriction on what a `measure()` body is allowed to contain: no
-recursion, no calls to other `meta` functions besides other `measure()` bodies, no loops — just a straight-line
-pure expression built from `Add`/`Sub`/`Eq`/`Comparable` operations and reads of `Measurable`-typed sub-fields
-(e.g. `self.left.measure() + self.right.measure()` for a tree). There is no fixed-point construct anywhere in
-that grammar, so there is no way to write a `measure()` that fails to terminate even in principle — that whole
-category of bug is excluded by construction, not merely checked for. Without opening this up, `total` is only
-ever useful for built-in numeric types, since a user can never give the checker a way to measure their own
-recursive types (trees, custom collections, etc.), which would make the feature far less valuable in practice.
+We think this restriction can be relaxed for user types.
+The requirement is just that `measure()` be total, deterministic, and pure: defined for every input, always giving the same output for the same input, and free of side effects.
+Given that, plus a bounded-below codomain like `PosInt`, the compiler can independently verify at each recursive call site that the measure actually decreases, regardless of which type `measure()` is defined on.
+So there's no correctness reason to keep `Measurable` closed to built-in types specifically, only a simplicity one for now.
 
 This is a materially different, and much safer, question than opening up general-purpose `meta` functions to
-user-defined recursion — see below.
+user-defined recursion. See below.
 
 ```mamba
 # Trait measurable lives at the heart of this system, and by extension Mamba.
