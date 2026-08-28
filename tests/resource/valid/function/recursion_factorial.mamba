@@ -1,0 +1,6 @@
+def factorial(n: Int) -> Int := do
+    if n <= 1 then return 1
+    return n * factorial(n - 1)
+end
+
+print(factorial(5))

@@ -48,3 +48,5 @@ class int(float):
     def __str__(self) -> str: pass
 
     def __eq__(self, other: int) -> bool:  pass
+
+    def __ne__(self, other: int) -> bool:  pass

@@ -1,0 +1,3 @@
+def a := 10
+def b := 4
+if a != b then print(1) else print(0)

@@ -24,6 +24,16 @@ use tests_util::{resource_path, run_cli, run_via_asm, run_via_bin, run_via_pytho
 #[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_shadow.mamba" => "6\n100\n")]
 #[test_matrix([run_via_python, run_via_bin], &["function"], "def_in_if_shadow.mamba" => "999\n100\n")]
 #[test_matrix([run_via_python, run_via_bin], &["function"], "def_in_loop_shadow.mamba" => "999\n999\n999\n100\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_int.mamba" => "1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_float.mamba" => "1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "float_comparison.mamba" => "1\n0\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "simple_reassign.mamba" => "5\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "forward_ref.mamba" => "4\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "void_implicit_body.mamba" => "4\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "recursion_factorial.mamba" => "120\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "early_return.mamba" => "7\n7\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "both_branches_return.mamba" => "-1\n1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "nested_for_sum.mamba" => "9\n")]
 fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
@@ -68,6 +78,12 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case("print_two_args_unsupported.mamba", "!= 1 argument")]
 #[test_case("print_interpolated_unsupported.mamba", "interpolated string")]
 #[test_case("no_initializer_unsupported.mamba", "variable definition")]
+#[test_case("and_unsupported.mamba", "And")]
+#[test_case("or_unsupported.mamba", "Or")]
+#[test_case("not_unsupported.mamba", "Not")]
+#[test_case("pow_unsupported.mamba", "Pow")]
+#[test_case("mod_unsupported.mamba", "Mod")]
+#[test_case("while_unsupported.mamba", "While")]
 fn bin_backend_rejects_gracefully(file: &str, expected_substring: &str) {
     let err = run_via_bin(&["function"], file)
         .expect_err("this fixture is deliberately outside the Cranelift backend's support");

@@ -1,0 +1,2 @@
+def a := True
+if not a then print(1) else print(0)

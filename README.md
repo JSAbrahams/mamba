@@ -375,6 +375,7 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
 
    a. If in the _call tree_ we call a different total function, the argument does not have to be strictly decreasing.
    b. However, it should still be globally decreasing, meaning that we amend the above:
+
       _"compared to the first parent of the node which is equal to said node, summing over all intermediate nodes"
       This does mean that we must be able to perform basic arithmetic on the types of the function for this (logic) system to work!
       **In some sense, basic (integer) arithmetic forms the logical bedrock of our system**
@@ -387,6 +388,33 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
    - `RangeInclusive` : `a..=b`
 
 Put another way, we sidestep the issue by ensuring that our system is still sound, but incomplete by acknowledging that we cannot prove termination for arbitrary functions!
+**Marking a function `total` does not ask the compiler to decide termination for the function as written.**
+It switches the checker into a stricter mode that only accepts the fixed, mechanically checkable subset described by the four rules above.
+Write something outside that shape, however obviously it halts to a human reader, and it is rejected.
+This is the same trade-off `const fn` makes in Rust or `constexpr` makes in C++.
+
+It's worth being explicit that this really is a strict subset, not a temporary gap we intend to close later.
+Not every function that obviously halts can be marked `total`.
+**Ackermann's function** is the classic example:
+
+```mamba
+# some syntax here such as guard arms which are not in the language yet
+def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) where
+    (m, n) if m = 0 => n + 1
+    (m, n) if n = 0 => ackermann(m - 1, 1)
+    (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
+end
+```
+
+This halts for every input, but Mamba can never mark it `total`.
+The trouble is the last case, `ackermann(m - 1, ackermann(m, n - 1))`.
+The first argument does get smaller each time.
+But the second argument is whatever the inner call returns, which can be a huge number, far bigger than `n` ever was.
+Our checker only ever tracks one shrinking number per recursive call.
+Here, there just isn't one number that always shrinks.
+
+There is a way to prove this function halts, but it needs comparing two numbers together rather than one, a more powerful (and more complicated) technique than Mamba currently supports.
+See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md) for the full mathematical story, including why some other languages and provers can accept this exact function today.
 
 Take for instance this naive implementation of the Fibonacci sequence:
 
@@ -435,20 +463,23 @@ Instead, ordering is reduced to numeric ordering, which is verifiable and depend
 It is for instance defined for the built-in primitive `Int`.
 
 ```mamba
-# Measure for int just returns self
+# Measure for Int returns abs(self), landing in PosInt, since a measure needs a bounded-below domain
 def StrictlyDecreases for Int where
-    def meta measure(self) -> Measurable := self
+    def meta measure(self) -> Measurable := self.abs()
 end
 
-# For string, we as an example use the length of the string (Which is also an integer)
+# For string, we as an example use the length of the string (also a PosInt)
 def StrictlyDecreases for Str where
     def meta measure(self) -> Measurable := self.len() 
 end
 ```
 
-Both of the above return an `Int`, which is part of the library and implements the `Measured` trait.
+Both of the above return a `PosInt`, which is part of the library and implements the `Measurable` trait.
 This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
-This is because this forms the logical bedrock of our system of proving that functions are total, but in future we may relax this constraint.
+
+Implementing `Measurable` for custom types is future work.
+`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `PosInt`; the compiler verifies the decrease independently at each call site regardless of which type `measure()` is defined on.
+See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md#measurable-and-custom-types) for the reasoning.
 
 ```mamba
 # Trait measurable lives at the heart of this system, and by extension Mamba.
@@ -484,27 +515,21 @@ But we can imagine that library writers might find these useful if they wish to 
 
 ### Meta functions (🇻 x+)
 
-The above also highlights meta functions in the language, which is a necessary evil.
-Meta functions are functions which can be evaluated at compile time.
-This is somewhat similar to macros in say C++ (or Rust, whose implementation is arguably far superior).
-However, the goal of meta functions and traits is to prove properties of variables at compile time.
-These functions have two constraints:
+Meta functions are evaluated at compile time, similar to macros in Rust (more so than in C or C++).
+Their purpose is to prove properties of the program before code generation, not to generate code.
 
-- These may not call non-meta functions (including total and pure functions) or values.
-- A meta function is also pure; they have no side-effects.
-  As this is always implied, we omit the need for the `pure` keyword.
+A meta function:
 
-Additionally:
+- May not call non-meta functions or values.
+- Is always pure, so the `pure` keyword is omitted.
+- Is total: its body is held to the same four restrictions as a `total` function, checked syntactically rather than by running it.
 
-- A meta function is not enforced to be total, but it is recommended that it is!
-  This is because for the compiler to prove a function is meta, it must compile the application first.
-  Thus we have a circular dependency;
-  We are already compiling, so this is not an option (unless we have a meta-compiler, but that would require a meta-meta compiler, and so forth...).
-- We may well place additional constraints on meta functions in future.
+`meta` is closed to the standard library.
+Opening it to user code is future work, though a `measure()` for a custom `Measurable` type (see above) would be a safe first case, since its shape can be checked without running it.
+See [docs/features/functions/meta_functions.md](docs/features/functions/meta_functions.md).
 
-**Essentially, the main reason for Mamba having meta functions is to serve as the logical bedrock for provable total functions**.
-One other benefit is that compiled functions are evaluated at compile time and not runtime, potentially offering significant speed benefits.
-This is useful when one wants to document how one derived a meta in the form of code, without re-calculating it each time at runtime.
+Meta functions exist primarily as the logical bedrock for provable `total` functions.
+A secondary benefit is performance: a meta computation runs once, at compile time, rather than being recomputed at every call.
 
 - A meta function is defined as `def meta my_function(<args>) := ...`.
 - A meta variable is defined `def meta my_var: MyType := ...`, with type annotations being non-optional.

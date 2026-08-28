@@ -1,0 +1,7 @@
+def abs_val(x: Int) -> Int := do
+    if x < 0 then return -x
+    return x
+end
+
+print(abs_val(-7))
+print(abs_val(7))

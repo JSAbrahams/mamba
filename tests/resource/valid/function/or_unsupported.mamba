@@ -1,0 +1,3 @@
+def a := True
+def b := False
+if a or b then print(1) else print(0)

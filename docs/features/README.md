@@ -23,3 +23,8 @@
 ##### [2.4.2 Error Handling](safety/error_handling.md)
 ##### [2.4.3 Null Safety](safety/null_safety.md)
 ##### [2.4.4 Generics](safety/generics.md)
+
+#### [2.5 🔁 Functions](functions/README.md)
+##### [2.5.1 Pure Functions](functions/pure_functions.md)
+##### [2.5.2 Total Functions](functions/total_functions.md)
+##### [2.5.3 Meta Functions](functions/meta_functions.md)

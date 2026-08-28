@@ -490,10 +490,21 @@ fn newline_if_body(core: &PythonCore, ind: usize) -> String {
 
 fn newline_delimited(items: &[PythonCore], ind: usize) -> String {
     let mut s = String::new();
-    items
-        .iter()
-        .for_each(|item| writeln!(s, "{}{}", indent(ind), to_py(item, ind)).unwrap());
+    write_items(&mut s, items, ind);
     s
+}
+
+/// Render each of `items` at `ind`, flattening any item that's itself a [`PythonCore::Block`]
+/// (recursively, in case of several layers) rather than indenting it as a single opaque item.
+///
+/// A `Block` already indents each of its own statements uniformly at `ind` (this is the same function, called again one level down).
+fn write_items(s: &mut String, items: &[PythonCore], ind: usize) {
+    for item in items {
+        match item {
+            PythonCore::Block { statements } => write_items(s, statements, ind),
+            other => writeln!(s, "{}{}", indent(ind), to_py(other, ind)).unwrap(),
+        }
+    }
 }
 
 fn comma_delimited(items: &[PythonCore], ind: usize) -> String {
