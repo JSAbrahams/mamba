@@ -1,6 +1,6 @@
 [package]
 name = "mamba"
-version = "0.3.6"
+version = "0.4.0"
 authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which converts Mamba files to Python 3 files"
 edition = "2021"
