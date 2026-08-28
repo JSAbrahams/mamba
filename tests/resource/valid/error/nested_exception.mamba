@@ -2,7 +2,7 @@ class MyException1(msg: Str): Exception(msg)
 class MyException2(msg: Str): Exception(msg)
 
 def f(x: Int) -> Int ! { MyException1, MyException2 } :=
-    match x with
+    match x where
         0 => 20
         1 => ! MyException1()
         2 => ! MyException2()

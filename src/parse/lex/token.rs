@@ -109,7 +109,6 @@ pub enum Token {
     Continue,
     Break,
     Ret,
-    With,
 
     Question,
 
@@ -235,7 +234,6 @@ impl fmt::Display for Token {
             Token::Break => write!(f, "break"),
             Token::Ret => write!(f, "return"),
             Token::Do => write!(f, "do"),
-            Token::With => write!(f, "with"),
 
             Token::Question => write!(f, "?"),
 

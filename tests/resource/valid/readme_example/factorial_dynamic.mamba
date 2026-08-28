@@ -1,4 +1,4 @@
-def factorial(x: Int) -> Int := match x with
+def factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
         def ans := 1

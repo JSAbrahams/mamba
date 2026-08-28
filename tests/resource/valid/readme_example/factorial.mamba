@@ -1,5 +1,5 @@
 # Factorial of x
-def factorial(x: Int) -> Int := match x with
+def factorial(x: Int) -> Int := match x where
     0 => 1
     n => n * factorial(n - 1)
 end

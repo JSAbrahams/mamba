@@ -1,4 +1,4 @@
-def a := match 40 with
+def a := match 40 where
     2 => 3
     4 => 30
     _ => 300

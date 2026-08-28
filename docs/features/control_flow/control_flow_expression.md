@@ -43,18 +43,18 @@ We can even match based on the type of the returned expression.
 
 A `match` has the form:
 
-    match <expression> with { <expression> => <expression or statement> }
+    match <expression> where { <expression> => <expression or statement> }
 
 An example would be (if `b` is a number):
 
-    match b with
+    match b where
         1 => print "one"
         4 => print "four"
         5 => print "five"
 
 We can also add a default case if:
 
-    match b with
+    match b where
         1 => print "one"
         4 => print "four"
         5 => print "five"
@@ -69,6 +69,6 @@ This can be achieved by either exhaustively covering every possible value, or by
 
 So, a `match` _expression_ has the form:
 
-    match <expression> with { <expression> => <expression> }
+    match <expression> where { <expression> => <expression> }
 
 With the additional requirement that we have an arm for every possible value of a given input type.

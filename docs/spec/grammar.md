@@ -104,7 +104,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     control-flow-expr::= if | match
     if               ::= "if" expression "then" expression [ "else" expression ]
-    match            ::= "match" expression "with" map
+    match            ::= "match" expression "where" map
     
     control-flow-stmt::= while | foreach | "break" | "continue"
     while            ::= "while" expression "do" expression

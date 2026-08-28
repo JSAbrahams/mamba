@@ -1,4 +1,4 @@
-match 10 with
+match 10 where
     n => print("10")
 end
 

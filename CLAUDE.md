@@ -106,7 +106,7 @@ has its own README worth reading before making non-trivial changes there (`src/p
 
 ## Block syntax (post indent/dedent removal)
 
-`for`/`while`/`with` bodies always require an explicit `do ... end` block — there is no single-statement
+`for`/`while`/`where` (resource) bodies always require an explicit `do ... end` block — there is no single-statement
 shorthand for these three (`for a in b do c` is a parse error; it must be `for a in b do c end`). `if`/`then`/
 `else` branches are the exception: each branch is parsed as one `parse_expr_or_stmt`, which accepts either a
 bare single statement/expression or an explicit `do ... end` block (`if a then do ... end else c` is valid).

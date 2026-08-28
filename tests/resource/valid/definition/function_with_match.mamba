@@ -1,5 +1,5 @@
 def f(x: Int) -> Int :=
-    match x with
+    match x where
         2 => 3
         4 => 30
         _ => 300
