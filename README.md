@@ -477,14 +477,9 @@ end
 Both of the above return a `PosInt`, which is part of the library and implements the `Measurable` trait.
 This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
 
-We think this restriction can be relaxed for user types.
-The requirement is just that `measure()` be total, deterministic, and pure: defined for every input, always giving the same output for the same input, and free of side effects.
-Given that, plus a bounded-below codomain like `PosInt`, the compiler can independently verify at each recursive call site that the measure actually decreases, regardless of which type `measure()` is defined on.
-So there's no correctness reason to keep `Measurable` closed to built-in types specifically, only a simplicity one for now.
-See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md#opening-measurable-to-custom-types) for the full reasoning and its caveats.
-
-This is a materially different, and much safer, question than opening up general-purpose `meta` functions to user-defined recursion.
-See below.
+Implementing `Measurable` for custom types is future work.
+`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `PosInt`; the compiler verifies the decrease independently at each call site regardless of which type `measure()` is defined on.
+See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md#measurable-and-custom-types) for the reasoning.
 
 ```mamba
 # Trait measurable lives at the heart of this system, and by extension Mamba.
@@ -520,30 +515,21 @@ But we can imagine that library writers might find these useful if they wish to 
 
 ### Meta functions (🇻 x+)
 
-The above also highlights meta functions in the language, which is a necessary evil.
-Meta functions are functions which can be evaluated at compile time.
-This is somewhat similar to macros in say C++ (or Rust, whose implementation is arguably far superior).
-However, the goal of meta functions and traits is to prove properties of variables at compile time.
-These functions have two constraints:
+Meta functions are evaluated at compile time, similar to macros in Rust (more so than in C or C++).
+Their purpose is to prove properties of the program before code generation, not to generate code.
 
-- These may not call non-meta functions (including total and pure functions) or values.
-- A meta function is also pure; they have no side-effects.
-  As this is always implied, we omit the need for the `pure` keyword.
+A meta function:
 
-Additionally:
+- May not call non-meta functions or values.
+- Is always pure, so the `pure` keyword is omitted.
+- Is total: its body is held to the same four restrictions as a `total` function, checked syntactically rather than by running it.
 
-- A meta function must be total, not just recommended to be.
-  We can require this without solving the halting problem again, because a meta function's body is held to the same four restrictions as `total` functions.
-  That's a rule the checker confirms just by looking at the code, without running it.
-- We currently keep `meta` closed to the standard library, rather than opening it up to every Mamba user.
-  General-purpose `meta` doesn't have as clean a safety story as `Measurable` does.
-- We may well place additional constraints on meta functions in future.
+`meta` is closed to the standard library.
+Opening it to user code is future work, though a `measure()` for a custom `Measurable` type (see above) would be a safe first case, since its shape can be checked without running it.
+See [docs/features/functions/meta_functions.md](docs/features/functions/meta_functions.md).
 
-See [docs/features/functions/meta_functions.md](docs/features/functions/meta_functions.md) for why we're keeping `meta` closed for now, and what would need to be true before we open it up.
-
-**Essentially, the main reason for Mamba having meta functions is to serve as the logical bedrock for provable total functions**.
-One other benefit is that compiled functions are evaluated at compile time and not runtime, potentially offering significant speed benefits.
-This is useful when one wants to document how one derived a meta in the form of code, without re-calculating it each time at runtime.
+Meta functions exist primarily as the logical bedrock for provable `total` functions.
+A secondary benefit is performance: a meta computation runs once, at compile time, rather than being recomputed at every call.
 
 - A meta function is defined as `def meta my_function(<args>) := ...`.
 - A meta variable is defined `def meta my_var: MyType := ...`, with type annotations being non-optional.
