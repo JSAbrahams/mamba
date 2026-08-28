@@ -28,7 +28,11 @@ impl<'a> FnLower<'a> {
 
     fn lower_call(&mut self, ast: &ASTTy) -> BackendResult<Option<Value>> {
         let (name, args) = match &ast.node {
-            NodeTy::FunctionCall { name, args } => (name, args),
+            NodeTy::FunctionCall {
+                name,
+                args,
+                is_index: false,
+            } => (name, args),
             other => {
                 return Err(BackendErr::unimplemented(
                     ast,

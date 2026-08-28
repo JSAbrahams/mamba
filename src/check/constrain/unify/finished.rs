@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use log::trace;
 
@@ -19,6 +19,8 @@ pub(crate) type PosNameMap = HashMap<Position, Name>;
 #[derive(Debug, Clone, Default)]
 pub struct Finished {
     pub(crate) pos_to_name: PosNameMap,
+    /// Positions of a `FunctionCall` (round-bracket call, `a(0)`) resolved as indexing into a  collection.
+    pub(crate) index_calls: HashSet<Position>,
 }
 
 impl Finished {

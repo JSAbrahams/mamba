@@ -42,3 +42,5 @@ class float(complex):
     def __str__(self) -> str: pass
 
     def __eq__(self, other: float) -> bool:  pass
+
+    def __ne__(self, other: float) -> bool:  pass
