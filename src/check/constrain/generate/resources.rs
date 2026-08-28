@@ -18,19 +18,19 @@ pub fn gen_resources(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::With {
+        Node::Using {
             resource,
             alias: Some((alias, mutable, ty)),
             expr,
         } => {
             constr.add(
-                "with alias",
+                "using alias",
                 &Expected::from(resource),
                 &Expected::from(alias),
                 env,
             );
             constr.add(
-                "with resource",
+                "using resource",
                 &Expected::from(resource),
                 &Expected::any(resource.pos),
                 env,
@@ -41,7 +41,7 @@ pub fn gen_resources(
                     name: Name::try_from(ty)?,
                 };
                 constr.add(
-                    "with alias type",
+                    "using alias type",
                     &Expected::from(resource),
                     &Expected::new(ty.pos, &ty_exp),
                     env,
@@ -71,9 +71,9 @@ pub fn gen_resources(
 
             Ok(env.clone())
         }
-        Node::With { resource, expr, .. } => {
+        Node::Using { resource, expr, .. } => {
             constr.add(
-                "with",
+                "using",
                 &Expected::from(resource),
                 &Expected::any(resource.pos),
                 env,

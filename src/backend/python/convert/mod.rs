@@ -247,7 +247,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
         NodeTy::Condition { .. } => return Err(Box::from(UnimplementedErr::new(ast, "condition"))),
 
-        NodeTy::With {
+        NodeTy::Using {
             resource,
             alias: Some((alias, ..)),
             expr,
@@ -266,7 +266,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 expr: Box::from(scope_guarded(expr, expr_core)),
             }
         }
-        NodeTy::With { resource, expr, .. } => {
+        NodeTy::Using { resource, expr, .. } => {
             let expr_core = convert_node(expr, imp, state, ctx)?;
             PythonCore::With {
                 resource: Box::from(convert_node(resource, imp, state, ctx)?),
@@ -803,7 +803,7 @@ mod tests {
     }
 
     #[test]
-    fn with_verify() {
+    fn using_verify() {
         let resource = to_pos!(Node::Id {
             lit: String::from("my_resource")
         });
@@ -817,7 +817,7 @@ mod tests {
         let expr = to_pos!(Node::Int {
             lit: String::from("9")
         });
-        let with = to_pos!(Node::With {
+        let using = to_pos!(Node::Using {
             resource,
             alias,
             expr
@@ -827,9 +827,9 @@ mod tests {
             resource,
             alias,
             expr,
-        }) = gen(&ASTTy::from(&with))
+        }) = gen(&ASTTy::from(&using))
         else {
-            panic!("Expected with as but was {:?}", gen(&ASTTy::from(&with)))
+            panic!("Expected with as but was {:?}", gen(&ASTTy::from(&using)))
         };
 
         assert_eq!(
@@ -909,20 +909,20 @@ mod tests {
     }
 
     #[test]
-    fn with_no_as_verify() {
+    fn using_no_as_verify() {
         let resource = to_pos!(Node::Id {
             lit: String::from("other")
         });
         let expr = to_pos!(Node::Int {
             lit: String::from("2341")
         });
-        let with = to_pos!(Node::With {
+        let using = to_pos!(Node::Using {
             resource,
             alias: None,
             expr
         });
 
-        let (resource, expr) = match gen(&ASTTy::from(&with)) {
+        let (resource, expr) = match gen(&ASTTy::from(&using)) {
             Ok(PythonCore::With { resource, expr }) => (resource, expr),
             other => panic!("Expected with but was {other:?}"),
         };

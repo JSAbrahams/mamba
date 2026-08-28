@@ -34,6 +34,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | trait-def
                       | class-def
                       | import
+                      | using-block
                       | "return" [ expression ]
                       | code-set
     expression       ::= control-flow-expr 
@@ -101,14 +102,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end" 
     code-set         ::= "where" expr-or-stmt { newline expr-or-stmt } "end"
+    using-block      ::= "using" expression { "as" expression } code-block
     
     control-flow-expr::= if | match
     if               ::= "if" expression "then" expression [ "else" expression ]
-    match            ::= "match" expression "where" map
+    match            ::= "match" expression "where" match-cases
+    match-cases      ::= "where" { match-case } "end"
+    match-case       ::= expression "=>" expression
     
     control-flow-stmt::= while | foreach | "break" | "continue"
-    while            ::= "while" expression "do" expression
-    foreach          ::= "for" expression "in" expression "do" expression
+    while            ::= "while" expression code-block
+    foreach          ::= "for" expression "in" expression code-block
     
     newline          ::= <platform dependent>
 ```

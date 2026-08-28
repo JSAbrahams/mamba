@@ -46,7 +46,7 @@ impl Display for Node {
             Node::AnonFun { .. } => String::from("anonymous function"),
             Node::Raise { .. } => String::from("raise"),
             Node::Handle { .. } => String::from("handle"),
-            Node::With { .. } => String::from("with"),
+            Node::Using { .. } => String::from("using"),
             Node::FunctionCall { name, args } => {
                 format!(
                     "{}({})",
@@ -240,11 +240,11 @@ impl Node {
                 expr_or_stmt: Box::from(expr_or_stmt.map(mapping)),
                 cases: cases.iter().map(|c| c.map(mapping)).collect(),
             },
-            Node::With {
+            Node::Using {
                 resource,
                 alias,
                 expr,
-            } => Node::With {
+            } => Node::Using {
                 resource: Box::from(resource.map(mapping)),
                 alias: alias.map(|(resource, alias, expr)| {
                     (
@@ -561,12 +561,12 @@ impl Node {
                 },
             ) => les.same_value(res) && equal_vec(lc, rc),
             (
-                Node::With {
+                Node::Using {
                     resource: lr,
                     alias: Some((la, lmut, lty)),
                     expr: le,
                 },
-                Node::With {
+                Node::Using {
                     resource: rr,
                     alias: Some((ra, rmut, rty)),
                     expr: re,
@@ -579,12 +579,12 @@ impl Node {
                     && le.same_value(re)
             }
             (
-                Node::With {
+                Node::Using {
                     resource: lr,
                     alias: None,
                     expr: le,
                 },
-                Node::With {
+                Node::Using {
                     resource: rr,
                     alias: None,
                     expr: re,
@@ -1382,7 +1382,7 @@ mod test {
             cases: vec![*first.clone()],
             expr_or_stmt: second.clone()
         });
-        two_ast!(Node::With {
+        two_ast!(Node::Using {
             resource: first.clone(),
             alias: Some((second.clone(), false, Some(third.clone()))),
             expr: Box::from(AST::new(Position::invisible(), Node::Pass))
