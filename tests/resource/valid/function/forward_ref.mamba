@@ -1,0 +1,9 @@
+def main_fn() := do
+    print(helper(3))
+end
+
+def helper(x: Int) -> Int := do
+    return x + 1
+end
+
+main_fn()

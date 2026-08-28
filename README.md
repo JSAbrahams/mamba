@@ -399,7 +399,7 @@ Not every function that obviously halts can be marked `total`.
 
 ```mamba
 # some syntax here such as guard arms which are not in the language yet
-def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) with
+def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
     (m, n)          => ackermann(m - 1, ackermann(m, n - 1))

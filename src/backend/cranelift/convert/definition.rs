@@ -101,6 +101,7 @@ pub(super) fn define_function(
     funcs: &Funcs,
     want_asm: bool,
 ) -> BackendResult<Option<String>> {
+    let is_void = sig.returns.is_empty();
     let mut ctx = ClifContext::new();
     ctx.set_disasm(want_asm);
     ctx.func = Function::with_name_signature(UserFuncName::user(0, func_id.as_u32()), sig);
@@ -127,7 +128,21 @@ pub(super) fn define_function(
             lower.bind_arg(arg, value)?;
         }
 
+        // A void function's body is lowered as a statement, never a value-producing tail --
+        // otherwise a body that's just a bare statement (e.g. `def f() := print(x)`, or a
+        // `do ... end` block with no explicit trailing `return`) would wrongly fall through
+        // `lower_tail`'s catch-all, which tries to evaluate it as an expression and return its
+        // value. `print` in particular is only special-cased in `lower_stmt`, so that fallback
+        // surfaces as a confusing "Undefined function 'print'" rather than actually running it.
         match body {
+            // Only add the implicit trailing `return` if the body didn't already end with one
+            // itself (see `lower_stmt`'s doc comment) -- it would otherwise try to add an
+            // instruction to an already-filled block and panic.
+            Some(body) if is_void => {
+                if !lower.lower_stmt(body)? {
+                    lower.builder.ins().return_(&[]);
+                }
+            }
             Some(body) => lower.lower_tail(body)?,
             None => {
                 lower.builder.ins().return_(&[]);
@@ -175,11 +190,17 @@ pub(super) fn define_main(
             puts_id,
         };
 
+        let mut terminated = false;
         for statement in statements {
-            lower.lower_stmt(statement)?;
+            if lower.lower_stmt(statement)? {
+                terminated = true;
+                break;
+            }
         }
-        let zero = lower.builder.ins().iconst(types::I32, 0);
-        lower.builder.ins().return_(&[zero]);
+        if !terminated {
+            let zero = lower.builder.ins().iconst(types::I32, 0);
+            lower.builder.ins().return_(&[zero]);
+        }
 
         lower.builder.seal_all_blocks();
         lower.builder.finalize();

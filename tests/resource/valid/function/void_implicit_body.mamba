@@ -1,0 +1,7 @@
+def helper(x: Int) -> Int := do
+    return x + 1
+end
+
+def main_fn() := print(helper(3))
+
+main_fn()

@@ -1,5 +1,5 @@
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{types, InstBuilder};
+use cranelift_codegen::ir::{types, InstBuilder, TrapCode};
 
 use crate::backend::cranelift::convert::common::fun_name;
 use crate::backend::cranelift::convert::FnLower;
@@ -18,7 +18,7 @@ impl<'a> FnLower<'a> {
     /// reassigning an outer variable with `:=`, which isn't a new binding, still works exactly as
     /// expected; only fresh bindings are undone here, since a `:=` never touches `self.vars`, only
     /// the value already tracked by whichever `Variable` the name already resolves to).
-    fn lower_scoped_stmt(&mut self, ast: &ASTTy) -> BackendResult<()> {
+    fn lower_scoped_stmt(&mut self, ast: &ASTTy) -> BackendResult<bool> {
         let snapshot = self.vars.clone();
         let result = self.lower_stmt(ast);
         self.vars = snapshot;
@@ -28,12 +28,20 @@ impl<'a> FnLower<'a> {
     /// Lower an `IfElse` in statement position: both arms are lowered as statements, and control
     /// re-joins in a shared `merge_block` afterwards (or falls straight through to it when there
     /// is no `else`).
+    ///
+    /// Returns whether this `if` definitely terminates the enclosing block itself -- only
+    /// possible when there's an `else` and *both* arms return, since otherwise the false path
+    /// (falling through with no `else`, or an `else` that doesn't return) always reaches
+    /// `merge_block` and execution continues from there. When both arms do return, `merge_block`
+    /// is never actually jumped into -- it's given a `trap` as a placeholder terminator (dead
+    /// code, never executed) purely so it stays valid IR; Cranelift requires every block in the
+    /// layout to end in a terminator whether or not it's reachable.
     pub(super) fn lower_if_else_stmt(
         &mut self,
         cond: &ASTTy,
         then: &ASTTy,
         el: Option<&ASTTy>,
-    ) -> BackendResult<()> {
+    ) -> BackendResult<bool> {
         let cond_value = self.lower_expr(cond)?;
         let then_block = self.builder.create_block();
         let merge_block = self.builder.create_block();
@@ -48,17 +56,27 @@ impl<'a> FnLower<'a> {
             .brif(cond_value, then_block, &[], else_block, &[]);
 
         self.builder.switch_to_block(then_block);
-        self.lower_scoped_stmt(then)?;
-        self.builder.ins().jump(merge_block, &[]);
-
-        if let Some(el) = el {
-            self.builder.switch_to_block(else_block);
-            self.lower_scoped_stmt(el)?;
+        let then_returned = self.lower_scoped_stmt(then)?;
+        if !then_returned {
             self.builder.ins().jump(merge_block, &[]);
         }
 
+        let both_returned = if let Some(el) = el {
+            self.builder.switch_to_block(else_block);
+            let el_returned = self.lower_scoped_stmt(el)?;
+            if !el_returned {
+                self.builder.ins().jump(merge_block, &[]);
+            }
+            then_returned && el_returned
+        } else {
+            false
+        };
+
         self.builder.switch_to_block(merge_block);
-        Ok(())
+        if both_returned {
+            self.builder.ins().trap(TrapCode::unwrap_user(1));
+        }
+        Ok(both_returned)
     }
 
     /// Lower a `For` loop in statement position.
@@ -140,11 +158,15 @@ impl<'a> FnLower<'a> {
         self.vars.insert(var_name, (loop_var, ty));
         let result = self.lower_stmt(body);
         self.vars = snapshot;
-        result?;
-        let current = self.builder.use_var(loop_var);
-        let next = self.builder.ins().iadd(current, step_value);
-        self.builder.def_var(loop_var, next);
-        self.builder.ins().jump(header_block, &[]);
+        // If the body definitely returned (an early `return` inside the loop), `body_block` is
+        // already filled -- adding the increment/back-edge would panic, and there's no next
+        // iteration to run anyway, so skip straight to `exit_block` without touching it further.
+        if !result? {
+            let current = self.builder.use_var(loop_var);
+            let next = self.builder.ins().iadd(current, step_value);
+            self.builder.def_var(loop_var, next);
+            self.builder.ins().jump(header_block, &[]);
+        }
 
         self.builder.switch_to_block(exit_block);
         Ok(())

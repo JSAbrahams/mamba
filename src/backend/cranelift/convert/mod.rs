@@ -118,22 +118,45 @@ struct FnLower<'a> {
 
 impl<'a> FnLower<'a> {
     /// Lower `ast` as a statement: for side effects only, its value (if any) is discarded.
-    fn lower_stmt(&mut self, ast: &ASTTy) -> BackendResult<()> {
+    ///
+    /// Returns whether `ast` definitely ended the current block with a `return` (`Ok(true)`) --
+    /// once that happens, the block is "filled" and Cranelift panics if anything else tries to
+    /// add an instruction to it, so every caller that keeps lowering more statements into the
+    /// same block (a `Block`'s later statements, the synthetic top-level `return` a void
+    /// function's body doesn't already end with, ...) needs to stop the moment this comes back
+    /// `true`, exactly the way unreachable code after a `return` would in any straight-line IR.
+    fn lower_stmt(&mut self, ast: &ASTTy) -> BackendResult<bool> {
         match &ast.node {
-            NodeTy::VariableDef { .. } => self.lower_variable_def(ast),
-            NodeTy::Reassign { .. } => self.lower_reassign(ast),
+            NodeTy::VariableDef { .. } => self.lower_variable_def(ast).map(|()| false),
+            NodeTy::Reassign { .. } => self.lower_reassign(ast).map(|()| false),
             NodeTy::IfElse { cond, then, el } => self.lower_if_else_stmt(cond, then, el.as_deref()),
-            NodeTy::For { expr, col, body } => self.lower_for(expr, col, body),
+            NodeTy::For { expr, col, body } => self.lower_for(expr, col, body).map(|()| false),
             NodeTy::Block { statements } => {
                 for statement in statements {
-                    self.lower_stmt(statement)?;
+                    if self.lower_stmt(statement)? {
+                        return Ok(true);
+                    }
                 }
-                Ok(())
+                Ok(false)
             }
             NodeTy::FunctionCall { name, .. } if name.name == PRINT => {
-                self.lower_print(ast).map(|_| ())
+                self.lower_print(ast).map(|_| false)
             }
-            NodeTy::FunctionCall { .. } => self.lower_call_stmt(ast),
+            NodeTy::FunctionCall { .. } => self.lower_call_stmt(ast).map(|()| false),
+            // An early `return`/`return <expr>` doesn't have to be a function's literal last
+            // statement (see `lower_tail`, which handles these same two node shapes for that
+            // position) -- it can appear anywhere a statement can, e.g. inside an `if` branch
+            // that isn't the function's own tail. Mirror `lower_tail`'s handling here so that
+            // shape works too, for both void and value-returning functions.
+            NodeTy::Return { expr } => {
+                let value = self.lower_expr(expr)?;
+                self.builder.ins().return_(&[value]);
+                Ok(true)
+            }
+            NodeTy::ReturnEmpty => {
+                self.builder.ins().return_(&[]);
+                Ok(true)
+            }
             other => Err(BackendErr::unimplemented(
                 ast,
                 &format!("{other:?} statement"),

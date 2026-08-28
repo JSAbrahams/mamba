@@ -1,0 +1,4 @@
+def a := 1.5
+def b := 2.5
+if a < b then print(1) else print(0)
+if a > b then print(1) else print(0)
