@@ -38,6 +38,8 @@ class list(Generic[T], collection[T]):
 
     def __getitem__(self, item: Union[int, slice]) -> T: pass
 
+    def __setitem__(self, item: int, value: T) -> bool: pass
+
     def __bool__(self) -> bool: pass
 
     def __str__(self) -> str: pass
@@ -69,6 +71,8 @@ class dict(Generic[T, R]):
     def __init__(self): pass
 
     def __getitem__(self, item: T) -> R: pass
+
+    def __setitem__(self, item: T, value: R) -> bool: pass
 
     def __iter__(self) -> dictkeyiterator[T]: pass
 

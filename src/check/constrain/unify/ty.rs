@@ -163,6 +163,11 @@ fn recursive_sub_ty(
             };
             (any_substituted, Expected::new(inspected.pos, &func))
         }
+        Expect::Call { args } => {
+            let (any_substituted, args) = sub_ty_vec(side, old_to_new, args, pos)?;
+            let call = Expect::Call { args };
+            (any_substituted, Expected::new(inspected.pos, &call))
+        }
         Type { name } => {
             let new_name = name.substitute(old_to_new, pos)?;
             (

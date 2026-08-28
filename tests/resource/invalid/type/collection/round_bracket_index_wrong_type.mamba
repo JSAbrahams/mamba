@@ -1,0 +1,2 @@
+def a := { 20 => "asdf", 30 => "asdf" }
+def i: Int := a(20)

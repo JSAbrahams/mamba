@@ -31,6 +31,7 @@ pub const CONTAINS: &str = "__contains__";
 pub const SUPER: &str = "super";
 
 pub const GET_ITEM: &str = "__getitem__";
+pub const SET_ITEM: &str = "__setitem__";
 
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
