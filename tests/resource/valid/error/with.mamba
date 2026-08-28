@@ -2,14 +2,14 @@ def do_something(x: Int) := print("hello world {x}")
 
 def my_resource := 10
 
-where my_resource as other do
+using my_resource as other do
     do_something(other)
 end
 
-where my_resource as yet_another: Int do
+using my_resource as yet_another: Int do
     do_something(yet_another)
 end
 
-where my_resource do
+using my_resource do
     do_something(my_resource)
 end
