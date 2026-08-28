@@ -1,5 +1,5 @@
 def not_an_expression() := print("not an expression")
 
-using not_an_expression() as my_expression do
+where not_an_expression() as my_expression do
     print("not an expression!")
 end

@@ -27,7 +27,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(lex.pos.union(error.pos), node)))
             }
             Token::Def => parse_definition(it),
-            Token::Using => parse_using(it),
+            Token::Where => parse_with(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
             _ => Err(Box::from(expected_one_of(
@@ -35,7 +35,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                     Token::Pass,
                     Token::Raise,
                     Token::Def,
-                    Token::Using,
+                    Token::Where,
                     Token::For,
                     Token::While,
                     Token::Ret,
@@ -48,7 +48,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::Pass,
             Token::Raise,
             Token::Def,
-            Token::Using,
+            Token::Where,
             Token::For,
             Token::While,
             Token::Ret,
@@ -159,10 +159,10 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(right.pos), node)))
 }
 
-pub fn parse_using(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("using")?;
-    it.eat(&Token::Using, "using")?;
-    let resource = it.parse(&parse_expression, "using", start)?;
+pub fn parse_with(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("with")?;
+    it.eat(&Token::Where, "with")?;
+    let resource = it.parse(&parse_expression, "with", start)?;
 
     let alias = it.parse_if(&Token::As, &parse_expression_type, "using id", start)?;
     let alias = if let Some(alias) = &alias {
@@ -212,7 +212,7 @@ pub fn is_start_statement(tp: &Token) -> bool {
             | Token::While
             | Token::Pass
             | Token::Raise
-            | Token::Using
+            | Token::Where
             | Token::Ret
     )
 }

@@ -1,5 +1,5 @@
 def old := 10
 
-using old as new do
+where old as new do
     print(old + 10)
 end
