@@ -145,6 +145,7 @@ impl From<(&Node, &Finished)> for NodeTy {
             },
             Node::FunctionCall { name, args } => NodeTy::FunctionCall {
                 name: StringName::try_from(name).unwrap_or_else(|_| StringName::empty()),
+                is_index: false,
                 args: args
                     .iter()
                     .map(|ast| ASTTy::from((ast, finished)))

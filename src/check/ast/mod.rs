@@ -32,7 +32,12 @@ impl From<(Box<AST>, &Finished)> for ASTTy {
 
 impl From<(&AST, &Finished)> for ASTTy {
     fn from((ast, finished): (&AST, &Finished)) -> Self {
-        let node = NodeTy::from((&ast.node, finished));
+        let mut node = NodeTy::from((&ast.node, finished));
+        // `NodeTy::from` only sees the `Node::FunctionCall` payload, not the outer call's own
+        // position, so the round-bracket-indexing marker is filled in here instead.
+        if let NodeTy::FunctionCall { is_index, .. } = &mut node {
+            *is_index = finished.index_calls.contains(&ast.pos);
+        }
         ASTTy {
             node,
             ty: finished.pos_to_name.get(&ast.pos).cloned(),
@@ -135,6 +140,10 @@ pub enum NodeTy {
     },
     FunctionCall {
         name: StringName,
+        /// True if this round-bracket call was actually resolved as indexing into a
+        /// collection (`a(0)` desugared to `a.__getitem__(0)`) rather than a real call.
+        /// Used by the Python backend to render it with square brackets instead.
+        is_index: bool,
         args: Vec<ASTTy>,
     },
     PropertyCall {

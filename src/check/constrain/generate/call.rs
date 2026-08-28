@@ -15,7 +15,7 @@ use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::arg::python::SELF;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::function::python::GET_ITEM;
+use crate::check::context::function::python::{GET_ITEM, SET_ITEM};
 use crate::check::context::{arg, function, Context, LookupClass, LookupFunction};
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::string_name::StringName;
@@ -47,14 +47,27 @@ pub fn gen_call(
                     })
                     .fold(env.clone(), |env, self_var| env.assigned_to(&self_var));
 
-                constr.add(
-                    "reassign",
-                    &Expected::from(left),
-                    &Expected::from(right),
-                    env,
-                );
-                generate(right, &env_assigned_to, ctx, constr)?;
-                generate(left, &env_assigned_to, ctx, constr)?;
+                if let Node::Index { item, range } = &left.node {
+                    gen_set_item(item, range, right, &env_assigned_to, ctx, constr)?;
+                } else if let Node::FunctionCall { name, args } = &left.node {
+                    // Round-bracket equivalent of `Node::Index`: `item(range) := right`.
+                    let range = args.first().ok_or_else(|| {
+                        vec![TypeErr::new(
+                            left.pos,
+                            "Cannot reassign to a call with no arguments",
+                        )]
+                    })?;
+                    gen_set_item(name, range, right, &env_assigned_to, ctx, constr)?;
+                } else {
+                    constr.add(
+                        "reassign",
+                        &Expected::from(left),
+                        &Expected::from(right),
+                        env,
+                    );
+                    generate(right, &env_assigned_to, ctx, constr)?;
+                    generate(left, &env_assigned_to, ctx, constr)?;
+                }
                 Ok(env_assigned_to)
             } else {
                 reassign_op(ast, left, right, op, env, ctx, constr)
@@ -84,16 +97,15 @@ pub fn gen_call(
                 }
 
                 for (_, fun_exp) in functions {
-                    let last_pos = args.last().map_or_else(|| name.pos, |a| a.pos);
-                    let args = args.iter().map(Expected::from).collect();
-                    let right = Expected::new(
-                        last_pos,
-                        &Function {
-                            name: f_name.clone(),
-                            args,
+                    let call_args = args.iter().map(Expected::from).collect();
+                    let access = Expected::new(
+                        ast.pos,
+                        &Access {
+                            entity: Box::new(fun_exp.clone()),
+                            name: Box::new(Expected::new(ast.pos, &Call { args: call_args })),
                         },
                     );
-                    constr.add("function call", &right, &fun_exp, env);
+                    constr.add("function call", &Expected::from(ast), &access, env);
                 }
                 env.clone()
             } else {
@@ -285,10 +297,51 @@ fn property_call(
     Ok(env.clone())
 }
 
+/// Generate the constraint for `item(range) := value`, i.e. `item.__setitem__(range, value)`.
+///
+/// Deliberately not [gen_magic], which is built for binary magic methods (`self`, one other
+/// argument); `__setitem__` takes two logical arguments (`range`, `value`) besides `self`.
+fn gen_set_item(
+    item: &AST,
+    range: &AST,
+    value: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder,
+) -> Constrained {
+    gen_vec(
+        &[item.clone(), range.clone(), value.clone()],
+        env,
+        env.is_def_mode,
+        ctx,
+        constr,
+    )?;
+
+    let access = Expected::new(
+        item.pos,
+        &Access {
+            entity: Box::new(Expected::from(item)),
+            name: Box::new(Expected::new(
+                item.pos,
+                &Function {
+                    name: StringName::from(SET_ITEM),
+                    args: vec![
+                        Expected::from(item),
+                        Expected::from(range),
+                        Expected::from(value),
+                    ],
+                },
+            )),
+        },
+    );
+    constr.add("set item", &Expected::any(item.pos), &access, env);
+    Ok(env.clone())
+}
+
 /// Check if AST is something was can be re-assigned to.
 ///
-/// This is true if it is a valid identifier, or a property call which is a identifier.
-/// A property call may not be a tuple, however.
+/// This is true if it is a valid identifier, a property call which is a identifier, or an index (`item(range)`) into a mutable collection.
+/// A property call or index may not be a tuple, however.
 fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
     match &ast.node {
         Node::PropertyCall { instance, property } => match check_reassignable(property)? {
@@ -308,6 +361,20 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
                 let id_call = IdentiCall::Call(Box::from(inst_call), Box::from(prop_call));
                 Ok(Identifier::Single(m, id_call))
             }
+        },
+        Node::Index { item, .. } => match check_reassignable(item)? {
+            Identifier::Multi(_) => {
+                let msg = format!("Cannot reassign to {}", ast.node);
+                Err(vec![TypeErr::new(ast.pos, &msg)])
+            }
+            single => Ok(single),
+        },
+        Node::FunctionCall { name, args } if args.len() == 1 => match check_reassignable(name)? {
+            Identifier::Multi(_) => {
+                let msg = format!("Cannot reassign to {}", ast.node);
+                Err(vec![TypeErr::new(ast.pos, &msg)])
+            }
+            single => Ok(single),
         },
         _ => Identifier::try_from(ast).map_err(|errs| {
             errs.iter()

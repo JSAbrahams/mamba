@@ -57,7 +57,13 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             convert_def(ast, imp, state, ctx)?
         }
         NodeTy::Reassign { left, right, op } => PythonCore::Assign {
-            left: Box::from(convert_node(left, imp, state, ctx)?),
+            left: Box::from(match &left.node {
+                NodeTy::FunctionCall { name, args, .. } if args.len() == 1 => PythonCore::Index {
+                    item: Box::from(name.to_py(imp)),
+                    range: Box::from(convert_node(&args[0], imp, state, ctx)?),
+                },
+                _ => convert_node(left, imp, state, ctx)?,
+            }),
             right: Box::from(convert_node(right, imp, state, ctx)?),
             op: CoreOp::try_from((ast, op))?,
         },

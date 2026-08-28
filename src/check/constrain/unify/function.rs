@@ -1,6 +1,6 @@
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
+use crate::check::constrain::constraint::expected::Expect::{Access, Call, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
@@ -10,7 +10,7 @@ use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::constrain::Unified;
 use crate::check::context::arg::{FunctionArg, SELF};
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::context::function::python::STR;
+use crate::check::context::function::python::{GET_ITEM, STR};
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -129,6 +129,17 @@ fn access(
                 &constraint.msg,
                 total,
             ),
+            Call { args } => call_or_index_access(
+                constraints,
+                finished,
+                ctx,
+                entity_name,
+                args,
+                left,
+                right,
+                &constraint.msg,
+                total,
+            ),
             _ => {
                 reinsert(constraints, constraint, total)?;
                 unify_link(constraints, finished, ctx, total)
@@ -137,6 +148,108 @@ fn access(
     } else {
         reinsert(constraints, constraint, total)?;
         unify_link(constraints, finished, ctx, total)
+    }
+}
+
+/// Resolve a round-bracket call (`a(0)`, via [`Expect::Call`]) on an entity that isn't necessarily a real function.
+#[allow(clippy::too_many_arguments)]
+fn call_or_index_access(
+    constraints: &mut Constraints,
+    finished: &mut Finished,
+    ctx: &Context,
+    entity_name: &Name,
+    args: &[Expected],
+    accessed: &Expected,
+    other: &Expected,
+    msg: &str,
+    total: usize,
+) -> Unified {
+    if entity_name.is_empty() {
+        let err_msg = format!("Entity '{entity_name}' is not callable and not a collection");
+        return Err(vec![TypeErr::new(accessed.pos, &err_msg)]);
+    }
+
+    let arguments_union: Result<Vec<Vec<Name>>, Vec<TypeErr>> = entity_name
+        .names
+        .iter()
+        .map(|n| n.args(accessed.pos))
+        .collect();
+
+    match arguments_union {
+        Ok(arguments_union) => {
+            let mut pushed = 0;
+            for arguments in arguments_union {
+                for possible in arguments.iter().zip_longest(args.iter()) {
+                    match possible {
+                        EitherOrBoth::Both(arg, expected) => {
+                            pushed += 1;
+                            let arg_ty = Expected::new(accessed.pos, &Type { name: arg.clone() });
+                            constraints.push("anonymous function argument", &arg_ty, expected);
+                        }
+                        EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
+                            let msg = format!(
+                                "{} arguments given to function '{}', which takes {} arguments",
+                                args.len(),
+                                entity_name,
+                                arguments.len()
+                            );
+                            return Err(vec![TypeErr::new(accessed.pos, &msg)]);
+                        }
+                    }
+                }
+            }
+            for n in &entity_name.names {
+                if let Ok(ret_ty) = n.ret_ty(accessed.pos) {
+                    let ret_ty_exp = Expected::new(accessed.pos, &Type { name: ret_ty });
+                    constraints.push(msg, other, &ret_ty_exp);
+                    pushed += 1;
+                }
+            }
+            unify_link(constraints, finished, ctx, total + pushed)
+        }
+        // Not callable: maybe it's a collection indexed with round brackets, e.g. `a(0)`
+        // reads through `__getitem__` rather than calling `a`.
+        Err(err) if args.len() == 1 => {
+            let get_item = StringName::from(GET_ITEM);
+            let index_args = vec![
+                Expected::new(
+                    accessed.pos,
+                    &Type {
+                        name: entity_name.clone(),
+                    },
+                ),
+                args[0].clone(),
+            ];
+
+            let mut resolve = || -> Unified<usize> {
+                let mut pushed = 0;
+                for en in &entity_name.names {
+                    let class = ctx
+                        .class(en, accessed.pos)
+                        .map_err(|errs| access_class_cause(&errs, other, accessed, en, msg))?;
+                    let fun = class.fun(&get_item, accessed.pos).map_err(|errs| {
+                        access_fun_cause(&errs, other, en, &get_item, &index_args, msg)
+                    })?;
+                    pushed += unify_fun_arg(
+                        en,
+                        &get_item,
+                        &fun.arguments,
+                        &index_args,
+                        constraints,
+                        accessed.pos,
+                    )?;
+                    let ret_ty_exp = Expected::new(accessed.pos, &Type { name: fun.ret_ty });
+                    constraints.push(msg, other, &ret_ty_exp);
+                    pushed += 1;
+                }
+                Ok(pushed)
+            };
+
+            let pushed = resolve().map_err(|_: Vec<TypeErr>| err)?;
+            finished.index_calls.insert(other.pos);
+            unify_link(constraints, finished, ctx, total + pushed)
+        }
+        Err(err) => Err(err),
     }
 }
 

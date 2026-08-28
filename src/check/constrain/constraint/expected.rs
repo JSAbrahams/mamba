@@ -142,6 +142,11 @@ pub enum Expect {
         name: StringName,
         args: Vec<Expected>,
     },
+    /// Round-bracket call on a value, e.g. `a(0)`.
+    /// Different than [`Self::Function`], which names a specific (already known) method to look up.
+    Call {
+        args: Vec<Expected>,
+    },
     Field {
         name: String,
     },
@@ -175,6 +180,10 @@ impl Display for Expect {
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "{}({})", name, comma_delm(args))
+            }
+            Call { args } => {
+                let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
+                write!(f, "({})", comma_delm(args))
             }
             Field { name } => write!(f, "{name}"),
             Type { name } => write!(f, "{name}"),
@@ -211,6 +220,16 @@ impl Expect {
                             false
                         }
                     })
+            }
+
+            (Call { args: la }, Call { args: ra }) => {
+                la.iter().zip_longest(ra.iter()).all(|pair| {
+                    if let EitherOrBoth::Both(left, right) = pair {
+                        left.expect.same_value(&right.expect)
+                    } else {
+                        false
+                    }
+                })
             }
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),

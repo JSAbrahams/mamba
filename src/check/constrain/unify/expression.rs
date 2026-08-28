@@ -94,6 +94,11 @@ fn sub_recursive(side: &str, inspected: &Expected, old: &Expected, new: &Expecte
             };
             (any_substituted, Expected::new(inspected.pos, &func))
         }
+        Expect::Call { args } => {
+            let (any_substituted, args) = sub_vec(side, old, new, args);
+            let call = Expect::Call { args };
+            (any_substituted, Expected::new(inspected.pos, &call))
+        }
         _ => (false, inspected.clone()),
     }
 }

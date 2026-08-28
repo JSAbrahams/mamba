@@ -13,7 +13,15 @@ pub fn convert_call(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             object: Box::from(convert_node(instance, imp, state, ctx)?),
             property: Box::from(convert_node(property, imp, state, ctx)?),
         },
-        NodeTy::FunctionCall { name, args } => PythonCore::FunctionCall {
+        NodeTy::FunctionCall {
+            name,
+            is_index: true,
+            args,
+        } => PythonCore::Index {
+            item: Box::from(name.to_py(imp)),
+            range: Box::from(convert_node(&args[0], imp, state, ctx)?),
+        },
+        NodeTy::FunctionCall { name, args, .. } => PythonCore::FunctionCall {
             function: Box::from(name.to_py(imp)),
             args: convert_vec(args, imp, state, ctx)?,
         },
