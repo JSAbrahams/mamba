@@ -119,7 +119,7 @@ The above seems simple, but there are two issues:
   We could add these bounds checks to the method.
   However, this makes the method more verbose.
   Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
-
+  
 To solve the above two issues, we can use type aliases.
 Observe the following:
 
