@@ -11,31 +11,69 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Linux and macOS run the exact same Devbox environment contributors use locally, so the
+  # toolchain, Python and cargo helpers are pinned by devbox.lock rather than resolved per-run.
   test:
     environment: development
     strategy:
+      fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "macos-latest", "windows-latest" ]
-        python: [ "3.10" ]
-        rust: [ "1.98.0" ]
+        os: [ "ubuntu-latest", "macos-latest" ]
 
     runs-on: ${{ matrix.os }}
-    name: via ${{ matrix.os }}, Python v${{ matrix.python }}, Rust v${{ matrix.rust }}
+    name: via ${{ matrix.os }}, Devbox
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      # Install Python
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          enable-cache: 'true'
+
+      - name: Report environment
+        run: devbox run -- rustc --version && devbox run -- cargo --version
+
+      - name: Build
+        run: devbox run build
+
+      - name: Run tests
+        run: devbox run test-ci
+
+  # Windows cannot use Devbox: Nix has no native Windows support (WSL only), and
+  # devbox-install-action does not support windows runners. This job therefore installs the
+  # toolchain natively, and is the reason rust-toolchain.toml must stay in step with the version
+  # Devbox pins -- see CONTRIBUTING.md.
+  test-windows:
+    environment: development
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ "windows-latest" ]
+        python: [ "3.10" ]
+
+    runs-on: ${{ matrix.os }}
+    name: via ${{ matrix.os }}, native toolchain
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # tests_util::PYTHON is `python` on Windows, which is what setup-python puts on PATH.
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
+      # No toolchain version is named here on purpose: rustup reads rust-toolchain.toml, which is
+      # the single source of truth. `rustup show active-toolchain` normally installs it on first
+      # use; the fallback covers a rustup that only reports instead of installing.
+      - name: Install Rust from rust-toolchain.toml
+        shell: bash
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Report environment
+        shell: bash
+        run: rustc --version && cargo --version
 
       - name: Build
         run: cargo build

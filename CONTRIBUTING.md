@@ -32,6 +32,25 @@ This is the recommended path.
 It sets all of the above up for you and pins every version.
 You therefore do not need rustup, or any of the cargo helpers, installed yourself.
 
+### 💻 Which operating system to develop on
+
+We recommend developing on a Unix-like system, meaning Linux or macOS.
+That gives you Nix, and therefore Devbox, which is how this project guarantees everyone builds with identical tool versions.
+CI runs that same Devbox environment on Linux and macOS, so what passes locally is what passes in CI.
+
+Nix has no native Windows support, so Devbox cannot run there either.
+Windows contributors have two options:
+
+- **WSL is the recommended route.**
+  Install [WSL](https://learn.microsoft.com/windows/wsl/install), then follow the Linux instructions below inside it.
+  You get the full pinned environment, identical to every other contributor.
+  Treat the checkout as a Linux one, and keep it on the WSL filesystem rather than under `/mnt/c`, since the latter is considerably slower.
+- **Plain Windows is best effort.**
+  The transpiler is expected to work, and CI does run the test suite on `windows-latest`, so the main paths are covered.
+  But you will be installing the toolchain yourself via rustup, and version alignment is then on you.
+  The more niche corners are likelier to differ or to be unsupported, particularly anything touching paths, the `python3.10` versus `python` executable name, or the Cranelift backend's `cc` linker step.
+  If you hit something that looks platform-specific, say so in the issue, and prefer WSL if you can.
+
 ### 📦 Using Devbox
 
 Devbox reads [`devbox.json`](./devbox.json) at the project root.
@@ -64,7 +83,6 @@ If you are not running a Linux distro, this will probably not work for you.
 ```sh
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
 ```
-
 #### Installing Devbox
 
 ```sh
@@ -116,6 +134,16 @@ Anything in nixpkgs is therefore available, usually at a choice of versions.
 Prefer pinning an exact version for anything that affects build output, such as the toolchain and Python.
 Use `@latest` for incidental tooling.
 
+Two pins have to be changed in pairs, because something outside Devbox also reads them:
+
+- **`rustc`/`cargo`/`rustfmt`/`clippy` must match `rust-toolchain.toml`.**
+  Devbox covers Linux and macOS, but the Windows CI job installs the toolchain with rustup, which reads `rust-toolchain.toml`.
+  Contributors not using Devbox read it too.
+  If the two drift apart, `devbox shell` prints a warning on entry, and Windows silently builds with a different compiler than everyone else.
+- **`python` must match `tests_util::PYTHON`.**
+  The test suite invokes the interpreter by name, as `python3.10` on Linux.
+  See [Tests and coverage](#-tests-and-coverage) below.
+
 ### 🧪 Tests and coverage
 
 The test suite needs a Python 3.10 on `PATH`.
@@ -133,8 +161,7 @@ CI runs the suite with [nextest](https://nexte.st/) instead, so to reproduce a C
 cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
 ```
 
-Coverage is measured with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), using the same exclusions as
-CI/Codecov (see `.github/workflows/coverage.yml`):
+Coverage is measured with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), using the same exclusions as CI/Codecov (see `.github/workflows/coverage.yml`):
 
 ```sh
 cargo llvm-cov --lcov --output-path ./target/lcov.info \
@@ -146,18 +173,34 @@ Before treating an uncovered line as a missing test, read [tests/README.md](./te
 It records which lines are uncovered by design, and which are gated on unfinished features.
 It also records a few traps worth knowing about.
 
+### 🤖 Continuous integration
+
+CI runs the same Devbox environment described above, rather than its own list of tool versions.
+The workflows call the same named scripts you run locally, so the two cannot drift apart:
+
+| Workflow | Runners | What it runs |
+|----------|---------|--------------|
+| `test.yml` | ubuntu, macOS | `devbox run build`, then `devbox run test-ci` |
+| `test.yml` | windows | rustup plus `actions/setup-python`, then `cargo nextest run` |
+| `lint.yml` | ubuntu | `devbox run lint` |
+| `coverage.yml` | ubuntu | `devbox run coverage` |
+
+Windows is the one exception, for the reason given above: Nix does not run there, so that job installs the toolchain natively.
+This is also why `rust-toolchain.toml` has to stay in step with the version Devbox pins.
+
+`devbox run lint` includes [actionlint](https://github.com/rhysd/actionlint) over these workflow files, so a mistake in CI configuration is caught locally rather than on push.
+
 ### 🔤 Cargo.toml ordering
 
-Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with
-[cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by Devbox):
+Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with [cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by Devbox):
 
 ```sh
 cargo sort --check   # report only, what the hook runs
 cargo sort           # rewrite Cargo.toml into sorted order
 ```
 
-Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command,
-not the checking one.
+Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
+
 
 ## 📝 Procedures
 
