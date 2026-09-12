@@ -6,6 +6,8 @@
 
 ### [3.1 Grammar](grammar.md)
 
-### [3.2 Special Characters and Symbols](reserved.md)
+### [3.2 Keywords](keywords.md)
 
-### [3.3 Standard Library](std/characters.md)
+### [3.3 Special Characters and Symbols](characters.md)
+
+### [3.4 Standard Library](std/README.md)

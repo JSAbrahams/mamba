@@ -80,3 +80,11 @@ Keyword | Use
 ---|---
 `return`  | Return from a function or method
 `pass`    | Empty placeholder statement
+
+## Blocks
+
+Keyword | Use
+---|---
+`end`   | Denote end of code block or set
+`where` | Denote start of code set
+`using` | Denote start of a resource block, binding an alias for the duration of its body

@@ -10,8 +10,8 @@ The following is a list of characters in the language
 
 Symbol | Use
 ---|---
-`(` | Denote start of tuple elements or function arguments
-`)` | Denote end of tuple elements or function arguments
+`(` | Denote start of tuple elements or function arguments, including collection indexing (list or mapping)
+`)` | Denote end of tuple elements or function arguments, including collection indexing (list or mapping)
 `{` | Denote start of set, set constructor, or map
 `}` | Denote end of set, set constructor, or map
 `[` | Denote start of list, or opening bracket of generics of a class

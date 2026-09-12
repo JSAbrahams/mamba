@@ -15,8 +15,9 @@
 
 #### [2.3 📦 Modules](modules/README.md)
 ##### [2.3.1 Script](modules/script.md)
-##### [2.3.2 Types](modules/types.md)
-##### [2.3.3 State and Stateless](modules/state_stateless.md)
+##### [2.3.2 Class](modules/class.md)
+##### [2.3.3 Types](modules/types.md)
+##### [2.3.4 Type Aliases](modules/type_alias.md)
 
 #### [2.4 ⛑ Safety](safety/README.md)
 ##### [2.4.1 Types](safety/types.md)

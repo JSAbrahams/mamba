@@ -47,8 +47,9 @@ Here you can find both the informal description of the language features, and th
 #### [2.3 📦 Modules](features/modules/README.md)
 
 ##### [2.3.1 Script](features/modules/script.md)
-##### [2.3.2 Types](features/modules/types.md)
-##### [2.3.3 State and Stateless](features/modules/state_stateless.md)
+##### [2.3.2 Class](features/modules/class.md)
+##### [2.3.3 Types](features/modules/types.md)
+##### [2.3.4 Type Aliases](features/modules/type_alias.md)
 
 #### [2.4 ⛑ Safety](features/safety/README.md)
 
@@ -57,11 +58,18 @@ Here you can find both the informal description of the language features, and th
 ##### [2.4.3 Null Safety](features/safety/null_safety.md)
 ##### [2.4.4 Generics](features/safety/generics.md)
 
+#### [2.5 🔁 Functions](features/functions/README.md)
+
+##### [2.5.1 Pure Functions](features/functions/pure_functions.md)
+##### [2.5.2 Total Functions](features/functions/total_functions.md)
+##### [2.5.3 Meta Functions](features/functions/meta_functions.md)
+
 ### [3 📚 Specification](spec/README.md)
 
 #### [3.1 Grammar](spec/grammar.md)
 #### [3.2 Keywords](spec/keywords.md)
 #### [3.3 Special Characters and Symbols](spec/characters.md)
+#### [3.4 Standard Library](spec/std/README.md)
 
 ### [4 👥 Acknowledgements](acknowledgements.md)
 

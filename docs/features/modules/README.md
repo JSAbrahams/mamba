@@ -18,9 +18,8 @@ A module is one of the following:
 Module type | Description
 ------------|--------------
 script      | A sequence of instructions.
-type        | A blueprint for a class, defines the behaviour of a class.
-stateful    | A blueprint for an instance of a stateful object. Defines the behaviour of that object, and may implement a type.
-stateless   | A blueprint for a singleton, stateless object. Only one instance of such an object can exist, and its state may never change. It can implement a type.
+class       | A blueprint for an instance of an object. Defines the behaviour of that object, and may implement one or more traits.
+trait       | A blueprint for a class, defines the behaviour of a class.
 
-A file may contain either a script accompanied by functions, or a mix of type, stateful and stateless modules. 
-It is generally best to have at most one type per file for readability's sake.
+A file may contain either a script accompanied by functions, or a mix of class and trait modules.
+It is generally best to have at most one class per file for readability's sake.
