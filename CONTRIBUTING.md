@@ -34,47 +34,11 @@ You therefore do not need rustup, or any of the cargo helpers, installed yoursel
 
 ### 💻 Which operating system to develop on
 
-We recommend developing on a Unix-like system, meaning Linux or macOS.
-That gives you Nix, and therefore Devbox, which is how this project guarantees everyone builds with identical tool versions.
-CI runs that same Devbox environment on Linux and macOS, so what passes locally is what passes in CI.
+Flakes are still a Nix experimental feature, so this needs them enabled — either add
+`experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`) once, or pass
+`--extra-experimental-features 'nix-command flakes'` to the command above.
 
-Nix has no native Windows support, so Devbox cannot run there either.
-Windows contributors have two options:
-
-- **WSL is the recommended route.**
-  Install [WSL](https://learn.microsoft.com/windows/wsl/install), then follow the Linux instructions below inside it.
-  You get the full pinned environment, identical to every other contributor.
-  Treat the checkout as a Linux one, and keep it on the WSL filesystem rather than under `/mnt/c`, since the latter is considerably slower.
-- **Plain Windows is best effort.**
-  The transpiler is expected to work, and CI does run the test suite on `windows-latest`, so the main paths are covered.
-  But you will be installing the toolchain yourself via rustup, and version alignment is then on you.
-  The more niche corners are likelier to differ or to be unsupported, particularly anything touching paths, the `python3.10` versus `python` executable name, or the Cranelift backend's `cc` linker step.
-  If you hit something that looks platform-specific, say so in the issue, and prefer WSL if you can.
-
-### 📦 Using Devbox
-
-Devbox reads [`devbox.json`](./devbox.json) at the project root.
-It gives you a shell containing exactly the tools this project needs:
-
-- the Rust toolchain (`rustc`, `cargo`, `rustfmt`, `clippy`) and `rust-analyzer`
-- `cargo-nextest`, `cargo-llvm-cov` and `cargo-sort`, which the git hooks and CI call
-- Python 3.10, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
-- `nushell` and `starship`, so you get the project's shell and prompt
-- the odds and ends: `clang` (its `cc` links the `--bin` output), `llvm`, `git`, `jq`, `direnv`, an editor
-
-Resolved versions are locked in `devbox.lock`, which is committed.
-Every contributor and CI therefore get identical versions.
-That file is Devbox's equivalent of `Cargo.lock`.
-Do not edit it by hand.
-It is updated by `devbox add` and `devbox update`.
-
-#### Installing Nix
-
-Devbox is a convenience layer over the [Nix](https://nixos.org/) package manager.
-Nix must therefore be installed first.
-Devbox offers to install it on first run.
-Doing it yourself up front avoids an interactive prompt.
-That also makes it the right order in containers and CI.
+### Installing Nix
 
 Nix is distributed as a small installer script on nixos.org.
 Below are the recommended commands.
@@ -201,6 +165,46 @@ cargo sort           # rewrite Cargo.toml into sorted order
 
 Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
 
+
+### 🧪 Tests and coverage
+
+The test suite needs a Python 3.10 on `PATH` (it shells out to `python3.10` by name on Linux), since generated Python
+is validated by compiling and running it. The nix flake provides this.
+
+```sh
+cargo test --package mamba    # run the full suite
+```
+
+CI runs the suite with [nextest](https://nexte.st/) instead, so to reproduce a CI run exactly:
+
+```sh
+cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+```
+
+Coverage is measured with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), using the same exclusions as
+CI/Codecov (see `.github/workflows/coverage.yml`):
+
+```sh
+cargo llvm-cov --lcov --output-path ./target/lcov.info \
+  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
+```
+
+Both `cargo-nextest` and `cargo-llvm-cov` are provided by the nix flake. Before treating an uncovered line as a
+missing test, read [tests/README.md](./tests/README.md) — it records which lines are uncovered by design, which are
+gated on unfinished features, and a few traps worth knowing about.
+
+### 🔤 Cargo.toml ordering
+
+Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with
+[cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by the nix flake):
+
+```sh
+cargo sort --check   # report only, what the hook runs
+cargo sort           # rewrite Cargo.toml into sorted order
+```
+
+Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command,
+not the checking one.
 
 ## 📝 Procedures
 

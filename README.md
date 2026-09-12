@@ -104,6 +104,14 @@ devbox run precommit      # everything the pre-commit hook runs
 ```
 
 A more minimal setup, to just get started:
+Flakes are still a Nix experimental feature, so `nix develop` needs them enabled.
+Either add `experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`)
+once, or pass them per-invocation:
+
+```sh
+nix develop --extra-experimental-features 'nix-command flakes'
+```
+
 
 ```sh
 # Install rustup (if you don't have it already), which is the rust toolchain manager
