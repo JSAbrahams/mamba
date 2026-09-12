@@ -1,54 +1,6 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "actionlint@latest": {
-      "last_modified": "2026-08-27T07:16:00Z",
-      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#actionlint",
-      "source": "devbox-search",
-      "version": "1.7.12",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/sglg5r34lwm96k8k7krq4dniws4kpj6w-actionlint-1.7.12",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/sglg5r34lwm96k8k7krq4dniws4kpj6w-actionlint-1.7.12"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/zzk60nb1qx8jjfd62md294nwq3w3nwa9-actionlint-1.7.12",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/zzk60nb1qx8jjfd62md294nwq3w3nwa9-actionlint-1.7.12"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/w4rjv0ikr5r5x54w758c8ck2016nmzsx-actionlint-1.7.12",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/w4rjv0ikr5r5x54w758c8ck2016nmzsx-actionlint-1.7.12"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/r4vw89ai96l7s7avqpp9mkgb0vfz0k8y-actionlint-1.7.12",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/r4vw89ai96l7s7avqpp9mkgb0vfz0k8y-actionlint-1.7.12"
-        }
-      }
-    },
     "aspell@latest": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#aspell",
@@ -94,44 +46,6 @@
             }
           ],
           "store_path": "/nix/store/agkkra0r9bgqpp58vhpiq7m1f2fsm6hd-aspell-0.60.8.2"
-        }
-      }
-    },
-    "carapace@latest": {
-      "last_modified": "2026-08-27T07:16:00Z",
-      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#carapace",
-      "source": "devbox-search",
-      "version": "1.7.3",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/flssaq4s8ifyrfg4gqkcamvjhia5g4cq-carapace-1.7.3",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/flssaq4s8ifyrfg4gqkcamvjhia5g4cq-carapace-1.7.3"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/r4vx31pwplkkvpax7jd6rviji2d83ll7-carapace-1.7.3",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/r4vx31pwplkkvpax7jd6rviji2d83ll7-carapace-1.7.3"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/0p72yay8lpw948k1fzla216a1f55472q-carapace-1.7.3",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/0p72yay8lpw948k1fzla216a1f55472q-carapace-1.7.3"
         }
       }
     },
@@ -498,44 +412,6 @@
             }
           ],
           "store_path": "/nix/store/qjykx14jbm8300y4fczmpp5j143gq08v-direnv-2.37.1"
-        }
-      }
-    },
-    "gh@latest": {
-      "last_modified": "2026-08-27T07:16:00Z",
-      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#gh",
-      "source": "devbox-search",
-      "version": "2.98.0",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/y81ibbw74n6mskwsh54hnvwblkw33yzb-gh-2.98.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/y81ibbw74n6mskwsh54hnvwblkw33yzb-gh-2.98.0"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/j5mb4f9a0vbi5r89i00f548z0y5j1kp7-gh-2.98.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/j5mb4f9a0vbi5r89i00f548z0y5j1kp7-gh-2.98.0"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/dpiajg8vgzpaq74jc79j01fd5bja3cik-gh-2.98.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/dpiajg8vgzpaq74jc79j01fd5bja3cik-gh-2.98.0"
         }
       }
     },

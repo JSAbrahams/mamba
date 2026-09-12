@@ -11,8 +11,6 @@
     "cargo-nextest@0.9.143",
     "cargo-sort@2.1.4",
 
-    "actionlint@latest",
-
     "python@3.10.18",
 
     "clang@latest",
@@ -21,9 +19,6 @@
 
     "nushell@latest",
     "starship@latest",
-    "carapace@latest",
-
-    "gh@latest",
 
     "aspell@latest",
     "coreutils@latest",
@@ -95,14 +90,10 @@
       "lint": [
         "cargo fmt --all -- --check",
         "cargo clippy --all-features -- -D warnings",
-        "cargo sort --check",
-        "actionlint"
+        "cargo sort --check"
       ],
       "coverage": [
         "cargo llvm-cov --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
-      ],
-      "coverage-json": [
-        "cargo llvm-cov --summary-only --json --output-path ./target/cov.json --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
       ],
       "precommit": [
         "cargo fmt --all -- --check",
