@@ -2,8 +2,7 @@
 
 Contributions are encouraged!
 
-A good place to start is by looking
-at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%20issue).
+A good place to start is by looking at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%20issue).
 
 Please read our [code of conduct](/CODE_OF_CONDUCT.md) before contributing.
 
@@ -77,12 +76,13 @@ Doing it yourself up front avoids an interactive prompt.
 That also makes it the right order in containers and CI.
 
 Nix is distributed as a small installer script on nixos.org.
-Below are the recommended commands.
+Below is the recommended command.
 If you are not running a Linux distro, this will probably not work for you.
 
 ```sh
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
 ```
+
 #### Installing Devbox
 
 ```sh
@@ -201,14 +201,13 @@ cargo sort           # rewrite Cargo.toml into sorted order
 
 Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
 
-
 ## 📝 Procedures
 
-We standardise the process of creating issues and pull requests to make it easier to manage the project. Please adhere
-to these standards.
+We standardise the process of creating issues and pull requests, to make it easier to manage the project.
+Please adhere to these standards.
 
-*Note* In general, it is better to only comment on open pull requests and issues. Comments on closed issues and pull
-requests are likely to be ignored.
+*Note* In general, it is better to only comment on open pull requests and issues.
+Comments on closed issues and pull requests are likely to be ignored.
 
 ### ❗ Submitting an Issue
 
@@ -221,14 +220,12 @@ requests are likely to be ignored.
 
 - Do use the provided template.
 - Do check that there are no other pull requests that are doing the same thing.
-  If you think your solution is better than an existing pull request, it is better to comment there first and engage
-  in discussion before opening your own pull request.
+  If you think your solution is better than an existing pull request, it is better to comment there first and engage in discussion before opening your own pull request.
 - Do reference other issues and pull requests that are relevant.
 - Do actively engage with the comments on the pull request.
   An active discussion might lead to an even better solution or new ideas.
 - Do add tests when fixing a bug or adding new functionality.
-- Do make sure that this PR is targets one single issue, as large pull requests are difficult to review and unlikely to
-  be merged.
+- Do make sure that this PR is targets one single issue, as large pull requests are difficult to review and unlikely to be merged.
 - Do make sure that the base branch is the correct branch:
   - The base branch will never be `main` (unless you are a core contributor).
   - The base branch generally will be `develop`.
@@ -239,10 +236,7 @@ requests are likely to be ignored.
 For all the below, every merge is preceded by a Pull Request.
 
 - New featuers branch off and are merged with the development branch.
-- Large features get their own branch, and sub-features branch from this branch and are merged with this branch, before
-  the feature branch is merged with develop.
-- Once develop has amassed enough features for a new release, we new branch is created where a release is staged (
-  e.g. `v0.3.1`).
+- Large features get their own branch, and sub-features branch from this branch and are merged with this branch, before the feature branch is merged with develop.
+- Once develop has amassed enough features for a new release, we new branch is created where a release is staged ( e.g. `v0.3.1`).
 - Once approved, the new feature branch is merged with master.
-- The new merged release is tagged, and a new release is published on GitHub and published
-  to [Cargo](https://crates.io/crates/mamba).
+- The new merged release is tagged, and a new release is published on GitHub and published to [Cargo](https://crates.io/crates/mamba).
