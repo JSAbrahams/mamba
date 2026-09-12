@@ -96,8 +96,7 @@ Devbox installs Nix in single-user mode on Linux if it has to, and that needs a 
 #### Starting Devbox
 
 ```sh
-devbox shell     # enter the environment (nushell + starship)
-exit             # leave it again
+devbox shell     # enter the environment (nix + nushell + starship)
 ```
 
 The first `devbox shell` is slow, since it downloads every pinned package.
