@@ -64,3 +64,9 @@ Here you can find both the informal description of the language features, and th
 #### [3.3 Special Characters and Symbols](spec/characters.md)
 
 ### [4 👥 Acknowledgements](acknowledgements.md)
+
+### [5 🧮 Worked Examples](examples/README.md)
+
+#### [5.1 Euclidean Algorithm (GCD)](examples/euclidean_gcd.md)
+#### [5.2 The Collatz Conjecture](examples/collatz_conjecture.md)
+#### [5.3 A Busy Beaver](examples/busy_beaver.md)

@@ -84,6 +84,10 @@
 
             # push a new branch without needing --set-upstream every time
             git config push.autoSetupRemote true
+            
+            # cargo libraries
+            cargo install cargo-nextest --locked --version 0.9.143
+            cargo install cargo-llvm-cov --locked --version 0.9.1
 
             if [ -z "$NU_VERSION" ]; then
                 # workspace is where we called flake from
