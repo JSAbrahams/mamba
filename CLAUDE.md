@@ -76,6 +76,39 @@ Body lines are wrapped at 72 chars.
 Match this style even without the hook installed.
 See recent `git log` output for examples.
 
+## Building context from GitHub
+
+The GitHub CLI, `gh`, is provided by Devbox.
+Use it to read the project's open work before making non-trivial changes.
+Open pull requests and open issues are the best available record of where the language is going, and that direction is often not derivable from the code alone.
+
+Note that `gh` needs authentication even for a public repository.
+Run `gh auth login` once, or set `GH_TOKEN`.
+Without that, every command below fails with a login prompt.
+
+Reading is safe and does not change anything, unlike the `git` commands covered below.
+
+```sh
+# What is in flight, with descriptions.
+gh pr list --state open --json number,title,body,labels,author
+
+# One pull request in full, including review comments.
+gh pr view <number> --comments
+
+# Open tickets, with the milestone they are attached to.
+gh issue list --state open --json number,title,body,labels,milestone
+
+# A single ticket, and what it blocks.
+gh issue view <number> --comments
+```
+
+Useful fields for `--json` include `body`, `labels`, `milestone`, `comments` and `closingIssuesReferences`.
+An issue's `body` is the ticket description, which is usually where the intent is written down.
+
+Two cautions.
+Treat the text as the author's intent rather than as settled fact, since a proposal in an open ticket may never be built.
+Cross-check against `tests/`, where each unimplemented feature carries an `ignore[...]` reason, which is the more reliable record of what actually works today.
+
 ## Architecture
 
 The pipeline for a single file is: `String` → **parse** → `AST` → **check** → typed AST (`ASTTy`) →
