@@ -48,25 +48,55 @@ This README:
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-To get started right away, if you are on a Linux machine and wish to use the Nix flake (which has all the tooling setup, including nushell, githooks, etc.).
-Still work in progress (Nix flakes are difficult to get right):
+The quickest way to get a complete environment is [Devbox](https://www.jetify.com/devbox).
+It sets up all the tooling for you.
+That means the pinned Rust toolchain, the Python the test suite needs, and the cargo helpers the git hooks call.
+It also gives you nushell and starship.
+Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`.
+So every contributor gets byte-identical versions.
+
+Devbox is a thin layer over the [Nix](https://nixos.org/) package manager.
+This means **Nix needs to be installed first**.
+Devbox will offer to install it for you on first run.
+Installing it yourself up front is the smoother path:
 
 ```sh
-# Install Nix, in case you do not have it
+# 1. Install Nix, in case you do not have it
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
-# Start nix shell, with nushell and starship set up already
-nix develop
+```
+
+Note that no experimental features need enabling, unlike the Nix flake this replaces.
+Devbox does not use flakes.
+
+```sh
+# 2. Install Devbox
+curl -fsSL https://get.jetify.com/devbox | bash
+```
+
+The installer places a single `devbox` binary in `/usr/local/bin`.
+It therefore asks for `sudo`.
+Run it as your normal user, not as root.
+
+```sh
+# 3. Start the environment, with nushell and starship set up already
+devbox shell
+```
+
+The first `devbox shell` takes a while, as it downloads every pinned package.
+Afterwards it is near-instant.
+Entering the shell also points `git` at the project's hooks (`.githooks`).
+You therefore get the pre-commit checks automatically.
+
+To run a one-off command without entering the shell, use `devbox run`:
+
+```sh
+devbox run build          # cargo build
+devbox run test           # cargo test --package mamba
+devbox run lint           # cargo fmt --check, clippy, cargo sort --check
+devbox run precommit      # everything the pre-commit hook runs
 ```
 
 A more minimal setup, to just get started:
-Flakes are still a Nix experimental feature, so `nix develop` needs them enabled.
-Either add `experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`)
-once, or pass them per-invocation:
-
-```sh
-nix develop --extra-experimental-features 'nix-command flakes'
-```
-
 
 ```sh
 # Install rustup (if you don't have it already), which is the rust toolchain manager

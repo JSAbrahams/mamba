@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.18.0/.schema/devbox.schema.json",
+  "packages": [
+    "rustc@1.97.1",
+    "cargo@1.97.1",
+    "rustfmt@1.97.1",
+    "clippy@1.97.1",
+    "rust-analyzer@latest",
+
+    "cargo-llvm-cov@0.9.0",
+    "cargo-nextest@0.9.143",
+    "cargo-sort@2.1.4",
+
+    "python@3.10.18",
+
+    "clang@latest",
+    "llvmPackages.bintools@latest",
+    "llvm_21@latest",
+
+    "nushell@latest",
+    "starship@latest",
+
+    "aspell@latest",
+    "coreutils@latest",
+    "direnv@latest",
+    "git@latest",
+    "jq@latest",
+    "less@latest",
+    "more@latest",
+    "nano@latest",
+    "openssh@latest",
+    "pkg-config@latest",
+    "vim@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      "# Consumed by `cargo llvm-cov`. Resolved from PATH rather than hardcoded, so this works on",
+      "# every platform devbox resolves packages for, not just x86_64-linux.",
+      "export LLVM_COV=\"$(command -v llvm-cov)\"",
+      "export LLVM_PROFDATA=\"$(command -v llvm-profdata)\"",
+
+      "# Warn (never block) if the toolchain devbox provides has drifted from the channel pinned in",
+      "# rust-toolchain.toml, which is what rustup contributors and CI build with.",
+      "pinned=\"$(sed -n 's/^ *channel *= *\"\\([^\"]*\\)\".*/\\1/p' rust-toolchain.toml)\"",
+      "actual=\"$(rustc --version | cut -d' ' -f2)\"",
+      "if [ -n \"$pinned\" ] && [ \"$pinned\" != \"$actual\" ]; then",
+      "  echo \"warning: devbox rustc ($actual) differs from rust-toolchain.toml's pinned channel ($pinned) -- non-devbox (rustup) contributors will be building with a different compiler version.\" >&2",
+      "fi",
+      "unset pinned actual",
+
+      "# Make sure the project's git hooks are used, and that pushing a new branch does not need",
+      "# --set-upstream every time.",
+      "git config core.hooksPath .githooks",
+      "git config push.autoSetupRemote true",
+
+      "# direnv: initialize auto-env loading. Guarded by shell, because `direnv hook bash` emits",
+      "# bash-only syntax ([[ =~ ]]) and this hook also runs under /bin/sh for `devbox run`.",
+      "if [ -n \"$BASH_VERSION\" ]; then",
+      "  eval \"$(direnv hook bash)\"",
+      "elif [ -n \"$ZSH_VERSION\" ]; then",
+      "  eval \"$(direnv hook zsh)\"",
+      "fi",
+
+      "export WORKSPACE=\"$PWD\"",
+
+      "# Prefer a personal starship/nushell config if present, else the version-controlled example.",
+      "if [ -f \"$WORKSPACE/.config/starship.toml\" ]; then",
+      "  export STARSHIP_CONFIG=\"$WORKSPACE/.config/starship.toml\"",
+      "else",
+      "  export STARSHIP_CONFIG=\"$WORKSPACE/.config/starship.example.toml\"",
+      "fi",
+
+      "# Drop into nushell (with starship) for interactive use only: the `-t 0` test keeps",
+      "# `devbox run ...` and CI on bash, which would otherwise be replaced by nushell and never",
+      "# run the requested command.",
+      "if [ -z \"$NU_VERSION\" ] && [ -t 0 ]; then",
+      "  if [ -f \"$WORKSPACE/.config/nushell/config.nu\" ]; then",
+      "    exec nu --login --config \"$WORKSPACE/.config/nushell/config.nu\"",
+      "  elif [ -f \"$WORKSPACE/.config/nushell/config.example.nu\" ]; then",
+      "    exec nu --login --config \"$WORKSPACE/.config/nushell/config.example.nu\"",
+      "  else",
+      "    exec nu --login",
+      "  fi",
+      "fi"
+    ],
+    "scripts": {
+      "build": "cargo build",
+      "test": "cargo test --package mamba",
+      "test-ci": "cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci",
+      "lint": [
+        "cargo fmt --all -- --check",
+        "cargo clippy --all-features -- -D warnings",
+        "cargo sort --check"
+      ],
+      "coverage": [
+        "cargo llvm-cov --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
+      ],
+      "precommit": [
+        "cargo fmt --all -- --check",
+        "cargo check --tests --all",
+        "cargo check --tests --all --release",
+        "cargo sort --check",
+        "cargo clippy -- -D warnings",
+        "cargo clippy --all-features --release -- -D warnings",
+        "cargo check --benches --release",
+        "cargo check --benches --release --all-features"
+      ]
+    }
+  }
+}

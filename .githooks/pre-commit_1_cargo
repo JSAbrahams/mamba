@@ -30,7 +30,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo sort
+# --check reports without rewriting; a bare `cargo sort` sorts in place and exits 0, so it would
+# always pass here and leave the fix unstaged. See also .githooks/pre-commit_0_toml.
+cargo sort --check
 if [ $? -ne 0 ]; then
     log_error "Dependencies in $project_dir/Cargo.toml not in alphabetical order, please run \"cargo sort\" in $project_dir"
     exit 1
