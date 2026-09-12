@@ -32,13 +32,30 @@ This is the recommended path.
 It sets all of the above up for you and pins every version.
 You therefore do not need rustup, or any of the cargo helpers, installed yourself.
 
-### 💻 Which operating system to develop on
+### 📦 Using Devbox
 
-Flakes are still a Nix experimental feature, so this needs them enabled — either add
-`experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`) once, or pass
-`--extra-experimental-features 'nix-command flakes'` to the command above.
+Devbox reads [`devbox.json`](./devbox.json) at the project root.
+It gives you a shell containing exactly the tools this project needs:
 
-### Installing Nix
+- the Rust toolchain (`rustc`, `cargo`, `rustfmt`, `clippy`) and `rust-analyzer`
+- `cargo-nextest`, `cargo-llvm-cov` and `cargo-sort`, which the git hooks and CI call
+- Python 3.10, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
+- `nushell` and `starship`, so you get the project's shell and prompt
+- the odds and ends: `clang` (its `cc` links the `--bin` output), `llvm`, `git`, `jq`, `direnv`, an editor
+
+Resolved versions are locked in `devbox.lock`, which is committed.
+Every contributor and CI therefore get identical versions.
+That file is Devbox's equivalent of `Cargo.lock`.
+Do not edit it by hand.
+It is updated by `devbox add` and `devbox update`.
+
+#### Installing Nix
+
+Devbox is a convenience layer over the [Nix](https://nixos.org/) package manager.
+Nix must therefore be installed first.
+Devbox offers to install it on first run.
+Doing it yourself up front avoids an interactive prompt.
+That also makes it the right order in containers and CI.
 
 Nix is distributed as a small installer script on nixos.org.
 Below are the recommended commands.
@@ -166,10 +183,63 @@ cargo sort           # rewrite Cargo.toml into sorted order
 Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
 
 
+#### Installing Devbox
+
+```sh
+curl -fsSL https://get.jetify.com/devbox | bash
+```
+
+This downloads a single static binary into `/usr/local/bin`.
+That is why it asks for `sudo`.
+Run it as your normal user rather than as root.
+Devbox installs Nix in single-user mode on Linux if it has to, and that needs a non-root user.
+
+#### Starting Devbox
+
+```sh
+devbox shell     # enter the environment (nushell + starship)
+exit             # leave it again
+```
+
+The first `devbox shell` is slow, since it downloads every pinned package.
+Subsequent runs are near-instant.
+Entering the shell also runs `git config core.hooksPath .githooks` for you.
+The hooks above are therefore configured automatically.
+It sets `push.autoSetupRemote` too, so pushing a new branch does not need `--set-upstream`.
+
+To run a single command in the environment without entering the shell, use `devbox run`.
+The named scripts are defined under `shell.scripts` in `devbox.json`:
+
+```sh
+devbox run build       # cargo build
+devbox run test        # cargo test --package mamba
+devbox run test-ci     # the nextest invocation CI uses
+devbox run lint        # cargo fmt --check, clippy, cargo sort --check
+devbox run coverage    # cargo llvm-cov with CI's exclusions
+devbox run precommit   # every cargo command the pre-commit hook runs
+```
+
+`devbox run -- <any command>` works too, for anything without a named script.
+
+#### Adding or updating a package
+
+```sh
+devbox add <package>@<version>   # e.g. devbox add cargo-audit@latest
+devbox update                    # refresh resolved versions in devbox.lock
+devbox search <package>          # find a package and its available versions
+```
+
+Packages are resolved through [Nixhub](https://www.nixhub.io/).
+Anything in nixpkgs is therefore available, usually at a choice of versions.
+Prefer pinning an exact version for anything that affects build output, such as the toolchain and Python.
+Use `@latest` for incidental tooling.
+
 ### 🧪 Tests and coverage
 
-The test suite needs a Python 3.10 on `PATH` (it shells out to `python3.10` by name on Linux), since generated Python
-is validated by compiling and running it. The nix flake provides this.
+The test suite needs a Python 3.10 on `PATH`.
+It shells out to `python3.10` by name on Linux.
+This is because generated Python is validated by compiling and running it.
+Devbox provides this.
 
 ```sh
 cargo test --package mamba    # run the full suite
@@ -189,14 +259,15 @@ cargo llvm-cov --lcov --output-path ./target/lcov.info \
   --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
 ```
 
-Both `cargo-nextest` and `cargo-llvm-cov` are provided by the nix flake. Before treating an uncovered line as a
-missing test, read [tests/README.md](./tests/README.md) — it records which lines are uncovered by design, which are
-gated on unfinished features, and a few traps worth knowing about.
+Both `cargo-nextest` and `cargo-llvm-cov` are provided by Devbox.
+Before treating an uncovered line as a missing test, read [tests/README.md](./tests/README.md).
+It records which lines are uncovered by design, and which are gated on unfinished features.
+It also records a few traps worth knowing about.
 
 ### 🔤 Cargo.toml ordering
 
 Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with
-[cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by the nix flake):
+[cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by Devbox):
 
 ```sh
 cargo sort --check   # report only, what the hook runs
