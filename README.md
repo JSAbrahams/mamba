@@ -53,13 +53,6 @@ That means the pinned Rust toolchain, the Python the test suite needs, and the c
 It also gives you nushell and starship.
 Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`.
 So every contributor gets byte-identical versions.
-CI runs this same environment, so what passes locally is what passes in CI.
-
-**We recommend developing on a Unix-like system, meaning Linux or macOS.**
-That is what gives you Nix, and therefore Devbox, and therefore that alignment.
-On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install) and follow the Linux instructions inside it.
-Developing on plain Windows is supported on a best-effort basis: the test suite does run there in CI, but you install the toolchain yourself, and the more niche corners are likelier to differ.
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the details.
 
 Devbox is a thin layer over the [Nix](https://nixos.org/) package manager.
 This means **Nix needs to be installed first**.
@@ -103,14 +96,6 @@ devbox run precommit      # everything the pre-commit hook runs
 ```
 
 A more minimal setup, to just get started:
-Flakes are still a Nix experimental feature, so `nix develop` needs them enabled.
-Either add `experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`)
-once, or pass them per-invocation:
-
-```sh
-nix develop --extra-experimental-features 'nix-command flakes'
-```
-
 
 ```sh
 # Install rustup (if you don't have it already), which is the rust toolchain manager
