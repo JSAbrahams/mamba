@@ -200,7 +200,6 @@ cargo sort           # rewrite Cargo.toml into sorted order
 
 Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
 
-
 ## 📝 Procedures
 
 We standardise the process of creating issues and pull requests, to make it easier to manage the project.
