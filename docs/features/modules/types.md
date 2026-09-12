@@ -6,6 +6,10 @@
 
 # 2.3.3 Type
 
+_Note_ This page predates the current syntax.
+The `type` keyword shown here is now `trait`, and `<-` is now `:=`.
+See the [README](../../../README.md#-types-properties-and-classes) for current syntax.
+
 A type describes the properties a value of that type should have.
 Each such property is a definition.
 A definition is then either a method or an immutable variable.

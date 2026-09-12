@@ -6,6 +6,11 @@
 
 # 2.4.3 Null Safety
 
+_Note_ This page predates the current syntax.
+The `?and` and `?or` operators and the infix method calls it uses are future work.
+`?` on a nullable type and `None` are implemented.
+See the [README](../../../README.md) for current syntax.
+
 We wish to be explicit about a function which may return nothing, as the user of the function might expect a value.
 For this we use the question mark symbol: `?`
 
@@ -14,12 +19,13 @@ Take the following:
     # type error! 'get' function might return nothing
     def my_function(set: Set[Int], str: String): Int := set get str 
 
-The type checker is complaining that the `get` function from `Set` might return `undefined`. To circumvent this, we make
-the return type of the function nullable.
+The type checker is complaining that the `get` function from `Set` might return `undefined`.
+To circumvent this, we make the return type of the function nullable.
 
     def my_function(set: Set[String], str: String): String? := set get str
     
-Now when calling my function, I will either get an `Int` or an `undefined`. Because this is explicit, we know this at compile time.
+Now when calling my function, I will either get an `Int` or an `undefined`.
+Because this is explicit, we know this at compile time.
 To call a function on the resulting value, we may use the `?and` operator.
 
     def set ofmut <- { "hello" }
@@ -36,8 +42,9 @@ If we try to call a function or access a definition of the function directly we 
 
 ## Default values
 
-In some situations, we want to have a default value. In such situations, we use the `?or` operator. Note that both sides
-of the operator must be of the same type.
+In some situations, we want to have a default value.
+In such situations, we use the `?or` operator.
+Note that both sides of the operator must be of the same type.
 
     def world <- my_function(set, "world") ?or "world"
     

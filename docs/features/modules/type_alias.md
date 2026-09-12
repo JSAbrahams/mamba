@@ -6,6 +6,9 @@
 
 # 2.3.4 Type Aliases
 
+_Note_ Type aliases and the `type ... when ...` refinement described here are future work.
+None of this page is implemented yet.
+
 In certain situations, we want to make sure that certain methods can only be called when an instance of a class is in a certain state.
 This can be achieved using type aliases and type refinement.
 

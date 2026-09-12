@@ -6,16 +6,23 @@
 
 # 2.4.2 Error Handling
 
-Errors are a fact of life. They may be the result of incorrect data, user input, or a programming mistake. Error handling,
-ideally, should be done in an explicit manner. However, at the same time, error handling code should not become overly
-verbose as it might obfuscate the actual relevant parts of the codebase which perform the actual calculations. Thus, a
-balance must be reached.
+_Note_ This page predates the current syntax.
+Class arguments take no `def` prefix, and `String` is now `Str`.
+See the [README](../../../README.md#-error-handling) for current syntax.
 
-In some cases it may be that we might want to raise an error. Exception handling and `try` `catch` blocks are common in modern languages.
+Errors are a fact of life.
+They may be the result of incorrect data, user input, or a programming mistake.
+Error handling, ideally, should be done in an explicit manner.
+However, at the same time, error handling code should not become overly verbose as it might obfuscate the actual relevant parts of the codebase which perform the actual calculations.
+Thus, a balance must be reached.
+
+In some cases it may be that we might want to raise an error.
+Exception handling and `try` `catch` blocks are common in modern languages.
 These constructs however have been shown to be somewhat troublesome:
 
 - When several lines of code are wrapped in a try catch block, we do not know which expression or statement is the one which might throw an exception.
-- Certain languages don't require all exceptions to be part of the function or method signature. This means that a method call might result in an exception even if the source code does not reflect this.
+- Certain languages don't require all exceptions to be part of the function or method signature.
+  This means that a method call might result in an exception even if the source code does not reflect this.
   This means that the use of said method either has to either:
   - Manually check that a method does indeed not throw an exception, which becomes exponentially more difficult when a method calls other methods, and so forth.
   - Wrap all method calls in `try` `catch` blocks, which might often be unnecessary and make the application unnecessarily verbose.
@@ -50,8 +57,10 @@ We can also use the `Result` type to define a possible return type and error pai
     def h (x: Int): Result[Int, [MyErr, OtherErr]] := if x > 10 then ! MyErr("bigger than 10") else OtherErr("or not")
     
 The first way of writing is preferred, as this more clearly separates the return type and possible errors that may be raised.
-However, using Result may be better in some other situations. For instance, it allows us to use the type alias feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency.
-See "Types" for a more in-depth explanation. A trivial case would be:
+However, using Result may be better in some other situations.
+For instance, it allows us to use the type alias feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency.
+See "Types" for a more in-depth explanation.
+A trivial case would be:
 
     type MyResult := Result[Int, MyErr]
     
@@ -62,16 +71,17 @@ Small side note: using the default behaviour feature of the language, we can rew
     def g (x: Int): Int ! { MyErr } := x
     def g (0)                       := ! MyErr("x was 10")
     
-Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
-point, or we will get a type error:
+Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some point, or we will get a type error:
 
     # type error! exception of type MyErr can never be raised
     def no_err(x: Int): Int ! [MyErr] := x + 1
     
 ## Handle
 
-We can also explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned
-value to determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
+We can also explicitly handle it on site.
+We do this using the `handle when`, which matches the type of the returned value to determine what to do.
+A good first step is to log the error.
+In this case, we simply print it using `println`:
 
     def l := g(9) + 1.5
         err: MyErr => println err
@@ -89,7 +99,8 @@ The above would desugar to the following:
     # here, l has type l?, as we do not know if an error occurred or not
     println "we don't know whether l is an Int or None"
 
-We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
+We may also return if we detect an error.
+In that case, the code after would only be executed if no error occurred:
 
     def l := g(9)
         err: MyErr =>
@@ -100,8 +111,9 @@ We may also return if we detect an error. In that case, the code after would onl
     # if an error was thrown this will not be executed at all
     println "[l] has type Int and not Int?"
     
-We can, instead of returning, also assign a default value to l. This should be done with care, however. Assigning
-to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
+We can, instead of returning, also assign a default value to l.
+This should be done with care, however.
+Assigning to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
     def l := g(9)
         err: MyErr =>

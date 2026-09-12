@@ -6,6 +6,10 @@
 
 # 2.4.1 Types
 
+_Note_ This page predates the current syntax.
+For example, `def f(x): Int` is now `def f(x) -> Int`, and `String` is now `Str`.
+See the [README](../../../README.md) for current syntax.
+
 Often a distinction is made between static and dynamic typing.
 
 If the application were dynamically typed, we would constantly have to verify that variables are indeed what they claim to be.
@@ -29,7 +33,7 @@ Now, in the body of the function, we can rest easy knowing that the passed varia
 It is actually now impossible to pass another variable type to the function, as this is statically checked by the type checker.
 If it sees that we try to pass something that is not a composer, it will give an error, meaning that the program will not run.
 
-In some programming languages, we have to explicitly state the type of each variable. 
+In some programming languages, we have to explicitly state the type of each variable.
 This however makes the application rather verbose.
 Take for instance:
 
@@ -59,7 +63,7 @@ We now rewrite my_function so it only works for `DeadComposer`s:
 
     def my_function(composer: DeadComposer): Int := today.year - composer.death.year
     
-Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function. 
+Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function.
 To use such a function, we must explicitly cast a `Composer`:
 
     def chopin := Composer("Chopin")
@@ -96,30 +100,38 @@ This is a rather trivial example, but it shows how we can explicitly name the di
 
 ## Type aliases
 
-In some cases, for readability we might want to write a type alias. Say we have the following function:
+In some cases, for readability we might want to write a type alias.
+Say we have the following function:
 
     def distance_remaning(covered: Int) -> Int := self total - covered
     
 The above seems simple, but there are two issues:
 
-* At a glance, we cannot know what covered symbolises. Kilometers, meters? We can of course rename the variable, but in certain situations this makes the code rather verbose.
-* We do no bounds checking here. What if covered is more than the total, or negative? We could add these bounds checks to the method.
-  However, this makes the method more verbose. Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
+* At a glance, we cannot know what covered symbolises.
+  Kilometers, meters?
+  We can of course rename the variable, but in certain situations this makes the code rather verbose.
+* We do no bounds checking here.
+  What if covered is more than the total, or negative?
+  We could add these bounds checks to the method.
+  However, this makes the method more verbose.
+  Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
   
-To solve the above two issues, we can use type aliases. Observe the following:
+To solve the above two issues, we can use type aliases.
+Observe the following:
 
     type Kilometer: Int
     
-Type `Kilometer` can do everything an `Int` can (we can use all the same operators), but using such an alias allows us
-to more clearly express our ideas in the codebase without relying on documentation. (This is a recurring theme, source
-code ideally should speak for itself without relying heavily on documentation.) We can rewrite the function as so:
+Type `Kilometer` can do everything an `Int` can (we can use all the same operators), but using such an alias allows us to more clearly express our ideas in the codebase without relying on documentation.
+(This is a recurring theme, source code ideally should speak for itself without relying heavily on documentation.)
+We can rewrite the function as so:
 
     def distance_remaning(self, covered: Kilometer) -> Kilometer -> self.total - covered
 
 ## Type Refinement
 
 Type refinement expands upon type aliases by defining certain conditions an object must adhere to, to be considered that type.
-This can also be used to enforce pre-conditions of a function or method when used as a parameter, and post-conditions when used as the return type. This is akin to the philosophy of Design by Contract.
+This can also be used to enforce pre-conditions of a function or method when used as a parameter, and post-conditions when used as the return type.
+This is akin to the philosophy of Design by Contract.
 
 Say we have a function:
 
@@ -127,7 +139,8 @@ Say we have a function:
         println("this number is even: {x}")
         x
     
-In some situations, this function does not behave as we expect it to. It may print an uneven number.
+In some situations, this function does not behave as we expect it to.
+It may print an uneven number.
 In such a situation, we often turn to the design by contract philosophy, where a function has pre and post-conditions.
 There are several traditional approaches to solving this problem, both of which are valid, though the preferred approach does depend on context:
 
@@ -150,8 +163,8 @@ This is a situation where type aliases with conditions can come in handy.
 Type aliases encourage decentralisation.
 The logic of a type is closely linked to the type itself, instead of having to manually check that a type adheres to certain conditions every time it is used.
 
-We can use a trivial type `EvenNum` to demonstrate how one would use conditions in a type alias. Say we define the
-type-alias `EvenNum`:
+We can use a trivial type `EvenNum` to demonstrate how one would use conditions in a type alias.
+Say we define the type-alias `EvenNum`:
 
     type EvenNum: Int when
         self mod 2 = 0 # we can list more conditions below this one. They must all evaluate to a boolean.
@@ -166,8 +179,9 @@ We may also choose to add a descriptive error message:
     type EvenNum: Int when
         self mod 2 = 0 else "{self} is an uneven number"
 
-This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. This is similar to creating
-a new class `EvenNum` which is an `Int`, and verifying that these properties hold.
+This defines all `Int`, or Integers, that are even.
+That is, the condition listed above holds.
+This is similar to creating a new class `EvenNum` which is an `Int`, and verifying that these properties hold.
 
 We can now redefine the function as follows:
 
@@ -176,10 +190,10 @@ We can now redefine the function as follows:
         print("this number is even: {x}")
         x
     
-Now, the actual type of the argument describes what conditions the argument adheres to, instead of having to manually
-check these in the body of the function. We now know that these conditions hold in the body of the function. We can cast
-any variable that is an `Int` to `EvenNum`. During casting, the defined conditions are checked, and the respective error
-is thrown if a condition does not hold:
+Now, the actual type of the argument describes what conditions the argument adheres to, instead of having to manually check these in the body of the function.
+We now know that these conditions hold in the body of the function.
+We can cast any variable that is an `Int` to `EvenNum`.
+During casting, the defined conditions are checked, and the respective error is thrown if a condition does not hold:
 
     # We can cast x to an EvenNum, which might give an error
     def x := random_int() # here x is an Int
@@ -208,7 +222,8 @@ is thrown if a condition does not hold:
     
     # first, second, third, fourth, and fifth all have type Int
 
-We can also use it as a sort of post-condition of the function. We ensure that the function returns an `EvenNum`:
+We can also use it as a sort of post-condition of the function.
+We ensure that the function returns an `EvenNum`:
 
     def g (x: EvenNum): EvenNum ! Err :=
         print("this number is even: {x}")

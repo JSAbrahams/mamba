@@ -36,10 +36,9 @@ Mamba is similar to Python, but with a few key features:
 
 See [docs](/docs/) for a more extensive overview of the language philosophy.
 
-This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
-files.
+This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
 There therefore exists some interoperability with Python code.
-Currently we compile down to Python, in future we may compile down to Python bytecode, for instance. 
+Python is the default (and by far the most complete) output; there is also an experimental backend which compiles a small subset of the language straight to machine code, see [Machine Output](#-machine-output) below.
 
 This README:
 
@@ -198,6 +197,9 @@ print(ab(2)) # prints '(2, "list")'
 print(ef(1)) # prints '1'
 ```
 
+_Note_ Builder syntax currently only resolves a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`).
+Binding more than one, as in the `ab` and `ef` examples above, is future work.
+
 In a way, a list is a type of mapping where the keys are the indexes of each item.
 So:
 
@@ -231,13 +233,12 @@ a := a + 2   # allowed
 ```
 
 We opt to make mutability the default (unlike say in Rust, where you have to use the `mut` keyword to make something mutable).
-The reason for doing so is domain;
-Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
+The reason for doing so is domain; Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
 
 ### 📋 Types, Properties, and Classes
 
 Next, we introduce the concept of a class.
-A class is essentially a blueprint for the behaviour of an instance. 
+A class is essentially a blueprint for the behaviour of an instance.
 
 In Mamba, like Python and Rust, each function in a class has an explicit `self` argument, which gives access to the state of this instance.
 Such a function is called a method.
@@ -281,15 +282,17 @@ end
 Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
 _In general_, the notation of a class is:
 
-`class MyClass(<one-or-more-constructor-args>) := where <one-or-more-expressions> end`
+`class MyClass(<one-or-more-constructor-args>) where <one-or-more-expressions> end`
 
 The body of the class is optional, i.e. one can create "just" a data class.
-Constructor arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`) — there is no `def` prefix; it's just shorthand for a field without a separate constructor.
+Constructor arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`).
+There is no `def` prefix.
+It is just shorthand for a field without a separate constructor.
 The body of the class is evaluated for each object we created, effectively making this the constructor body.
 
 As for the class body:
 
-- It is denoted using a code set: Using `{` and `}`.
+- It is denoted using a code set: Using `where` and `end`.
   This is because the concept of order is not defined in a class body.
 - In future, we may generalize the code-set notation to mean a set of statements which may be executed in arbitrary order, and thus **also in parallel**.
   Therefore baking parallel computations into the semantics of the language, as opposed to a library.
@@ -321,7 +324,7 @@ end
 Last, we have `trait`s, which in Mamba are more fine-grained building blocks to describe the behaviour of instances.
 These are similar to interfaces in Java and Kotlin, and near identical to traits in Rust.
 In Mamba, we aim to have many small traits for a more idiomatic way to express the behaviour of objects/classes.
-For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance). 
+For those familiar with object-oriented programming, we favour a trait-based system over inheritance (like Rust, Mamba doesn't have inheritance).
 
 Consider example with iterators (which briefly showcases language generics):
 
@@ -347,7 +350,10 @@ end
 ```
 
 Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
-The syntax here is `trait <id> := where <one-or-more-definitions end` and we use it as `def <trait> for <class>`.
+The syntax here is `trait <id> where <one-or-more-definitions> end` and we use it as `def <trait> for <class>`.
+
+_Note_ Implementing a trait externally, with `def <trait> for <class> where ... end` as in the `RangeIter` example above, is future work.
+For now a class states the traits it implements in its own declaration (`class Person(name: Str): Named where ... end`) and defines their methods in its own body.
 
 Lastly, like Rust, types (traits) can also be used as generics.
 This would allow, for instance, for defining a `Hash` trait and enforcing for a hashmap that keys implement said trait.
@@ -359,6 +365,9 @@ E.g.
 ```mamba
 trait Ordered[T]: Equality, Comparable
 ```
+
+_Note_ A trait may currently name at most one parent trait (`trait Ordered[T]: Equality`); composing several, as above, is future work.
+A _class_, on the other hand, can already list several parents (`class MyClass: MyType, MyType2 where ... end`).
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 
@@ -418,8 +427,9 @@ Instead, we place heavy restrictions on total functions, enforcing that they are
 1. We may only call total functions
 2. Within the _call tree_ of a function, all arguments to nodes in the tree must be _strictly decreasing_ compared to the first parent of a node which is equal to said node.
 
-   a. If in the _call tree_ we call a different total function, the argument does not have to be strictly decreasing.
-   b. However, it should still be globally decreasing, meaning that we amend the above:
+a.
+If in the _call tree_ we call a different total function, the argument does not have to be strictly decreasing. b.
+However, it should still be globally decreasing, meaning that we amend the above:
 
       _"compared to the first parent of the node which is equal to said node, summing over all intermediate nodes"
       This does mean that we must be able to perform basic arithmetic on the types of the function for this (logic) system to work!
@@ -545,8 +555,7 @@ def Measurable for Int
 ```
 
 We require that the measured item implements basic arithmetic so that we can add and subtract as we traverse those trees where we interweave recursive calls.
-_Peano arithmetic, essentially, forms the logical bedrock of the system which proves functions are total._
-Only meta functions can be evaluated at compile time, see the section on meta functions below.
+_Peano arithmetic, essentially, forms the logical bedrock of the system which proves functions are total._ Only meta functions can be evaluated at compile time, see the section on meta functions below.
 
 In general:
 
@@ -615,6 +624,9 @@ print("Last operation was: {last_op}")
 In the above script, we will always print an error (gracefully) and assign some other value to `last_op`.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
+
+_Note_ A case can currently only bind the error itself (`err: MatrixErr => ...`, with the message read off it as `err.message`).
+Destructuring its constructor arguments, as in `err: MatrixErr(message)` above, is future work.
 
 Under the hood, `<call> ! where <cases> end` desugars to a plain `match` on the call's result:
 
@@ -688,6 +700,9 @@ a = a ! # Result[Int, MyErr] => Int, where if error case, an exception is raised
 print("a has value {a}.")
 ```
 
+_Note_ Naming the `Result[...]` type explicitly, and narrowing one by re-raising with `a = a !`, are both future work.
+Handling every case on-site (as in the examples further up) and propagating with a bare `!` are what is implemented today.
+
 ## 💽 Machine Output
 
 There is an experimental feature where we output a very small subset of the language to machine code.
@@ -733,5 +748,4 @@ You can type `mamba -help` for a message containing roughly the above informatio
 
 # 👥 Contributing
 
-Before submitting your first issue or pull request, please take the time to read both
-our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
+Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
