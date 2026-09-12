@@ -33,47 +33,11 @@ You therefore do not need rustup, or any of the cargo helpers, installed yoursel
 
 ### 💻 Which operating system to develop on
 
-We recommend developing on a Unix-like system, meaning Linux or macOS.
-That gives you Nix, and therefore Devbox, which is how this project guarantees everyone builds with identical tool versions.
-CI runs that same Devbox environment on Linux and macOS, so what passes locally is what passes in CI.
+Flakes are still a Nix experimental feature, so this needs them enabled — either add
+`experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`) once, or pass
+`--extra-experimental-features 'nix-command flakes'` to the command above.
 
-Nix has no native Windows support, so Devbox cannot run there either.
-Windows contributors have two options:
-
-- **WSL is the recommended route.**
-  Install [WSL](https://learn.microsoft.com/windows/wsl/install), then follow the Linux instructions below inside it.
-  You get the full pinned environment, identical to every other contributor.
-  Treat the checkout as a Linux one, and keep it on the WSL filesystem rather than under `/mnt/c`, since the latter is considerably slower.
-- **Plain Windows is best effort.**
-  The transpiler is expected to work, and CI does run the test suite on `windows-latest`, so the main paths are covered.
-  But you will be installing the toolchain yourself via rustup, and version alignment is then on you.
-  The more niche corners are likelier to differ or to be unsupported, particularly anything touching paths, the `python3.10` versus `python` executable name, or the Cranelift backend's `cc` linker step.
-  If you hit something that looks platform-specific, say so in the issue, and prefer WSL if you can.
-
-### 📦 Using Devbox
-
-Devbox reads [`devbox.json`](./devbox.json) at the project root.
-It gives you a shell containing exactly the tools this project needs:
-
-- the Rust toolchain (`rustc`, `cargo`, `rustfmt`, `clippy`) and `rust-analyzer`
-- `cargo-nextest`, `cargo-llvm-cov` and `cargo-sort`, which the git hooks and CI call
-- Python 3.10, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
-- `nushell` and `starship`, so you get the project's shell and prompt
-- the odds and ends: `clang` (its `cc` links the `--bin` output), `llvm`, `git`, `jq`, `direnv`, an editor
-
-Resolved versions are locked in `devbox.lock`, which is committed.
-Every contributor and CI therefore get identical versions.
-That file is Devbox's equivalent of `Cargo.lock`.
-Do not edit it by hand.
-It is updated by `devbox add` and `devbox update`.
-
-#### Installing Nix
-
-Devbox is a convenience layer over the [Nix](https://nixos.org/) package manager.
-Nix must therefore be installed first.
-Devbox offers to install it on first run.
-Doing it yourself up front avoids an interactive prompt.
-That also makes it the right order in containers and CI.
+### Installing Nix
 
 Nix is distributed as a small installer script on nixos.org.
 Below is the recommended command.
