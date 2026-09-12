@@ -11,6 +11,8 @@
     "cargo-nextest@0.9.143",
     "cargo-sort@2.1.4",
 
+    "actionlint@latest",
+
     "python@3.10.18",
 
     "clang@latest",
@@ -93,7 +95,8 @@
       "lint": [
         "cargo fmt --all -- --check",
         "cargo clippy --all-features -- -D warnings",
-        "cargo sort --check"
+        "cargo sort --check",
+        "actionlint"
       ],
       "coverage": [
         "cargo llvm-cov --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
