@@ -18,6 +18,16 @@ cargo fmt --all -- --check        # check formatting (CI enforces this)
 cargo clippy -- -D warnings       # lint (CI enforces this, treats warnings as errors)
 ```
 
+CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`, so to reproduce a CI test run
+exactly:
+
+```sh
+cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+```
+
+Note that CI's clippy step does *not* pass `--tests`, so lints that only fire inside `#[cfg(test)]` code are
+not enforced.
+
 Running the test suite requires a `python3` on `PATH` (`python3.10` on Linux, `python3` on macOS, `python` on
 Windows — see `tests_util/src/lib.rs`), since generated Python output is validated with `python -m py_compile`.
 

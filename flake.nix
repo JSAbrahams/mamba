@@ -13,17 +13,21 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+
+    # Python 3.10 only. The test suite shells out to `python3.10` by name on Linux
+    # (`tests_util::PYTHON`), but nixpkgs-unstable has since dropped `python310` (upstream EOL),
+    # so it is pinned here to the last revision that still provides it. Bump this only together
+    # with `tests_util::PYTHON`.
+    nixpkgs-python310.url = "github:NixOS/nixpkgs/4206c4cb56751df534751b058295ea61357bbbaa";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-python310, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        pkgsPython310 = nixpkgs-python310.legacyPackages.${system};
         # Read the file relative to the flake's root
         overrides = (builtins.fromTOML (builtins.readFile (self + "/rust-toolchain.toml")));
-        libPath = with pkgs; lib.makeLibraryPath [
-          # load external libraries that you need in your rust project here
-        ];
       in
       {
         devShells.default = pkgs.lib.warnIf
@@ -40,8 +44,9 @@
             less     # Used under the hood by git
             more     # Nice to have next to 'less'
             
-            clang                    # C++ tooling
-            llvmPackages.bintools    #
+            clang                    # provides `cc`, which the Cranelift backend shells out to in order
+                                     # to link a --bin executable (src/backend/cranelift/link.rs)
+            llvmPackages.bintools    # linker and binutils
             llvmPackages_latest.llvm # LLVM build tools (also provides llvm-cov/llvm-profdata, see LLVM_COV below)
 
             rustc   # Rust toolchain straight from the nix store, see top-of-file note
@@ -50,8 +55,10 @@
             clippy
             rust-analyzer # Language server, for editor integration
             cargo-llvm-cov # `cargo llvm-cov` coverage tooling, see CONTRIBUTING.md
+            cargo-nextest  # `cargo nextest` test runner, see CONTRIBUTING.md
+            cargo-sort     # `cargo sort` checks Cargo.toml dependency ordering (.githooks/pre-commit_0_toml)
 
-            python310 # required by the test suite (tests_util::PYTHON on Linux); see CLAUDE.md
+            pkgsPython310.python310 # required by the test suite (tests_util::PYTHON on Linux); see CLAUDE.md
 
             nushell  # Nu Shell                   <https://wiki.nixos.org/wiki/Nushell>
             starship # Display relevant info      <https://wiki.nixos.org/wiki/Starship>
@@ -65,12 +72,9 @@
 
           RUSTC_VERSION = overrides.toolchain.channel;
 
-          # https://github.com/rust-lang/rust-bindgen#environment-variables
-          LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages_latest.libclang.lib ];
-
-          # Consumed by `cargo llvm-cov`; sourced from the same nixpkgs llvmPackages_latest as
-          # LIBCLANG_PATH above, rather than a system/arch-specific path, so this works on every
-          # system the flake targets (not just x86_64-linux).
+          # Consumed by `cargo llvm-cov`; sourced from nixpkgs' llvmPackages_latest rather than a
+          # system/arch-specific path, so this works on every system the flake targets (not just
+          # x86_64-linux).
           LLVM_COV = "${pkgs.llvmPackages_latest.llvm}/bin/llvm-cov";
           LLVM_PROFDATA = "${pkgs.llvmPackages_latest.llvm}/bin/llvm-profdata";
 
@@ -84,10 +88,10 @@
 
             # push a new branch without needing --set-upstream every time
             git config push.autoSetupRemote true
-            
-            # cargo libraries
-            cargo install cargo-nextest --locked --version 0.9.143
-            cargo install cargo-llvm-cov --locked --version 0.9.1
+
+            # cargo-nextest and cargo-llvm-cov come from nixpkgs (see buildInputs above) rather
+            # than `cargo install`, so they are pinned by flake.lock like everything else and
+            # need no network access or rebuild on shell entry.
 
             if [ -z "$NU_VERSION" ]; then
                 # workspace is where we called flake from
@@ -109,26 +113,7 @@
             fi
           '';
 
-          # Add precompiled library to rustc search path
-          RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
-            # add libraries here (e.g. pkgs.libvmi)
-          ]);
-          
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (buildInputs ++ nativeBuildInputs);
-
-          # Add glibc, clang, glib, and other headers to bindgen search path
-          BINDGEN_EXTRA_CLANG_ARGS =
-          # Includes normal include path
-          (builtins.map (a: ''-I"${a}/include"'') [
-            # add dev libraries here (e.g. pkgs.libvmi.dev)
-            pkgs.glibc.dev
-          ])
-          # Includes with special directory paths
-          ++ [
-            ''-I"${pkgs.llvmPackages_latest.libclang.lib}/lib/clang/${pkgs.llvmPackages_latest.libclang.version}/include"''
-            ''-I"${pkgs.glib.dev}/include/glib-2.0"''
-            ''-I${pkgs.glib.out}/lib/glib-2.0/include/''
-          ];
         });
       }
     );

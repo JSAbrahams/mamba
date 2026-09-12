@@ -9,7 +9,9 @@ if ! git diff --cached --name-only --diff-filter=ACM | grep -q '^Cargo\.toml$'; 
     exit 0
 fi
 
-cargo sort
+# --check reports without rewriting: a bare `cargo sort` sorts the file in place and exits 0, which
+# would both always pass here and leave the fix unstaged (so the commit keeps the unsorted version).
+cargo sort --check
 if [ $? -ne 0 ]; then
     log_error "Dependencies in $project_dir/Cargo.toml not in alphabetical order, please run \"cargo sort\" in $project_dir"
     exit 1

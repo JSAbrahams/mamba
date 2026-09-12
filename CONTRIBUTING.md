@@ -33,6 +33,10 @@ Alternatively, if you have nix (shell) installed, you can use the nix flake whic
 nix develop
 ```
 
+Flakes are still a Nix experimental feature, so this needs them enabled — either add
+`experimental-features = nix-command flakes` to your `~/.config/nix/nix.conf` (or `/etc/nix/nix.conf`) once, or pass
+`--extra-experimental-features 'nix-command flakes'` to the command above.
+
 ### Installing Nix
 
 Nix is distributed as a small installer script on nixos.org.
@@ -42,6 +46,46 @@ If you are not running a Linux distro, this will probably not work for you.
 ```sh
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
 ```
+
+### 🧪 Tests and coverage
+
+The test suite needs a Python 3.10 on `PATH` (it shells out to `python3.10` by name on Linux), since generated Python
+is validated by compiling and running it. The nix flake provides this.
+
+```sh
+cargo test --package mamba    # run the full suite
+```
+
+CI runs the suite with [nextest](https://nexte.st/) instead, so to reproduce a CI run exactly:
+
+```sh
+cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+```
+
+Coverage is measured with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), using the same exclusions as
+CI/Codecov (see `.github/workflows/coverage.yml`):
+
+```sh
+cargo llvm-cov --lcov --output-path ./target/lcov.info \
+  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
+```
+
+Both `cargo-nextest` and `cargo-llvm-cov` are provided by the nix flake. Before treating an uncovered line as a
+missing test, read [tests/README.md](./tests/README.md) — it records which lines are uncovered by design, which are
+gated on unfinished features, and a few traps worth knowing about.
+
+### 🔤 Cargo.toml ordering
+
+Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with
+[cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by the nix flake):
+
+```sh
+cargo sort --check   # report only, what the hook runs
+cargo sort           # rewrite Cargo.toml into sorted order
+```
+
+Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command,
+not the checking one.
 
 ## 📝 Procedures
 
