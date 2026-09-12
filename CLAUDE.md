@@ -201,6 +201,25 @@ That function runs during context building, before any of this.
 
 ## Documentation
 
+### Writing style (applies to every `.md` file in this repo)
+
+These rules are not optional, and they apply to edits as well as to new prose.
+
+- **One sentence per line.**
+  Every sentence starts on its own line and ends on that same line.
+- **Never wrap a sentence across lines.**
+  Do not cobble a sentence together from several lines, and do not reflow prose to a column limit.
+  A long line is correct; a wrapped one is not.
+- **Favour short sentences.**
+  Split a long sentence into several short ones rather than joining clauses.
+- **No em dashes.**
+  Do not use `—`, and do not use ` -- ` as a prose dash either.
+  Rewrite into separate sentences, or use a comma or colon.
+  A literal `--` that is part of a command, such as `cargo fmt --all -- --check`, is fine.
+
+Leave code blocks, tables and verbatim CLI output alone.
+Multi-sentence table cells stay as they are, since splitting them would break the row.
+
 `docs/` contains the language specification and philosophy docs, including the formal grammar at `docs/spec/grammar.md`.
 Those docs are partially outdated, as their own README says.
 The top-level `README.md` has a larger set of annotated Mamba code examples, covering functions, collections, classes and error handling.
@@ -210,3 +229,16 @@ Check those for concrete syntax before assuming behavior from the grammar spec a
 
 - PRs target `develop`, not `main`/`master` (see `CONTRIBUTING.md`); `main` is release-only.
 - Keep `Cargo.toml` dependencies alphabetically sorted (`cargo sort`).
+
+### Git is off limits unless asked
+
+Do not run `git` commands that change anything.
+This includes `commit`, `branch`, `checkout`, `switch`, `rebase`, `reset`, `cherry-pick`, `merge`, `tag`, `stash`, `push` and `git rm`.
+The exception is when the user gives a specific instruction to do so, for that specific task.
+A general request to fix or clean something up is not such an instruction.
+
+Read-only inspection is always fine.
+That means `git status`, `git log`, `git diff`, `git show` and `git branch --list`.
+Prefer those for orienting yourself.
+
+When a task does seem to call for changing history or branches, describe the commands and let the user run them, unless they have said otherwise.
