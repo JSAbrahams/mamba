@@ -144,4 +144,10 @@ This is why the marker sits on `new` rather than on the class.
 A class-level `class pure Counter` would read as though `tick` were pure too.
 The narrower reading is the useful one, so it is spelled on the thing it actually constrains.
 
+### A known problem in the notation
+
+`def pure new` reads as a field, because it is written in exactly the grammar a field uses.
+`def <name>` with no parentheses is how a field is declared, and `def other` at the top level really does define a variable.
+So the marker does not merely resemble a field, it borrows the field's production, while the thing it describes is a function.
+
 See [Pure Functions](../functions/pure_functions.md) for the rules a pure function obeys.

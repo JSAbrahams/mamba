@@ -4,7 +4,7 @@ use crate::check::ast::NodeTy;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Empty, Name};
-use crate::parse::ast::{Node, AST, NEW};
+use crate::parse::ast::{is_new_marker, Node, AST};
 use crate::ASTTy;
 
 /// Drop a bodiless `new` from a class body.
@@ -16,10 +16,7 @@ fn without_new_marker(body: &AST) -> AST {
         Node::Block { statements } => {
             let statements = statements
                 .iter()
-                .filter(|stmt| {
-                    !matches!(&stmt.node, Node::FunDef { id, args, body: None, .. }
-                        if args.is_empty() && matches!(&id.node, Node::Id { lit } if lit == NEW))
-                })
+                .filter(|stmt| !is_new_marker(stmt))
                 .cloned()
                 .collect();
             AST::new(body.pos, Node::Block { statements })

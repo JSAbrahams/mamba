@@ -56,6 +56,16 @@ pub const SELF_TY: &str = "Self";
 /// invariant that plain construction could otherwise bypass.
 pub const NEW: &str = "new";
 
+/// Whether a statement is a bodiless `new` with no argument list.
+///
+/// It is written in the grammar a field uses, and it declares nothing: it only asserts
+/// something about the `new` the class already has. Recognised in one place so the rest of
+/// the compiler can treat `new` as an ordinary function.
+pub fn is_new_marker(stmt: &AST) -> bool {
+    matches!(&stmt.node, Node::FunDef { id, args, body: None, .. }
+        if args.is_empty() && matches!(&id.node, Node::Id { lit } if lit == NEW))
+}
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
     Import {

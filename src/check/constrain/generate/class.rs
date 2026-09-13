@@ -13,7 +13,7 @@ use crate::check::name::string_name::StringName;
 use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::Node::Id;
-use crate::parse::ast::{Node, AST, NEW};
+use crate::parse::ast::{is_new_marker, Node, AST, NEW};
 
 pub fn gen_class(
     ast: &AST,
@@ -132,12 +132,6 @@ fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()
 /// describes is the one the class already gets from its arguments.
 fn is_pure_new_marker(stmt: &AST) -> bool {
     is_new_marker(stmt) && matches!(stmt.node, Node::FunDef { pure: true, .. })
-}
-
-/// Whether a statement is a bodiless `new` with no argument list, marker or not.
-fn is_new_marker(stmt: &AST) -> bool {
-    matches!(&stmt.node, Node::FunDef { id, args, body: None, .. }
-        if args.is_empty() && matches!(&id.node, Node::Id { lit } if lit == NEW))
 }
 
 /// Whether a type annotation admits `None`, so a field of it needs no value of its own.
