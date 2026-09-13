@@ -1,0 +1,5 @@
+# A class body may only declare fields and methods, so constructing this class has no
+# side effects and a pure function may do it
+class Point(x: Int, y: Int)
+
+def pure origin() -> Point := Point(0, 0)

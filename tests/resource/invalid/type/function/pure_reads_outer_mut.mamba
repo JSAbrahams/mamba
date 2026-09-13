@@ -1,0 +1,4 @@
+def mut counter := 0
+
+# counter is mut and defined outside f, so reading it breaks referential transparency
+def pure f(x: Int) -> Int := x + counter

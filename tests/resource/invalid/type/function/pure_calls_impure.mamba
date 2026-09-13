@@ -1,0 +1,4 @@
+def impure_double(x: Int) -> Int := x * 2
+
+# double is not pure, so a pure function may not call it
+def pure quadruple(x: Int) -> Int := impure_double(x)

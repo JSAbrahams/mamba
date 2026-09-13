@@ -32,7 +32,7 @@ pub fn gen_def(
             body,
             raises,
             id,
-            ..
+            pure,
         } => {
             let (class, non_nullable_class_vars) = match &id.node {
                 Id { lit } if *lit == INIT => {
@@ -62,9 +62,27 @@ pub fn gen_def(
                 _ => (None, HashSet::new()),
             };
 
+            if *pure {
+                // `self` is just another argument, so a pure method mutating it would give a
+                // different result for the same inputs.
+                for arg in fun_args {
+                    if let Node::FunArg { mutable, var, .. } = &arg.node {
+                        if *mutable && var.node == Node::new_self() {
+                            let msg = format!("A pure function cannot take 'mut {SELF}'");
+                            return Err(vec![TypeErr::new(arg.pos, &msg)]);
+                        }
+                    }
+                }
+            }
+
             let body_env = constrain_args(fun_args, env, ctx, constr)?
                 .with_unassigned(non_nullable_class_vars)
                 .in_fun(true);
+            let body_env = if *pure {
+                body_env.in_pure(env)
+            } else {
+                body_env
+            };
 
             let (raises, errs): (Vec<(Position, _)>, Vec<_>) = raises
                 .iter()

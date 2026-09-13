@@ -62,6 +62,36 @@ pub fn gen_class(
     }
 }
 
+/// A class body may only declare fields and methods.
+///
+/// A bare statement would run once per instance, like a constructor, which leaves it
+/// ambiguous whether constructing the class has side effects. Side effects belong in an
+/// explicit constructor instead, where they are visible in its signature. A leading
+/// docstring is the one exception, since it is documentation rather than a statement.
+fn check_only_declarations(statements: &[AST]) -> Constrained<()> {
+    let errors: Vec<TypeErr> = statements
+        .iter()
+        .enumerate()
+        .filter(|(i, stmt)| {
+            !matches!(stmt.node, Node::VariableDef { .. } | Node::FunDef { .. })
+                && !(*i == 0 && matches!(stmt.node, Node::DocStr { .. }))
+        })
+        .map(|(_, stmt)| {
+            let msg = format!(
+                "A class body may only declare fields and methods, was {}",
+                stmt.node
+            );
+            TypeErr::new(stmt.pos, &msg)
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
+}
+
 pub fn constrain_class_body(
     statements: &[AST],
     ty: &AST,
@@ -70,6 +100,7 @@ pub fn constrain_class_body(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let name = StringName::try_from(ty)?;
+    check_only_declarations(statements)?;
     let class_env = env.in_class(&name);
     gen_vec(statements, &class_env, true, ctx, constr)?;
 

@@ -222,8 +222,17 @@ Destructuring a list or set, as `def [a, b]`, does not parse at all.
 
 What is actually enforced is narrower than what is written down.
 Reassigning a binding that is not `mut` is an error, and so is reassigning through a receiver that is not `mut`.
-`mut` on a class field is recorded in `Context` but never checked, `mut self` is not required to call a mutating method, and no `pure` restriction is enforced at all.
+`mut` on a class field is recorded in `Context` but never checked, and `mut self` is not required to call a mutating method.
 Each gap has an `ignore[...]` fixture; see `tests/README.md`.
+
+The `pure` rules from the README *are* enforced, in `src/check/constrain/generate/`.
+`env.rs` carries `in_pure`, `outer_mut` and `pure_nonlocal`, set by `in_pure` when entering a pure body.
+`call.rs` holds `check_pure_call`, `check_pure_method`, `check_pure_field_read` and `check_pure_assign`.
+`definition.rs` rejects `pure` with `mut self`, and `expression.rs` rejects reading an outer `mut` variable.
+Method and field rules need the receiver's class at generation time, so they reach `self` and annotated variables, not a receiver whose type only unification resolves.
+
+A class body may only declare fields and methods, enforced by `check_only_declarations` in `class.rs`.
+That is what makes construction pure by default: `Class::constructor` in `src/check/context/clss/mod.rs` reports pure unless an explicit `__init__` is impure.
 
 Fixtures should still be annotated as if all of it were enforced, so they stay correct when it is.
 

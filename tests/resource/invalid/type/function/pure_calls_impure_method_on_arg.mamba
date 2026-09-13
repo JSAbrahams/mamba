@@ -1,0 +1,6 @@
+class C where
+    def value(self) -> Int := 1
+end
+
+# value is not pure, so it may not be called on an argument either
+def pure f(c: C) -> Int := c.value()

@@ -1,0 +1,5 @@
+# print writes to standard output, which is a side effect
+def pure f(x: Int) -> Int := do
+    print(x)
+    x
+end

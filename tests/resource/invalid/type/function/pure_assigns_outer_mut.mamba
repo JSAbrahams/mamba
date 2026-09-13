@@ -1,0 +1,7 @@
+def mut counter := 0
+
+# counter is defined outside f, so assigning it leaks out of the function
+def pure f(x: Int) -> Int := do
+    counter := counter + 1
+    x
+end

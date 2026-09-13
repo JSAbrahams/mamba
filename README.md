@@ -256,7 +256,6 @@ If we write `self`, it is immutable and we cannot change its state, whereas if w
 We can do the same for any argument to a function, for that matter.
 
 We showcase this using a simple `Matrix2x2` object.
-You will also see some "pure" functions, these will be explained later.
 
 ```mamba
 class MatrixErr(message: Str): Exception(message)
@@ -266,14 +265,14 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(self) -> Float := self.a + self.d
+    def trace(self) -> Float := self.a + self.d
 
     # Determinant of the matrix (ad - bc)
-    def pure determinant(self) -> Float := self.a * self.d - self.b * self.c
+    def determinant(self) -> Float := self.a * self.d - self.b * self.c
 
     # Solves this matrix against the vector (u, v) by Cramer's rule.
     # A singular matrix has no unique solution, so this may fail.
-    def pure solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+    def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
         def det := self.determinant()
         if det = 0.0 then ! MatrixErr("Determinant is zero.")
         def x := u * self.d - self.b * v
@@ -298,6 +297,11 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
 end
 ```
 
+None of these methods can be `pure`, which is worth dwelling on.
+`scale` and `reset` mutate the matrix, so the four fields must be `mut`.
+A pure function may not read a `mut` field, so no method reading `a` to `d` qualifies.
+See [Pure functions](#-pure-functions--041) below.
+
 Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
 _In general_, the notation of a class is:
 
@@ -311,6 +315,10 @@ The body of the class is evaluated for each object we created, effectively makin
 
 As for the class body:
 
+- It may only declare fields and methods, plus an optional leading docstring.
+  A bare statement is rejected.
+  Such a statement would run once per instance, which hides whether constructing the class has side effects.
+  Put that work in an explicit `__init__` instead, where the signature shows it.
 - It is denoted using a code set: Using `where` and `end`.
   This is because the concept of order is not defined in a class body.
 - In future, we may generalize the code-set notation to mean a set of statements which may be executed in arbitrary order, and thus **also in parallel**.
@@ -413,6 +421,13 @@ Some additional rules hold for calling and assigning to passed arguments to upho
 - One may only read fields of an argument which are not `mut`.
 - One may only call methods of an argument which are pure (`pure`).
 - It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
+- Constructing a class is allowed, since a class body may only declare fields and methods.
+  A class with an explicit `__init__` is only constructible from a pure function if that `__init__` is itself `pure`.
+
+In practice this makes `pure` far more useful on plain functions than on methods.
+A class with any mutating method needs `mut` fields, and no pure method may read one, so its methods cannot be pure.
+`Matrix2x2` above is exactly that case.
+`pure` methods are still allowed, and are useful on a class whose fields are all immutable, but that is the narrower case.
 
 When a function is `pure`, its output is always the same for a given input.
 It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
@@ -421,6 +436,12 @@ Immutable variables and pure functions make it easier to write declarative progr
 ```mamba
 # taylor is immutable, its value does not change during execution
 def taylor := 7
+
+# factorial must itself be pure, since sin calls it
+def pure factorial(x: Int) -> Int := match x where
+    0 => 1
+    n => n * factorial(n - 1)
+end
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) -> Int := do

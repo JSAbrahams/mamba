@@ -14,6 +14,19 @@ It also relies on the rules the README lists:
 a `self` that is not `mut`, no calling impure functions, only reading fields that are not `mut` or calling `pure` methods on arguments.
 Those rules exist so that nothing reachable from a pure function's arguments can be mutated out from under it, directly or indirectly.
 
+## Purity and classes
+
+A pure method is allowed, but the rules limit where one is useful.
+A class with any mutating method needs `mut` fields, and a pure function may not read a `mut` field.
+No method of such a class can therefore be pure.
+This is why `pure` is mostly a tool for plain functions, and why the `Matrix2x2` example in the README has no pure methods.
+A class whose fields are all immutable has no such problem, and its methods may be pure.
+
+Constructing a class from a pure function is allowed.
+A class body may only declare fields and methods, so construction has no side effects of its own.
+Where a class declares an explicit `__init__`, that constructor may do arbitrary work, so it must itself be marked `pure` before a pure function may construct the class.
+Marking it is optional: an `__init__` that calls `print` simply is not pure, and neither is constructing that class.
+
 Purity says nothing about termination on its own.
 A pure function can still loop forever.
 That's what `total` is for, covered next.

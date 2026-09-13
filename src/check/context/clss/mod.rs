@@ -12,6 +12,7 @@ use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::function::python::INIT;
 use crate::check::context::function::Function;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{Context, LookupClass};
@@ -279,11 +280,21 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
 impl Class {
     pub fn constructor(&self, without_self: bool) -> Function {
+        // A class body may only declare fields and methods, so constructing is only impure
+        // where an explicit constructor makes it so. Marking that constructor `pure` is
+        // optional: one that calls, say, `print` simply is not marked, and then neither is
+        // the class's construction.
+        let pure = self
+            .functions
+            .iter()
+            .find(|f| f.name.name.as_str() == INIT)
+            .map_or(true, |init| init.pure);
+
         Function {
             is_py_type: false,
             name: self.name.clone(),
             self_mutable: None,
-            pure: false,
+            pure,
             arguments: if without_self && !self.args.is_empty() {
                 self.args.iter().skip(1).cloned().collect()
             } else {

@@ -15,6 +15,7 @@ use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::arg::python::SELF;
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::clss::{GetField, GetFun};
 use crate::check::context::function::python::{GET_ITEM, SET_ITEM};
 use crate::check::context::{arg, function, Context, LookupClass, LookupFunction};
 use crate::check::ident::{IdentiCall, Identifier};
@@ -35,6 +36,7 @@ pub fn gen_call(
         Node::Reassign { left, right, op } => {
             let identifier = check_reassignable(left)?;
             check_iden_mut(&identifier, env, constr, left.pos)?;
+            check_pure_assign(&identifier, env, left.pos)?;
 
             if let NodeOp::Assign = op {
                 let env_assigned_to: Environment = identifier
@@ -78,6 +80,13 @@ pub fn gen_call(
             gen_vec(args, env, false, ctx, constr)?;
 
             Ok(if f_name == StringName::from(function::PRINT) {
+                if env.in_pure {
+                    let msg = format!(
+                        "A pure function cannot call '{}', which writes to standard output",
+                        function::PRINT
+                    );
+                    return Err(vec![TypeErr::new(ast.pos, &msg)]);
+                }
                 args.iter()
                     .map(|arg| Constraint::stringy("print", &Expected::from(arg)))
                     .for_each(|cons| constr.add_constr(&cons, env));
@@ -111,6 +120,7 @@ pub fn gen_call(
             } else {
                 // Resort to looking up in Context
                 let fun = ctx.function(&f_name, ast.pos)?;
+                check_pure_call(&f_name, fun.pure, env, ast.pos)?;
                 call_parameters(ast, &fun.arguments, &None, args, ctx, env, constr)?;
                 let fun_ret_exp = Expected::new(ast.pos, &Type { name: fun.ret_ty });
                 // entire AST is either fun ret ty or statement
@@ -130,6 +140,172 @@ pub fn gen_call(
         Node::Index { item, range } => gen_magic(GET_ITEM, ast, item, range, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
+    }
+}
+
+/// A pure function may only call other pure functions.
+///
+/// Calling an impure one would let its side effects, or its dependence on state outside its
+/// arguments, leak into a function that claims to have neither.
+fn check_pure_call(
+    name: &StringName,
+    callee_pure: bool,
+    env: &Environment,
+    pos: Position,
+) -> TypeResult<()> {
+    if env.in_pure && !callee_pure {
+        let msg = format!("A pure function cannot call '{name}', which is not pure");
+        Err(vec![TypeErr::new(pos, &msg)])
+    } else {
+        Ok(())
+    }
+}
+
+/// The receiver of a property access, and the classes it may be, where the rules apply to it.
+///
+/// [None] when the rules do not reach this receiver: it is not a plain identifier, it was
+/// defined by the pure function's own body (so it is destroyed on exit and is fair game), or
+/// its type is not known here. Generation runs before unification, so only `self` and an
+/// annotated variable or argument resolve.
+fn pure_receiver<'a>(
+    instance: &'a AST,
+    env: &Environment,
+    constr: &ConstrBuilder,
+) -> Option<(&'a String, Vec<StringName>)> {
+    let lit = match &instance.node {
+        Node::Id { lit } => lit,
+        _ => return None,
+    };
+
+    let classes: Vec<StringName> = if lit == arg::SELF {
+        env.class.iter().cloned().collect()
+    } else if env.pure_nonlocal.contains(lit) {
+        env.get_var(lit, &constr.var_mapping)
+            .into_iter()
+            .flatten()
+            .filter_map(|(_, exp)| match exp.expect {
+                Type { name } => Some(name.as_direct()),
+                _ => None,
+            })
+            .flatten()
+            .collect()
+    } else {
+        return None;
+    };
+
+    Some((lit, classes))
+}
+
+/// A pure function may only read fields that are not `mut`.
+///
+/// A `mut` field can change between two calls with the same arguments, so reading one would
+/// break the guarantee that the result depends on the arguments alone.
+fn check_pure_field_read(
+    instance: &AST,
+    field: &str,
+    env: &Environment,
+    ctx: &Context,
+    constr: &ConstrBuilder,
+    pos: Position,
+) -> TypeResult<()> {
+    if !env.in_pure {
+        return Ok(());
+    }
+    let (lit, classes) = match pure_receiver(instance, env, constr) {
+        Some(receiver) => receiver,
+        None => return Ok(()),
+    };
+
+    for class in classes {
+        // An unresolvable class or field is left to the rest of the checker to report.
+        if let Ok(class) = ctx.class(&class, pos) {
+            if let Ok(f) = class.field(field, pos) {
+                if f.mutable {
+                    let msg = format!(
+                        "A pure function cannot read '{field}' of '{lit}', as it is declared 'mut'"
+                    );
+                    return Err(vec![TypeErr::new(pos, &msg)]);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// A pure function may only call pure methods on a receiver it did not itself define.
+///
+/// The receiver's class has to be known here, since generation runs before unification. That
+/// covers `self`, and any variable or argument with an annotated type, which is exactly where
+/// the rule matters: a receiver the function built itself is fair game either way.
+fn check_pure_method(
+    instance: &AST,
+    name: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &ConstrBuilder,
+    pos: Position,
+) -> TypeResult<()> {
+    if !env.in_pure {
+        return Ok(());
+    }
+    let (lit, classes) = match pure_receiver(instance, env, constr) {
+        Some(receiver) => receiver,
+        None => return Ok(()),
+    };
+
+    let f_name = StringName::try_from(name)?;
+    for class in classes {
+        // An unresolvable class is left to the rest of the checker to report.
+        if let Ok(class) = ctx.class(&class, pos) {
+            if let Ok(fun) = class.fun(&f_name, pos) {
+                if !fun.pure {
+                    let msg = format!(
+                        "A pure function cannot call '{f_name}' on '{lit}', as it is not pure"
+                    );
+                    return Err(vec![TypeErr::new(pos, &msg)]);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// A pure function may not assign through anything it did not itself define.
+///
+/// Assigning to an argument only rebinds a local name, which is fine. Assigning to a *field*
+/// of one reaches through to the caller's value, and assigning to a mutable variable from an
+/// enclosing scope leaks out of the function altogether. Both hold for `self` too, which is
+/// just another argument.
+fn check_pure_assign(id: &Identifier, env: &Environment, pos: Position) -> TypeResult<()> {
+    if !env.in_pure {
+        return Ok(());
+    }
+
+    let errors: Vec<String> = id
+        .all_calls()
+        .iter()
+        .filter_map(|call| match call {
+            IdentiCall::Iden(var) if env.outer_mut.contains(var) => Some(format!(
+                "A pure function cannot assign to '{var}', which is defined outside it"
+            )),
+            IdentiCall::Iden(_) => None,
+            call => {
+                let object = call.object(pos).ok()?;
+                if env.pure_nonlocal.contains(&object) {
+                    Some(format!(
+                        "A pure function cannot assign to a field of '{object}', as that would modify the caller's value"
+                    ))
+                } else {
+                    None
+                }
+            }
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.iter().map(|msg| TypeErr::new(pos, msg)).collect())
     }
 }
 
@@ -247,9 +423,11 @@ fn property_call(
                 }
             }
 
+            check_pure_field_read(last_inst, lit, env, ctx, constr, property.pos)?;
             Expected::new(property.pos, &Field { name: lit.clone() })
         }
         Node::FunctionCall { name, args } => {
+            check_pure_method(last_inst, name, env, ctx, constr, property.pos)?;
             gen_vec(args, env, false, ctx, constr)?;
             let args = [last_inst.clone()]
                 .iter()
