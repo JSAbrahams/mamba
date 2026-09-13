@@ -1,4 +1,13 @@
-# An annotated tuple should keep each element's type, the same way an annotated
-# single binding does
-def (a, b): (Int, Int) := (10, 20)
+class MyClass where
+    def mut my_field: Int := 10
+end
+
+# An annotated tuple keeps each element's type, the same way an annotated single
+# binding does, so a method may be resolved on an element
+def (a, b): (Int, Str) := (10, "hi")
 print(b)
+def c := a + 1
+
+# including when the element is a class, and when there is no right hand side
+def (d, e): (MyClass, Int) := (MyClass(), 10)
+print(d.my_field)

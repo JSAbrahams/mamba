@@ -81,7 +81,7 @@ use test_case::test_case;
 #[test_case("definition", "tuple_modify_mut")]
 #[test_case("definition", "tuple_modify_element_mut")]
 #[test_case("definition", "tuple_element_mut_annotated")]
-#[test_case("definition", "tuple_annotated_element_type" => ignore["an annotated tuple loses each element's type, so using an element fails where an annotated single binding works"])]
+#[test_case("definition", "tuple_annotated_element_type")]
 #[test_case("definition", "f_strings" => ignore["cannot nest strings: #481"])]
 #[test_case("definition", "collection_in_f_strings")]
 #[test_case("definition", "assign_with_if")]

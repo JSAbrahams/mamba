@@ -207,6 +207,35 @@ pub fn constrain_args(
     Ok(env_with_args.is_expr(exp_expression))
 }
 
+/// Tie one element of an annotated identifier tuple to its own type.
+///
+/// An annotated definition only constrains the whole binding, which for a tuple leaves each element's type unpinned.
+/// A later use of the element then cannot resolve methods on it.
+/// The unannotated path already does this via its temporary names.
+fn constrain_tuple_element(
+    identifier: &Identifier,
+    f_name: &str,
+    f_ty: &Expected,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) {
+    if identifier.is_tuple() {
+        let element = AST::new(
+            pos,
+            Id {
+                lit: String::from(f_name),
+            },
+        );
+        constr.add(
+            "tuple element with type",
+            &Expected::from(&element),
+            f_ty,
+            env,
+        );
+    }
+}
+
 pub fn id_from_var(
     var: &AST,
     ty: &Option<Name>,
@@ -231,13 +260,11 @@ pub fn id_from_var(
     };
     match (ty, expr) {
         (Some(ty), Some(expr)) => {
-            let mut names = vec![];
             for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
-                names.push(name.clone());
-
                 constr.insert_var(&f_name);
-                let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(f_mut, &f_name, &ty, &constr.var_mapping);
+                let f_ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(f_mut, &f_name, &f_ty, &constr.var_mapping);
+                constrain_tuple_element(&identifier, &f_name, &f_ty, &env, constr, var.pos);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
@@ -257,8 +284,9 @@ pub fn id_from_var(
         (Some(ty), None) => {
             for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
                 constr.insert_var(&f_name);
-                let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(f_mut, &f_name, &ty, &constr.var_mapping);
+                let f_ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(f_mut, &f_name, &f_ty, &constr.var_mapping);
+                constrain_tuple_element(&identifier, &f_name, &f_ty, &env, constr, var.pos);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
