@@ -29,7 +29,6 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
 
             Token::Add => op!(it, Add),
             Token::Sub => op!(it, Sub),
-            Token::Sqrt => op!(it, Sqrt),
             Token::Mul => op!(it, Mul),
             Token::FDiv => op!(it, FDiv),
             Token::Div => op!(it, Div),
@@ -47,7 +46,6 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
             Token::LSBrack,
             Token::Add,
             Token::Sub,
-            Token::Sqrt,
             Token::Mul,
             Token::FDiv,
             Token::Div,

@@ -248,9 +248,6 @@ pub enum Node {
         left: Box<AST>,
         right: Box<AST>,
     },
-    Sqrt {
-        expr: Box<AST>,
-    },
     Le {
         left: Box<AST>,
         right: Box<AST>,

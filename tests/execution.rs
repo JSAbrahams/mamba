@@ -59,6 +59,7 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 /// outside the Cranelift backend's supported subset. Tuples are not lowered to machine code
 /// at all, so there is no second backend to compare against.
 #[test_case(run_via_python, &["definition"], "tuple_nested.mamba" => "10\n20\n30\n150\n")]
+#[test_case(run_via_python, &["definition"], "identifier_sqrt.mamba" => "9\n4\n")]
 #[test_case(run_via_python, &["class"], "associated_function.mamba" => "3\n0\n")]
 #[test_case(run_via_python, &["class"], "self_type.mamba" => "True\n")]
 #[test_case(run_via_python, &["class"], "derived_field.mamba" => "12\n12\n")]

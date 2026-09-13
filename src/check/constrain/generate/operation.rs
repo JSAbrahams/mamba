@@ -9,7 +9,6 @@ use crate::check::context::function::python::CONTAINS;
 use crate::check::context::function::python::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB,
 };
-use crate::check::context::function::SQRT;
 use crate::check::context::Context;
 use crate::check::name::string_name::StringName;
 use crate::check::name::Name;
@@ -60,35 +59,6 @@ pub fn gen_op(
         Node::Eq { left, right } => gen_magic(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
-        Node::Sqrt { expr } => {
-            let ty = Type {
-                name: Name::from(FLOAT),
-            };
-            constr.add(
-                "square root",
-                &Expected::from(ast),
-                &Expected::new(ast.pos, &ty),
-                env,
-            );
-
-            let access = Expected::new(
-                expr.pos,
-                &Access {
-                    entity: Box::new(Expected::from(expr)),
-                    name: Box::from(Expected::new(
-                        expr.pos,
-                        &Function {
-                            name: StringName::from(SQRT),
-                            args: vec![Expected::from(expr)],
-                        },
-                    )),
-                },
-            );
-
-            constr.add("square root", &Expected::from(ast), &access, env);
-            generate(expr, env, ctx, constr)
-        }
-
         Node::Not { expr } => {
             let bool = Expected::new(
                 ast.pos,

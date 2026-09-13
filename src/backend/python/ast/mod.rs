@@ -368,7 +368,6 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
                 to_py(right.as_ref(), ind)
             )
         }
-        PythonCore::Sqrt { expr } => format!("math.sqrt({})", to_py(expr.as_ref(), ind)),
 
         PythonCore::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
 

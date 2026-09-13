@@ -84,7 +84,6 @@ pub fn generate(
         Eq { .. } | Neq { .. } => gen_op(ast, env, ctx, constr),
         Mod { .. } => gen_op(ast, env, ctx, constr),
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
-        Sqrt { .. } => gen_op(ast, env, ctx, constr),
 
         And { .. } | Or { .. } | Not { .. } => gen_op(ast, env, ctx, constr),
 

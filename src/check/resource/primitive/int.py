@@ -16,8 +16,6 @@ class int(float):
     # def __mul__(self, other: complex) -> complex: pass
     def __mul__(self, other: int) -> int: pass
 
-    def sqrt(self) -> float: pass
-
     # def __truediv__(self, other: float) -> float: pass
     # def __truediv__(self, other: complex) -> complex: pass
     def __truediv__(self, other: int) -> float: pass

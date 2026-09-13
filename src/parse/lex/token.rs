@@ -69,7 +69,6 @@ pub enum Token {
     FDiv,
     Pow,
     Mod,
-    Sqrt,
 
     Ge,
     Geq,
@@ -198,7 +197,6 @@ impl fmt::Display for Token {
             Token::FDiv => write!(f, "//"),
             Token::Pow => write!(f, "^"),
             Token::Mod => write!(f, "mod"),
-            Token::Sqrt => write!(f, "sqrt"),
 
             Token::Ge => write!(f, ">"),
             Token::Geq => write!(f, ">="),

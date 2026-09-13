@@ -51,7 +51,6 @@ Keyword | Use
 Keyword | Use
 ---|---
 `mod`   | Modulus operator
-`sqrt`  | Square root operator
 
 ## Control flow Expressions
 

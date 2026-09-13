@@ -205,13 +205,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::SubU { expr } => PythonCore::SubU {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
-        NodeTy::Sqrt { expr } => {
-            imp.add_import("math");
-            PythonCore::Sqrt {
-                expr: Box::from(convert_node(expr, imp, state, ctx)?),
-            }
-        }
-
         NodeTy::Le { left, right } => PythonCore::Le {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -616,38 +609,6 @@ mod tests {
     #[test]
     fn sub_unary_verify() {
         verify_unary!(SubU);
-    }
-
-    #[test]
-    fn sqrt_verify() {
-        let expr = to_pos!(Node::Id {
-            lit: String::from("expression")
-        });
-        let add_node = to_pos!(Node::Sqrt { expr });
-
-        let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
-            Ok(PythonCore::Block { statements }) => (statements[0].clone(), statements[1].clone()),
-            other => panic!("Expected unary operation but was {other:?}"),
-        };
-
-        assert_eq!(
-            import,
-            PythonCore::Import {
-                from: None,
-                import: vec![PythonCore::Id {
-                    lit: String::from("math")
-                }],
-                alias: vec![],
-            }
-        );
-        assert_eq!(
-            expr_des,
-            PythonCore::Sqrt {
-                expr: Box::from(PythonCore::Id {
-                    lit: String::from("expression")
-                })
-            }
-        );
     }
 
     #[test]

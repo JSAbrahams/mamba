@@ -320,9 +320,6 @@ impl From<(&Node, &Finished)> for NodeTy {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
-            Node::Sqrt { expr } => NodeTy::Sqrt {
-                expr: Box::from(ASTTy::from((expr, finished))),
-            },
             Node::Le { left, right } => NodeTy::Le {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),

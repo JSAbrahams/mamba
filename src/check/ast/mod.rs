@@ -272,9 +272,6 @@ pub enum NodeTy {
         left: Box<ASTTy>,
         right: Box<ASTTy>,
     },
-    Sqrt {
-        expr: Box<ASTTy>,
-    },
     BOr {
         left: Box<ASTTy>,
         right: Box<ASTTy>,

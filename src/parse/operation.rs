@@ -147,8 +147,6 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
         un_op!(it, parse_level_2, Add, AddU, "plus")
     } else if it.eat_if(&Token::Sub).is_some() {
         un_op!(it, parse_level_2, Sub, SubU, "subtract")
-    } else if it.eat_if(&Token::Sqrt).is_some() {
-        un_op!(it, parse_expression, Sqrt, Sqrt, "square root")
     } else if it.eat_if(&Token::Not).is_some() {
         un_op!(it, parse_expression, Not, Not, "not")
     } else {
@@ -550,16 +548,31 @@ mod test {
         );
     }
 
+    /// `sqrt` is an ordinary identifier, so it stands alone and it can be called.
+    ///
+    /// As an operator it was neither: bare `sqrt` was a parse error, and `x.sqrt()` could not
+    /// parse at all, because the name never reached the parser as an identifier.
     #[test]
-    fn sqrt_verify() {
-        let source = String::from("sqrt some_num");
-        let ast = parse_direct(&source).unwrap();
-
-        let expr = verify_is_un_operation!(Sqrt, ast);
+    fn sqrt_is_an_identifier() {
+        let ast = parse_direct(&String::from("sqrt")).unwrap();
         assert_eq!(
-            expr.node,
+            ast.first().expect("script empty.").node,
             Node::Id {
-                lit: String::from("some_num")
+                lit: String::from("sqrt")
+            }
+        );
+
+        let ast = parse_direct(&String::from("x.sqrt()")).unwrap();
+        let Node::PropertyCall { property, .. } = &ast.first().expect("script empty.").node else {
+            panic!("was {:?}", ast.first().map(|a| a.node.clone()))
+        };
+        let Node::FunctionCall { name, .. } = &property.node else {
+            panic!("was {:?}", property.node)
+        };
+        assert_eq!(
+            name.node,
+            Node::Id {
+                lit: String::from("sqrt")
             }
         );
     }
@@ -735,12 +748,6 @@ mod test {
     #[test]
     fn not_missing_value() {
         let source = String::from("not");
-        source.parse::<AST>().unwrap_err();
-    }
-
-    #[test]
-    fn sqrt_missing_value() {
-        let source = String::from("sqrt");
         source.parse::<AST>().unwrap_err();
     }
 }

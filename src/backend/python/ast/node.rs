@@ -194,9 +194,6 @@ pub enum PythonCore {
         left: Box<PythonCore>,
         right: Box<PythonCore>,
     },
-    Sqrt {
-        expr: Box<PythonCore>,
-    },
     For {
         expr: Box<PythonCore>,
         col: Box<PythonCore>,
