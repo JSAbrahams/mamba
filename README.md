@@ -308,22 +308,78 @@ _In general_, the notation of a class is:
 `class MyClass(<one-or-more-constructor-args>) where <one-or-more-expressions> end`
 
 The body of the class is optional, i.e. one can create "just" a data class.
-Constructor arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`).
+Class arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`).
 There is no `def` prefix.
-It is just shorthand for a field without a separate constructor.
-The body of the class is evaluated for each object we created, effectively making this the constructor body.
 
 As for the class body:
 
 - It may only declare fields and methods, plus an optional leading docstring.
   A bare statement is rejected.
   Such a statement would run once per instance, which hides whether constructing the class has side effects.
-  Put that work in an explicit `__init__` instead, where the signature shows it.
+  Put that work in an explicit `new` instead, where the signature shows it.
 - It is denoted using a code set: Using `where` and `end`.
   This is because the concept of order is not defined in a class body.
 - In future, we may generalize the code-set notation to mean a set of statements which may be executed in arbitrary order, and thus **also in parallel**.
   Therefore baking parallel computations into the semantics of the language, as opposed to a library.
   However, this idea is still in its infancy.
+
+#### Constructing a class
+
+Mamba has no constructor to define or override.
+A class is constructed through `new`, which every class gets for free, taking exactly its class arguments:
+
+```mamba
+class Point(x: Int, y: Int)
+
+def p := Point.new(3, 4)
+```
+
+Applying the class to its arguments, as `Point(3, 4)`, is the underlying primitive, and it is only in scope **within `Point` itself**.
+Outside, it does not resolve.
+That is deliberate.
+If it were public, `new` would be advisory: a caller could sidestep it, and two spellings of the same thing would coexist forever.
+Because it is not, declaring your own `new` is the only way in, and it can therefore enforce something:
+
+```mamba
+class Fraction(num: Int, den: Int) where
+    def new(num: Int, den: Int) -> Self ! FractionErr :=
+        if den = 0 then ! FractionErr("Denominator is zero") else Fraction(num, den)
+end
+```
+
+A declared `new` replaces the generated one.
+`Self` names the enclosing class, and works in a method and in an associated function alike.
+
+A function in a class body that takes no `self` is an **associated function**, called on the class rather than on an instance.
+That is what makes `new` ordinary rather than special, and it means named alternatives sit beside it as equals:
+
+```mamba
+class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
+    def identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
+end
+
+def m := Matrix2x2.identity()
+```
+
+Those who have worked with structured languages such as Rust will find this very familiar.
+Constructors are not a feature of the language but enforced by convention.
+
+#### Derived fields
+
+A field declared in the body is *derived*: computed from the class arguments rather than passed.
+This exists so you need not list every field at the construction site:
+
+```mamba
+class Circle(radius: Float) where
+    def area: Float := self.radius * self.radius * 3.14159
+end
+
+def c := Circle.new(2.0)   # area is computed, never passed
+```
+
+A derived field must be assigned a value, unless its type is nullable.
+Without one it would silently hold `None` whatever its type claims.
+If you meant to pass it, make it a class argument instead.
 
 We can change the relevant parts of the above example to use a class constant:
 
@@ -421,13 +477,57 @@ Some additional rules hold for calling and assigning to passed arguments to upho
 - One may only read fields of an argument which are not `mut`.
 - One may only call methods of an argument which are pure (`pure`).
 - It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
-- Constructing a class is allowed, since a class body may only declare fields and methods.
-  A class with an explicit `__init__` is only constructible from a pure function if that `__init__` is itself `pure`.
+- Constructing a class is allowed only where the class says construction is pure, see below.
 
 In practice this makes `pure` far more useful on plain functions than on methods.
 A class with any mutating method needs `mut` fields, and no pure method may read one, so its methods cannot be pure.
 `Matrix2x2` above is exactly that case.
 `pure` methods are still allowed, and are useful on a class whose fields are all immutable, but that is the narrower case.
+
+#### Pure construction
+
+Purity is never inferred, here or anywhere.
+A class states that constructing it is pure by declaring `new` pure, with no argument list and no body:
+
+```mamba
+class Point(x: Int, y: Int) where
+    def pure new
+end
+
+def pure origin() -> Point := Point.new(0, 0)
+```
+
+There is no argument list because it is not declaring a signature.
+The generated `new` already has the class arguments; this only asserts a property of it.
+The assertion is then checked against the derived field initializers, which are the only thing construction runs:
+
+```mamba
+class Seeded(n: Int) where
+    def pure new
+    def seed: Int := random()   # rejected, random is not pure
+end
+```
+
+Leave the assertion out and `new` is an ordinary impure function, so a pure function may not construct the class.
+Writing a bare `def new` asks for what the class already has, and the compiler warns that it is redundant.
+
+Note that `def pure new` constrains construction only, never the methods:
+
+```mamba
+class Counter(start: Int) where
+    def pure new
+    def mut count: Int := self.start
+
+    # perfectly fine, purity was never claimed for methods
+    def tick(mut self) := do
+        self.count := self.count + 1
+        print(self.count)
+    end
+end
+```
+
+This is why the marker sits on `new` rather than on the class.
+A `class pure Counter` would read as though `tick` were pure too, which it is not.
 
 When a function is `pure`, its output is always the same for a given input.
 It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.

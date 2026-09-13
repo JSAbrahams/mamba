@@ -22,10 +22,13 @@ No method of such a class can therefore be pure.
 This is why `pure` is mostly a tool for plain functions, and why the `Matrix2x2` example in the README has no pure methods.
 A class whose fields are all immutable has no such problem, and its methods may be pure.
 
-Constructing a class from a pure function is allowed.
-A class body may only declare fields and methods, so construction has no side effects of its own.
-Where a class declares an explicit `__init__`, that constructor may do arbitrary work, so it must itself be marked `pure` before a pure function may construct the class.
-Marking it is optional: an `__init__` that calls `print` simply is not pure, and neither is constructing that class.
+Constructing a class from a pure function needs the class to say that constructing it is pure.
+That is a bodiless `def pure new`, and it is checked against the derived field initializers.
+Purity is never inferred from those initializers, because a guarantee that appears and disappears as unrelated code changes is worse than one that is stated.
+See [Class](../modules/class.md#pure-construction).
+
+Note that `def pure new` says nothing about the class's methods.
+It sits on `new` precisely so it cannot be read as a claim about them.
 
 Purity says nothing about termination on its own.
 A pure function can still loop forever.

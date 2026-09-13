@@ -18,7 +18,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     # a class may list several parents; a trait taking more than one parent is future work
     trait-def        ::= "trait" type-not-fun [ ":" type-not-fun ] [ code-set ]
-    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ code-set ]
+    # a class's arguments are its fields; there is no constructor to declare
+    # its body holds only field and method declarations, plus a leading docstring
+    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ class-set ]
+    class-set        ::= "where" [ docstring newline ] class-member { newline class-member } "end"
+    class-member     ::= variable-def | fun-def | pure-new
+    # asserts that the "new" the class already has is pure; no argument list, no body
+    pure-new         ::= "def" [ "pure" ] "new"
     
     id               ::= { character }
     # "mut" marks one binding, so it may only precede an id, never a tuple
@@ -27,7 +33,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     id-element       ::= [ "mut" ] id | id-tuple
     id-maybe-type    ::= ( [ "mut" ] id | id-tuple ) [ ":" type ]
 
-    type-not-fun     ::= id [ generics ]
+    # "Self" is a type naming the enclosing class, usable anywhere in a class body
+    type-not-fun     ::= id [ generics ] | "Self"
     type             ::= id [ generics ] [ "->" type ]
     generics         ::= "[" id { "," id } "]"
     
@@ -85,6 +92,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
                          ( id | overridable-op ) fun-args [ "->" type ] [ raise ] 
                          [ ":=" expression ]
+    # a fun-def with no "self" argument is an associated function, called on the class
+    # rather than on an instance; "new" is one of these
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= id-maybe-type [ ":=" expression ]
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
