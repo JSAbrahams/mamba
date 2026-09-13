@@ -23,7 +23,7 @@ To this end, we use types.
 A user defines a class `Composer`, which defines the behaviour of a composer:
 
     class Composer(name: Str) where
-        def composer_method(fin self) -> Int := 10
+        def composer_method(self) -> Int := 10
     end
 
 And then we define the `my_function` as such:
@@ -107,7 +107,7 @@ This is a rather trivial example, but it shows how we can explicitly name the di
 In some cases, for readability we might want to write a type alias.
 Say we have the following method:
 
-    def distance_remaining(fin self, covered: Int) -> Int := self.total - covered
+    def distance_remaining(self, covered: Int) -> Int := self.total - covered
 
 The above seems simple, but there are two issues:
 
@@ -129,7 +129,7 @@ Type `Kilometer` can do everything an `Int` can (we can use all the same operato
 (This is a recurring theme, source code ideally should speak for itself without relying heavily on documentation.)
 We can rewrite the method as so:
 
-    def distance_remaining(fin self, covered: Kilometer) -> Kilometer := self.total - covered
+    def distance_remaining(self, covered: Kilometer) -> Kilometer := self.total - covered
 
 ## Type Refinement
 

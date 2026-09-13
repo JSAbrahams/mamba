@@ -30,6 +30,7 @@ Here you can find both the informal description of the language features, and th
 #### [1.3 Imperative Versus Functional](philosophy/imperative_vs_functional.md)
 #### [1.4 Flexibility](philosophy/flexibility.md)
 #### [1.5 Safety](philosophy/safety.md)
+#### [1.6 Mutability](philosophy/mutability.md)
 
 ### [2 🛠 Features of the Language](features/README.md)
 

@@ -16,8 +16,8 @@ This can be achieved using type aliases and type refinement.
 I have a trait `Server`:
 
     trait Server where
-        def is_connected(fin self) -> Bool
-        def last_sent_message(fin self) -> Str?
+        def is_connected(self) -> Bool
+        def last_sent_message(self) -> Str?
         def send_message(self, message: Str) -> Bool ! ServerErr
         def disconnect(self) -> Bool ! ServerErr
     end
@@ -35,26 +35,26 @@ And I define the following type aliases:
 We can do the following:
 
     class HTTPServer(ip_address: IpAddress): Server where
-        def connected: Bool := False
-        def last_message: Str? := None
+        def mut connected: Bool := False
+        def mut last_message: Str? := None
 
-        def is_connected(fin self) -> Bool := self.connected
+        def is_connected(self) -> Bool := self.connected
 
-        def last_sent_message(fin self) -> Str? := self.last_message
+        def last_sent_message(self) -> Str? := self.last_message
 
-        def connect(self: DisconnectedHTTPServer, ip_address: IpAddress) -> Bool ! ServerErr := do
+        def connect(mut self: DisconnectedHTTPServer, ip_address: IpAddress) -> Bool ! ServerErr := do
             # perform some operations here
             self.connected := True
             True
         end
 
-        def send_message(self: ConnectedHTTPServer, message: Str) -> Bool ! ServerErr := do
+        def send_message(mut self: ConnectedHTTPServer, message: Str) -> Bool ! ServerErr := do
             # perform some operations here
             self.last_message := message
             True
         end
 
-        def disconnect(self: ConnectedHTTPServer) -> Bool ! ServerErr := do
+        def disconnect(mut self: ConnectedHTTPServer) -> Bool ! ServerErr := do
             # perform some operations here
             self.connected := False
             True

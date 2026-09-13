@@ -151,7 +151,7 @@ _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic
 def factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
-        def ans := 1
+        def mut ans := 1
         for i in 1 ..= n do ans := ans * i end
         ans
     end
@@ -225,15 +225,19 @@ Therefore, we index indexable collections (mappings and lists) using the `collec
 Mutability gives us the power to modify an instance in the language after it is created:
 
 ```
-def a := 10     # we may modify a
-def fin b := 20 # we may not modify b
+def mut a := 10 # we may modify a
+def b := 20     # we may not modify b
 
 a := a + 2   # allowed
 # b := b + 2 # compilation error
 ```
 
-We opt to make mutability the default (unlike say in Rust, where you have to use the `mut` keyword to make something mutable).
-The reason for doing so is domain; Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
+A binding is immutable unless we mark it `mut`, as in Rust.
+This holds everywhere a name is bound, so it covers variables, function arguments, the `self` argument of a method, and class fields.
+The reason is domain.
+Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
+Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.
+See [Mutability](docs/philosophy/mutability.md) for the longer argument, including why Mamba used to do this the other way round.
 
 ### 📋 Types, Properties, and Classes
 
@@ -243,7 +247,7 @@ A class is essentially a blueprint for the behaviour of an instance.
 In Mamba, like Python and Rust, each function in a class has an explicit `self` argument, which gives access to the state of this instance.
 Such a function is called a method.
 We can for each method state whether we can modify the state of `self` by stating whether it is mutable or not.
-If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its state.
+If we write `self`, it is immutable and we cannot change its state, whereas if we write `mut self`, we can.
 We can do the same for any argument to a function, for that matter.
 
 We showcase this using a simple dummy `Matrix` object.
@@ -252,17 +256,17 @@ You will also see some "pure" functions, these will be explained later.
 ```mamba
 class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
+class Matrix2x2(mut a: Int, mut b: Int, mut c: Int, mut d: Int) where
     # Accessor for matrix contents
-    def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
+    def contents(self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(fin self) -> Int := self.a + self.d
+    def pure trace(self) -> Int := self.a + self.d
 
     # Determinant recomputation (pure function)
-    def pure determinant(fin self) -> Int := self.a * self.d - self.b * self.c
+    def pure determinant(self) -> Int := self.a * self.d - self.b * self.c
 
-    def scale(self, factor: Int) := do
+    def scale(mut self, factor: Int) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
@@ -270,7 +274,7 @@ class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
     end
 
     # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
-    def reset(self) := do
+    def reset(mut self) := do
         self.a := 1
         self.b := 0
         self.c := 0
@@ -302,21 +306,21 @@ We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def x: Int := self.ORIGIN_X
-    def y: Int := self.ORIGIN_Y
+    def mut x: Int := self.ORIGIN_X
+    def mut y: Int := self.ORIGIN_Y
 
-    def move(self, dx: Int, dy: Int) := do
+    def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx
         self.y := self.y + dy
     end
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
-    def reset(self) := do
+    def reset(mut self) := do
         self.x := self.ORIGIN_X
         self.y := self.ORIGIN_Y
     end
 
-    def info(fin self) -> Str := 
+    def info(self) -> Str := 
         "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end
 ```
@@ -335,13 +339,13 @@ trait Iterator[T] where
 end
 
 class RangeIter(_start: Int, _end: Int) where
-    def _current: Int := _start
+    def mut _current: Int := _start
 end
 
 def Iterator[Int] for RangeIter where
     def has_next(self) -> Bool := self._current < self._end
 
-    def next(self) -> Int? := if self.has_next() then do
+    def next(mut self) -> Int? := if self.has_next() then do
         def value := self._current
         self._current := self._current + 1
         value
@@ -379,7 +383,7 @@ For use to be able to compare two instances, the instance must implement the `Eq
 By default, functions are not pure.
 When we mark a function `pure`, restrictions are enforced by the language:
 
-- `self` **must** be final (if this is a method).
+- `self` **must not** be `mut` (if this is a method).
   This means that it cannot mutate the values of self.
   It should be noted that if we mutate self and call a method again, then the output might be different.
   But, this makes sense!
@@ -391,7 +395,7 @@ Some additional rules hold for calling and assigning to passed arguments to upho
 - Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
 - An argument may be assigned to, as this will not modify the original reference.
 - The field of an argument may not be assigned to, as this will modify the original reference.
-- One may only read fields of an argument which are final (`fin`).
+- One may only read fields of an argument which are not `mut`.
 - One may only call methods of an argument which are pure (`pure`).
 - It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
 
@@ -401,11 +405,11 @@ Immutable variables and pure functions make it easier to write declarative progr
 
 ```mamba
 # taylor is immutable, its value does not change during execution
-def fin taylor := 7
+def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) -> Int := do
-    def ans := x
+    def mut ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     end
@@ -504,16 +508,16 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
 trait StrictlyDecreases: Measurable where
-    def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
-    def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
-    def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
+    def meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
+    def meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
+    def meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
 end
 ```
 
-This avoids abuse of `decreases` (i.e. one could write `def fin meta decreases(self, other: Self) := True`).
+This avoids abuse of `decreases` (i.e. one could write `def meta decreases(self, other: Self) := True`).
 Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
 It is for instance defined for the built-in primitive `Int`.
 

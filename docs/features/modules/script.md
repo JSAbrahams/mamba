@@ -14,8 +14,8 @@ Below we have an example script:
 
     from graph import Graph
 
-    def fin first := 1
-    def fin last  := 5
+    def first := 1
+    def last  := 5
 
     def nodes := { x | x in first ..= last }
     def graph := Graph(nodes)

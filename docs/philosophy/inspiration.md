@@ -38,7 +38,7 @@ It keeps Python's readability and low ceremony, and changes the rest:
 - Types are static and checked, with inference so you rarely write them.
 - Nothing may be `None` unless its type says `?`.
 - Errors are handled at the call that failed, with `!` and `where`, not in a `try` around a region.
-- `fin` marks what may not change.
+- Nothing may change unless its binding says `mut`.
 - Traits replace inheritance.
 - Indexing is `a(0)`, not `a[0]`.
 - `{ ... }` is a set.
@@ -82,8 +82,9 @@ Traits instead of inheritance, strictness about mutability, and `!` on a fallibl
 Two differences stand out:
 
 - Rust is immutable by default and annotates with `mut`.
-  Mamba inverts this and annotates with `fin`, arguing that rebinding is routine in mathematical work.
-  This is the choice most likely to be regretted.
+  Mamba does the same, and took the spelling with it.
+  It spent a long time inverted, marking the immutable case with `fin` on the argument that rebinding is routine in mathematical work.
+  That argument was backwards, and [Mutability](mutability.md) records why.
 - Rust's `Result` with `?` is the monadic approach Mamba declined.
 
 ## Kotlin

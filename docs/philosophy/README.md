@@ -171,7 +171,7 @@ That is the same bargain `const fn` makes in Rust.
 Working today:
 
 - Static typing with inference, null safety with `?`, on-site error handling with `!` and `where`.
-- Mutability distinction with `fin`, and traits.
+- Mutability distinction with `mut`, and traits.
 - Round-bracket application for functions, lists and maps.
 - `=` as structural equality, `:=` as definition, word operators, `^` and `mod`, ranges, slices.
 - Set, list and map literals, and single-variable comprehensions.

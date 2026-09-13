@@ -137,11 +137,11 @@ has its own README worth reading before making non-trivial changes there (`src/p
   nullability + mutability flags around a `NameVariant`, which is one of `StringName` (nominal type),
   `Tuple`, or `Function` (args + return `Name`).
 
-- **`src/generate`**: converts `ASTTy` into `Core` (a simplified, near-Python IR that tracks blocks/indentation),
-  desugaring language constructs that have no 1:1 Python equivalent and tracking which imports the output needs
-  (e.g. `from typing import Tuple`). `Core` is then rendered directly to a Python string. Errors here generally
-  indicate either an unimplemented language construct or a type-checker bug (an AST shape the generator wasn't
-  expecting).
+Type identity is centered on `check/name`.
+A `Name` is a set of `TrueName`s, which is a type union.
+A `TrueName` wraps nullability and mutability flags around a `NameVariant`.
+The mutability flag is display-only, and is excluded from `TrueName`'s `PartialEq`, `Hash` and `Ord`, since mutability belongs to a binding rather than to a type.
+A `NameVariant` is one of `StringName` (a nominal type), `Tuple`, or `Function` (arguments plus a return `Name`).
 
 - **`src/common`**: shared types used across all stages, notably `Position` (source spans, used for error
   messages) and `WithSource`/error-formatting helpers.
@@ -199,6 +199,30 @@ dependency (`order_by_self_field_deps`), not just declaration order — a field 
 declared later in the body, which would still be `None` at that point otherwise. `get_fields_and_functions`
 in `src/check/context/clss/generic.rs` (context building, runs before any of this) must likewise treat a bare
 statement as "not part of the signature" rather than rejecting it.
+
+## Mutability: `mut`, and the absence of `fin`
+
+Every binding is immutable unless marked `mut`.
+`fin` is not a keyword, and has not been one since the polarity was inverted.
+If you see `fin` anywhere, it is stale and should be fixed.
+See `docs/philosophy/mutability.md` for why the language works this way.
+
+`mut` is parsed by `parse_expression_type` in `src/parse/ty.rs`, and by `parse_expression_maybe_type` in `src/parse/control_flow_expr.rs` for match cases.
+Both are a single `it.eat_if(&Token::Mut).is_some()`.
+Because every binding site funnels through those, one marker covers variables, function arguments, class constructor arguments and `self`.
+So it is `def mut a := 10`, `def f(mut a: Int)`, `class X(mut a: Int)` and `def f(mut self)`.
+
+Two shapes are worth knowing.
+A tuple takes one marker for the whole binding, as `def mut (a, b) := (1, 2)`.
+Per-element mutability, as in `def (mut a, b) := ...`, does not parse.
+That is a known gap, recorded by the `ignore[...]` on `definition/tuple_modify_inner_mut` in `tests/check/invalid.rs`.
+
+What is actually enforced is narrower than what is written down.
+Reassigning a binding that is not `mut` is an error, and so is reassigning through a receiver that is not `mut`.
+`mut` on a class field is recorded in `Context` but never checked, `mut self` is not required to call a mutating method, and no `pure` restriction is enforced at all.
+Each gap has an `ignore[...]` fixture; see `tests/README.md`.
+
+Fixtures should still be annotated as if all of it were enforced, so they stay correct when it is.
 
 ## Documentation
 

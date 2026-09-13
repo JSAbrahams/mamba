@@ -17,15 +17,15 @@ To demonstrate generics, we will use an incomplete implementation of a graph.
 
     trait Node where
         def id: Int
-        def to_hash(fin self) -> Int
+        def to_hash(self) -> Int
     end
 
     class MyNode(id: Int): Node where
-        def to_hash(fin self) -> Int := self.id
+        def to_hash(self) -> Int := self.id
     end
 
     class OtherNode(id: Int): Node where
-        def to_hash(fin self) -> Int := self.id * 31
+        def to_hash(self) -> Int := self.id * 31
     end
 
 Next we define a class `Graph`.
@@ -34,7 +34,7 @@ Next we define a class `Graph`.
 
     # a generic is usually a trait. It may be a class, but this has limited use as we cannot inherit from a class
     class Graph[N: Node](nodes: Set[N]) where
-        def contains(fin self, node: N) -> Bool := node in self.nodes
+        def contains(self, node: N) -> Bool := node in self.nodes
     end
 
 Now we write the main script.

@@ -9,14 +9,14 @@
 Every definition must be preceded with the `def` keyword.
 This is not necessary when reassigning however.
 
-Functions and methods cannot be reassigned, mutable values can, however.
+Functions and methods cannot be reassigned, values marked `mut` can, however.
 A value is an expression which may be evaluated.
 
 ## Variables
 
 A variable definition has the following structure:
 
-    def [ fin ] <identifier> [ : <type> ] := <expression>
+    def [ mut ] <identifier> [ : <type> ] := <expression>
 
 For instance, a variable `x` is assigned to as such:
 
@@ -24,12 +24,16 @@ For instance, a variable `x` is assigned to as such:
 
 Or:
 
-    def fin x := <expression>
+    def mut x := <expression>
 
-Use this if `x` has to be immutable.
-A definition is mutable unless we mark it `fin`, so we reassign the first `x` but not the second:
+Use this if `x` has to be mutable.
+A definition is immutable unless we mark it `mut`, so we reassign the second `x` but not the first:
 
     x := <expression>
+
+The same marker works on a function argument, and on the `self` argument of a method.
+A method that assigns to its own fields must take `mut self`.
+See [Mutability](../../philosophy/mutability.md) for why this is the way round it is.
 
 ## Functions
 
@@ -66,13 +70,13 @@ See [Error Handling](../safety/error_handling.md).
 We can have default values:
 
     class MyClass where
-        def my_field: Int := 5
-        def my_method(self, x: Int, y: Int := 2) := self.my_field := x + y
+        def mut my_field: Int := 5
+        def my_method(mut self, x: Int, y: Int := 2) := self.my_field := x + y
     end
 
 We can now call the method as such:
 
-    def my_class := MyClass()
+    def mut my_class := MyClass()
     my_class.my_method(10, 2)
 
 Or, leaving `y` to its default:
