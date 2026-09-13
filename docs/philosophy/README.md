@@ -208,18 +208,22 @@ Ordered by how much each would sharpen the language's identity.
    Lambdas bound to variables, functions as values, composition.
    Without these, the first item has nothing to be interchangeable with.
 3. **Enforce `pure`.**
-   The tier exists in name only until the restrictions bite, and it is the cheapest one to enforce.
+   The tier exists in name only.
 4. **Implement `total`, then `meta`.**
    `Measurable` and the decreasing-measure check are already specified in some detail.
 5. **Refinement types with a solver.**
-   `type EvenNum: Int when self mod 2 = 0` is the feature most likely to make Mamba useful, and an SMT backend is the realistic way to check it.
+   `type EvenNum: Int when self mod 2 = 0` is neither implemented nor documented in any detail.
+   It is an avenue to explore rather than a plan.
 6. **Turn code sets into parallelism.**
    The syntax already declares that order does not matter.
+   Making that a first-class feature of the language would be fun to demonstrate.
+   It does lean towards the gimmicky, though.
 7. **Guards in match cases.**
-   Piecewise definition is how mathematics defines functions, and side conditions are half of that notation.
    The README's Ackermann example is written in a syntax the parser does not accept.
 8. **Grow the native backend.**
-   Currently a small slice of the language.
+   It covers a small slice of the language.
+   Using it for anything serious means walking on eggshells
+   It will stay limited and experimental for the foreseeable future regardless.
 
 ## Non-goals
 
