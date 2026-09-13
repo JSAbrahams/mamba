@@ -6,41 +6,46 @@
 
 # 2.4.4 Generics
 
-A `type`, `function`, or `class` may have a generic parameter.
+_Note_ Generics are only partly implemented.
+A `class` or `trait` may declare a generic parameter, and a field may be typed with it.
+Using that parameter as the type of a method argument, and instantiating a generic class, are both future work.
+A function may not declare a generic parameter at all.
+
+A `trait` or `class` may have a generic parameter.
 
 To demonstrate generics, we will use an incomplete implementation of a graph.
 
-    type Node
+    trait Node where
         def id: Int
-        def to_hash: Int
-        
-    class MyNode isa Node:
-        def id <- floor(random() * 100)
-        def to_hash <- id
-        
-    class OtherNode isa Node:
-        def id <- floor(random() * 1000)
-        def to_hash <- id
+        def to_hash(fin self) -> Int
+    end
+
+    class MyNode(id: Int): Node where
+        def to_hash(fin self) -> Int := self.id
+    end
+
+    class OtherNode(id: Int): Node where
+        def to_hash(fin self) -> Int := self.id * 31
+    end
 
 Next we define a class `Graph`.
 
-    from "node" use Node
-    
-    # a generic is usually a type. It may be a class, but this has limited use as we cannot inherit from a class
-    class Graph[N: Node]
-        def private mut nodes: Set[N] <- {}
-        
-        def addNode(node: N) := nodes add node
+    from node import Node
+
+    # a generic is usually a trait. It may be a class, but this has limited use as we cannot inherit from a class
+    class Graph[N: Node](nodes: Set[N]) where
+        def contains(fin self, node: N) -> Bool := node in self.nodes
+    end
 
 Now we write the main script.
 
-    from "graph" use Graph
-    from "node" use MyNode, OtherNode
-    
-    def graph <- Graph[MyNode]
-    def other_graph <- Graph[OtherNode]
-    
-    graph addNode MyNode()
-    other_graph addNode OtherNode()
-    
-    graph addNode OtherNode() # type error! Expected MyNode but got OtherNode
+    from graph import Graph
+    from node import MyNode, OtherNode
+
+    def graph := Graph({ MyNode(1), MyNode(2) })
+    def other_graph := Graph({ OtherNode(1) })
+
+    print(graph.contains(MyNode(1)))
+    print(other_graph.contains(OtherNode(1)))
+
+    print(graph.contains(OtherNode(1))) # type error! Expected MyNode but got OtherNode

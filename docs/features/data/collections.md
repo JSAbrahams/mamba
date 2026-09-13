@@ -13,11 +13,11 @@ We have three types of collections:
 - `Tuple`
 
 We can also create key-value pairs as such:
-`<expression> => <expression or statement>`
+`<expression> => <expression>`
 If Mamba detects we are building a data-structure which only contains such values, it becomes a dictionary.
 
-By default, a collection is immutable, meaning that we cannot add or remove items, or make changes to the contained items.
-A collection may be mutable.
+As with any other definition, a collection is mutable unless we mark it `fin`.
+A `fin` collection cannot be reassigned.
 
 ## Set
 
@@ -27,32 +27,51 @@ A set is an unordered collection of unique items, meaning that we cannot access 
 Below we show some examples of how a set may be used:
 
     # A set may be immutable
-    def animals <- { "dog", "cat", "mouse" }
+    def fin animals := { "dog", "cat", "mouse" }
     # Or mutable
-    def mut instruments <- { "piano", "violin", "flute" }      
+    def instruments := { "piano", "violin", "flute" }
+
     # I can iterate over a set
-    for animal in animals print animal
-    
-    # I can add an item to a mutable set
-    instruments add "trombone"
-    # Or remove an item from a mutable set
-    instruments remove "violin"
-    # Or modify items in a mutable set
-    foreach item in instruments do item += " is an instrument"
+    for animal in animals do print(animal) end
+
+    # I can check whether a set contains an item
+    if "dog" in animals then print("there is a dog")
+
+    # I can reassign a mutable set
+    instruments := { "piano", "trombone" }
+
+    # I can derive a new set from an existing one using set-builder notation
+    def described := { item + " is an instrument" | item in instruments }
+
+_Note_ The standard library does not define methods on a `Set` yet, so there is no `add` or `remove`.
+Iteration, containment with `in`, and the set-builder notation above are what is available today.
 
 ## List
 
 A list is created using `[` ... `]`, or by using the list-builder notation.
 
-A list can be accessed using an index: `list(1)`\
-A list may be ordered.
+A list is ordered, and can be accessed using an index: `list(1)`.
+Note that we index using round brackets, and not square ones.
+
+    def xs := [ 4, 9, 16 ]
+    print(xs(0)) # prints '4'
 
 ## Tuple
 
 A tuple is created using `(` ... `)`.
-A tuple is a collection of named items.
+A tuple is a fixed-size collection, where each item may have a different type.
+
+    def t := (1, "two")
+
+We can also define several variables at once by destructuring one:
+
+    def (a, b) := (10, 20)
 
 ## Dictionary
 
 A map is created using `{` ... `}`, where each mapping is represented as such: `key => value`.
 A map is an unordered collection of items.
+As with a list, we index it using round brackets.
+
+    def pairs := { "do" => 1, "ree" => 2 }
+    print(pairs("do")) # prints '1'

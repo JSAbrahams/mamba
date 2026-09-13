@@ -10,15 +10,12 @@ We can overload the following operators of the language:
 
 - `sqrt`
 - `+` and `-`
-- `*` and `/`
+- `*`, `/`, and `//`
 - `^` and `mod`
-- `=` and `/=`
-- `<`, `<=`, `>`, and `>=`
+- `=`
+- `<` and `>`
 
-We cannot overload the following operators, as these are used to compare instances directly and not their properties.
-
-- `is`
-- `isa`
+The remaining comparison operators, `!=`, `<=`, and `>=`, cannot be given a body of their own.
 
 Overloading operators gives us the ability to more concisely work with more complex objects.
 To demonstrate the concept of operator overloading we will use the (incomplete) `Vec2` class, which represents a two-dimensional vector.

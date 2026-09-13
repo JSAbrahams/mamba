@@ -6,9 +6,9 @@
 
 # 2.4.1 Types
 
-_Note_ This page predates the current syntax.
-For example, `def f(x): Int` is now `def f(x) -> Int`, and `String` is now `Str`.
-See the [README](../../../README.md) for current syntax.
+_Note_ Static typing and type inference, covered first, are implemented.
+Type aliases and type refinement, covered from "Type Aliases and Type Refinement" onwards, are future work.
+That includes the `type ... when ...` notation, the `isa` operator, and `as` casts.
 
 Often a distinction is made between static and dynamic typing.
 
@@ -17,18 +17,19 @@ Say I have a variable `beethoven`, can I assume that it is an instance of `Compo
 
     # how can I be sure that this function argument is a composer?
     def my_function(composer) := composer.composer_method()
-    
+
 There are of course ways to check this, such as using the `isinstance` method in Python, but this is rather tiresome.
 To this end, we use types.
-A user defines a type `Composer`, which defines the behaviour of a composer:
+A user defines a class `Composer`, which defines the behaviour of a composer:
 
-    class Composer
-        def composer_method(): Int := 10
-    
+    class Composer(name: Str) where
+        def composer_method(fin self) -> Int := 10
+    end
+
 And then we define the `my_function` as such:
 
     def my_function(composer: Composer) -> Int := composer.composer_method()
-    
+
 Now, in the body of the function, we can rest easy knowing that the passed variable is indeed a composer.
 It is actually now impossible to pass another variable type to the function, as this is statically checked by the type checker.
 If it sees that we try to pass something that is not a composer, it will give an error, meaning that the program will not run.
@@ -45,66 +46,69 @@ The type of every variable is inferred from the context in which it is used.
 
     def x := 10                 # x has type Int, we know this because 10 is an Int
     def c := Complex(10, 20)    # c has type Complex
-    def y := 20.1               # 20.1 uses decimal notation, so we know y is a real number, or Real
-    
-    def z: Float := 10.5         # In some situations however, you still might want to explicitly mention the type
+    def y := 20.1               # 20.1 uses decimal notation, so we know y is a Float
+
+    def z: Float := 10.5        # In some situations however, you still might want to explicitly mention the type
 
 The program is still statically typed, but now we don't require the developer to write everything out in full.
 
 ## Type Aliases and Type Refinement
 
+_Note_ Everything from here on is future work.
+
 We can also use type aliases and type refinement to further refine types by adding conditions to them.
 Say we have the following:
 
     type DeadComposer: Composer when
-        self.death_date /= None else "Composer is not dead."
+        self.death_date != None else "Composer is not dead."
 
 We now rewrite my_function so it only works for `DeadComposer`s:
 
-    def my_function(composer: DeadComposer): Int := today.year - composer.death.year
-    
+    def my_function(composer: DeadComposer) -> Int := today.year - composer.death.year
+
 Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function.
 To use such a function, we must explicitly cast a `Composer`:
 
     def chopin := Composer("Chopin")
-    
-    if chopin isa DeadComposer then
+
+    if chopin isa DeadComposer then do
         def years_ago := my_function(chopin)                    # chopin is dynamically casted to a DeadComposer
         print("{chopin.name} died {years_ago} years ago.")
+    end
 
 This draws on concepts of **Design by Contract** philosophy.
 
 Furthermore, it also allows us to explicitly define the state of an object, something which is often left ambiguous.
 For instance, we can say a server is connected or disconnected by doing the following:
 
-    type Server
-        def private connected: Boolean
-        def send_message(self: ConnectedServer, String) -> String
+    trait Server where
+        def connected: Bool
+        def send_message(self, message: Str) -> Str
+    end
 
-    type ConnectedServer isa Server when
+    type ConnectedServer: Server when
         self.connected else "Server is not connected"
 
-And we may then elsewhere implement this `Server` interface:
+And we may then elsewhere implement this `Server` trait:
 
-    class MyServer: Server
-        def private connected := false
-        
-        def init() := ...
-        
-        def connect(ip: IpAddress) := ...
-        
+    class MyServer: Server where
+        def connected: Bool := False
+
+        def connect(self, ip: IpAddress) := pass
+
         # You can only call this function if I am a connected server
-        def send_message(self: ConnectedServer, message: String) -> String := ...
+        def send_message(self: ConnectedServer, message: Str) -> Str := pass
+    end
 
 This is a rather trivial example, but it shows how we can explicitly name the different states of a server.
 
 ## Type aliases
 
 In some cases, for readability we might want to write a type alias.
-Say we have the following function:
+Say we have the following method:
 
-    def distance_remaning(covered: Int) -> Int := self total - covered
-    
+    def distance_remaining(fin self, covered: Int) -> Int := self.total - covered
+
 The above seems simple, but there are two issues:
 
 * At a glance, we cannot know what covered symbolises.
@@ -115,17 +119,17 @@ The above seems simple, but there are two issues:
   We could add these bounds checks to the method.
   However, this makes the method more verbose.
   Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
-  
+
 To solve the above two issues, we can use type aliases.
 Observe the following:
 
     type Kilometer: Int
-    
+
 Type `Kilometer` can do everything an `Int` can (we can use all the same operators), but using such an alias allows us to more clearly express our ideas in the codebase without relying on documentation.
 (This is a recurring theme, source code ideally should speak for itself without relying heavily on documentation.)
-We can rewrite the function as so:
+We can rewrite the method as so:
 
-    def distance_remaning(self, covered: Kilometer) -> Kilometer -> self.total - covered
+    def distance_remaining(fin self, covered: Kilometer) -> Kilometer := self.total - covered
 
 ## Type Refinement
 
@@ -135,10 +139,11 @@ This is akin to the philosophy of Design by Contract.
 
 Say we have a function:
 
-    def f (x: Int) -> Int := 
-        println("this number is even: {x}")
+    def f(x: Int) -> Int := do
+        print("this number is even: {x}")
         x
-    
+    end
+
 In some situations, this function does not behave as we expect it to.
 It may print an uneven number.
 In such a situation, we often turn to the design by contract philosophy, where a function has pre and post-conditions.
@@ -146,18 +151,20 @@ There are several traditional approaches to solving this problem, both of which 
 
 Just return `x` if it is uneven and don't print anything using a simple `if`:
 
-    def f (x: Int) -> Int := 
-        if x mod 2 /= 0 return x
+    def f(x: Int) -> Int := do
+        if x mod 2 != 0 then return x
         print("this number is even: {x}")
         x
-    
-Raise and error if `x` is uneven:
+    end
 
-    def f (x: Int) -> Int ! Err := 
-        if x mod 2 /= 0 ! Err("Expected x to be even.")
+Raise an error if `x` is uneven:
+
+    def f(x: Int) -> Int ! Err := do
+        if x mod 2 != 0 then ! Err("Expected x to be even.")
         print("this number is even: {x}")
         x
-    
+    end
+
 However, in the above code, we see that writing pre-conditions can get out of hand, and we might want to use the same pre-conditions for multiple functions, which results in duplicate code.
 This is a situation where type aliases with conditions can come in handy.
 Type aliases encourage decentralisation.
@@ -168,12 +175,7 @@ Say we define the type-alias `EvenNum`:
 
     type EvenNum: Int when
         self mod 2 = 0 # we can list more conditions below this one. They must all evaluate to a boolean.
-        
-Which is the same as:
 
-    type EvenNum: Int when
-        self mod 2 = 0
-        
 We may also choose to add a descriptive error message:
 
     type EvenNum: Int when
@@ -186,10 +188,11 @@ This is similar to creating a new class `EvenNum` which is an `Int`, and verifyi
 We can now redefine the function as follows:
 
     # EvenNum has conditions, so we need to state that it may raise an error
-    def g (x: EvenNum) -> Int ! Err :=
+    def g(x: EvenNum) -> Int ! Err := do
         print("this number is even: {x}")
         x
-    
+    end
+
 Now, the actual type of the argument describes what conditions the argument adheres to, instead of having to manually check these in the body of the function.
 We now know that these conditions hold in the body of the function.
 We can cast any variable that is an `Int` to `EvenNum`.
@@ -199,58 +202,61 @@ During casting, the defined conditions are checked, and the respective error is 
     def x := random_int() # here x is an Int
     def y := x as EvenNum
     def first := g(y)
-    
+
     # We can also pass it immediately if we want, in which case it is casted to EvenNum
     def z := random_int()
     def second := g(z)
     # which is the same as
-    def second_with_case := g(z as EvenNum)
-    
+    def second_with_cast := g(z as EvenNum)
+
     # Or just say that the variable is an EvenNum upon instantiation
     def y: EvenNum := random_int()
     def third := g(y)
-    
-    # We can also use the isa to check that the conditions holds without raising an error
+
+    # We can also use isa to check that the conditions hold without raising an error
     def a := random_int()
     # notice how we don't have to cast a to an EvenNum if the condition holds.
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
-    fourth := if a isa EvenNum then g(a) else 0
-    
+    def fourth := if a isa EvenNum then g(a) else 0
+
     # If it can be statically verified that the properties hold, it is not necessary to handle any type specific errors
     def c := 2
     def fifth := g(c)
-    
+
     # first, second, third, fourth, and fifth all have type Int
 
 We can also use it as a sort of post-condition of the function.
 We ensure that the function returns an `EvenNum`:
 
-    def g (x: EvenNum): EvenNum ! Err :=
+    def g(x: EvenNum) -> EvenNum ! Err := do
         print("this number is even: {x}")
         def y := x + some_other_function(x)
         y as EvenNum
-        
+    end
+
 Or:
 
-    def g (x: EvenNum): EvenNum ! Err :=
-        print("this number is even: [x]")
+    def g(x: EvenNum) -> EvenNum ! Err := do
+        print("this number is even: {x}")
         def y: EvenNum := x + some_other_function(x)
         y
+    end
 
 We can even ensure that the function never returns an error:
 
-    def h (x: EvenNum): EvenNum := 
+    def h(x: EvenNum) -> EvenNum := do
         print("this number is even: {x}")
         def y := x + some_other_function(x)
         if y isa EvenNum then
             y # type sensitive flow ensure that this is an EvenNum
         else x
+    end
 
 So now:
 
     def x := 10  # here x is an Int
     def a := g(x as EvenNum)
-    
+
     def b := g(a) # we don't have to cast a to an EvenNum, it is already of that type
-    
+
     def c := h(x)  # function h never raises an error
