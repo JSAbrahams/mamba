@@ -12,7 +12,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
         self.z_modified := "fdsa"
 
         def (a, b) := (10, 20)
-        def mut (a, b) := (30, 40)
+        def (mut a, mut b) := (30, 40)
         (a, b) := (0, 10)
 
         def my_bool := True

@@ -1,0 +1,4 @@
+# An annotated tuple should keep each element's type, the same way an annotated
+# single binding does
+def (a, b): (Int, Int) := (10, 20)
+print(b)

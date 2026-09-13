@@ -168,11 +168,63 @@ pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
     }
 }
 
+/// Parse an identifier at a binding site, where each element of an identifier tuple
+/// may carry its own [Token::Mut].
+///
+/// The tuple case lives here rather than in [parse_id], which also serves positions where
+/// no binding is introduced and `mut` is therefore meaningless.
+fn parse_binding_id(it: &mut LexIterator) -> ParseResult {
+    if !it.peek_if(&|lex| lex.token == Token::LRBrack) {
+        return parse_id(it);
+    }
+
+    let mut elements = vec![];
+    let start = it.eat(&Token::LRBrack, "identifier tuple")?;
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+        elements.push(*it.parse(&parse_binding_element, "identifier tuple", start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
+
+    let end = it.eat(&Token::RRBrack, "identifier tuple")?;
+    Ok(Box::from(AST::new(end, Node::Tuple { elements })))
+}
+
+/// One element of an identifier tuple, with its own optional [Token::Mut].
+///
+/// A type annotation is rejected here, as it is by [parse_expr_no_type].
+fn parse_binding_element(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("identifier tuple element")?;
+    let mutable = it.eat_if(&Token::Mut).is_some();
+    let expr = it.parse(&parse_binding_id, "identifier tuple element", start)?;
+
+    if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
+        return Err(Box::from(custom(
+            "Type annotation not allowed here",
+            annotation_pos,
+        )));
+    }
+
+    let end = expr.pos;
+    let node = Node::ExpressionType {
+        expr,
+        mutable,
+        ty: None,
+    };
+    Ok(Box::from(AST::new(start.union(end), node)))
+}
+
 pub fn parse_expression_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
-    let expr = it.parse(&parse_id, "expression type", start)?;
+    let expr = it.parse(&parse_binding_id, "expression type", start)?;
+    if mutable && matches!(expr.node, Node::Tuple { .. }) {
+        // A tuple is one binding per element, so each element takes its own marker.
+        let msg = format!("Cannot mark an identifier tuple '{}'", Token::Mut);
+        return Err(Box::from(custom(&msg, start.union(expr.pos))));
+    }
+
     let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression type", start)?;
     let end = ty.clone().map_or(expr.pos, |t| t.pos);
 

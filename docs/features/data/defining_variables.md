@@ -34,6 +34,13 @@ A definition is immutable unless we mark it `mut`, so we reassign the second `x`
 The same marker works on a function argument, and on the `self` argument of a method.
 A method that assigns to its own fields must take `mut self`.
 
+A tuple binding takes one marker per element, since each element is its own binding:
+
+    def (mut a, b) := (10, 20)
+
+Here `a` may be reassigned and `b` may not.
+Marking the tuple itself, as `def mut (a, b)`, is a parse error.
+
 ## Functions
 
 A function definition has the following structure:

@@ -221,7 +221,14 @@ pub fn id_from_var(
     }
 
     let mut env = env.clone();
-    let identifier = Identifier::try_from(var)?.as_mutable(mutable);
+    // A tuple's elements each carry their own `mut`, so only a single binding takes its
+    // mutability from the definition itself. The parser rejects `mut` on a tuple.
+    let identifier = Identifier::try_from(var)?;
+    let identifier = if identifier.is_tuple() {
+        identifier
+    } else {
+        identifier.as_mutable(mutable)
+    };
     match (ty, expr) {
         (Some(ty), Some(expr)) => {
             let mut names = vec![];
@@ -230,7 +237,7 @@ pub fn id_from_var(
 
                 constr.insert_var(&f_name);
                 let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+                env = env.insert_var(f_mut, &f_name, &ty, &constr.var_mapping);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
@@ -251,7 +258,7 @@ pub fn id_from_var(
             for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
                 constr.insert_var(&f_name);
                 let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+                env = env.insert_var(f_mut, &f_name, &ty, &constr.var_mapping);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
@@ -276,7 +283,7 @@ pub fn id_from_var(
                         name: temp_name.clone(),
                     },
                 );
-                env = env.insert_var(mutable && *f_mut, name, &ty, &constr.var_mapping);
+                env = env.insert_var(*f_mut, name, &ty, &constr.var_mapping);
 
                 let var = AST::new(var.pos, Id { lit: name.clone() });
                 constr.add(
@@ -342,7 +349,7 @@ pub fn id_from_var(
             let any = Expected::any(var.pos);
             for (f_mut, f_name) in identifier.fields(var.pos)? {
                 constr.insert_var(&f_name);
-                env = env.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
+                env = env.insert_var(f_mut, &f_name, &any, &constr.var_mapping);
             }
         }
     }

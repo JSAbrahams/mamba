@@ -1,0 +1,2 @@
+# Destructuring a list or set in a definition is not implemented, only a tuple is
+def [a, b] := [10, 20]

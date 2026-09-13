@@ -1,0 +1,7 @@
+class MyClass where
+    def mut my_field: Int := 10
+end
+
+# Only the first element is mut, so only it may be modified through
+def (mut a, b) := (MyClass(), 10)
+a.my_field := 20

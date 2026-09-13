@@ -1,0 +1,1 @@
+def f((a, b): (Int, Int)) -> Int := a + b

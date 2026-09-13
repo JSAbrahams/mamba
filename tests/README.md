@@ -314,3 +314,29 @@ Several of these tests write to shared, fixed paths under `tests/resource/valid/
 This was not introduced by the coverage work in this file.
 It is a pre-existing test isolation issue, worth a look if it starts flaking in CI.
 Workaround: run with `-- --test-threads=1` if it flakes.
+
+## Closed gap: per-element tuple mutability, and three neighbouring limits it exposed
+
+`def (mut a, b) := (1, 2)` now parses, and marking the tuple itself, as `def mut (a, b)`, is a parse error.
+The `ignore[...]` on `definition/tuple_modify_inner_mut` in `tests/check/invalid.rs` is therefore gone.
+
+Two places used to force every element of a tuple to the definition's own flag, via `Identifier::as_mutable`.
+They are `Identifier::try_from` in `src/check/ident.rs` and `id_from_var` in `src/check/constrain/generate/definition.rs`.
+Both now leave per-element flags alone, and `id_from_var` reads `f_mut` rather than `mutable && f_mut` at all four of its arms.
+All four arms are covered: annotated with an expression, annotated without one, unannotated with an expression, and neither.
+
+Three pre-existing limits surfaced while fixturing this, none of them caused by the change:
+
+- An *annotated* tuple loses each element's type, so using an element fails where an annotated single binding works.
+  `def (a, b): (Int, Int) := (10, 20)` followed by `print(b)` is rejected, while `def a: Int := 10` then `print(a)` is fine.
+  Unannotated tuples are fine too, so annotation is what breaks it.
+  Recorded by the `ignore[...]` on `definition/tuple_annotated_element_type` in `tests/check/valid.rs`.
+  Note that assignment through an annotated tuple element *does* work, which is why the mutability tests above pass.
+- Nested tuple destructuring is not supported: `def ((a, b), c) := ((1, 2), 3)` reports "Expected tuple of 3 elements, was 2", so the checker flattens the pattern.
+  Recorded by `definition/tuple_nested`.
+- A tuple is not accepted as a function argument, failing in the *checker* rather than the parser, at `src/check/context/arg/generic.rs`.
+  Recorded by `definition/tuple_fun_arg`, which lives in the `invalid/type` tree for that reason.
+
+`parse_definition` in `src/parse/definition.rs` also routes `[` and `{` to `parse_variable_def`, but neither ever parsed.
+`parse_id` accepts only an identifier or `(`, so `def [a, b] := [10, 20]` has always been a parse error.
+That dead route is recorded by `def_collection_destructure`, and the `[ "mut" ] collection` alternative has been dropped from `docs/spec/grammar.md`, which claimed it worked.
