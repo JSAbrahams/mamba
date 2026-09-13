@@ -10,16 +10,40 @@ Rust** that converts `.mamba` source files into `.py` (Python 3) source files. T
 
 ## Commands
 
+The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json`.
+Versions are pinned in `devbox.lock`.
+Devbox is a layer over Nix.
+It supplies the Rust toolchain, Python 3.10, and the cargo helpers the hooks and CI call.
+`devbox shell` enters the environment.
+`devbox run -- <cmd>` runs a single command in it.
+The cargo commands below assume you are inside that environment.
+`devbox.json` also defines named scripts, such as `devbox run lint` and `devbox run precommit`.
+See CONTRIBUTING.md for those.
+
 ```sh
 cargo build                       # build the transpiler
 cargo run -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
 cargo test --package mamba        # run the full test suite (matches CI)
 cargo fmt --all -- --check        # check formatting (CI enforces this)
-cargo clippy -- -D warnings       # lint (CI enforces this, treats warnings as errors)
+cargo clippy --all-features -- -D warnings  # lint (CI enforces this, treats warnings as errors)
 ```
 
-Running the test suite requires a `python3` on `PATH` (`python3.10` on Linux, `python3` on macOS, `python` on
-Windows — see `tests_util/src/lib.rs`), since generated Python output is validated with `python -m py_compile`.
+CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`.
+To reproduce a CI test run exactly:
+
+```sh
+cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+```
+
+Note that CI's clippy step does *not* pass `--tests`.
+Lints that only fire inside `#[cfg(test)]` code are therefore not enforced.
+
+Running the test suite requires a `python3` on `PATH`.
+That is `python3.10` on Linux, `python3` on macOS, and `python` on Windows.
+See `tests_util/src/lib.rs` for the exact names.
+The requirement exists because generated Python output is validated with `python -m py_compile`.
+Devbox pins `python@3.10.18` for this.
+If you change the version there, change `tests_util::PYTHON` to match.
 
 To run a single test:
 
@@ -41,12 +65,16 @@ Hooks live in `.githooks/` (not `.git/hooks/`) and are opt-in:
 git config core.hooksPath .githooks
 ```
 
-The `pre-commit` hook runs `cargo fmt --check`, `cargo check --tests --all` (debug + release), `cargo sort`
-(Cargo.toml dependencies must stay alphabetically sorted), `cargo clippy -D warnings` (debug + release,
-all-features), and `cargo check --benches`. The `commit-msg` hook enforces Conventional-Commits-style subject
-lines: `<type>: <summary>` where `<type>` is one of `doc test feat fix style refactor revert git chore perf
-build ci cd deploy security`, the subject is under 50 chars and doesn't end in a period, and body lines are
-wrapped at 72 chars. Match this style even without the hook installed (see recent `git log` for examples).
+The `pre-commit` hook runs several checks.
+These are `cargo fmt --check`, `cargo check --tests --all` in debug and release, `cargo sort --check`, `cargo clippy -D warnings` in debug and release with all features, and `cargo check --benches`.
+`cargo sort --check` is there because Cargo.toml dependencies must stay alphabetically sorted.
+The `commit-msg` hook enforces Conventional-Commits-style subject lines.
+The form is `<type>: <summary>`.
+`<type>` is one of `doc test feat fix style refactor revert git chore perf build ci cd deploy security`.
+The subject must be under 50 chars and must not end in a period.
+Body lines are wrapped at 72 chars.
+Match this style even without the hook installed.
+See recent `git log` output for examples.
 
 ## Architecture
 

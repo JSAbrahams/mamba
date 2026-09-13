@@ -11,31 +11,26 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
+  lint:
     environment: development
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
-        rust: [ "1.98.0" ]
 
     runs-on: ${{ matrix.os }}
-    name: via ${{ matrix.os }}, Rust v${{ matrix.rust }}
+    name: via ${{ matrix.os }}, Devbox
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      # Install Rust, build and check clippy warnings
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
         with:
-          toolchain: ${{ matrix.rust }}
-          components: clippy, rustfmt
-          override: true
+          enable-cache: 'true'
 
-      - name: Check code formatting
-        run: cargo fmt --all -- --check
-
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+      # `devbox run lint` is the same script contributors run locally: cargo fmt --check,
+      # cargo clippy --all-features -D warnings, cargo sort --check, and actionlint over these
+      # workflow files. Keeping CI on the script rather than on its own copy of the commands
+      # means the two cannot drift apart.
+      - name: Lint
+        run: devbox run lint

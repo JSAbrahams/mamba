@@ -85,7 +85,7 @@ use test_case::test_case;
 #[test_case("definition", "assign_with_if")]
 #[test_case("definition", "assign_with_if_different_types" => ignore["annotating output reveals bug in check stage"])]
 #[test_case("definition", "assign_with_match")]
-#[test_case("definition", "assign_with_match_different_types" => ignore["annotating output reveals bug in check stage"])]
+#[test_case("definition", "assign_with_match_different_types")]
 #[test_case("definition", "assign_with_match_type_annotation")]
 #[test_case("definition", "assign_with_nested_if")]
 #[test_case("definition", "assign_with_try_except")]

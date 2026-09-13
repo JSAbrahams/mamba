@@ -9,50 +9,42 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  
+
 jobs:
   coverage:
     environment: development
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
-        python: [ "3.10" ]
-        rust: [ "1.98.0" ]      
 
     runs-on: ${{ matrix.os }}
-    name: via ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
+    name: via ${{ matrix.os }}, Devbox
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Install llvm-tools-preview
-        run: rustup component add llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
-
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
         with:
-          python-version: ${{ matrix.python }}
+          enable-cache: 'true'
 
-      - name: Generate LCOV report using default testrunner
-        run: |
-          cargo llvm-cov --lcov --output-path ./target/lcov.info \
-          --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
+      # `devbox run coverage` is the same script contributors run locally, and carries the
+      # --ignore-filename-regex exclusions with it. Devbox supplies cargo-llvm-cov plus the
+      # matching llvm-cov/llvm-profdata via LLVM_COV/LLVM_PROFDATA, so no rustup component or
+      # `cargo install` step is needed.
+      - name: Generate LCOV report
+        run: devbox run coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./target/lcov.info
           fail_ci_if_error: true
           token: ${{ vars.CODECOV_TOKEN }}
           slug: codecov/gh/JSAbrahams/mamba
-          
+
       - name: Upload LCOV artifact
         uses: actions/upload-artifact@v4
         with:
           name: lcov-report
-          path: lcov.info
-          
-          
+          path: ./target/lcov.info
