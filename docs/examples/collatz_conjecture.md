@@ -25,7 +25,7 @@ def collatz_steps(n: int) -> int:
 ## Mamba
 
 ```mamba
-def collatz_steps(n: Int) -> Int := do
+def pure collatz_steps(n: Int) -> Int := do
     if n = 1 then return 0
 
     if n mod 2 = 0 
@@ -36,5 +36,8 @@ end
 print(collatz_steps(27))
 ```
 
-This can never be marked `total`: the `3 * n + 1` branch grows `n`, and no decreasing measure is known, since none is known to exist.
+It is `pure`, since its result depends on nothing but its argument.
+It can never be marked `total`: the `3 * n + 1` branch grows `n`, and no decreasing measure is known, since none is known to exist.
 Proving termination here is the Collatz conjecture itself.
+This is the clearest case of the two being independent.
+A function can be perfectly pure and still never be known to halt.

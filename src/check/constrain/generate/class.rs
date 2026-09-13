@@ -90,7 +90,7 @@ fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()
                 errors.push(TypeErr::new(stmt.pos, &msg));
             }
             // `def new` on its own asks for what the class already has.
-            stmt_node if is_new_marker(stmt) && !is_pure_new_marker(stmt) => {
+            stmt_node if is_new_marker(stmt) && !declares_pure_new(stmt) => {
                 let _ = stmt_node;
                 warn!(
                     "{}:{} redundant '{NEW}', as one taking the class arguments is already generated. Write '{} {NEW}' to assert it is pure, or give it arguments and a body to replace it",
@@ -130,8 +130,9 @@ fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()
 ///
 /// It declares no argument list and no body, since it is not a signature: the constructor it
 /// describes is the one the class already gets from its arguments.
-fn is_pure_new_marker(stmt: &AST) -> bool {
-    is_new_marker(stmt) && matches!(stmt.node, Node::FunDef { pure: true, .. })
+fn declares_pure_new(stmt: &AST) -> bool {
+    matches!(&stmt.node, Node::FunDef { pure: true, id, .. }
+        if matches!(&id.node, Node::Id { lit } if lit == NEW))
 }
 
 /// Whether a type annotation admits `None`, so a field of it needs no value of its own.
@@ -158,7 +159,7 @@ pub fn constrain_class_body(
     // `def pure new` asserts the generated constructor is pure, and the derived field
     // initializers are the only thing it runs. Checking them under the purity rules is what
     // turns the assertion into a guarantee.
-    if statements.iter().any(is_pure_new_marker) {
+    if statements.iter().any(declares_pure_new) {
         let (fields, rest): (Vec<AST>, Vec<AST>) = statements
             .iter()
             .cloned()

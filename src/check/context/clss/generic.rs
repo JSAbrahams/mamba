@@ -202,7 +202,11 @@ impl TryFrom<&AST> for GenericClass {
                 let (markers, functions): (HashSet<_>, HashSet<_>) = functions
                     .into_iter()
                     .partition(|f| f.name == StringName::from(NEW) && f.arguments.is_empty());
-                let pure_new = markers.iter().any(|f| f.pure);
+
+                let pure_new = markers
+                    .iter()
+                    .chain(functions.iter().filter(|f| f.name == StringName::from(NEW)))
+                    .any(|f| f.pure);
 
                 if class_args.is_empty() {
                     class_args.push(GenericFunctionArg {

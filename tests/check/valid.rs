@@ -36,6 +36,7 @@ use test_case::test_case;
 #[test_case("class", "construct_inside_class")]
 #[test_case("class", "derived_field")]
 #[test_case("class", "pure_new_with_impure_method")]
+#[test_case("class", "pure_new_written_out")]
 #[test_case("class", "with_generics" => ignore["why is Outerclass undefined?"])]
 #[test_case("class", "top_level_unassigned_but_nullable")]
 #[test_case("class", "unassigned_tuple_second_nullable")]

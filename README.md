@@ -123,7 +123,7 @@ We can write a simple script that computes the factorial of a value given by the
 
 ```mamba
 # Factorial of x
-def factorial(x: Int) -> Int := match x where
+def pure factorial(x: Int) -> Int := match x where
     0 => 1
     n => n * factorial(n - 1)
 end
@@ -150,7 +150,7 @@ Also note that:
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
 ```mamba
-def factorial(x: Int) -> Int := match x where
+def pure factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
         def mut ans := 1
@@ -249,11 +249,16 @@ Substitution of equals for equals, which is the move that makes such reasoning w
 Next, we introduce the concept of a class.
 A class is essentially a blueprint for the behaviour of an instance.
 
-In Mamba, like Python and Rust, each function in a class has an explicit `self` argument, which gives access to the state of this instance.
+In Mamba, like Python and Rust, a function in a class may take an explicit `self` argument, which gives access to the state of this instance.
 Such a function is called a method.
-We can for each method state whether we can modify the state of `self` by stating whether it is mutable or not.
-If we write `self`, it is immutable and we cannot change its state, whereas if we write `mut self`, we can.
-We can do the same for any argument to a function, for that matter.
+
+A method is an ordinary function whose first argument is the instance, named `self` by convention.
+`p.move(1, 2)` and `move(p, 1, 2)` differ in spelling, not in kind, and the second is what the first means.
+A function in a class body that takes no `self` simply a function that needs no instance, and is called on the class.
+
+Because `self` is just an argument, it obeys the argument rules.
+We say whether a method may modify the instance by marking that argument, exactly as we would any other.
+Write `self` and it is immutable, write `mut self` and it is not.
 
 We showcase this using a simple `Matrix2x2` object.
 
@@ -342,7 +347,7 @@ Because it is not, declaring your own `new` is the only way in, and it can there
 
 ```mamba
 class Fraction(num: Int, den: Int) where
-    def new(num: Int, den: Int) -> Self ! FractionErr :=
+    def pure new(num: Int, den: Int) -> Self ! FractionErr :=
         if den = 0 then ! FractionErr("Denominator is zero") else Fraction(num, den)
 end
 ```
@@ -355,7 +360,8 @@ That is what makes `new` ordinary rather than special, and it means named altern
 
 ```mamba
 class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
-    def identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
+    def pure new
+    def pure identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
 end
 
 def m := Matrix2x2.identity()
@@ -454,35 +460,33 @@ A _class_, on the other hand, can already list several parents (`class MyClass: 
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 
-Mamba has features to ensure that functions are pure, meaning that if `x = y`, for a pure function `f`, `f(x) = f(y)`.
-`=` is the equality operator in Mamba, which checks for structural equality and not whether this is the same object in memory (with the same address).
-This is inspired originally by pure functions in proof assistant tools.
-For use to be able to compare two instances, the instance must implement the `Equality` trait (which we showed above).
+A function is pure when `f(x) = f(y)` for every `x = y`.
+`=` is structural equality in Mamba, not identity, so two instances that look alike count as alike.
+The idea is borrowed from proof assistants.
 
-By default, functions are not pure.
-When we mark a function `pure`, restrictions are enforced by the language:
+Functions are impure by default.
+The same holds for methods, which as stated before as also function where the first argument is the instance.
+Marking them `pure` guarantees that there are no side-effects, enforced by the following set of restrictions:
 
-- `self` **must not** be `mut` (if this is a method).
-  This means that it cannot mutate the values of self.
-  It should be noted that if we mutate self and call a method again, then the output might be different.
-  But, this makes sense!
-  Self is just another argument to the function, and by mutating the instance we call the same function again but with a different instance, conceptually speaking.
-- Call impure functions.
+- Calling anything that is not itself `pure`.
+- Reading or assigning a `mut` variable declared outside the function, whose value can change between calls.
+- Assigning to a field of an argument, which reaches through to the caller's value.
+- Reading a field of an argument that is `mut`, which can differ between two calls given equal arguments.
+- Taking `mut self`, since mutating the receiver is mutating an argument.
+- Constructing a class, unless that class declares construction pure.
 
-Some additional rules hold for calling and assigning to passed arguments to uphold the pure property (meaning, no side-effects):
+And keeps:
 
-- Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
-- An argument may be assigned to, as this will not modify the original reference.
-- The field of an argument may not be assigned to, as this will modify the original reference.
-- One may only read fields of an argument which are not `mut`.
-- One may only call methods of an argument which are pure (`pure`).
-- It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
-- Constructing a class is allowed only where the class says construction is pure, see below.
+- Everything the body defines, which is destroyed on return and may be used however you like.
+- Reassigning an argument, which rebinds a local name and leaves the caller's value untouched.
+- Reading any field that is not `mut`, and calling any method that is `pure`.
 
-In practice this makes `pure` far more useful on plain functions than on methods.
-A class with any mutating method needs `mut` fields, and no pure method may read one, so its methods cannot be pure.
+Read that list again with the first argument in mind and it collapses to one idea: a pure function may not touch anything that outlives the call, and may not depend on anything that can change between calls.
+
+This is why `pure` suits plain functions better than methods.
+A class with a mutating method needs `mut` fields, and no pure function may read one, so such a class has no pure methods at all.
 `Matrix2x2` above is exactly that case.
-`pure` methods are still allowed, and are useful on a class whose fields are all immutable, but that is the narrower case.
+Pure methods remain useful on a class whose fields are all immutable.
 
 #### Pure construction
 
@@ -529,9 +533,7 @@ end
 This is why the marker sits on `new` rather than on the class.
 A `class pure Counter` would read as though `tick` were pure too, which it is not.
 
-When a function is `pure`, its output is always the same for a given input.
-It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
-Immutable variables and pure functions make it easier to write declarative programs with no hidden dependencies.
+Immutable bindings and pure functions together make a program declarative, with no hidden dependencies:
 
 ```mamba
 # taylor is immutable, its value does not change during execution

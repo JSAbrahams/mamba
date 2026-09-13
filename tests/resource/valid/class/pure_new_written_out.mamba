@@ -1,0 +1,14 @@
+# A `new` written out in full asserts pure construction just as the bodiless marker does.
+# Without that, a pure `new` could not build the value it exists to build
+class Point(x: Int, y: Int) where
+    def pure new(x: Int, y: Int) -> Self := return Point(x, y)
+
+    def pure origin() -> Self := return Point(0, 0)
+end
+
+def pure shifted() -> Point := return Point.new(1, 2)
+
+def p := shifted()
+print(p.x)
+def o := Point.origin()
+print(o.y)
