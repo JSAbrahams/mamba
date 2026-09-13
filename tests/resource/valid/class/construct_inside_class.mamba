@@ -1,0 +1,8 @@
+# Inside its own body a class may apply itself to its arguments, which is what lets an
+# explicit new be the only way in from outside
+class Point(x: Int, y: Int) where
+    def origin() -> Self := return Point(0, 0)
+end
+
+def o := Point.origin()
+print(o.x)

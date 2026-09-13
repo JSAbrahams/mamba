@@ -1,5 +1,4 @@
-use cranelift_codegen::ir::types;
-use cranelift_codegen::ir::Type;
+use cranelift_codegen::ir::{types, Type};
 
 use crate::check::ast::ASTTy;
 use crate::check::context::clss;

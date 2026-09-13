@@ -3,6 +3,6 @@ class MyClass where
     def f(mut self, x: Int) -> Int := self.a := x + 20
 end
 
-def my_class := MyClass()
+def my_class := MyClass.new()
 # should not be allowed, self is not mut!
 my_class.f(10)

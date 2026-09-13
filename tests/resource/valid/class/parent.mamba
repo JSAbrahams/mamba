@@ -3,9 +3,7 @@ trait MyType where
     def factorial(self, x: Int) -> Int
 end
 
-class MyClass1: MyType where
-    def other: Int
-
+class MyClass1(other: Int): MyType where
     def fun_a(self) := print("hello")
     def factorial(self, x: Int) -> Int := x * 1
 end

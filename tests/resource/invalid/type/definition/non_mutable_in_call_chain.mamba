@@ -1,18 +1,18 @@
 class A where
-    def b: B := B()
+    def b: B := B.new()
 end
 
 class B where
-    def c: C := C()
+    def c: C := C.new()
 end
 
 class C where
-    def d: D := D()
+    def d: D := D.new()
 end
 
 class D where
     def e: Int := 100
 end
 
-def a := A()
+def a := A.new()
 a.b.c.d.e := 20

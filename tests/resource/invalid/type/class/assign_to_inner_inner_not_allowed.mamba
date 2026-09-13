@@ -1,12 +1,8 @@
 class Y(x: Int)
 
-class X where
-    def y: Y
-    def __init__(a: Int) :=
-        self.y = Y(a)
-end
+class X(mut y: Y)
 
-def x := X(10)
+def mut x := X.new(Y.new(10))
 
-# now assign a float
+# X has no field x, only y
 x.x := 2.5

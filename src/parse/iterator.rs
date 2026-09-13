@@ -3,11 +3,8 @@ use std::slice::Iter;
 
 use crate::common::position::Position;
 use crate::common::result::WithCause;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::token::Token;
-use crate::parse::result::eof_expected_one_of;
-use crate::parse::result::expected;
-use crate::parse::result::ParseResult;
+use crate::parse::lex::token::{Lex, Token};
+use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
 
 #[derive(Debug)]
 pub struct LexIterator<'a> {

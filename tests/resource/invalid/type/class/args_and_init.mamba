@@ -1,3 +1,0 @@
-class MyClass(arg1: SomeType) where
-    def __init__(self) := print("cannot have two constructors")
-end

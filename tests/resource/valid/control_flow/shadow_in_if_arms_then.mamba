@@ -5,9 +5,9 @@ class MyClass2 where
     def f2(self) := pass
 end
 
-def x := MyClass2()
+def x := MyClass2.new()
 if True then do
-    def x := MyClass1()
+    def x := MyClass1.new()
     x.f1()
 end else
     x.f2()

@@ -14,7 +14,7 @@ use crate::check::name::string_name::StringName;
 use crate::check::name::{Any, Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{Node, AST, NEW};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
@@ -26,6 +26,9 @@ pub struct GenericClass {
     pub fields: HashSet<GenericField>,
     pub functions: HashSet<GenericFunction>,
     pub parents: HashSet<GenericParent>,
+    /// Whether the class asserted, with a bodiless `def pure new`, that constructing it is
+    /// pure. Never inferred from the field initializers.
+    pub pure_new: bool,
 }
 
 impl PartialEq for GenericClass {
@@ -53,6 +56,7 @@ impl GenericClass {
                     fields: Default::default(),
                     functions: Default::default(),
                     parents: Default::default(),
+                    pure_new: false,
                 })
             }
             _ => Err(vec![TypeErr::new(id.pos, "Expected class name")]),
@@ -92,6 +96,7 @@ impl Any for GenericClass {
             fields: Default::default(),
             functions,
             parents: Default::default(),
+            pure_new: false,
         }
     }
 }
@@ -191,6 +196,14 @@ impl TryFrom<&AST> for GenericClass {
                     }
                 }
 
+                // A bodiless `new` asserts something about the constructor the class already
+                // has, rather than declaring one. It is recorded as a flag and dropped, so
+                // nothing downstream mistakes it for a real function.
+                let (markers, functions): (HashSet<_>, HashSet<_>) = functions
+                    .into_iter()
+                    .partition(|f| f.name == StringName::from(NEW) && f.arguments.is_empty());
+                let pure_new = markers.iter().any(|f| f.pure);
+
                 if class_args.is_empty() {
                     class_args.push(GenericFunctionArg {
                         is_py_type: false,
@@ -223,6 +236,7 @@ impl TryFrom<&AST> for GenericClass {
                     fields: argument_fields.union(&body_fields).cloned().collect(),
                     functions,
                     parents: parents.into_iter().map(Result::unwrap).collect(),
+                    pure_new,
                 })
             }
             Node::Trait { ty, isa, body, .. } => {
@@ -245,6 +259,7 @@ impl TryFrom<&AST> for GenericClass {
                 let (fields, functions) = get_fields_and_functions(&name, &statements, true)?;
                 Ok(GenericClass {
                     is_py_type: false,
+                    pure_new: false,
                     name,
                     pos: class.pos,
                     args: vec![GenericFunctionArg {

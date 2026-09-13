@@ -171,8 +171,7 @@ mod test {
     use crate::backend::python::gen;
     use crate::common::position::Position;
     use crate::parse::ast::node_op::NodeOp;
-    use crate::parse::ast::Node;
-    use crate::parse::ast::AST;
+    use crate::parse::ast::{Node, AST};
     use crate::ASTTy;
 
     macro_rules! to_pos_unboxed {

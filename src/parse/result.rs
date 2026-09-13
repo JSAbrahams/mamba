@@ -8,8 +8,7 @@ use crate::common::position::Position;
 use crate::common::result::{an_or_a, format_err, Cause, WithCause, WithSource};
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 

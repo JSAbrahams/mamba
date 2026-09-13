@@ -3,5 +3,5 @@ class X where
     def fancy(self) -> Int? := self.some_higher_order(\x: Int := x * 2)
 end
 
-def x := X()
+def x := X.new()
 x.fancy()

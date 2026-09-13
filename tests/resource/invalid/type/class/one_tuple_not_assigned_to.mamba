@@ -1,6 +1,0 @@
-class X where
-    def (a, b): (Int, Int)
-
-    def __init__(self, x: Int) :=
-        self.a = x
-end

@@ -81,6 +81,8 @@ impl TryFrom<&Classdef> for GenericClass {
         // pure rather than requiring every stub signature to spell out `pure` individually.
         GenericClass {
             is_py_type: true,
+            // A Python stub declares no Mamba assertion, and its construction is not pure.
+            pure_new: false,
             name: class.clone(),
             pos: Position::invisible(),
             concrete: false,

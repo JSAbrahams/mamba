@@ -6,9 +6,9 @@ class MyClass2 where
 end 
 
 if True then do
-    def x := MyClass1()
+    def x := MyClass1.new()
     x.f1()
 end else do
-    def x := MyClass2()
+    def x := MyClass2.new()
     x.f2()
 end

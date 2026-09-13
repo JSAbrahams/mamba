@@ -1,6 +1,6 @@
 class X(x: Int)
 
-def x := X(10)
+def x := X.new(10)
 
 # now assign a float
 x.x := 2.5

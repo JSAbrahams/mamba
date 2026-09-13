@@ -1,15 +1,11 @@
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST, NEW};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::custom;
-use crate::parse::result::ParseResult;
-use crate::parse::ty::parse_expression_type;
-use crate::parse::ty::parse_id;
-use crate::parse::ty::parse_type;
+use crate::parse::result::{custom, ParseResult};
+use crate::parse::ty::{parse_expression_type, parse_id, parse_type};
 
 pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("definition")?;
@@ -85,6 +81,23 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
         Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
             &|it, lex| match lex.token {
                 Token::LRBrack => parse_fun_def(&id, pure, it),
+                // `def pure new` asserts that the constructor a class gets for free is pure.
+                // It takes no argument list, because it is not declaring a signature: the
+                // generated one already has the class arguments. Bare `def new` parses the
+                // same way so it can be reported as redundant rather than as a stray field.
+                Token::NL if !*mutable && matches!(&expr.node, Node::Id { lit } if lit == NEW) => {
+                    Ok(Box::from(AST::new(
+                        id.pos,
+                        Node::FunDef {
+                            pure,
+                            id: expr.clone(),
+                            args: vec![],
+                            ret: None,
+                            raises: vec![],
+                            body: None,
+                        },
+                    )))
+                }
                 _ if !pure => parse_variable_def_id(&id, it),
                 _ => {
                     let msg = format!("Definition cannot have {} identifier", Token::Pure);

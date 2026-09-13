@@ -1,6 +1,4 @@
-class X where
-    def mut z: Int
-
-    def __init__(mut self, x: Int) :=
-        self.y := x
+class X(mut z: Int) where
+    # y is not a field of X
+    def set(mut self, x: Int) := self.y := x
 end

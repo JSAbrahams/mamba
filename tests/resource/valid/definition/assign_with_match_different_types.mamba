@@ -3,7 +3,7 @@ class MyClass1
 class MyClass2
 
 def a:= match 40 where
-    2 => MyClass()
-    4 => MyClass1()
-    _ => MyClass2()
+    2 => MyClass.new()
+    4 => MyClass1.new()
+    _ => MyClass2.new()
 end

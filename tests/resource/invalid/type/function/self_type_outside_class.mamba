@@ -1,0 +1,2 @@
+# Self has no enclosing class to name here
+def f() -> Self := 1

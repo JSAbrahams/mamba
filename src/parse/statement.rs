@@ -1,14 +1,12 @@
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, expected_one_of};
-use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
+use crate::parse::result::{custom, eof_expected_one_of, expected, expected_one_of, ParseResult};
 use crate::parse::ty::{parse_expression_type, parse_id};
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {

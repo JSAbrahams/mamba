@@ -1,8 +1,7 @@
 use std::ffi::OsString;
 use std::fs;
 use std::fs::OpenOptions;
-use std::io::Read;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::Path;
 
 use glob::glob;

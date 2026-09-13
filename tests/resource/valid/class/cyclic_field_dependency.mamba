@@ -3,5 +3,5 @@ class Cyclic(x: Int) where
     def b: Int := self.a + self.x
 end
 
-def c := Cyclic(3)
+def c := Cyclic.new(3)
 print(c.a)

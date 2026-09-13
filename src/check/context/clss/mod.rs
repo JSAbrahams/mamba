@@ -12,7 +12,6 @@ use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::function::python::INIT;
 use crate::check::context::function::Function;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{Context, LookupClass};
@@ -64,6 +63,8 @@ pub struct Class {
     pub fields: HashSet<Field>,
     pub parents: HashSet<TrueName>,
     pub functions: HashSet<Function>,
+    /// Whether the class asserted, with a bodiless `def pure new`, that constructing it is pure.
+    pub pure_new: bool,
 }
 
 pub trait HasParent<T> {
@@ -256,6 +257,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
+            pure_new: generic.pure_new,
             name: generic.name.substitute(generics, pos)?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
@@ -280,15 +282,11 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
 impl Class {
     pub fn constructor(&self, without_self: bool) -> Function {
-        // A class body may only declare fields and methods, so constructing is only impure
-        // where an explicit constructor makes it so. Marking that constructor `pure` is
-        // optional: one that calls, say, `print` simply is not marked, and then neither is
-        // the class's construction.
-        let pure = self
-            .functions
-            .iter()
-            .find(|f| f.name.name.as_str() == INIT)
-            .map_or(true, |init| init.pure);
+        // The `new` a class gets for free is pure only where the class says so, with a
+        // bodiless `def pure new`. Purity is never inferred from the field initializers: a
+        // guarantee that appears and disappears as unrelated code changes is worse than one
+        // that is stated.
+        let pure = self.pure_new;
 
         Function {
             is_py_type: false,

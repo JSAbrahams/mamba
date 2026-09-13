@@ -1,0 +1,6 @@
+class Circle(radius: Int) where
+    def area: Int := self.radius * self.radius * 3
+end
+
+# area is derived, so new takes only radius
+def c := Circle.new(2, 12)

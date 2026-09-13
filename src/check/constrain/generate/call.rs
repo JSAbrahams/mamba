@@ -24,7 +24,7 @@ use crate::check::name::{Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{Node, AST, NEW};
 
 pub fn gen_call(
     ast: &AST,
@@ -39,18 +39,8 @@ pub fn gen_call(
             check_pure_assign(&identifier, env, left.pos)?;
 
             if let NodeOp::Assign = op {
-                let env_assigned_to: Environment = identifier
-                    .all_calls()
-                    .iter()
-                    .flat_map(|call| call.without_obj(arg::SELF, left.pos))
-                    .flat_map(|identi_call| match identi_call {
-                        IdentiCall::Iden(var) => Some(var),
-                        _ => None,
-                    })
-                    .fold(env.clone(), |env, self_var| env.assigned_to(&self_var));
-
                 if let Node::Index { item, range } = &left.node {
-                    gen_set_item(item, range, right, &env_assigned_to, ctx, constr)?;
+                    gen_set_item(item, range, right, env, ctx, constr)?;
                 } else if let Node::FunctionCall { name, args } = &left.node {
                     // Round-bracket equivalent of `Node::Index`: `item(range) := right`.
                     let range = args.first().ok_or_else(|| {
@@ -59,7 +49,7 @@ pub fn gen_call(
                             "Cannot reassign to a call with no arguments",
                         )]
                     })?;
-                    gen_set_item(name, range, right, &env_assigned_to, ctx, constr)?;
+                    gen_set_item(name, range, right, env, ctx, constr)?;
                 } else {
                     constr.add(
                         "reassign",
@@ -67,10 +57,10 @@ pub fn gen_call(
                         &Expected::from(right),
                         env,
                     );
-                    generate(right, &env_assigned_to, ctx, constr)?;
-                    generate(left, &env_assigned_to, ctx, constr)?;
+                    generate(right, env, ctx, constr)?;
+                    generate(left, env, ctx, constr)?;
                 }
-                Ok(env_assigned_to)
+                Ok(env.clone())
             } else {
                 reassign_op(ast, left, right, op, env, ctx, constr)
             }
@@ -119,6 +109,7 @@ pub fn gen_call(
                 env.clone()
             } else {
                 // Resort to looking up in Context
+                check_constructor_in_class(&f_name, env, ctx, ast.pos)?;
                 let fun = ctx.function(&f_name, ast.pos)?;
                 check_pure_call(&f_name, fun.pure, env, ast.pos)?;
                 call_parameters(ast, &fun.arguments, &None, args, ctx, env, constr)?;
@@ -130,13 +121,18 @@ pub fn gen_call(
                 env.clone()
             })
         }
-        Node::PropertyCall { instance, property } => property_call(
-            &mut vec![instance.deref().clone()],
-            property,
-            env,
-            ctx,
-            constr,
-        ),
+        Node::PropertyCall { instance, property } => {
+            if let Some(env) = gen_associated_call(ast, instance, property, env, ctx, constr)? {
+                return Ok(env);
+            }
+            property_call(
+                &mut vec![instance.deref().clone()],
+                property,
+                env,
+                ctx,
+                constr,
+            )
+        }
         Node::Index { item, range } => gen_magic(GET_ITEM, ast, item, range, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
@@ -159,6 +155,81 @@ fn check_pure_call(
     } else {
         Ok(())
     }
+}
+
+/// Applying a class to its arguments is the construction primitive, and it is private.
+///
+/// It is only in scope inside that class's own body, which is what lets an explicit `new`
+/// enforce an invariant: outside, there is no way around it. Everywhere else, construction
+/// goes through `new`.
+fn check_constructor_in_class(
+    f_name: &StringName,
+    env: &Environment,
+    ctx: &Context,
+    pos: Position,
+) -> TypeResult<()> {
+    // A real function of that name wins, exactly as it does in the context lookup.
+    let is_constructor = !ctx.functions.iter().any(|f| f.name == *f_name)
+        && ctx.classes.iter().any(|c| c.name == *f_name);
+    if !is_constructor || env.class.as_ref() == Some(f_name) {
+        return Ok(());
+    }
+
+    let msg = format!(
+        "Cannot construct '{f_name}' here. '{f_name}(..)' is only in scope within '{f_name}' itself, so use '{f_name}.new(..)'"
+    );
+    Err(vec![TypeErr::new(pos, &msg)])
+}
+
+/// A call on a class name rather than on a value, such as `Point.new(1, 2)`.
+///
+/// The class acts as a namespace, and the function it names takes no `self`. Both the context
+/// and the Python backend already model such a function, so only resolving the receiver is
+/// needed here.
+///
+/// [None] when the receiver is not a class name, leaving it to be handled as an ordinary
+/// property access on a value.
+fn gen_associated_call(
+    ast: &AST,
+    instance: &AST,
+    property: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder,
+) -> TypeResult<Option<Environment>> {
+    let lit = match &instance.node {
+        Node::Id { lit } => lit,
+        _ => return Ok(None),
+    };
+    // A variable of the same name shadows the class.
+    if env.get_var(lit, &constr.var_mapping).is_some() {
+        return Ok(None);
+    }
+    let class = match ctx.class(&StringName::from(lit.as_str()), instance.pos) {
+        Ok(class) => class,
+        Err(_) => return Ok(None),
+    };
+    let (name, args) = match &property.node {
+        Node::FunctionCall { name, args } => (name, args),
+        _ => return Ok(None),
+    };
+
+    let f_name = StringName::try_from(name)?;
+    // Every class gets a `new` taking its arguments, unless it declares one of its own.
+    let fun = match class.fun(&f_name, property.pos) {
+        Ok(fun) => fun,
+        Err(_) if f_name.name.as_str() == NEW => class.constructor(true),
+        Err(err) => return Err(err),
+    };
+    check_pure_call(&f_name, fun.pure, env, ast.pos)?;
+
+    gen_vec(args, env, false, ctx, constr)?;
+    call_parameters(ast, &fun.arguments, &None, args, ctx, env, constr)?;
+
+    let ret = Expected::new(ast.pos, &Type { name: fun.ret_ty });
+    constr.add("associated function call", &Expected::from(ast), &ret, env);
+    check_raises_caught(&fun.raises.names, env, ctx, ast.pos)?;
+    Ok(Some(env.clone()))
 }
 
 /// The receiver of a property access, and the classes it may be, where the rules apply to it.
@@ -416,13 +487,6 @@ fn property_call(
             return property_call(instance, property, env, ctx, constr);
         }
         Node::Id { lit } => {
-            if let Node::Id { lit: instance } = &last_inst.node {
-                if instance == arg::SELF && env.unassigned.contains(lit) {
-                    let msg = format!("Cannot access unassigned field {lit}");
-                    return Err(vec![TypeErr::new(property.pos, &msg)]);
-                }
-            }
-
             check_pure_field_read(last_inst, lit, env, ctx, constr, property.pos)?;
             Expected::new(property.pos, &Field { name: lit.clone() })
         }

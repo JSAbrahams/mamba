@@ -3,4 +3,4 @@ class MyClass where
     def b: Int := self.a + 1
 end
 
-def my_class := MyClass()
+def my_class := MyClass.new()

@@ -1,12 +1,10 @@
 use std::ops::Deref;
 
 use crate::common::position::Position;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
-use crate::parse::result::ParseResult;
-use crate::parse::result::{custom, expected_one_of};
+use crate::parse::result::{custom, expected_one_of, ParseResult};
 
 /// Parse an identifier, or a tuple of identifiers.
 ///

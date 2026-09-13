@@ -1,0 +1,15 @@
+# `def pure new` says construction is pure. It says nothing about the methods, which is why
+# it sits on new rather than on the class
+class Counter(start: Int) where
+    def pure new
+
+    def mut count: Int := self.start
+
+    def tick(mut self) := do
+        self.count := self.count + 1
+        print(self.count)
+    end
+end
+
+def mut c := Counter.new(1)
+c.tick()

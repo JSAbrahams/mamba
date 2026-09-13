@@ -44,6 +44,18 @@ impl Termination for AST {
 
 pub type OptAST = Option<Box<AST>>;
 
+/// The enclosing class, as a type.
+///
+/// Distinct from the receiver *value* of a method, which is `self`. `Self` is usable anywhere
+/// in a class body, including in an associated function that takes no `self`.
+pub const SELF_TY: &str = "Self";
+
+/// The constructor a class gets for free, taking exactly its class arguments.
+///
+/// Declaring one of your own takes precedence, which is what lets a class enforce an
+/// invariant that plain construction could otherwise bypass.
+pub const NEW: &str = "new";
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
     Import {

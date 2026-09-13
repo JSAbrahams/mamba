@@ -1,0 +1,4 @@
+class C where
+    # Mamba has no constructor to override
+    def __init__(self, x: Int) := print(x)
+end

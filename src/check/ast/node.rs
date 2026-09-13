@@ -4,8 +4,29 @@ use crate::check::ast::NodeTy;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Empty, Name};
-use crate::parse::ast::Node;
+use crate::parse::ast::{Node, AST, NEW};
 use crate::ASTTy;
+
+/// Drop a bodiless `new` from a class body.
+///
+/// It declares no argument list and no body, because it only asserts something about the
+/// constructor the class already has. Emitting it would produce a Python method with no body.
+fn without_new_marker(body: &AST) -> AST {
+    match &body.node {
+        Node::Block { statements } => {
+            let statements = statements
+                .iter()
+                .filter(|stmt| {
+                    !matches!(&stmt.node, Node::FunDef { id, args, body: None, .. }
+                        if args.is_empty() && matches!(&id.node, Node::Id { lit } if lit == NEW))
+                })
+                .cloned()
+                .collect();
+            AST::new(body.pos, Node::Block { statements })
+        }
+        _ => body.clone(),
+    }
+}
 
 impl From<(&Node, &Finished)> for NodeTy {
     fn from((node, finished): (&Node, &Finished)) -> Self {
@@ -45,9 +66,12 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .iter()
                     .map(|ast| ASTTy::from((ast, finished)))
                     .collect(),
+                // A bodiless `new` is a marker for the checker, not a method, so it must not
+                // reach the backend as an empty definition.
                 body: body
                     .clone()
-                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(|body| without_new_marker(&body))
+                    .map(|ast| ASTTy::from((&ast, finished)))
                     .map(Box::from),
             },
             Node::Parent { ty, args } => NodeTy::Parent {

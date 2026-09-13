@@ -1,5 +1,7 @@
-# A class body may only declare fields and methods, so constructing this class has no
-# side effects and a pure function may do it
-class Point(x: Int, y: Int)
+# `def pure new` asserts that constructing this class is pure, which is what lets a pure
+# function do it. Purity is never inferred, so without the assertion this would be rejected
+class Point(x: Int, y: Int) where
+    def pure new
+end
 
-def pure origin() -> Point := Point(0, 0)
+def pure origin() -> Point := return Point.new(0, 0)
