@@ -138,7 +138,7 @@ mod test {
 
     #[test]
     fn from_fundef() -> Result<(), Vec<TypeErr>> {
-        let source = "def f(fin a: Int, b: String := \"a\") -> String ! E := pass";
+        let source = "def f(mut a: Int, b: String := \"a\") -> String ! E := pass";
         let ast = parse_direct(source)
             .expect("valid function syntax")
             .into_iter()
@@ -159,14 +159,14 @@ mod test {
         assert_eq!(generic_function.arguments[0].ty, Some(Name::from("Int")));
         assert!(!generic_function.arguments[0].has_default);
         assert!(!generic_function.arguments[0].is_py_type);
-        assert!(!generic_function.arguments[0].mutable);
+        assert!(generic_function.arguments[0].mutable);
         assert!(!generic_function.arguments[0].vararg);
 
         assert_eq!(generic_function.arguments[1].name, String::from("b"));
         assert_eq!(generic_function.arguments[1].ty, Some(Name::from("String")));
         assert!(generic_function.arguments[1].has_default);
         assert!(!generic_function.arguments[1].is_py_type);
-        assert!(generic_function.arguments[1].mutable);
+        assert!(!generic_function.arguments[1].mutable);
         assert!(!generic_function.arguments[1].vararg);
 
         Ok(())

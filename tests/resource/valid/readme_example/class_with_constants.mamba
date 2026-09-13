@@ -1,18 +1,18 @@
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def x: Int := self.ORIGIN_X
-    def y: Int := self.ORIGIN_Y
+    def mut x: Int := self.ORIGIN_X
+    def mut y: Int := self.ORIGIN_Y
 
-    def move(self, dx: Int, dy: Int) := do
+    def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx
         self.y := self.y + dy
     end
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
-    def reset(self) := do
+    def reset(mut self) := do
         self.x := self.ORIGIN_X
         self.y := self.ORIGIN_Y
     end
 
-    def info(fin self) -> Str :=
+    def info(self) -> Str :=
         "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end

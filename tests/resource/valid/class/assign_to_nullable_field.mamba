@@ -1,6 +1,6 @@
 class MyServer() where
-    def _message: Str? := None
+    def mut _message: Str? := None
 
-    def send(self, x: Str) :=
+    def send(mut self, x: Str) :=
         self._message := x
 end

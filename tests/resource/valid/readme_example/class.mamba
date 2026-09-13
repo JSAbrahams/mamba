@@ -1,16 +1,16 @@
 class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
+class Matrix2x2(mut a: Int, mut b: Int, mut c: Int, mut d: Int) where
     # Accessor for matrix contents
-    def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
+    def contents(self) -> List[Int] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(fin self) -> Int := self.a + self.d
+    def pure trace(self) -> Int := self.a + self.d
 
     # Determinant recomputation (pure function)
-    def pure determinant(fin self) -> Int := self.a * self.d - self.b * self.c
+    def pure determinant(self) -> Int := self.a * self.d - self.b * self.c
 
-    def scale(self, factor: Int) := do
+    def scale(mut self, factor: Int) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
@@ -18,7 +18,7 @@ class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
     end
 
     # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
-    def reset(self) := do
+    def reset(mut self) := do
         self.a := 1
         self.b := 0
         self.c := 0

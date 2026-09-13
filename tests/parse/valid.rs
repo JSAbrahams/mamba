@@ -44,7 +44,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("readme_example", "pure_functions")]
 #[test_case("readme_example", "sets_maps")]
 #[test_case("readme_example", "total_functions" => ignore["`total` keyword not implemented"])]
-#[test_case("readme_example", "trait_fin_meta" => ignore["meta/fin modifiers on trait methods not implemented"])]
+#[test_case("readme_example", "trait_meta" => ignore["meta modifier on trait methods not implemented"])]
 #[test_case("readme_example", "trait_inheritance" => ignore["composing multiple parent traits not implemented"])]
 #[test_case("readme_example", "traits" => ignore["generics on traits and external-implementation syntax not implemented"])]
 fn syntax(input_dir: &str, file_name: &str) -> ParseResult<AST> {

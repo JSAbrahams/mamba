@@ -108,7 +108,7 @@ impl Display for Identifier {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
             Identifier::Single(mutable, lit) => {
-                write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone())
+                write!(f, "{}{}", if *mutable { "mut " } else { "" }, lit.clone())
             }
             Identifier::Multi(ids) => write!(f, "({})", comma_delm(ids)),
         }

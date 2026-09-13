@@ -135,7 +135,7 @@ Two items originally flagged and deleted in a dead-code sweep were restored once
   `input()` is a real counter-example, being a top-level builtin that is emphatically not pure.
   That path therefore still starts functions as impure by default.
   Note the check/constrain stage still doesn't *enforce* any of the `pure` restrictions described in `README.md`.
-  Those restrictions include self having to be `fin`, and not calling impure functions.
+  Those restrictions include self not being `mut`, and not calling impure functions.
   See the correctness gap noted further down.
   This only fixed the dead-code problem, not that separate, larger gap.
 - **`Token::equals_name`**, in `parse/lex/token.rs`.

@@ -337,7 +337,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -355,7 +355,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -378,11 +378,11 @@ mod test {
 
     #[test]
     fn mutable_definition_verify() {
-        let source = String::from("def fin a := 10");
+        let source = String::from("def mut a := 10");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(!mutable);
+        assert!(mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -409,7 +409,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -448,7 +448,7 @@ mod test {
             other => panic!("Unexpected expression: {other:?}"),
         };
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(
             id.node,
             Node::Id {
@@ -476,7 +476,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(ty, None);
         assert_eq!(
             id.node,
@@ -506,7 +506,7 @@ mod test {
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable);
+        assert!(!mutable);
         assert_eq!(ty, None);
         assert_eq!(
             id.node,
@@ -537,7 +537,7 @@ mod test {
 
     #[test]
     fn function_definition_verify() {
-        let source = String::from("def f(fin b: Something, c) := d");
+        let source = String::from("def f(mut b: Something, c) := d");
         let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
@@ -595,8 +595,8 @@ mod test {
                     }
                 );
 
-                assert!(!mut1);
-                assert!(mut2);
+                assert!(mut1);
+                assert!(!mut2);
 
                 match ty1.clone().unwrap().node {
                     Node::Type { id, generics } => {
@@ -725,8 +725,8 @@ mod test {
                 assert!(!*v1);
                 assert!(!*v2);
 
-                assert!(*mut1);
-                assert!(*mut2);
+                assert!(!*mut1);
+                assert!(!*mut2);
 
                 assert_eq!(
                     id1.node,

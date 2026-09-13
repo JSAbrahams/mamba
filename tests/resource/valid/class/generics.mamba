@@ -4,15 +4,15 @@ class Err2(msg: Str): Exception(msg)
 class MyType[A: MyGeneric, C](super_field: Str)
 
 class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey") where
-    def fin z_modified: Str := "asdf"
-    def other_field: Int := 10
+    def mut z_modified: Str := "asdf"
+    def mut other_field: Int := 10
 
-    def __init__(self, other_field: Int, z: Int) ! Err1 := do
+    def __init__(mut self, other_field: Int, z: Int) ! Err1 := do
         if z > 10 then ! Err1("Something is wrong!")
         self.z_modified := "fdsa"
 
         def (a, b) := (10, 20)
-        def (a, b) := (30, 40)
+        def mut (a, b) := (30, 40)
         (a, b) := (0, 10)
 
         def my_bool := True
@@ -31,7 +31,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
 
     def error_function(self) -> Int ! { Err1, Err2 } := 200
 
-    def connect(self) := self.other_field := 200
+    def connect(mut self) := self.other_field := 200
 
     def _fun_b(self) := print("this function is private!")
 

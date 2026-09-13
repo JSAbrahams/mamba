@@ -4,13 +4,13 @@ trait Iterator[T] where
 end
 
 class RangeIter(_start: Int, _end: Int) where
-    def _current: Int := _start
+    def mut _current: Int := _start
 end
 
 def Iterator[Int] for RangeIter where
     def has_next(self) -> Bool := self._current < self._end
 
-    def next(self) -> Int? := if self.has_next() then do
+    def next(mut self) -> Int? := if self.has_next() then do
         def value := self._current
         self._current := self._current + 1
         value

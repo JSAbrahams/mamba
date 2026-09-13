@@ -146,9 +146,11 @@ fn check_iden_mut(
             Some(exps) if *f_mut => exps
                 .iter()
                 .filter(|(is_mut, _)| !*is_mut)
-                .map(|(_, var)| format!("Cannot change mutability of '{var}' in reassign"))
+                .map(|(_, var)| format!("Cannot assign to '{var}', which was not declared 'mut'"))
                 .collect(),
-            _ if !f_mut => vec![format!("Cannot change mutability of '{var}' in reassign")],
+            _ if !f_mut => vec![format!(
+                "Cannot assign to '{var}', which was not declared 'mut'"
+            )],
             _ if var == SELF && env.class.is_some() => vec![],
             _ => vec![format!("Cannot reassign to undefined '{var}'")],
         })

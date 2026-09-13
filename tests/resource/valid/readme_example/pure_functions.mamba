@@ -4,11 +4,11 @@ def factorial(x: Int) -> Int := match x where
 end
 
 # taylor is immutable, its value does not change during execution
-def fin taylor := 7
+def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) -> Int := do
-    def ans := x
+    def mut ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     end

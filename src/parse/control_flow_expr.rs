@@ -92,7 +92,7 @@ fn parse_match_case(it: &mut LexIterator) -> ParseResult {
 
 fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression maybe type")?;
-    let mutable = it.eat_if(&Token::Fin).is_none();
+    let mutable = it.eat_if(&Token::Mut).is_some();
 
     let expr = it.parse(&parse_expression, "expression maybe type", start)?;
     let ty = it.parse_if(

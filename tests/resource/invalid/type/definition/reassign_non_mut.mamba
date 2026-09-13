@@ -3,5 +3,5 @@ class A where
 end
 
 
-def fin a := A()
+def a := A()
 a.my_num := 20

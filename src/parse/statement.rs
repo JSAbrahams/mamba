@@ -207,7 +207,7 @@ pub fn is_start_statement(tp: &Token) -> bool {
     matches!(
         tp,
         Token::Def
-            | Token::Fin
+            | Token::Mut
             | Token::For
             | Token::While
             | Token::Pass

@@ -329,7 +329,7 @@ mod test {
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
         let source =
-            "class MyClass(fin a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
+            "class MyClass(mut a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -358,14 +358,14 @@ mod test {
         assert_eq!(generic_class.args[1].name, String::from("a"));
         assert_eq!(generic_class.args[1].ty, Some(Name::from("Int")));
         assert!(!generic_class.args[1].vararg);
-        assert!(!generic_class.args[1].mutable);
+        assert!(generic_class.args[1].mutable);
         assert!(!generic_class.args[1].is_py_type);
         assert!(!generic_class.args[1].has_default);
 
         assert_eq!(generic_class.args[2].name, String::from("b"));
         assert_eq!(generic_class.args[2].ty, Some(Name::from("Int")));
         assert!(!generic_class.args[2].vararg);
-        assert!(generic_class.args[2].mutable);
+        assert!(!generic_class.args[2].mutable);
         assert!(!generic_class.args[2].is_py_type);
         assert!(!generic_class.args[2].has_default);
 
@@ -380,7 +380,7 @@ mod test {
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
-        assert!(!field.mutable);
+        assert!(field.mutable);
 
         // `b` is a bare (non-`def`) constructor argument, which is still instance state stored
         // on `self` (just without an explicit field declaration), so it is a field too.
@@ -389,14 +389,14 @@ mod test {
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
-        assert!(field.mutable);
+        assert!(!field.mutable);
 
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "c");
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
-        assert!(field.mutable);
+        assert!(!field.mutable);
 
         Ok(())
     }
@@ -436,7 +436,7 @@ mod test {
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert_eq!(field.ty, Some(Name::from("Int")));
         assert!(!field.is_py_type);
-        assert!(field.mutable);
+        assert!(!field.mutable);
 
         Ok(())
     }
@@ -477,7 +477,7 @@ mod test {
         assert_eq!(field.in_class, Some(name));
         assert_eq!(field.ty, Some(Name::from("T")));
         assert!(!field.is_py_type);
-        assert!(field.mutable);
+        assert!(!field.mutable);
 
         Ok(())
     }

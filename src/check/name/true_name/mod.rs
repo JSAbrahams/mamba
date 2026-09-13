@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::clss::NONE;
@@ -17,11 +17,33 @@ use crate::common::position::Position;
 pub mod generic;
 pub mod python;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// A name, with the nullability and mutability of the binding it was read from.
+///
+/// `is_mutable` is deliberately *not* part of a name's identity.
+/// Mutability is a property of a binding, not of the type the binding holds, so `mut Str` and `Str`
+/// are the same type and must unify.
+/// `PartialEq`, `Hash` and `Ord` are therefore hand-written to skip it, and it only affects
+/// [Display].
+#[derive(Debug, Clone)]
 pub struct TrueName {
     pub is_nullable: bool,
     pub is_mutable: bool,
     pub variant: StringName,
+}
+
+impl PartialEq for TrueName {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_nullable == other.is_nullable && self.variant == other.variant
+    }
+}
+
+impl Eq for TrueName {}
+
+impl Hash for TrueName {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.is_nullable.hash(state);
+        self.variant.hash(state);
+    }
 }
 
 pub trait IsTemp {
@@ -40,11 +62,7 @@ pub trait MatchTempName {
 impl Ord for TrueName {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.variant == other.variant {
-            if self.is_nullable == other.is_nullable {
-                self.is_mutable.cmp(&other.is_mutable)
-            } else {
-                self.is_nullable.cmp(&other.is_nullable)
-            }
+            self.is_nullable.cmp(&other.is_nullable)
         } else {
             self.variant.cmp(&other.variant)
         }
@@ -79,7 +97,7 @@ impl ColType for TrueName {
 
 impl Display for TrueName {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let mutable = if self.is_mutable { "" } else { "fin " };
+        let mutable = if self.is_mutable { "mut " } else { "" };
         write!(
             f,
             "{}{}{}",
@@ -94,7 +112,7 @@ impl From<&StringName> for TrueName {
     fn from(name: &StringName) -> Self {
         TrueName {
             is_nullable: false,
-            is_mutable: true,
+            is_mutable: false,
             variant: name.clone(),
         }
     }
@@ -208,7 +226,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for TrueName {
     fn tuple(names: &[Name]) -> Self {
         Self {
             is_nullable: false,
-            is_mutable: true,
+            is_mutable: false,
             variant: StringName::tuple(names),
         }
     }
@@ -216,7 +234,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for TrueName {
     fn callable(args: &[Name], ret_ty: &Name) -> Self {
         Self {
             is_nullable: false,
-            is_mutable: true,
+            is_mutable: false,
             variant: StringName::callable(args, ret_ty),
         }
     }

@@ -3,7 +3,7 @@ class A where
 end
 
 class C where
-    def fin my_class: D := D()
+    def my_class: D := D()
     def my_field_accessor(self) -> D := self.my_class
 end
 

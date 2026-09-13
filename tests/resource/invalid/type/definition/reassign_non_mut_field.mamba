@@ -1,5 +1,5 @@
 class A where
-    def fin my_num: Int := 10
+    def my_num: Int := 10
 end
 
 def a := A()

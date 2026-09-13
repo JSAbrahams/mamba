@@ -3,7 +3,7 @@ class B where
 end
 
 class A where
-    def fin b: B
+    def b: B
 end
 
 def a := A()
