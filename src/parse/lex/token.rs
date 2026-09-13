@@ -59,8 +59,6 @@ pub enum Token {
 
     Range,
     RangeIncl,
-    Slice,
-    SliceIncl,
 
     Add,
     Sub,
@@ -187,8 +185,6 @@ impl fmt::Display for Token {
 
             Token::Range => write!(f, ".."),
             Token::RangeIncl => write!(f, "..="),
-            Token::Slice => write!(f, "::"),
-            Token::SliceIncl => write!(f, "::="),
 
             Token::Add => write!(f, "+"),
             Token::Sub => write!(f, "-"),
@@ -266,8 +262,6 @@ impl fmt::Display for TokenName<'_> {
 
             Token::Range => write!(f, "range"),
             Token::RangeIncl => write!(f, "range inclusive"),
-            Token::Slice => write!(f, "slice"),
-            Token::SliceIncl => write!(f, "slice inclusive"),
 
             Token::Add => write!(f, "addition"),
             Token::Sub => write!(f, "subtract"),

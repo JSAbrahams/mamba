@@ -25,7 +25,6 @@ pub const COMPLEX_PRIMITIVE: &str = "complex";
 
 pub const COLLECTION: &str = "collection";
 pub const RANGE: &str = "range";
-pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
 pub const DICT: &str = "dict";
@@ -118,7 +117,6 @@ pub fn python_to_concrete(name: &str) -> String {
 
         COLLECTION => String::from(clss::COLLECTION),
         RANGE => String::from(clss::RANGE),
-        SLICE => String::from(clss::SLICE),
         SET => String::from(clss::SET),
         LIST => String::from(clss::LIST),
         TUPLE => String::from(clss::TUPLE),

@@ -184,12 +184,6 @@ pub enum Node {
         inclusive: bool,
         step: OptAST,
     },
-    Slice {
-        from: Box<AST>,
-        to: Box<AST>,
-        inclusive: bool,
-        step: OptAST,
-    },
     Index {
         item: Box<AST>,
         range: Box<AST>,

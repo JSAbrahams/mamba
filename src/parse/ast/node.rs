@@ -115,7 +115,6 @@ impl Display for Node {
             }
             Node::Index { item, range } => format!("{}[{}]", item.node, range.node),
             Node::Range { .. } => String::from("range"),
-            Node::Slice { .. } => String::from("slice"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
@@ -965,7 +964,6 @@ impl Node {
             | Node::ListBuilder { .. }
             | Node::Tuple { .. }
             | Node::Range { .. }
-            | Node::Slice { .. }
             | Node::Index { .. }
             | Node::Real { .. }
             | Node::Int { .. }

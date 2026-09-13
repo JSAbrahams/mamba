@@ -12,10 +12,6 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
     match c {
         ',' => create(state, Token::Comma),
         ':' => match it.peek() {
-            Some(':') => match (it.next(), it.peek()) {
-                (_, Some('=')) => next_and_create(it, state, Token::SliceIncl),
-                _ => create(state, Token::Slice),
-            },
             Some('=') => next_and_create(it, state, Token::Assign),
             _ => create(state, Token::DoublePoint),
         },

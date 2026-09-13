@@ -618,8 +618,8 @@ mod tests {
     }
 
     #[test]
-    fn test_is_superset_slice_int() {
-        let name1 = Name::from(&HashSet::from([INT, clss::SLICE]));
+    fn test_is_superset_bool_int() {
+        let name1 = Name::from(&HashSet::from([INT, clss::BOOL]));
         let name2 = Name::from(&HashSet::from([INT]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -958,11 +958,11 @@ mod tests {
     }
 
     #[test]
-    fn slice_not_collection_int_as_parent() {
-        let range_name = Name::from(clss::SLICE);
+    fn bool_not_collection() {
+        let bool_name = Name::from(clss::BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, Position::invisible());
+        let collection_ty = bool_name.col_type(&ctx, Position::invisible());
         assert!(collection_ty.is_err());
     }
 

@@ -23,6 +23,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("type_tuple_no_comma"=> matches Err(_))]
 #[test_case("generics_no_comma"=> matches Err(_))]
 #[test_case("id_tuple_no_comma"=> matches Err(_))]
+#[test_case("slice_notation_removed"=> matches Err(_))]
 #[test_case("unrecognized_character"=> matches Err(_))]
 #[test_case("pure_new_without_arguments"=> matches Err(_))]
 fn syntax(file_name: &str) -> ParseResult<()> {

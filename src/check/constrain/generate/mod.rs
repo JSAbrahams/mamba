@@ -72,7 +72,7 @@ pub fn generate(
         }
         Set { .. } | List { .. } | Tuple { .. } | Dict { .. } => gen_coll(ast, env, ctx, constr),
 
-        Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
+        Range { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } | ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),
 

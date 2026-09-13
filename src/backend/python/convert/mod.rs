@@ -10,7 +10,7 @@ use crate::backend::python::convert::control_flow::{
 };
 use crate::backend::python::convert::definition::convert_def;
 use crate::backend::python::convert::handle::convert_handle;
-use crate::backend::python::convert::range_slice::convert_range_slice;
+use crate::backend::python::convert::range::convert_range;
 use crate::backend::python::convert::state::{Imports, State};
 use crate::backend::python::name::ToPy;
 use crate::backend::python::result::{GenResult, UnimplementedErr};
@@ -26,7 +26,7 @@ mod common;
 mod control_flow;
 mod definition;
 mod handle;
-mod range_slice;
+mod range;
 
 pub mod state;
 
@@ -234,7 +234,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state, ctx)?,
+        NodeTy::Range { .. } => convert_range(ast, imp, state, ctx)?,
 
         NodeTy::Underscore => PythonCore::UnderScore,
         NodeTy::Question { left, right } => PythonCore::Or {

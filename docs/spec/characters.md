@@ -79,8 +79,6 @@ Symbol | Use
 ---|---
 `..`  | Exclusive range, or range step, and in `new(..)` one or more class arguments that are not written out
 `..=` | Inclusive range
-`::`  | Exclusive slice, or slice step
-`::=` | Inclusive slice
 
 ## Comments
 

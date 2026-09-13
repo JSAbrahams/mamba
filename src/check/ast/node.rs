@@ -401,20 +401,6 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::Id { lit } if lit.as_str() == "True" => NodeTy::Bool { lit: true },
             Node::Id { lit } if lit.as_str() == "False" => NodeTy::Bool { lit: false },
             Node::Id { lit } => NodeTy::Id { lit: lit.clone() },
-            Node::Slice {
-                from,
-                to,
-                inclusive,
-                step,
-            } => NodeTy::Slice {
-                from: Box::from(ASTTy::from((from, finished))),
-                to: Box::from(ASTTy::from((to, finished))),
-                inclusive: *inclusive,
-                step: step
-                    .clone()
-                    .map(|ast| ASTTy::from((ast, finished)))
-                    .map(Box::from),
-            },
             Node::Index { item, range } => NodeTy::Index {
                 item: Box::from(ASTTy::from((item, finished))),
                 range: Box::from(ASTTy::from((range, finished))),

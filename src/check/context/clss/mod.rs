@@ -30,7 +30,6 @@ pub const COMPLEX: &str = "Complex";
 
 pub const COLLECTION: &str = "Collection";
 pub const RANGE: &str = "Range";
-pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
 pub const LIST: &str = "List";
 pub const DICT: &str = "Dict";
@@ -370,7 +369,6 @@ pub fn concrete_to_python(name: &str) -> String {
 
         COLLECTION => String::from(python::COLLECTION),
         RANGE => String::from(python::RANGE),
-        SLICE => String::from(python::SLICE),
         SET => String::from(python::SET),
         LIST => String::from(python::LIST),
         TUPLE => String::from(python::TUPLE),

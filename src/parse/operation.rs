@@ -93,19 +93,20 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
 fn parse_level_3(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (3)")?;
     let left = it.parse(&parse_level_2, "operation", start)?;
-    macro_rules! match_range_slice {
-        ($it:expr, $token:ident, $incl:expr, $node:ident, $msg:expr) => {{
-            $it.eat(&Token::$token, $msg)?;
-            let to = $it.parse(&parse_expression, $msg, start)?;
+    /// A second `..` after the bound is the step, as in `0 .. 10 .. 2`.
+    macro_rules! range {
+        ($it:expr, $token:ident, $incl:expr) => {{
+            $it.eat(&Token::$token, "range")?;
+            let to = $it.parse(&parse_expression, "range", start)?;
             let (to, step, end) = match to.node {
-                Node::$node { from, to, .. } => (from.clone(), Some(to.clone()), to.pos),
+                Node::Range { from, to, .. } => (from.clone(), Some(to.clone()), to.pos),
                 _ => {
-                    let step = $it.parse_if(&Token::$node, &parse_expression, $msg, start)?;
+                    let step = $it.parse_if(&Token::Range, &parse_expression, "range", start)?;
                     (to.clone(), step.clone(), step.map_or(to.pos, |ast| ast.pos))
                 }
             };
 
-            let node = Node::$node {
+            let node = Node::Range {
                 from: left.clone(),
                 to,
                 inclusive: $incl,
@@ -121,10 +122,8 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::Div => bin_op!(it, start, parse_level_3, Div, left.clone(), "div"),
             Token::FDiv => bin_op!(it, start, parse_level_3, FDiv, left.clone(), "floor div"),
             Token::Mod => bin_op!(it, start, parse_level_3, Mod, left.clone(), "mod"),
-            Token::Range => match_range_slice!(it, Range, false, Range, "range"),
-            Token::RangeIncl => match_range_slice!(it, RangeIncl, true, Range, "range"),
-            Token::Slice => match_range_slice!(it, Slice, false, Slice, "range"),
-            Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
+            Token::Range => range!(it, Range, false),
+            Token::RangeIncl => range!(it, RangeIncl, true),
             _ => Ok(left.clone()),
         },
         Ok(left.clone()),

@@ -85,7 +85,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "{" expression "=>" expression { "," [ newline ] expression "=>" expression } "}"
     map-builder      ::= "{ expression "=>" expression | expression { "," [ newline ] expression } }
       
-    slice            ::= expression ( "::" | "::=" ) expression
     range            ::= expression ( ".." | "..=" ) expression
     
     definition       ::= variable-def | fun-def | type-def | trait-def | class-def
@@ -115,7 +114,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operation        ::= relation [ boolean-logic operation ]
     relation         ::= arithmetic [ ( comparison | equality | "in" ) relation ]
     arithmetic       ::= term [ additive arithmetic ]
-    term             ::= unary [ ( multiplicative | range | slice ) term ]
+    term             ::= unary [ ( multiplicative | range ) term ]
     unary            ::= [ prefix ] inner-term
     inner-term       ::= factor [ power inner-term ]
     factor           ::= literal | id | expression

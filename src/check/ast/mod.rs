@@ -205,12 +205,6 @@ pub enum NodeTy {
         inclusive: bool,
         step: OptASTTy,
     },
-    Slice {
-        from: Box<ASTTy>,
-        to: Box<ASTTy>,
-        inclusive: bool,
-        step: OptASTTy,
-    },
     Index {
         item: Box<ASTTy>,
         range: Box<ASTTy>,
