@@ -1,0 +1,4 @@
+# Only `new` is generated, so only `new` has arguments to stand in for
+class Point(x: Int, y: Int) where
+    def other(..)
+end

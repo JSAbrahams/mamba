@@ -1,0 +1,2 @@
+# `..` on its own is not an expression, so there is nothing to assign
+def a := ..

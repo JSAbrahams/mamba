@@ -95,6 +95,13 @@ pub fn generate(
         Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
+        // The bodiless `new` that may carry a `..` is dropped in [gen_class] before anything
+        // is generated for it, so one that arrives here stands for nothing.
+        Rest => Err(vec![TypeErr::new(
+            ast.pos,
+            "'..' is only allowed as the argument list of a bodiless 'new'",
+        )]),
+
         Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => {
             Ok(env.clone())
         }

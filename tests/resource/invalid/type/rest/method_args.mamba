@@ -1,0 +1,4 @@
+# `new` is the only function whose arguments may be left unwritten, even inside a class
+class Point(x: Int, y: Int) where
+    def shifted(self, ..) -> Self := return Point(0, 0)
+end

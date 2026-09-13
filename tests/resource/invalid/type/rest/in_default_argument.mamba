@@ -1,0 +1,2 @@
+# `..` is not a value, so it cannot be one an argument falls back to
+def f(x: Int := ..) -> Int := return x

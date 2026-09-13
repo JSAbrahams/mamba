@@ -1,5 +1,5 @@
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::{Node, AST, NEW};
+use crate::parse::ast::{Node, AST};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -81,23 +81,6 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
         Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
             &|it, lex| match lex.token {
                 Token::LRBrack => parse_fun_def(&id, pure, it),
-                // `def pure new` asserts that the constructor a class gets for free is pure.
-                // It takes no argument list, because it is not declaring a signature: the
-                // generated one already has the class arguments. Bare `def new` parses the
-                // same way so it can be reported as redundant rather than as a stray field.
-                Token::NL if !*mutable && matches!(&expr.node, Node::Id { lit } if lit == NEW) => {
-                    Ok(Box::from(AST::new(
-                        id.pos,
-                        Node::FunDef {
-                            pure,
-                            id: expr.clone(),
-                            args: vec![],
-                            ret: None,
-                            raises: vec![],
-                            body: None,
-                        },
-                    )))
-                }
                 _ if !pure => parse_variable_def_id(&id, it),
                 _ => {
                     let msg = format!("Definition cannot have {} identifier", Token::Pure);
@@ -205,6 +188,14 @@ pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function argument")?;
+
+    // A placeholder binds nothing, so it takes neither a type nor a default.
+    if let Some(pos) = it.eat_if(&Token::Range) {
+        return Ok(Box::from(AST::new(pos, Node::Rest)));
+    }
+    if let Some(pos) = it.eat_if(&Token::Underscore) {
+        return Ok(Box::from(AST::new(pos, Node::Underscore)));
+    }
 
     let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
     let (mutable, var, ty) = match &expression_type.node {
@@ -815,5 +806,101 @@ mod test {
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
         source.parse::<AST>().unwrap_err();
+    }
+
+    #[test]
+    fn pure_new_empty_args_verify() {
+        let source = String::from("def pure new()");
+        let (pure, id, args, ret, raises, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(
+            id.node,
+            Node::Id {
+                lit: String::from("new")
+            }
+        );
+        assert!(args.is_empty());
+        assert_eq!(ret, None);
+        assert_eq!(raises.len(), 0);
+        assert_eq!(body, None);
+    }
+
+    #[test]
+    fn pure_new_underscore_args_verify() {
+        let source = String::from("def pure new(_)");
+        let (pure, _, args, _, _, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(args.len(), 1);
+        assert_eq!(args[0].node, Node::Underscore);
+        assert_eq!(body, None);
+    }
+
+    #[test]
+    fn pure_new_rest_args_verify() {
+        let source = String::from("def pure new(..)");
+        let (pure, _, args, _, _, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(args.len(), 1);
+        assert_eq!(args[0].node, Node::Rest);
+        assert_eq!(body, None);
+    }
+
+    /// The parser does not know that `new` is special, the checker does.
+    ///
+    /// That is what lets a misplaced placeholder be explained rather than reported as a syntax
+    /// error, and it is what a match case will need when `..` is allowed there.
+    #[test]
+    fn placeholder_args_on_ordinary_function_parse() {
+        for (source, expected) in [
+            ("def f(..) := 1", Node::Rest),
+            ("def f(_) := 1", Node::Underscore),
+        ] {
+            let (_, id, args, ..) = unwrap_func_definition!(
+                parse_direct(&String::from(source)).expect("valid definition")
+            );
+
+            assert_eq!(
+                id.node,
+                Node::Id {
+                    lit: String::from("f")
+                }
+            );
+            assert_eq!(args.len(), 1, "{source}");
+            assert_eq!(args[0].node, expected, "{source}");
+        }
+    }
+
+    /// A placeholder binds nothing, so there is nothing for a type to attach to.
+    #[test]
+    fn placeholder_arg_with_type_is_error() {
+        for source in ["def f(..: Int) := 1", "def f(_: Int) := 1"] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `new` without an argument list is a definition like any other, and the parser treats it
+    /// as one. Naming it as a function is left to the checker.
+    #[test]
+    fn new_without_args_is_a_variable_def() {
+        let source = String::from("def new\nprint(1)");
+        let (_, var, ty, expr, _) =
+            unwrap_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert_eq!(
+            var.node,
+            Node::Id {
+                lit: String::from("new")
+            }
+        );
+        assert_eq!(ty, None);
+        assert_eq!(expr, None);
     }
 }

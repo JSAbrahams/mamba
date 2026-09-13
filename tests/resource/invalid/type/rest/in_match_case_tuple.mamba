@@ -1,0 +1,8 @@
+# This is where `..` is intended to go next, as matching on the first element alone.
+# It does not work yet, and saying so beats quietly ignoring it
+def t := (1, 2)
+
+match t where
+    (1, ..) => print("one")
+    _       => print("other")
+end

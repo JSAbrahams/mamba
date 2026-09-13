@@ -102,24 +102,49 @@ This is also what lets construction be pure by default in the absence of an expl
 ## Pure construction
 
 Purity is never inferred.
-A class states that constructing it is pure by declaring `new` pure, with no argument list and no body:
+A class states that constructing it is pure by declaring `new` pure, with no body:
 
 ```mamba
 class Point(x: Int, y: Int) where
-    def pure new
+    def pure new(..)
 end
 
 def pure origin() -> Point := return Point.new(0, 0)
 ```
 
-There is no argument list because this is not a signature.
-The generated `new` already has the class arguments, and this asserts a property of it.
+The `..` stands for the class arguments.
+They are not written out because this is not declaring a signature: the generated `new` already has them, and this only asserts a property of it.
+
+The argument list still has to say how many there are, so there are three spellings:
+
+| written | stands for | use when the class has |
+| --- | --- | --- |
+| `new()` | no class arguments | none |
+| `new(_)` | exactly one class argument | exactly one |
+| `new(..)` | one or more class arguments | one or more |
+
+`_` is one thing and `..` is one or more, which is why `new(..)` is wrong for a class with no arguments and `new(_)` is wrong for a class with two.
+A class with one argument may write either.
+
+```mamba
+class Origin() where
+    def pure new()
+end
+
+class Wrapper(x: Int) where
+    def pure new(_)
+end
+```
+
+The list is not optional, so `def pure new` on its own is an error.
+Without it the assertion is written in exactly the grammar a field uses, since `def <name>` with no parentheses is how a field is declared.
+It would then not merely resemble a field, it would be one, while the thing it describes is a function.
 
 The assertion is checked against the derived field initializers, since those are the only thing construction runs.
 A field initialized by an impure call is rejected.
 
 Leave the assertion out and `new` is an ordinary impure function, so a pure function may not construct the class.
-Writing a bare `def new` asks for what the class already has, and the compiler warns that it is redundant.
+Writing it without `pure` asks for what the class already has, and the compiler warns that it is redundant.
 
 ### What `pure new` does not say
 
@@ -128,7 +153,7 @@ Methods are untouched:
 
 ```mamba
 class Counter(start: Int) where
-    def pure new
+    def pure new(..)
     def mut count: Int := self.start
 
     def tick(mut self) := do
@@ -144,10 +169,14 @@ This is why the marker sits on `new` rather than on the class.
 A class-level `class pure Counter` would read as though `tick` were pure too.
 The narrower reading is the useful one, so it is spelled on the thing it actually constrains.
 
-### A known problem in the notation
+### Where else `_` and `..` go
 
-`def pure new` reads as a field, because it is written in exactly the grammar a field uses.
-`def <name>` with no parentheses is how a field is declared, and `def other` at the top level really does define a variable.
-So the marker does not merely resemble a field, it borrows the field's production, while the thing it describes is a function.
+`_` and `..` read the same wherever they appear: something is there, and it is not written out.
+`_` is one of it, `..` is one or more.
+The argument list of a bodiless `new` is the only place either is allowed today.
+
+`..` is intended to go in a match case next, where `(2, ..)` matches on the first element alone and ignores the rest.
+That is the same one-or-more reading it has in `new(..)`.
+Anywhere else, such as a tuple that is built rather than matched, there is nothing to leave out, and the compiler says so.
 
 See [Pure Functions](../functions/pure_functions.md) for the rules a pure function obeys.

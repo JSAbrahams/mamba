@@ -1,0 +1,4 @@
+# `_` stands for exactly one thing, so it cannot cover two class arguments
+class Point(x: Int, y: Int) where
+    def pure new(_)
+end

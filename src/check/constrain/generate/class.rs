@@ -12,8 +12,9 @@ use crate::check::context::Context;
 use crate::check::name::string_name::StringName;
 use crate::check::name::Name;
 use crate::check::result::TypeErr;
+use crate::check::{is_new_marker, is_pure_new, NEW};
 use crate::parse::ast::Node::Id;
-use crate::parse::ast::{is_new_marker, Node, AST, NEW};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_class(
     ast: &AST,
@@ -25,6 +26,7 @@ pub fn gen_class(
         Node::Class {
             body: Some(body),
             ty,
+            args,
             ..
         } => match &body.node {
             Node::Block { statements } => {
@@ -38,7 +40,7 @@ pub fn gen_class(
                 );
                 let env = id_from_var(&var, &name, &None, true, ctx, constr, env)?;
 
-                constrain_class_body(statements, ty, true, &env, ctx, constr)
+                constrain_class_body(statements, ty, args, true, &env, ctx, constr)
             }
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
@@ -48,7 +50,7 @@ pub fn gen_class(
             ..
         } => match &body.node {
             Node::Block { statements } => {
-                constrain_class_body(statements, ty, false, env, ctx, constr)
+                constrain_class_body(statements, ty, &[], false, env, ctx, constr)
             }
             _ => Err(vec![TypeErr::new(body.pos, "Expected code block")]),
         },
@@ -76,7 +78,11 @@ pub fn gen_class(
 /// ambiguous whether constructing the class has side effects. Side effects belong in an
 /// explicit constructor instead, where they are visible in its signature. A leading
 /// docstring is the one exception, since it is documentation rather than a statement.
-fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()> {
+fn check_only_declarations(
+    statements: &[AST],
+    class_args: &[AST],
+    is_class: bool,
+) -> Constrained<()> {
     let mut errors: Vec<TypeErr> = vec![];
 
     for (i, stmt) in statements.iter().enumerate() {
@@ -89,13 +95,38 @@ fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()
                 );
                 errors.push(TypeErr::new(stmt.pos, &msg));
             }
-            // `def new` on its own asks for what the class already has.
-            stmt_node if is_new_marker(stmt) && !declares_pure_new(stmt) => {
-                let _ = stmt_node;
-                warn!(
-                    "{}:{} redundant '{NEW}', as one taking the class arguments is already generated. Write '{} {NEW}' to assert it is pure, or give it arguments and a body to replace it",
-                    stmt.pos.start.line, stmt.pos.start.pos, "pure"
-                );
+            // The marker's argument list stands for the class arguments rather than declaring
+            // any, so it has to say how many there are.
+            Node::FunDef { args, .. } if is_new_marker(stmt) => {
+                let (matches_class, list, stands_for) = match args.first().map(|arg| &arg.node) {
+                    None => (class_args.is_empty(), "()", "no class arguments"),
+                    Some(Node::Underscore) => {
+                        (class_args.len() == 1, "(_)", "exactly one class argument")
+                    }
+                    _ => (
+                        !class_args.is_empty(),
+                        "(..)",
+                        "one or more class arguments",
+                    ),
+                };
+
+                if !matches_class {
+                    let write = match class_args.len() {
+                        0 => format!("'{NEW}()'"),
+                        1 => format!("'{NEW}(_)' or '{NEW}(..)'"),
+                        _ => format!("'{NEW}(..)'"),
+                    };
+                    let msg = format!(
+                        "'{NEW}{list}' stands for {stands_for}, but the class has {}. Write {write}",
+                        class_args.len()
+                    );
+                    errors.push(TypeErr::new(stmt.pos, &msg));
+                } else if !is_pure_new(stmt) {
+                    warn!(
+                        "{}:{} redundant '{NEW}{list}', as one taking the class arguments is already generated. Mark it 'pure' to assert construction is pure, or give it arguments and a body to replace it",
+                        stmt.pos.start.line, stmt.pos.start.pos
+                    );
+                }
             }
             Node::FunDef { .. } => {}
             Node::DocStr { .. } if i == 0 => {}
@@ -126,15 +157,6 @@ fn check_only_declarations(statements: &[AST], is_class: bool) -> Constrained<()
     }
 }
 
-/// Whether a statement is the bodiless `def pure new` that asserts pure construction.
-///
-/// It declares no argument list and no body, since it is not a signature: the constructor it
-/// describes is the one the class already gets from its arguments.
-fn declares_pure_new(stmt: &AST) -> bool {
-    matches!(&stmt.node, Node::FunDef { pure: true, id, .. }
-        if matches!(&id.node, Node::Id { lit } if lit == NEW))
-}
-
 /// Whether a type annotation admits `None`, so a field of it needs no value of its own.
 fn is_nullable(ty: &AST) -> bool {
     match &ty.node {
@@ -147,19 +169,31 @@ fn is_nullable(ty: &AST) -> bool {
 pub fn constrain_class_body(
     statements: &[AST],
     ty: &AST,
+    class_args: &[AST],
     is_class: bool,
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let name = StringName::try_from(ty)?;
-    check_only_declarations(statements, is_class)?;
+    check_only_declarations(statements, class_args, is_class)?;
     let class_env = env.in_class(&name);
 
-    // `def pure new` asserts the generated constructor is pure, and the derived field
+    let pure_new = statements.iter().any(is_pure_new);
+
+    // The marker declares nothing, so there is nothing in it to constrain. Dropping it here
+    // also keeps its `..` away from the generator, which rejects one wherever it lands.
+    let statements: Vec<AST> = statements
+        .iter()
+        .filter(|stmt| !is_new_marker(stmt))
+        .cloned()
+        .collect();
+    let statements = statements.as_slice();
+
+    // `def pure new(..)` asserts the generated constructor is pure, and the derived field
     // initializers are the only thing it runs. Checking them under the purity rules is what
     // turns the assertion into a guarantee.
-    if statements.iter().any(declares_pure_new) {
+    if pure_new {
         let (fields, rest): (Vec<AST>, Vec<AST>) = statements
             .iter()
             .cloned()

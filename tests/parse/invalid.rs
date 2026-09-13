@@ -19,6 +19,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("class_parent_bad_token"=> matches Err(_))]
 #[test_case("class_parent_arg_bad_token"=> matches Err(_))]
 #[test_case("unrecognized_character"=> matches Err(_))]
+#[test_case("pure_new_without_arguments"=> matches Err(_))]
 fn syntax(file_name: &str) -> ParseResult<()> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(false, &["syntax"], &file_name).unwrap();

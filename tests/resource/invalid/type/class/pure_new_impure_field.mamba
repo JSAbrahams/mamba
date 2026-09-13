@@ -2,7 +2,7 @@ def seed() -> Int := 4
 
 class Seeded(n: Int) where
     # asserts pure construction, but the derived field below breaks it
-    def pure new
+    def pure new(..)
 
     def seed: Int := seed()
 end

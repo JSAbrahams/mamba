@@ -1,0 +1,4 @@
+# `_` stands for exactly one thing, and this class has nothing to stand for
+class Empty() where
+    def pure new(_)
+end

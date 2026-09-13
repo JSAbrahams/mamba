@@ -42,6 +42,13 @@ use mamba::parse::ast::AST;
 #[test_case("class", "derived_field_passed" => matches Err(_))]
 #[test_case("class", "init_not_a_thing" => matches Err(_))]
 #[test_case("class", "pure_new_impure_field" => matches Err(_))]
+// The marker's argument list stands for the class arguments, so it has to say how many there
+// are: `()` none, `(_)` exactly one, `(..)` one or more. These are the mismatches.
+#[test_case("class", "new_empty_list_with_class_arguments" => matches Err(_))]
+#[test_case("class", "new_underscore_without_class_arguments" => matches Err(_))]
+#[test_case("class", "new_underscore_with_two_class_arguments" => matches Err(_))]
+#[test_case("class", "new_rest_without_class_arguments" => matches Err(_))]
+#[test_case("class", "new_as_field" => matches Err(_))]
 #[test_case("class", "same_parent_twice" => matches Err(_))]
 #[test_case("class", "wrong_generic_type" => matches Err(_))]
 #[test_case("collection", "dictionary_assume_not_optional" => ignore["type checker incorrectly assumes access always non-optional"])]
@@ -158,6 +165,28 @@ use mamba::parse::ast::AST;
 #[test_case("operation", "reassign_to_undefined" => matches Err(_))]
 #[test_case("operation", "string_minus" => matches Err(_))]
 #[test_case("operation", "undefined_field_fstring" => matches Err(_))]
+// `..` is allowed by the grammar wherever an expression or an argument may appear, so that a
+// misplaced one is explained rather than reported as a syntax error. These are the positions
+// it reaches, and the only one it may survive is the argument list of a bodiless `new`.
+#[test_case("rest", "in_function_args" => matches Err(_))]
+#[test_case("rest", "in_default_argument" => matches Err(_))]
+#[test_case("rest", "as_class_argument" => matches Err(_))]
+#[test_case("rest", "in_tuple" => matches Err(_))]
+#[test_case("rest", "in_list" => matches Err(_))]
+#[test_case("rest", "in_set" => matches Err(_))]
+#[test_case("rest", "in_call_args" => matches Err(_))]
+#[test_case("rest", "on_its_own" => matches Err(_))]
+#[test_case("rest", "as_condition" => matches Err(_))]
+#[test_case("rest", "as_return_value" => matches Err(_))]
+#[test_case("rest", "in_match_case_tuple" => matches Err(_))]
+#[test_case("rest", "in_nested_match_case_tuple" => matches Err(_))]
+#[test_case("rest", "as_whole_match_case" => matches Err(_))]
+#[test_case("rest", "new_with_body" => matches Err(_))]
+#[test_case("rest", "method_args" => matches Err(_))]
+#[test_case("rest", "bodiless_function_other_than_new" => matches Err(_))]
+#[test_case("rest", "underscore_in_function_args" => matches Err(_))]
+#[test_case("rest", "underscore_in_method_args" => matches Err(_))]
+#[test_case("rest", "underscore_as_class_argument" => matches Err(_))]
 fn fail_check(input_dir: &str, file_name: &str) -> TypeResult<()> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(false, &["type", input_dir], &file_name).unwrap();

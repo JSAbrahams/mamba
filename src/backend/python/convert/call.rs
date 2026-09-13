@@ -8,8 +8,8 @@ use crate::check::ast::NodeTy;
 use crate::check::context::clss::GetFun;
 use crate::check::context::LookupClass;
 use crate::check::name::string_name::StringName;
+use crate::check::NEW;
 use crate::common::position::Position;
-use crate::parse::ast::NEW;
 use crate::{ASTTy, Context};
 
 /// Rewrite `C.new(..)` to `C(..)` where `new` is the constructor the class got for free.

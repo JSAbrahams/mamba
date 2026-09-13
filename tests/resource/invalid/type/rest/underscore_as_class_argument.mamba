@@ -1,0 +1,2 @@
+# A class argument is a field, and a field needs a name
+class Point(_)

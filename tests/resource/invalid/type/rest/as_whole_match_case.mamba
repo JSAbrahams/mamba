@@ -1,0 +1,5 @@
+def t := 1
+
+match t where
+    .. => print("a")
+end

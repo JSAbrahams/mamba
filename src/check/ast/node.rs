@@ -2,9 +2,10 @@ use std::convert::TryFrom;
 
 use crate::check::ast::NodeTy;
 use crate::check::constrain::unify::finished::Finished;
+use crate::check::is_new_marker;
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Empty, Name};
-use crate::parse::ast::{is_new_marker, Node, AST};
+use crate::parse::ast::{Node, AST};
 use crate::ASTTy;
 
 /// Drop a bodiless `new` from a class body.

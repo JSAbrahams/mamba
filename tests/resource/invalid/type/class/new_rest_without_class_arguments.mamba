@@ -1,0 +1,4 @@
+# `..` reads as one or more, so it is wrong for a class with no arguments at all
+class Empty() where
+    def pure new(..)
+end

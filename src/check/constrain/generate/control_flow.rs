@@ -147,6 +147,7 @@ fn constrain_cases(
         match &case.node {
             Node::Case { cond, body } => {
                 constr.branch("match arm", case.pos);
+                check_no_rest(cond)?;
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
 
                 if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
@@ -176,4 +177,20 @@ fn constrain_cases(
     constr.reset_branches();
 
     Ok(env.clone())
+}
+
+/// Reject a `..` in a match case, which is where it is meant to go next.
+///
+/// A case that is not a plain identifier is not walked at all, so a `..` in one never reaches
+/// [generate]. Allowing `(2, ..)` later means matching on the elided elements here.
+fn check_no_rest(ast: &AST) -> Constrained<()> {
+    match &ast.node {
+        Node::Rest => Err(vec![TypeErr::new(
+            ast.pos,
+            "'..' is only allowed as the argument list of a bodiless 'new'",
+        )]),
+        Node::Tuple { elements } => elements.iter().try_for_each(check_no_rest),
+        Node::ExpressionType { expr, .. } => check_no_rest(expr),
+        _ => Ok(()),
+    }
 }

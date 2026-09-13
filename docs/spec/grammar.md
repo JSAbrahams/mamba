@@ -22,9 +22,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # its body holds only field and method declarations, plus a leading docstring
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ class-set ]
     class-set        ::= "where" [ docstring newline ] class-member { newline class-member } "end"
-    class-member     ::= variable-def | fun-def | pure-new
-    # asserts that the "new" the class already has is pure; no argument list, no body
-    pure-new         ::= "def" [ "pure" ] "new"
+    class-member     ::= variable-def | fun-def | class-new
+    # asserts something about the "new" the class already has, rather than declaring one
+    # its list stands for the class arguments: "()" none, "(_)" one, "(..)" one or more
+    class-new        ::= "def" [ "pure" ] "new" "(" [ "_" | ".." ] ")"
     
     id               ::= { character }
     # "mut" marks one binding, so it may only precede an id, never a tuple
@@ -55,6 +56,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | anon-fun
                       | call
                       | "_"
+                      | ".."
                       | code-block
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) expression
@@ -95,7 +97,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # a fun-def with no "self" argument is an associated function, called on the class
     # rather than on an instance; "new" is one of these
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    fun-arg          ::= id-maybe-type [ ":=" expression ]
+    # a placeholder binds nothing, so it takes neither a type nor a default
+    # the grammar lets one stand wherever an expression or an argument does, and the type
+    # checker narrows it to "class-new" above; a match case is where ".." goes next
+    fun-arg          ::= id-maybe-type [ ":=" expression ] | "_" | ".."
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     
     operation        ::= relation [ ( equality | boolean-logic ) relation ]

@@ -1,0 +1,7 @@
+# `(_)` is the exact spelling for a class with one argument: `_` stands for one thing
+class Wrapper(x: Int) where
+    def pure new(_)
+end
+
+def pure wrap(x: Int) -> Wrapper := return Wrapper.new(x)
+print(wrap(7).x)

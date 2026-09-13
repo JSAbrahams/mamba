@@ -1,0 +1,8 @@
+# A bodiless `def new(..)` asks for the `new` the class already has, so it is redundant.
+# The compiler warns and carries on, since the notation is right and only the intent is idle
+class Point(x: Int, y: Int) where
+    def new(..)
+end
+
+def p := Point.new(1, 2)
+print(p.x)

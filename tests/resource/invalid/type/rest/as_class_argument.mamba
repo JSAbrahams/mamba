@@ -1,0 +1,2 @@
+# The class arguments are what `..` stands in for elsewhere, so here it stands for itself
+class Point(..)

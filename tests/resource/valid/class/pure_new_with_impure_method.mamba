@@ -1,7 +1,7 @@
-# `def pure new` says construction is pure. It says nothing about the methods, which is why
-# it sits on new rather than on the class
+# `def pure new(..)` says construction is pure. It says nothing about the methods,
+# which is why it sits on new rather than on the class
 class Counter(start: Int) where
-    def pure new
+    def pure new(..)
 
     def mut count: Int := self.start
 

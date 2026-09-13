@@ -360,7 +360,7 @@ That is what makes `new` ordinary rather than special, and it means named altern
 
 ```mamba
 class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
-    def pure new
+    def pure new(..)
     def pure identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
 end
 
@@ -491,35 +491,40 @@ Pure methods remain useful on a class whose fields are all immutable.
 #### Pure construction
 
 Purity is never inferred, here or anywhere.
-A class states that constructing it is pure by declaring `new` pure, with no argument list and no body:
+A class states that constructing it is pure by declaring `new` pure, with no body:
 
 ```mamba
 class Point(x: Int, y: Int) where
-    def pure new
+    def pure new(..)
 end
 
 def pure origin() -> Point := Point.new(0, 0)
 ```
 
-There is no argument list because it is not declaring a signature.
-The generated `new` already has the class arguments; this only asserts a property of it.
+The `..` stands for the class arguments, which are not written out because this is not declaring a signature.
+The generated `new` already has them; this only asserts a property of it.
+
+The list still has to say how many arguments there are, so there are three spellings: `new()` for a class with none, `new(_)` for a class with exactly one, and `new(..)` for one or more.
+Read `_` as one thing and `..` as one or more, which is what they will mean in a match case such as `(2, ..)` when implemented.
+Everywhere else they are an error, as is the bare `def pure new`, which would otherwise be written in the grammar a field uses.
+
 The assertion is then checked against the derived field initializers, which are the only thing construction runs:
 
 ```mamba
 class Seeded(n: Int) where
-    def pure new
+    def pure new(..)
     def seed: Int := random()   # rejected, random is not pure
 end
 ```
 
 Leave the assertion out and `new` is an ordinary impure function, so a pure function may not construct the class.
-Writing a bare `def new` asks for what the class already has, and the compiler warns that it is redundant.
+Writing it without `pure` asks for what the class already has, and the compiler warns that it is redundant.
 
-Note that `def pure new` constrains construction only, never the methods:
+Note that `def pure new(..)` constrains construction only, never the methods:
 
 ```mamba
 class Counter(start: Int) where
-    def pure new
+    def pure new(..)
     def mut count: Int := self.start
 
     # perfectly fine, purity was never claimed for methods

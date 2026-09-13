@@ -151,6 +151,7 @@ impl Display for Node {
             Node::Continue => format!("{}", Token::Continue),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
             Node::Underscore => format!("{}", Token::Underscore),
+            Node::Rest => format!("{}", Token::Range),
             Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
@@ -977,6 +978,7 @@ impl Node {
             | Node::Str { .. }
             | Node::Match { .. }
             | Node::Underscore
+            | Node::Rest
             | Node::Question { .. }
             | Node::QuestionOp { .. } => true,
 

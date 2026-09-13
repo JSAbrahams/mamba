@@ -22,9 +22,10 @@ use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
+use crate::check::NEW;
 use crate::common::position::Position;
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::{Node, AST, NEW};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_call(
     ast: &AST,
