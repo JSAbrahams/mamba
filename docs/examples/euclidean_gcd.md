@@ -29,11 +29,11 @@ print(gcd(48, 18))
 print(gcd(1071, 462))
 ```
 
-Typed with `PosInt` (non-negative `Int`) and annotated fully, this reads:
+Typed with `Nat` (non-negative `Int`) and annotated fully, this reads:
 
 ```mamba
-# PosInt and total aren't implemented yet
-def total pure gcd(a: PosInt, b: PosInt) -> PosInt := 
+# Nat and total aren't implemented yet
+def total pure gcd(a: Nat, b: Nat) -> Nat := 
     if b = 0 then a
     else gcd(b, a mod b)
 ```

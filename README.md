@@ -34,7 +34,7 @@ Mamba is similar to Python, but with a few key features:
 - Pure functions, or, functions without side effects
 - Meta functions, for reasoning about the language itself
 
-See [docs](/docs/) for a more extensive overview of the language philosophy.
+See [docs](docs/) for a more extensive overview of the language philosophy.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
 There therefore exists some interoperability with Python code.
@@ -139,6 +139,8 @@ end else
 We specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
 This is part of the signature of the function, and is required (it cannot be inferred).
 This means that the compiler will check for us that factorial is only used with integers as argument.
+`Int` is unbounded by design, with no width and no wrapping.
+See [docs/features/safety/types.md](docs/features/safety/types.md#unbounded-integers).
 Also note that:
 
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
@@ -240,7 +242,6 @@ This holds everywhere a name is bound, so it covers variables, function argument
 The reason is domain.
 Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
 Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.
-See [Mutability](docs/philosophy/mutability.md) for the longer argument, including why Mamba used to do this the other way round.
 
 ### 📋 Types, Properties, and Classes
 
@@ -471,7 +472,7 @@ Not every function that obviously halts can be marked `total`.
 
 ```mamba
 # some syntax here such as guard arms which are not in the language yet
-def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) where
+def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
     (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
@@ -492,7 +493,7 @@ Take for instance this naive implementation of the Fibonacci sequence:
 
 ```mamba
 ## Fibonacci, implemented using recursion and not dynamic programming
-def total pure fibonacci(x: PosInt) -> Int := match x where
+def total pure fibonacci(x: Nat) -> Int := match x where
     0 => 0
     1 => 1
     n => fibonacci(n - 1) + fibonacci(n - 2)
@@ -523,7 +524,7 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 trait StrictlyDecreases: Measurable where
     def meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
     def meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
-    def meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
+    def meta subtract(self, other: Self) -> Nat? := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
@@ -535,22 +536,49 @@ Instead, ordering is reduced to numeric ordering, which is verifiable and depend
 It is for instance defined for the built-in primitive `Int`.
 
 ```mamba
-# Measure for Int returns abs(self), landing in PosInt, since a measure needs a bounded-below domain
+# Measure for Int returns abs(self), landing in Nat, since a measure needs a bounded-below domain
 def StrictlyDecreases for Int where
     def meta measure(self) -> Measurable := self.abs()
 end
 
-# For string, we as an example use the length of the string (also a PosInt)
+# For string, we as an example use the length of the string (also a Nat)
 def StrictlyDecreases for Str where
     def meta measure(self) -> Measurable := self.len()
 end
 ```
 
-Both of the above return a `PosInt`, which is part of the library and implements the `Measurable` trait.
-This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
+Both of the above return a `Nat`, the non-negative integers.
+`Nat` is part of the library and implements the `Measurable` trait.
+`Measurable` is a special built-in trait of the language.
+As of writing it cannot be implemented for custom types.
+Zero is in `Nat`, which is what a measure needs.
+Both `0.abs()` and `"".len()` are `0`.
+
+`Nat` is a refinement of `Int`, not a separate primitive, and is future work.
+Like `Int`, it is unbounded rather than a fixed-width unsigned integer.
+See [docs/features/safety/types.md](docs/features/safety/types.md#nat) for its definition.
+
+`Nat` is closed under addition but not under subtraction.
+That is why `subtract` above is partial.
+When `other` measures larger than `self`, the difference lands outside `Nat`.
+There is no value to hand back, so `subtract` yields `None`.
+
+This is deliberately not an error.
+Leaving the domain is not a fault to report.
+It is a question with no answer, and `Nat?` is how the language already says that.
+
+It is equally deliberately not saturation at zero.
+`None` and `0` have to stay distinct.
+`0` says the two measures were equal.
+`None` says the subtraction left the domain.
+Collapsing them would report a decrease where there was none.
+That is the unsoundness `Measurable` exists to rule out, so `decreases` never reads `None` as a decrease.
+Since `subtract` is `meta`, which of the two it yields is settled at compile time.
 
 Implementing `Measurable` for custom types is future work.
-`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `PosInt`; the compiler verifies the decrease independently at each call site regardless of which type `measure()` is defined on.
+`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `Nat`.
+The compiler verifies the decrease independently at each call site.
+Which type `measure()` is defined on does not matter.
 See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md#measurable-and-custom-types) for the reasoning.
 
 ```mamba

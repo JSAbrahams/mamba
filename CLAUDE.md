@@ -205,7 +205,6 @@ statement as "not part of the signature" rather than rejecting it.
 Every binding is immutable unless marked `mut`.
 `fin` is not a keyword, and has not been one since the polarity was inverted.
 If you see `fin` anywhere, it is stale and should be fixed.
-See `docs/philosophy/mutability.md` for why the language works this way.
 
 `mut` is parsed by `parse_expression_type` in `src/parse/ty.rs`, and by `parse_expression_maybe_type` in `src/parse/control_flow_expr.rs` for match cases.
 Both are a single `it.eat_if(&Token::Mut).is_some()`.

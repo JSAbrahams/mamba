@@ -33,7 +33,6 @@ A definition is immutable unless we mark it `mut`, so we reassign the second `x`
 
 The same marker works on a function argument, and on the `self` argument of a method.
 A method that assigns to its own fields must take `mut self`.
-See [Mutability](../../philosophy/mutability.md) for why this is the way round it is.
 
 ## Functions
 

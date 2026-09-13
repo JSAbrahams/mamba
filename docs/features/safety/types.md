@@ -52,6 +52,19 @@ The type of every variable is inferred from the context in which it is used.
 
 The program is still statically typed, but now we don't require the developer to write everything out in full.
 
+## Unbounded integers
+
+`Int` is arbitrary-precision by design.
+It has no width, no maximum, and no wrapping behaviour.
+A number that silently wraps is a correctness bug.
+`Nat`, the non-negative integers, is a refinement of `Int` and inherits this.
+`Nat` is future work, see [`Nat`](#nat) below.
+
+Compiling to machine code with `--bin` or `--asm` lowers `Int` to a fixed-width 64-bit integer.
+However, the two backends are meant to agree.
+The divergence is therefore a known limitation, not intended behaviour.
+Arbitrary-precision arithmetic in the Cranelift backend is future work.
+
 ## Type Aliases and Type Refinement
 
 _Note_ Everything from here on is future work.
@@ -258,3 +271,17 @@ So now:
     def b := g(a) # we don't have to cast a to an EvenNum, it is already of that type
 
     def c := h(x)  # function h never raises an error
+
+### `Nat`
+
+`Nat`, the non-negative integers, is defined as a refinement rather than as a separate primitive:
+
+    type Nat: Int when
+        self >= 0 else "{self} is negative"
+
+Zero is in the set.
+That matters wherever `Nat` is used as a measure, since `0.abs()` and `"".len()` are both `0`.
+
+`Nat` is closed under addition but not under subtraction.
+Subtracting a larger `Nat` leaves the domain, so an operation that may do so returns `Nat?`.
+See [Total Functions](../functions/total_functions.md#partial-subtraction-in-strictlydecreases) for the case that motivates it.

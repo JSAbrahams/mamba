@@ -82,9 +82,7 @@ Traits instead of inheritance, strictness about mutability, and `!` on a fallibl
 Two differences stand out:
 
 - Rust is immutable by default and annotates with `mut`.
-  Mamba does the same, and took the spelling with it.
-  It spent a long time inverted, marking the immutable case with `fin` on the argument that rebinding is routine in mathematical work.
-  That argument was backwards, and [Mutability](mutability.md) records why.
+  Mamba does the same.
 - Rust's `Result` with `?` is the monadic approach Mamba declined.
 
 ## Kotlin

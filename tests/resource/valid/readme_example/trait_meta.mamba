@@ -3,7 +3,7 @@
 trait StrictlyDecreases: Measurable where
     def meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
     def meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
-    def meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
+    def meta subtract(self, other: Self) -> Nat? := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
