@@ -55,6 +55,15 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
 
+/// Fixtures that only run through the Python backend, because they use language features
+/// outside the Cranelift backend's supported subset. Tuples are not lowered to machine code
+/// at all, so there is no second backend to compare against.
+#[test_case(run_via_python, &["definition"], "tuple_nested.mamba" => "10\n20\n30\n150\n")]
+#[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
+fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
+    run(dirs, file).unwrap()
+}
+
 /// Mamba constructs that are valid (the Python backend handles all of these) but fall outside
 /// this backend's supported subset -- each should fail with a clear, specific error rather than
 /// panicking or producing silently wrong output.

@@ -40,6 +40,9 @@ A tuple binding takes one marker per element, since each element is its own bind
 
 Here `a` may be reassigned and `b` may not.
 Marking the tuple itself, as `def mut (a, b)`, is a parse error.
+This holds at every depth, so a nested tuple takes the marker on its elements too:
+
+    def ((mut a, b), c) := ((10, 20), 30)
 
 ## Functions
 

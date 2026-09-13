@@ -13,6 +13,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("pure_variable_def"=> matches Err(_))]
 #[test_case("mut_without_def"=> matches Err(_))]
 #[test_case("mut_on_tuple"=> matches Err(_))]
+#[test_case("mut_on_nested_tuple"=> matches Err(_))]
 #[test_case("type_annotation_in_for_tuple"=> matches Err(_))]
 #[test_case("def_collection_destructure"=> matches Err(_))]
 #[test_case("class_parent_bad_token"=> matches Err(_))]

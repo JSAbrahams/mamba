@@ -82,6 +82,7 @@ use test_case::test_case;
 #[test_case("definition", "tuple_modify_element_mut")]
 #[test_case("definition", "tuple_element_mut_annotated")]
 #[test_case("definition", "tuple_annotated_element_type")]
+#[test_case("definition", "tuple_nested")]
 #[test_case("definition", "f_strings" => ignore["cannot nest strings: #481"])]
 #[test_case("definition", "collection_in_f_strings")]
 #[test_case("definition", "assign_with_if")]

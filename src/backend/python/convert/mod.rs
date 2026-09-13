@@ -102,7 +102,9 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Bool { lit } => PythonCore::Bool { boolean: *lit },
 
         NodeTy::Tuple { elements } if state.tup_lit => PythonCore::TupleLiteral {
-            elements: convert_vec(elements, imp, state, ctx)?,
+            // A tuple literal renders bare, so a nested one has to keep its parentheses.
+            // Otherwise `(a, b), c` flattens to `a, b, c` and unpacking fails at runtime.
+            elements: convert_vec(elements, imp, &state.tuple_literal(false), ctx)?,
         },
         NodeTy::Tuple { elements } => PythonCore::Tuple {
             elements: convert_vec(elements, imp, state, ctx)?,

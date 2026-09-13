@@ -21,10 +21,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ code-set ]
     
     id               ::= { character }
-    # "mut" marks one binding, so an id-tuple takes one marker per element and never
-    # one for the tuple itself
-    id-tuple         ::= "(" [ "mut" ] id-or-tuple { "," [ "mut" ] id-or-tuple } ")"
-    id-or-tuple      ::= id | id-tuple
+    # "mut" marks one binding, so it may only precede an id, never a tuple
+    # an id-tuple therefore takes one marker per element, at every depth
+    id-tuple         ::= "(" id-element { "," id-element } ")"
+    id-element       ::= [ "mut" ] id | id-tuple
     id-maybe-type    ::= ( [ "mut" ] id | id-tuple ) [ ":" type ]
 
     type-not-fun     ::= id [ generics ]

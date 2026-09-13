@@ -105,7 +105,7 @@ use mamba::parse::ast::AST;
 #[test_case("definition", "reassign_non_mut_field" => ignore["checker incorrectly allows reassign to non-mutable fields"])]
 #[test_case("definition", "tuple_modify_inner_mut" => matches Err(_))]
 #[test_case("definition", "tuple_modify_inner_mut_annotated" => matches Err(_))]
-#[test_case("definition", "tuple_nested" => matches Err(_))]
+#[test_case("definition", "tuple_nested_wrong_size" => matches Err(_))]
 #[test_case("definition", "tuple_fun_arg" => matches Err(_))]
 #[test_case("definition", "tuple_modify_mut" => matches Err(_))]
 #[test_case("definition", "tuple_modify_mut_entire" => matches Err(_))]
