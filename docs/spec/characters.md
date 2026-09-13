@@ -21,7 +21,7 @@ Symbol | Use
 
 Symbol | Use
 ---|---
-`?` | Denote optional type
+`?` | After a type, denote that it is optional; between two expressions, take the left unless it is `None`
 
 ## Mathematical Operators
 
@@ -54,7 +54,7 @@ Symbol | Use
 `:`  | Specify type of identifier
 `.`  | Precedes method call, or fractional digits of real number
 `,`  | Separates arguments in collections or function or method signatures
-`_`  | Anonymous value
+`_`  | Anonymous value, and in `new(_)` one class argument that is not written out
 
 ## Reassignment Operations
 
@@ -77,7 +77,7 @@ Symbol | Use
 
 Symbol | Use
 ---|---
-`..`  | Exclusive range, or range step
+`..`  | Exclusive range, or range step, and in `new(..)` one or more class arguments that are not written out
 `..=` | Inclusive range
 `::`  | Exclusive slice, or slice step
 `::=` | Inclusive slice
