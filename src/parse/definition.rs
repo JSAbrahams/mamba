@@ -152,41 +152,31 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let mut raises: Vec<AST> = Vec::new();
     if let Some(start) = it.eat_if(&Token::LCBrack) {
-        it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
-            raises.push(*it.parse(&parse_type, "raises", start)?);
-            it.eat_if(&Token::Comma);
-            Ok(())
-        })?;
+        let raises = it.parse_comma_separated(&Token::RCBrack, &parse_type, "raises", start)?;
         it.eat(&Token::RCBrack, "raises")?;
+        Ok(raises.into_iter().map(|r| *r).collect())
     } else {
         let start = it.start_pos("single raises")?;
-        raises.push(*it.parse(&parse_type, "raises", start)?);
+        Ok(vec![*it.parse(&parse_type, "raises", start)?])
     }
-
-    Ok(raises)
 }
 
 pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::LRBrack, "function arguments")?;
-    let mut args = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);
-
-        if let Some(next) = it.peek_next() {
-            if next.token != Token::RRBrack {
-                it.eat(&Token::Comma, "function arguments must be comma separated")?;
-            }
-        }
-        Ok(())
-    })?;
+    let args = it.parse_comma_separated(
+        &Token::RRBrack,
+        &|it| parse_fun_arg(it, true),
+        "function arguments",
+        start,
+    )?;
 
     it.eat(&Token::RRBrack, "function arguments")?;
-    Ok(args)
+    Ok(args.into_iter().map(|a| *a).collect())
 }
 
-pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
+/// An anonymous function's argument takes no default, since `:=` there opens its body.
+pub fn parse_fun_arg(it: &mut LexIterator, default_allowed: bool) -> ParseResult {
     let start = it.start_pos("function argument")?;
 
     // A placeholder binds nothing, so it takes neither a type nor a default.
@@ -207,12 +197,16 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
             )));
         }
     };
-    let default = it.parse_if(
-        &Token::Assign,
-        &parse_expression,
-        "function argument default",
-        start,
-    )?;
+    let default = if default_allowed {
+        it.parse_if(
+            &Token::Assign,
+            &parse_expression,
+            "function argument default",
+            start,
+        )?
+    } else {
+        None
+    };
 
     let end = default.clone().map_or(expression_type.pos, |def| def.pos);
     let node = Node::FunArg {
@@ -225,39 +219,10 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(end), node)))
 }
 
-/// Lambda args cannot be assigned a default, though whether we should even allow default arguments is debatable.
-pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("function argument")?;
-
-    let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
-    let (mutable, var, ty) = match &expression_type.node {
-        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
-        _ => {
-            return Err(Box::from(custom(
-                "Expected expression type in function argument",
-                expression_type.pos,
-            )));
-        }
-    };
-
-    let node = Node::FunArg {
-        vararg: false,
-        mutable,
-        var,
-        ty,
-        default: None,
-    };
-    Ok(Box::from(AST::new(start.union(expression_type.pos), node)))
-}
-
 pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("forward")?;
-    let mut forwarded: Vec<AST> = vec![];
-    it.peek_while_not_token(&Token::NL, &mut |it, _| {
-        forwarded.push(*it.parse(&parse_id, "forward", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
+    let forwarded = it.parse_comma_separated(&Token::NL, &parse_id, "forward", start)?;
+    let forwarded: Vec<AST> = forwarded.into_iter().map(|f| *f).collect();
 
     Ok(forwarded)
 }

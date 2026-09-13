@@ -1,5 +1,5 @@
 use crate::parse::ast::{Node, AST};
-use crate::parse::definition::parse_lambda_arg;
+use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -10,12 +10,13 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("anonymous function")?;
     it.eat(&Token::BSlash, "anonymous function")?;
 
-    let mut args: Vec<AST> = vec![];
-    it.peek_while_not_token(&Token::Assign, &mut |it, _| {
-        args.push(*it.parse(&parse_lambda_arg, "anonymous function", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
+    let args = it.parse_comma_separated(
+        &Token::Assign,
+        &|it| parse_fun_arg(it, false),
+        "anonymous function",
+        start,
+    )?;
+    let args: Vec<AST> = args.into_iter().map(|a| *a).collect();
 
     it.eat(&Token::Assign, "anonymous function")?;
     let body = it.parse(&parse_expression, "anonymous function", start)?;
@@ -27,6 +28,8 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::Point, Token::LRBrack];
+
     it.peek_or_err(
         &|it, ast| match ast.token {
             Token::Point => {
@@ -48,26 +51,17 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
-            _ => Err(Box::from(expected_one_of(
-                &[Token::Point, Token::LRBrack],
-                ast,
-                "function call",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, ast, "function call"))),
         },
-        &[Token::Point, Token::LRBrack],
+        &expected,
         "function call",
     )
 }
 
 fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("arguments")?;
-    let mut arguments = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        arguments.push(*it.parse(&parse_expression, "arguments", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-    Ok(arguments)
+    let args = it.parse_comma_separated(&Token::RRBrack, &parse_expression, "arguments", start)?;
+    Ok(args.into_iter().map(|a| *a).collect())
 }
 
 #[cfg(test)]

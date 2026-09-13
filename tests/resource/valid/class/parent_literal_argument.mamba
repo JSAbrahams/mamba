@@ -1,0 +1,7 @@
+# A parent argument is an expression, so a literal is as good as a name
+class Base(code: Int, offset: Int)
+class Derived(): Base(404, 1 + 1)
+
+def d := Derived.new()
+print(d.code)
+print(d.offset)

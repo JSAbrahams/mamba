@@ -1,11 +1,11 @@
 use crate::parse::ast::{Node, AST, SELF_TY};
 use crate::parse::block::parse_set;
-use crate::parse::definition::parse_fun_arg;
+use crate::parse::definition::parse_fun_args;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{expected, expected_one_of, ParseResult};
-use crate::parse::ty::{parse_id, parse_type};
+use crate::parse::result::{expected, ParseResult};
+use crate::parse::ty::parse_type;
 use crate::parse::Lex;
 
 /// Rewrite the type `Self` to the enclosing class, throughout a class body.
@@ -126,16 +126,13 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Class, "class")?;
     let ty = it.parse(&parse_type, "class", start)?;
 
-    // Class arguments are always fields, never `def`-prefixed.
-    let mut args = vec![];
-    if it.eat_if(&Token::LRBrack).is_some() {
-        it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-            args.push(*it.parse(&parse_fun_arg, "constructor argument", start)?);
-            it.eat_if(&Token::Comma);
-            Ok(())
-        })?;
-        it.eat(&Token::RRBrack, "class arguments")?;
-    }
+    // Class arguments are always fields, never `def`-prefixed. They are otherwise an ordinary
+    // argument list, which is what the generated `new` takes.
+    let args = if it.peek_if(&|lex: &Lex| lex.token == Token::LRBrack) {
+        it.parse_vec(&parse_fun_args, "class arguments", start)?
+    } else {
+        vec![]
+    };
 
     let mut parents = vec![];
     if it.eat_if(&Token::DoublePoint).is_some() {
@@ -175,31 +172,19 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("parent")?;
     let ty = it.parse(&parse_type, "parent", start)?;
 
+    // A parent is applied to its arguments like any other call, so they are expressions.
     let mut args = vec![];
     let end = if it.eat_if(&Token::LRBrack).is_some() {
-        it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
-            Token::Id { .. } => {
-                args.push(*it.parse(&parse_id, "parent arguments", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
-            Token::Str { .. } => {
-                args.push(*it.parse(&parse_expression, "parent arguments", start)?);
-                it.eat_if(&Token::Comma);
-                Ok(())
-            }
-            _ => Err(Box::from(expected_one_of(
-                &[
-                    Token::Id(String::new()),
-                    Token::Str(String::new(), vec![]),
-                    Token::Int(String::new()),
-                    Token::Real(String::new()),
-                    Token::ENum(String::new(), String::new()),
-                ],
-                lex,
+        args = it
+            .parse_comma_separated(
+                &Token::RRBrack,
+                &parse_expression,
                 "parent arguments",
-            ))),
-        })?;
+                start,
+            )?
+            .into_iter()
+            .map(|a| *a)
+            .collect();
         it.eat(&Token::RRBrack, "parent arguments")?
     } else {
         ty.pos

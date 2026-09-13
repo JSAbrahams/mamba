@@ -90,8 +90,12 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
 
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     let msg = format!(
-        "Expected {} token while parsing {}{parsing}, but found '{}' ({})",
-        an_or_a(expected),
+        "Expected {} while parsing {}{parsing}, but found '{}' ({})",
+        if expected.to_string().is_empty() || expected.equals_name() {
+            expected.name().to_string()
+        } else {
+            format!("'{expected}' ({})", expected.name())
+        },
         an_or_a(parsing),
         actual.token,
         actual.token.name()

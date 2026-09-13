@@ -7,18 +7,16 @@ use crate::parse::operation::parse_expression;
 use crate::parse::result::{expected_one_of, ParseResult};
 
 pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::LRBrack, Token::LSBrack, Token::LCBrack];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set_or_dict(it),
-            _ => Err(Box::from(expected_one_of(
-                &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
-                lex,
-                "collection",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, lex, "collection"))),
         },
-        &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
+        &expected,
         "collection",
     )
 }

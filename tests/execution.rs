@@ -68,6 +68,7 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["class"], "new_underscore_one_argument.mamba" => "7\n")]
 #[test_case(run_via_python, &["class"], "new_rest_one_argument.mamba" => "8\n")]
 #[test_case(run_via_python, &["class"], "redundant_new.mamba" => "1\n")]
+#[test_case(run_via_python, &["class"], "parent_literal_argument.mamba" => "404\n2\n")]
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()

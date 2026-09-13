@@ -4,7 +4,8 @@ use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::result::ParseResult;
 
-macro_rules! inner_bin_op {
+/// The left operand is already parsed; eat the operator and parse the right at `fun`.
+macro_rules! bin_op {
     ($it:expr, $start:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
         $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg, $start)?;
@@ -37,76 +38,61 @@ pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
 
 fn parse_level_6(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (6)")?;
-    let arithmetic = it.parse(&parse_level_5, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
+    let left = it.parse(&parse_level_5, "operation", start)?;
     it.peek(
         &|it, lex| match lex.token {
-            Token::And => bin_op!(it, parse_level_6, And, arithmetic.clone(), "and"),
-            Token::Or => bin_op!(it, parse_level_6, Or, arithmetic.clone(), "or"),
-            Token::Question => bin_op!(it, parse_level_6, Question, arithmetic.clone(), "question"),
-            _ => Ok(arithmetic.clone()),
+            Token::And => bin_op!(it, start, parse_level_6, And, left.clone(), "and"),
+            Token::Or => bin_op!(it, start, parse_level_6, Or, left.clone(), "or"),
+            Token::Question => {
+                bin_op!(it, start, parse_level_6, Question, left.clone(), "question")
+            }
+            _ => Ok(left.clone()),
         },
-        Ok(arithmetic.clone()),
+        Ok(left.clone()),
     )
 }
 
 fn parse_level_5(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (5)")?;
-    let arithmetic = it.parse(&parse_level_4, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
+    let left = it.parse(&parse_level_4, "operation", start)?;
     it.peek(
         &|it, lex| match lex.token {
-            Token::Ge => bin_op!(it, parse_level_5, Ge, arithmetic.clone(), "greater"),
-            Token::Geq => bin_op!(it, parse_level_5, Geq, arithmetic.clone(), "greater, equal"),
-            Token::Le => bin_op!(it, parse_level_5, Le, arithmetic.clone(), "less"),
-            Token::Leq => bin_op!(it, parse_level_5, Leq, arithmetic.clone(), "less, equal"),
-            Token::Eq => bin_op!(it, parse_level_5, Eq, arithmetic.clone(), "equal"),
-            Token::Neq => bin_op!(it, parse_level_5, Neq, arithmetic.clone(), "not equal"),
-            Token::In => bin_op!(it, parse_level_5, In, arithmetic.clone(), "in"),
-            _ => Ok(arithmetic.clone()),
+            Token::Ge => bin_op!(it, start, parse_level_5, Ge, left.clone(), "greater"),
+            Token::Geq => bin_op!(
+                it,
+                start,
+                parse_level_5,
+                Geq,
+                left.clone(),
+                "greater, equal"
+            ),
+            Token::Le => bin_op!(it, start, parse_level_5, Le, left.clone(), "less"),
+            Token::Leq => bin_op!(it, start, parse_level_5, Leq, left.clone(), "less, equal"),
+            Token::Eq => bin_op!(it, start, parse_level_5, Eq, left.clone(), "equal"),
+            Token::Neq => bin_op!(it, start, parse_level_5, Neq, left.clone(), "not equal"),
+            Token::In => bin_op!(it, start, parse_level_5, In, left.clone(), "in"),
+            _ => Ok(left.clone()),
         },
-        Ok(arithmetic.clone()),
+        Ok(left.clone()),
     )
 }
 
 fn parse_level_4(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (4)")?;
-    let arithmetic = it.parse(&parse_level_3, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
+    let left = it.parse(&parse_level_3, "operation", start)?;
     it.peek(
         &|it, lex| match lex.token {
-            Token::Add => bin_op!(it, parse_level_4, Add, arithmetic.clone(), "add"),
-            Token::Sub => bin_op!(it, parse_level_4, Sub, arithmetic.clone(), "sub"),
-            _ => Ok(arithmetic.clone()),
+            Token::Add => bin_op!(it, start, parse_level_4, Add, left.clone(), "add"),
+            Token::Sub => bin_op!(it, start, parse_level_4, Sub, left.clone(), "sub"),
+            _ => Ok(left.clone()),
         },
-        Ok(arithmetic.clone()),
+        Ok(left.clone()),
     )
 }
 
 fn parse_level_3(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (3)")?;
-    let arithmetic = it.parse(&parse_level_2, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
+    let left = it.parse(&parse_level_2, "operation", start)?;
     macro_rules! match_range_slice {
         ($it:expr, $token:ident, $incl:expr, $node:ident, $msg:expr) => {{
             $it.eat(&Token::$token, $msg)?;
@@ -120,7 +106,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             };
 
             let node = Node::$node {
-                from: arithmetic.clone(),
+                from: left.clone(),
                 to,
                 inclusive: $incl,
                 step,
@@ -131,17 +117,17 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::Mul => bin_op!(it, parse_level_3, Mul, arithmetic.clone(), "mul"),
-            Token::Div => bin_op!(it, parse_level_3, Div, arithmetic.clone(), "div"),
-            Token::FDiv => bin_op!(it, parse_level_3, FDiv, arithmetic.clone(), "floor div"),
-            Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
+            Token::Mul => bin_op!(it, start, parse_level_3, Mul, left.clone(), "mul"),
+            Token::Div => bin_op!(it, start, parse_level_3, Div, left.clone(), "div"),
+            Token::FDiv => bin_op!(it, start, parse_level_3, FDiv, left.clone(), "floor div"),
+            Token::Mod => bin_op!(it, start, parse_level_3, Mod, left.clone(), "mod"),
             Token::Range => match_range_slice!(it, Range, false, Range, "range"),
             Token::RangeIncl => match_range_slice!(it, RangeIncl, true, Range, "range"),
             Token::Slice => match_range_slice!(it, Slice, false, Slice, "range"),
             Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
-            _ => Ok(arithmetic.clone()),
+            _ => Ok(left.clone()),
         },
-        Ok(arithmetic.clone()),
+        Ok(left.clone()),
     )
 }
 
@@ -172,28 +158,22 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
 
 fn parse_level_1(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (1)")?;
-    let arithmetic = it.parse(&parse_inner_expression, "operation", start)?;
-    macro_rules! bin_op {
-        ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
-        }};
-    }
-
+    let left = it.parse(&parse_inner_expression, "operation", start)?;
     it.peek(
         &|it, lex| match lex.token {
-            Token::Pow => bin_op!(it, parse_level_1, Pow, arithmetic.clone(), "exponent"),
+            Token::Pow => bin_op!(it, start, parse_level_1, Pow, left.clone(), "exponent"),
             Token::Question => {
                 it.eat(&Token::Question, "optional expression")?;
                 let right = it.parse(&parse_expression, "optional expression", lex.pos)?;
                 let node = Node::Question {
-                    left: arithmetic.clone(),
+                    left: left.clone(),
                     right: right.clone(),
                 };
                 Ok(Box::from(AST::new(lex.pos.union(right.pos), node)))
             }
-            _ => Ok(arithmetic.clone()),
+            _ => Ok(left.clone()),
         },
-        Ok(arithmetic.clone()),
+        Ok(left.clone()),
     )
 }
 

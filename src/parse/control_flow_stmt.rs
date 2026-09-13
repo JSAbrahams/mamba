@@ -7,6 +7,8 @@ use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_id;
 
 pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::While, Token::For, Token::Break, Token::Continue];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::While => parse_while(it),
@@ -20,12 +22,12 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(lex.pos.union(end), Node::Continue)))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::While, Token::For, Token::Break, Token::Continue],
+                &expected,
                 lex,
                 "control flow statement",
             ))),
         },
-        &[Token::While, Token::For, Token::Break, Token::Continue],
+        &expected,
         "control flow statement",
     )
 }

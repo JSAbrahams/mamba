@@ -7,17 +7,19 @@ use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_type;
 
 pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::If, Token::Match];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::If => parse_if(it),
             Token::Match => parse_match(it),
             _ => Err(Box::from(expected_one_of(
-                &[Token::If, Token::Match],
+                &expected,
                 lex,
                 "control flow expression",
             ))),
         },
-        &[Token::If, Token::Match],
+        &expected,
         "control flow expression",
     )
 }

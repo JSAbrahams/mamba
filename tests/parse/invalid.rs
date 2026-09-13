@@ -18,6 +18,11 @@ use mamba::parse::result::ParseResult;
 #[test_case("def_collection_destructure"=> matches Err(_))]
 #[test_case("class_parent_bad_token"=> matches Err(_))]
 #[test_case("class_parent_arg_bad_token"=> matches Err(_))]
+// Every comma-separated list requires its commas, per `{ "," item }` in the grammar.
+#[test_case("class_args_no_comma"=> matches Err(_))]
+#[test_case("type_tuple_no_comma"=> matches Err(_))]
+#[test_case("generics_no_comma"=> matches Err(_))]
+#[test_case("id_tuple_no_comma"=> matches Err(_))]
 #[test_case("unrecognized_character"=> matches Err(_))]
 #[test_case("pure_new_without_arguments"=> matches Err(_))]
 fn syntax(file_name: &str) -> ParseResult<()> {

@@ -28,6 +28,7 @@ use test_case::test_case;
 #[test_case("class", "multiple_parent")]
 #[test_case("class", "shadow")]
 #[test_case("class", "parent")]
+#[test_case("class", "parent_literal_argument")]
 #[test_case("class", "types")]
 #[test_case("class", "trait_and_type")]
 #[test_case("class", "top_level_tuple")]

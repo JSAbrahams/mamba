@@ -298,6 +298,7 @@ impl fmt::Display for TokenName<'_> {
             Token::BSlash => write!(f, "backslash"),
 
             Token::NL => write!(f, "newline"),
+            Token::Comma => write!(f, "comma"),
             Token::Underscore => write!(f, "underscore"),
 
             Token::Question => write!(f, "question"),
