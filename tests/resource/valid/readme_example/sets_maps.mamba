@@ -8,7 +8,7 @@ def c := { 10, 20 }
 def d := { 3 }
 # sets, builder syntax
 def cd := { x ^ y | x in c, y in d }
-def empty_set := {} # note: `{}` is always parsed as an empty set -- there is no empty mapping literal (yet)
+def empty_set := {}
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }

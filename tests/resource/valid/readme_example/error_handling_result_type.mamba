@@ -1,0 +1,6 @@
+class MyErr(message: Str): Exception(message)
+class MyOtherErr(message: Str): Exception(message)
+
+def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
+
+def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()

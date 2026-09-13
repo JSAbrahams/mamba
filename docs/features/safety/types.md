@@ -79,28 +79,26 @@ To use such a function, we must explicitly cast a `Composer`:
 This draws on concepts of **Design by Contract** philosophy.
 
 Furthermore, it also allows us to explicitly define the state of an object, something which is often left ambiguous.
-For instance, we can say a server is connected or disconnected by doing the following:
+For instance, we can say a matrix is invertible or singular by doing the following:
 
-    trait Server where
-        def connected: Bool
-        def send_message(self, message: Str) -> Str
+    trait Matrix where
+        def determinant(self) -> Float
+        def solve(self, u: Float, v: Float) -> List[Float]
     end
 
-    type ConnectedServer: Server when
-        self.connected else "Server is not connected"
+    type InvertibleMatrix: Matrix when
+        self.determinant() != 0.0 else "Matrix is singular"
 
-And we may then elsewhere implement this `Server` trait:
+And we may then elsewhere implement this `Matrix` trait:
 
-    class MyServer: Server where
-        def connected: Bool := False
+    class Matrix2x2(a: Float, b: Float, c: Float, d: Float): Matrix where
+        def determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-        def connect(self, ip: IpAddress) := pass
-
-        # You can only call this function if I am a connected server
-        def send_message(self: ConnectedServer, message: Str) -> Str := pass
+        # You can only call this function if I am an invertible matrix
+        def solve(self: InvertibleMatrix, u: Float, v: Float) -> List[Float] := pass
     end
 
-This is a rather trivial example, but it shows how we can explicitly name the different states of a server.
+This is a rather trivial example, but it shows how we can explicitly name the different states of a matrix.
 
 ## Type aliases
 

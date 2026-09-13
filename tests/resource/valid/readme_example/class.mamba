@@ -1,27 +1,37 @@
 class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(mut a: Int, mut b: Int, mut c: Int, mut d: Int) where
+class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     # Accessor for matrix contents
-    def contents(self) -> List[Int] := [self.a, self.b, self.c, self.d]
+    def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(self) -> Int := self.a + self.d
+    def pure trace(self) -> Float := self.a + self.d
 
-    # Determinant recomputation (pure function)
-    def pure determinant(self) -> Int := self.a * self.d - self.b * self.c
+    # Determinant of the matrix (ad - bc)
+    def pure determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-    def scale(mut self, factor: Int) := do
+    # Solves this matrix against the vector (u, v) by Cramer's rule.
+    # A singular matrix has no unique solution, so this may fail.
+    def pure solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+        def det := self.determinant()
+        if det = 0.0 then ! MatrixErr("Determinant is zero.")
+        def x := u * self.d - self.b * v
+        def y := self.a * v - u * self.c
+        [x / det, y / det]
+    end
+
+    def scale(mut self, factor: Float) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
         self.d := self.d * factor
     end
 
-    # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
+    # Reset turns this matrix into a 2x2 identity matrix, regardless of the initial value.
     def reset(mut self) := do
-        self.a := 1
-        self.b := 0
-        self.c := 0
-        self.d := 1
+        self.a := 1.0
+        self.b := 0.0
+        self.c := 0.0
+        self.d := 1.0
     end
 end

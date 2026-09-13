@@ -200,6 +200,9 @@ print(ef(1)) # prints '1'
 _Note_ Builder syntax currently only resolves a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`).
 Binding more than one, as in the `ab` and `ef` examples above, is future work.
 
+_Note_ `{}` is always parsed as an empty set.
+There is no empty mapping literal yet.
+
 In a way, a list is a type of mapping where the keys are the indexes of each item.
 So:
 
@@ -224,7 +227,7 @@ Therefore, we index indexable collections (mappings and lists) using the `collec
 
 Mutability gives us the power to modify an instance in the language after it is created:
 
-```
+```mamba
 def mut a := 10 # we may modify a
 def b := 20     # we may not modify b
 
@@ -250,35 +253,45 @@ We can for each method state whether we can modify the state of `self` by statin
 If we write `self`, it is immutable and we cannot change its state, whereas if we write `mut self`, we can.
 We can do the same for any argument to a function, for that matter.
 
-We showcase this using a simple dummy `Matrix` object.
+We showcase this using a simple `Matrix2x2` object.
 You will also see some "pure" functions, these will be explained later.
 
 ```mamba
 class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(mut a: Int, mut b: Int, mut c: Int, mut d: Int) where
+class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     # Accessor for matrix contents
-    def contents(self) -> List[Int] := [self.a, self.b, self.c, self.d]
+    def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(self) -> Int := self.a + self.d
+    def pure trace(self) -> Float := self.a + self.d
 
-    # Determinant recomputation (pure function)
-    def pure determinant(self) -> Int := self.a * self.d - self.b * self.c
+    # Determinant of the matrix (ad - bc)
+    def pure determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-    def scale(mut self, factor: Int) := do
+    # Solves this matrix against the vector (u, v) by Cramer's rule.
+    # A singular matrix has no unique solution, so this may fail.
+    def pure solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+        def det := self.determinant()
+        if det = 0.0 then ! MatrixErr("Determinant is zero.")
+        def x := u * self.d - self.b * v
+        def y := self.a * v - u * self.c
+        [x / det, y / det]
+    end
+
+    def scale(mut self, factor: Float) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
         self.d := self.d * factor
     end
 
-    # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
+    # Reset turns this matrix into a 2x2 identity matrix, regardless of the initial value.
     def reset(mut self) := do
-        self.a := 1
-        self.b := 0
-        self.c := 0
-        self.d := 1
+        self.a := 1.0
+        self.b := 0.0
+        self.c := 0.0
+        self.d := 1.0
     end
 end
 ```
@@ -320,7 +333,7 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
         self.y := self.ORIGIN_Y
     end
 
-    def info(self) -> Str := 
+    def info(self) -> Str :=
         "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end
 ```
@@ -529,7 +542,7 @@ end
 
 # For string, we as an example use the length of the string (also a PosInt)
 def StrictlyDecreases for Str where
-    def meta measure(self) -> Measurable := self.len() 
+    def meta measure(self) -> Measurable := self.len()
 end
 ```
 
@@ -548,7 +561,7 @@ meta trait Measurable: Add, Sub, Eq, Comparable
 
 # Built in to the standard library
 # The idea is that this allows performing arithmetic not just at runtime but at compile-time.
-def Measurable for Int 
+def Measurable for Int
 # The following is already defined for Int, but for the sake of our example:
 # {
 #     def meta less_than(self, other: Int) -> Bool := self < other
@@ -604,28 +617,23 @@ Arguably it may be easier to just use Monads, similar to Rust's solution.
 But, we are operating in a different domain, so that may be overly verbose for our purposes.
 
 Let's continue with our matrix example.
-Before, we simply discarded the error by appending `!` to `last_op`.
-Instead, we now handle the error on-site:
+The `solve` method above raises a `MatrixErr` when the matrix is singular.
+We handle that error on-site:
 
 ```mamba
-def m := Matrix(1.0, 2.0, 3.0, 4.0)
+def m := Matrix2x2(1.0, 2.0, 3.0, 4.0)
 
-if m.is_invertible() then
-    def inv := m.inverse()
-else
-    print("Matrix is singular (not invertible).")
-
-def last_op := m.last_op() ! where
+def solution := m.solve(5.0, 6.0) ! where
     err: MatrixErr(message) => do
-        print("Error when getting last op: \"{message}\"")
-        "N/A" # optionally we can also return, but here we assign default value
+        print("Could not solve system: \"{message}\"")
+        [0.0, 0.0] # optionally we can also return, but here we assign default value
     end
 end
 
-print("Last operation was: {last_op}")
+print("Solution is: {solution}")
 ```
 
-In the above script, we will always print an error (gracefully) and assign some other value to `last_op`.
+In the above script, if the matrix turns out to be singular, we print an error (gracefully) and assign some other value to `solution`.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
@@ -635,8 +643,8 @@ Destructuring its constructor arguments, as in `err: MatrixErr(message)` above, 
 Under the hood, `<call> ! where <cases> end` desugars to a plain `match` on the call's result:
 
 ```mamba
-match m.last_op() where
-    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
+match m.solve(5.0, 6.0) where
+    err: MatrixErr(message) => print("Could not solve system: \"{message}\"")
 end
 ```
 
@@ -672,7 +680,7 @@ with_error_handling()
 
 We can also opt to not do any error handling, making the type of `a`:
 
-```
+```mamba
 def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
 ```
 

@@ -1,6 +1,6 @@
-class MyServer() where
-    def mut _message: Str? := None
+class Vector2() where
+    def mut _label: Str? := None
 
-    def send(mut self, x: Str) :=
-        self._message := x
+    def relabel(mut self, x: Str) :=
+        self._label := x
 end

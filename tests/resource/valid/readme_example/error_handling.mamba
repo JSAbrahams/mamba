@@ -1,15 +1,10 @@
-def m := Matrix(1.0, 2.0, 3.0, 4.0)
+def m := Matrix2x2(1.0, 2.0, 3.0, 4.0)
 
-if m isa InvertibleMatrix then
-    def inv := m.inverse()
-else
-    print("Matrix is singular (not invertible).")
-
-def last_op := m.last_op() ! where
+def solution := m.solve(5.0, 6.0) ! where
     err: MatrixErr(message) => do
-        print("Error when getting last op: \"{message}\"")
-        "N/A" # optionally we can also return, but here we assign default value
+        print("Could not solve system: \"{message}\"")
+        [0.0, 0.0] # optionally we can also return, but here we assign default value
     end
 end
 
-print("Last operation was: {last_op}")
+print("Solution is: {solution}")
