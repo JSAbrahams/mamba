@@ -194,8 +194,8 @@ impl Display for Expect {
 impl Expect {
     /// True if same value.
     ///
-    /// If other is a Raises or Type where the Name is temporary, and either is Raises in former case
-    /// or Type in latter, then also true.
+    /// Two of different variants are the same only when both are a nullable [Type], which
+    /// [Expect::is_none] decides.
     pub fn same_value(&self, other: &Self) -> bool {
         match (self, other) {
             (Field { name: l }, Field { name: r }) => l == r,

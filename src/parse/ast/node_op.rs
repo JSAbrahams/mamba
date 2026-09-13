@@ -15,8 +15,6 @@ pub enum NodeOp {
     Eq,
     Le,
     Ge,
-    BLShift,
-    BRShift,
 }
 
 impl Display for NodeOp {
@@ -33,8 +31,6 @@ impl Display for NodeOp {
             NodeOp::Eq => write!(f, "{EQ}"),
             NodeOp::Le => write!(f, "{LE}"),
             NodeOp::Ge => write!(f, "{GE}"),
-            NodeOp::BLShift => write!(f, "<<"),
-            NodeOp::BRShift => write!(f, ">>"),
         }
     }
 }

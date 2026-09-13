@@ -19,17 +19,17 @@ macro_rules! bin_op {
 
 /// Parse an operation.
 ///
-/// Precedence is as follows, from top to bottom:
-/// 1. exponent
-/// 2. unary and, unary or, bitwise ones complement
+/// Precedence is as follows, from tightest binding to loosest, each level parsed by the
+/// `parse_level_` function it is numbered after:
+/// 1. exponent, and the null-coalescing `?`
+/// 2. unary plus, unary minus, not
 /// 3. multiplication, division, floor division, modulus, range, range inclusive
 /// 4. addition, subtraction
-/// 5. greater, greater or equal, less, less or equal, equal, not equal, is, is,
-///    in not, is a, is not a
-/// 6. and, or, question
-/// 7. postfix calls
+/// 5. greater, greater or equal, less, less or equal, equal, not equal, in
+/// 6. and, or
 ///
-/// Newlines in front of exprsesions are ignored.
+/// A call, a property access and an index bind tighter than any of them.
+/// Newlines in front of expressions are ignored.
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
     it.eat_while(&Token::NL);
 

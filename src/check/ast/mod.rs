@@ -122,10 +122,6 @@ pub enum NodeTy {
         args: Vec<ASTTy>,
         body: Box<ASTTy>,
     },
-    Raises {
-        expr_or_stmt: Box<ASTTy>,
-        errors: Vec<ASTTy>,
-    },
     Raise {
         error: Box<ASTTy>,
     },
@@ -263,25 +259,6 @@ pub enum NodeTy {
         right: Box<ASTTy>,
     },
     Pow {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    BOr {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    BXOr {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    BOneCmpl {
-        expr: Box<ASTTy>,
-    },
-    BLShift {
-        left: Box<ASTTy>,
-        right: Box<ASTTy>,
-    },
-    BRShift {
         left: Box<ASTTy>,
         right: Box<ASTTy>,
     },
