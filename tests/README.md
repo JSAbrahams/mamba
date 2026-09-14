@@ -311,3 +311,18 @@ Several of these tests write to shared, fixed paths under `tests/resource/valid/
 This was not introduced by the coverage work in this file.
 It is a pre-existing test isolation issue, worth a look if it starts flaking in CI.
 Workaround: run with `-- --test-threads=1` if it flakes.
+
+## `tests/check/valid.rs` gives no signal on a `match` fixture
+
+`test_directory` compares the transpiler's output against the reference `.py` by diffing parsed Python ASTs, via `python-parser 0.1.0`.
+That crate predates PEP 634 and cannot parse a `match` statement.
+Its `file_input` is a `fold_many0`, so it stops at the first statement it cannot parse and silently discards the rest, on both sides of the diff.
+The two truncated ASTs then compare equal whatever the arms say.
+
+Verified by editing `tests/resource/valid/control_flow/match_stmt.py` so its arm read `case (9, 9, 9): print("TOTALLY DIFFERENT")` against a fixture producing `case (0, 1, 2): print("hello world")`.
+`check::valid::to_python::_control_flow_match_stmt_expects` still passed.
+The edit was reverted.
+
+What still holds for these fixtures is `fallable`'s two `python -m py_compile` runs, over the reference and the generated file alike.
+So a reference `.py` for a `match` fixture proves only that both files are syntactically valid Python 3.10.
+Assert the behaviour in `tests/execution.rs` instead, which runs the output and reads its stdout.
