@@ -1,0 +1,6 @@
+def impure_double(x: Int) -> Int := x * 2
+
+class C where
+    # a pure method is bound by the same rule as a pure function
+    def pure quadruple(self, x: Int) -> Int := impure_double(x)
+end

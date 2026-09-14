@@ -1,2 +1,4 @@
-class MyClass: Parent(123) where
+# A parent is applied to its arguments like any other call, so they are expressions.
+# `def` starts a definition, which is not one
+class MyClass: Parent(def) where
 end

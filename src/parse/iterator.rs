@@ -3,11 +3,8 @@ use std::slice::Iter;
 
 use crate::common::position::Position;
 use crate::common::result::WithCause;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::token::Token;
-use crate::parse::result::eof_expected_one_of;
-use crate::parse::result::expected;
-use crate::parse::result::ParseResult;
+use crate::parse::lex::token::{Lex, Token};
+use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
 
 #[derive(Debug)]
 pub struct LexIterator<'a> {
@@ -128,6 +125,26 @@ impl<'a> LexIterator<'a> {
             }
             _ => Ok(vec![]),
         }
+    }
+
+    /// Parse `{ item { "," item } }`, up to but not including `until`, which is left uneaten.
+    pub fn parse_comma_separated<T>(
+        &mut self,
+        until: &Token,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<T>,
+        cause: &str,
+        start: Position,
+    ) -> ParseResult<Vec<T>> {
+        let mut items = vec![];
+        self.peek_while_not_token(until, &mut |it, _| {
+            items.push(it.parse(parse_fun, cause, start)?);
+            if it.peek_if(&|lex| !Token::same_type(&lex.token, until)) {
+                it.eat(&Token::Comma, cause)?;
+            }
+            Ok(())
+        })?;
+
+        Ok(items)
     }
 
     pub fn peek_or_err(

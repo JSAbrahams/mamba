@@ -1,25 +1,25 @@
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::expected_one_of;
-use crate::parse::result::ParseResult;
+use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_type;
 
 pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::If, Token::Match];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::If => parse_if(it),
             Token::Match => parse_match(it),
             _ => Err(Box::from(expected_one_of(
-                &[Token::If, Token::Match],
+                &expected,
                 lex,
                 "control flow expression",
             ))),
         },
-        &[Token::If, Token::Match],
+        &expected,
         "control flow expression",
     )
 }

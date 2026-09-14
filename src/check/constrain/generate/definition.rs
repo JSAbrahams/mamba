@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -7,13 +6,11 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::arg::SELF;
-use crate::check::context::clss::{Class, HasParent};
-use crate::check::context::field::Field;
-use crate::check::context::function::python::INIT;
+use crate::check::context::clss::HasParent;
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::ident::Identifier;
 use crate::check::name::true_name::TrueName;
-use crate::check::name::{match_name, Name, Nullable, TupleCallable};
+use crate::check::name::{match_name, Name, TupleCallable};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::Node::Id;
@@ -31,40 +28,28 @@ pub fn gen_def(
             ret: ret_ty,
             body,
             raises,
-            id,
-            ..
+            id: _,
+            pure,
         } => {
-            let (class, non_nullable_class_vars) = match &id.node {
-                Id { lit } if *lit == INIT => {
-                    if let Some(class) = &env.class {
-                        let class = ctx.class(class, id.pos)?;
-                        let parents: Vec<Class> = class
-                            .parents
-                            .iter()
-                            .map(|p| ctx.class(p, id.pos))
-                            .collect::<TypeResult<_>>()?;
-
-                        let fields: Vec<&Field> = class
-                            .fields
-                            .iter()
-                            .filter(|f| !parents.iter().any(|p| p.fields.contains(f)))
-                            .filter(|f| !f.ty.is_nullable() && !f.assigned_to)
-                            .collect();
-                        (
-                            Some(class.clone()),
-                            fields.iter().map(|f| f.name.clone()).collect(),
-                        )
-                    } else {
-                        let msg = format!("Cannot have {INIT} function outside class");
-                        return Err(vec![TypeErr::new(id.pos, &msg)]);
+            if *pure {
+                // `self` is just another argument, so a pure method mutating it would give a
+                // different result for the same inputs.
+                for arg in fun_args {
+                    if let Node::FunArg { mutable, var, .. } = &arg.node {
+                        if *mutable && var.node == Node::new_self() {
+                            let msg = format!("A pure function cannot take 'mut {SELF}'");
+                            return Err(vec![TypeErr::new(arg.pos, &msg)]);
+                        }
                     }
                 }
-                _ => (None, HashSet::new()),
-            };
+            }
 
-            let body_env = constrain_args(fun_args, env, ctx, constr)?
-                .with_unassigned(non_nullable_class_vars)
-                .in_fun(true);
+            let body_env = constrain_args(fun_args, env, ctx, constr)?.in_fun(true);
+            let body_env = if *pure {
+                body_env.in_pure(env)
+            } else {
+                body_env
+            };
 
             let (raises, errs): (Vec<(Position, _)>, Vec<_>) = raises
                 .iter()
@@ -90,7 +75,7 @@ pub fn gen_def(
             let raises = raises.into_iter().map(|(_, r)| r.unwrap()).collect();
             let body_env = body_env.raises_caught(&raises);
 
-            let body_env = if let Some(body) = body {
+            if let Some(body) = body {
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
                     let ret_ty_raises_exp = Expected::new(body.pos, &Type { name: name.clone() });
@@ -110,20 +95,6 @@ pub fn gen_def(
             } else {
                 body_env
             };
-
-            if let Some(class) = class {
-                let unassigned: Vec<String> = body_env
-                    .unassigned
-                    .iter()
-                    .map(|v| format!("Non nullable attribute '{v}' of {class} not assigned to in constructor"))
-                    .collect();
-                if !unassigned.is_empty() {
-                    return Err(unassigned
-                        .iter()
-                        .map(|msg| TypeErr::new(id.pos, msg))
-                        .collect());
-                }
-            }
 
             Ok(env.clone())
         }

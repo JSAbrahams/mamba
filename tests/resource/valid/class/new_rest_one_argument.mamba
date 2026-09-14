@@ -1,0 +1,7 @@
+# `(..)` reads as one or more, so it covers a single class argument as well as `(_)` does
+class Wrapper(x: Int) where
+    def pure new(..)
+end
+
+def pure wrap(x: Int) -> Wrapper := return Wrapper.new(x)
+print(wrap(8).x)

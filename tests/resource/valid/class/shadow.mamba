@@ -11,14 +11,14 @@ class MyClass4 where
     def f4(self) := print("4")
 end
 
-def x := MyClass1()
+def x := MyClass1.new()
 x.f1()
 
-def x := MyClass2()
+def x := MyClass2.new()
 x.f2()
 
 class MyClass where
-    def x: MyClass3 := MyClass3()
+    def x: MyClass3 := MyClass3.new()
 
     def g() :=
         x.f3()

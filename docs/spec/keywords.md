@@ -27,7 +27,6 @@ Keyword | Use
 Keyword | Use
 ---|---
 `self`    | Refer to definitions of this class
-`init`    | The constructor of the class
 `forward` | Forwarding methods of contained class
 
 ## Definitions and Functions

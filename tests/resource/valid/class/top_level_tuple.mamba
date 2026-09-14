@@ -2,6 +2,6 @@ class A where
     def (a, b): (Int, Int) := (10, 100)
 end
 
-def a := A()
+def a := A.new()
 print(a.a)
 print(a.b)

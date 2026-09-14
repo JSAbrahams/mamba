@@ -1,0 +1,4 @@
+def f(x: Int) -> Int := return x
+
+# A call passes values, and `..` is not one
+def b := f(..)

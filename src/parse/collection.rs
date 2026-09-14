@@ -1,26 +1,22 @@
 use crate::common::position::Position;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::expected_one_of;
-use crate::parse::result::ParseResult;
+use crate::parse::result::{expected_one_of, ParseResult};
 
 pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
+    let expected = [Token::LRBrack, Token::LSBrack, Token::LCBrack];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set_or_dict(it),
-            _ => Err(Box::from(expected_one_of(
-                &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
-                lex,
-                "collection",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, lex, "collection"))),
         },
-        &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
+        &expected,
         "collection",
     )
 }
@@ -173,6 +169,96 @@ mod test {
         };
 
         assert_eq!(lit.as_str(), "a");
+    }
+
+    /// `..` is an element like any other as far as the grammar is concerned.
+    ///
+    /// The checker is what rejects it here today, and what will allow it in a match case
+    /// later, so the parse must keep it rather than refuse it.
+    #[test]
+    fn tuple_with_rest_verify() {
+        let source = String::from("(1, ..)");
+        let statements = parse_direct(&source).unwrap();
+        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
+        };
+
+        assert_eq!(elements.len(), 2);
+        assert_eq!(
+            elements[0].node,
+            Node::Int {
+                lit: String::from("1")
+            }
+        );
+        assert_eq!(elements[1].node, Node::Rest);
+    }
+
+    #[test]
+    fn tuple_with_leading_rest_verify() {
+        let source = String::from("(.., 2)");
+        let statements = parse_direct(&source).unwrap();
+        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
+        };
+
+        assert_eq!(elements.len(), 2);
+        assert_eq!(elements[0].node, Node::Rest);
+        assert_eq!(
+            elements[1].node,
+            Node::Int {
+                lit: String::from("2")
+            }
+        );
+    }
+
+    #[test]
+    fn list_with_rest_verify() {
+        let source = String::from("[1, ..]");
+        let statements = parse_direct(&source).unwrap();
+        let Node::List { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not list.")
+        };
+
+        assert_eq!(elements.len(), 2);
+        assert_eq!(elements[1].node, Node::Rest);
+    }
+
+    /// A `..` with something before it is still a range.
+    ///
+    /// This is the one thing reusing the token could have broken: a leading `..` starts an
+    /// expression, and an expression followed by another one is a call.
+    #[test]
+    fn range_is_not_a_call_of_its_lower_bound() {
+        let source = String::from("(0 .. 10)");
+        let statements = parse_direct(&source).unwrap();
+        let node = &statements.first().expect("script empty.").node;
+
+        assert!(
+            matches!(
+                node,
+                Node::Range {
+                    inclusive: false,
+                    ..
+                }
+            ),
+            "was {node:?}"
+        );
+    }
+
+    #[test]
+    fn range_in_tuple_is_still_a_range() {
+        let source = String::from("(0 .. 10, 2)");
+        let statements = parse_direct(&source).unwrap();
+        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
+        };
+
+        assert_eq!(elements.len(), 2);
+        assert!(
+            matches!(elements[0].node, Node::Range { .. }),
+            "was {:?}",
+            elements[0].node
+        );
     }
 
     #[test]

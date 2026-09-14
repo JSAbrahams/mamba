@@ -3,4 +3,4 @@ class MyChildClass: MyClass
 
 def my_fun(arg: MyChildClass) := pass
 
-my_fun(MyClass())
+my_fun(MyClass.new())

@@ -1,6 +1,0 @@
-class X where
-    def mut z: Int
-
-    def __init__(mut self, x: Int) :=
-        self.z += 10
-end

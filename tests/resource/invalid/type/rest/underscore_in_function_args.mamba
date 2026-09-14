@@ -1,0 +1,2 @@
+# `_` stands for a class argument that is not written out, which only a bodiless `new` has
+def f(_) -> Int := return 1

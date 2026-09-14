@@ -1,12 +1,10 @@
 use std::ops::Deref;
 
 use crate::common::position::Position;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
-use crate::parse::result::ParseResult;
-use crate::parse::result::{custom, expected_one_of};
+use crate::parse::result::{custom, expected_one_of, ParseResult};
 
 /// Parse an identifier, or a tuple of identifiers.
 ///
@@ -14,6 +12,8 @@ use crate::parse::result::{custom, expected_one_of};
 /// `binding` allows. Elsewhere, such as a `for` loop's variable, nothing is bound and `mut`
 /// is meaningless, so it is not accepted.
 fn parse_id_or_tuple(it: &mut LexIterator, binding: bool) -> ParseResult {
+    let expected = [Token::Id(String::new()), Token::LRBrack];
+
     it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::Id(id) => {
@@ -21,26 +21,21 @@ fn parse_id_or_tuple(it: &mut LexIterator, binding: bool) -> ParseResult {
                 Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
             }
             Token::LRBrack => {
-                let mut elements = vec![];
                 let start = it.eat(&Token::LRBrack, "identifier tuple")?;
-                it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-                    let element =
-                        it.parse(&|it| parse_tuple_element(it, binding), "identifier", start)?;
-                    elements.push(*element);
-                    it.eat_if(&Token::Comma);
-                    Ok(())
-                })?;
+                let elements = it.parse_comma_separated(
+                    &Token::RRBrack,
+                    &|it| parse_tuple_element(it, binding),
+                    "identifier tuple",
+                    start,
+                )?;
 
                 let end = it.eat(&Token::RRBrack, "identifier tuple")?;
+                let elements = elements.into_iter().map(|e| *e).collect();
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
-            _ => Err(Box::from(expected_one_of(
-                &[Token::Id(String::new()), Token::LRBrack],
-                lex,
-                "identifier",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, lex, "identifier"))),
         },
-        &[Token::Id(String::new())],
+        &expected,
         "identifier",
     )
 }
@@ -98,14 +93,8 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_generics(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("generics")?;
-    let mut generics: Vec<AST> = Vec::new();
-
-    it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
-        generics.push(*it.parse(&parse_generic, "generics", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-    Ok(generics)
+    let generics = it.parse_comma_separated(&Token::RSBrack, &parse_generic, "generics", start)?;
+    Ok(generics.into_iter().map(|g| *g).collect())
 }
 
 pub fn parse_generic(it: &mut LexIterator) -> ParseResult {
@@ -120,6 +109,8 @@ pub fn parse_generic(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type")?;
+    let expected = [Token::Id(String::new()), Token::LRBrack, Token::LCBrack];
+
     let ty = it.peek_or_err(
         &|it, lex| match lex.token {
             Token::Id(_) => {
@@ -137,13 +128,9 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
             }
             Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
             Token::LCBrack => it.parse(&parse_type_set, "type", start),
-            _ => Err(Box::from(expected_one_of(
-                &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
-                &lex.clone(),
-                "type",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, &lex.clone(), "type"))),
         },
-        &[Token::Id(String::new()), Token::LRBrack],
+        &expected,
         "type",
     )?;
 
@@ -186,14 +173,10 @@ pub fn parse_type_set(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type set")?;
     it.eat(&Token::LCBrack, "type set")?;
 
-    let mut types = vec![];
-    it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
-        types.push(*it.parse(&parse_type, "type set", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-
+    let types = it.parse_comma_separated(&Token::RCBrack, &parse_type, "type set", start)?;
     let end = it.eat(&Token::RCBrack, "type set")?;
+
+    let types = types.into_iter().map(|t| *t).collect();
     let node = Node::TypeUnion { types };
     Ok(Box::from(AST::new(start.union(end), node)))
 }
@@ -202,14 +185,10 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type tuple")?;
     it.eat(&Token::LRBrack, "type tuple")?;
 
-    let mut types = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        types.push(*it.parse(&parse_type, "type tuple", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
-
+    let types = it.parse_comma_separated(&Token::RRBrack, &parse_type, "type tuple", start)?;
     let end = it.eat(&Token::RRBrack, "type tuple")?;
+
+    let types = types.into_iter().map(|t| *t).collect();
     let node = Node::TypeTup { types };
     Ok(Box::from(AST::new(start.union(end), node)))
 }

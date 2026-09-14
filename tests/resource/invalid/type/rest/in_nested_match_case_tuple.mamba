@@ -1,0 +1,7 @@
+# The case is not a plain identifier, so nothing else walks it looking for a `..`
+def t := ((1, 2), 3)
+
+match t where
+    ((1, ..), 3) => print("a")
+    _            => print("b")
+end

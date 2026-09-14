@@ -1,15 +1,15 @@
 class A where
-    def mut b: B := B()
+    def mut b: B := B.new()
 end
 class B where
-    def mut c: C := C()
+    def mut c: C := C.new()
 end
 class C where
-    def mut d: D := D()
+    def mut d: D := D.new()
 end
 class D where
     def mut e: Int := 100
 end
 
-def mut a := A()
+def mut a := A.new()
 a.b.c.d.e := 20

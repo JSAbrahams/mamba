@@ -3,5 +3,5 @@ class OtherClass
 
 def fun_b(x: MyClass) := print("a")
 
-def other_class := OtherClass()
+def other_class := OtherClass.new()
 fun_b(other_class)

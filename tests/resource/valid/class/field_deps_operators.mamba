@@ -16,5 +16,5 @@ class Deps(x: Int) where
     def later: Int := self.x * 2
 end
 
-def d := Deps(3)
+def d := Deps.new(3)
 print(d.cmp)

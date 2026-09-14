@@ -1,0 +1,5 @@
+class C where
+    def pure double(self, x: Int) -> Int := x * 2
+
+    def pure quadruple(self, x: Int) -> Int := self.double(self.double(x))
+end

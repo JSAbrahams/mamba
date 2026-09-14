@@ -1,0 +1,10 @@
+# Self names the enclosing class as a type, in a method and in an associated function alike
+class Point(x: Int, y: Int) where
+    def new(x: Int, y: Int) -> Self := return Point(x, y)
+
+    def pure same_x(self, other: Self) -> Bool := return self.x = other.x
+end
+
+def a := Point.new(1, 2)
+def b := Point.new(1, 9)
+print(a.same_x(b))

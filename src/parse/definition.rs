@@ -1,15 +1,11 @@
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::custom;
-use crate::parse::result::ParseResult;
-use crate::parse::ty::parse_expression_type;
-use crate::parse::ty::parse_id;
-use crate::parse::ty::parse_type;
+use crate::parse::result::{custom, ParseResult};
+use crate::parse::ty::{parse_expression_type, parse_id, parse_type};
 
 pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("definition")?;
@@ -156,42 +152,40 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let mut raises: Vec<AST> = Vec::new();
     if let Some(start) = it.eat_if(&Token::LCBrack) {
-        it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
-            raises.push(*it.parse(&parse_type, "raises", start)?);
-            it.eat_if(&Token::Comma);
-            Ok(())
-        })?;
+        let raises = it.parse_comma_separated(&Token::RCBrack, &parse_type, "raises", start)?;
         it.eat(&Token::RCBrack, "raises")?;
+        Ok(raises.into_iter().map(|r| *r).collect())
     } else {
         let start = it.start_pos("single raises")?;
-        raises.push(*it.parse(&parse_type, "raises", start)?);
+        Ok(vec![*it.parse(&parse_type, "raises", start)?])
     }
-
-    Ok(raises)
 }
 
 pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::LRBrack, "function arguments")?;
-    let mut args = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        args.push(*it.parse(&parse_fun_arg, "function arguments", start)?);
-
-        if let Some(next) = it.peek_next() {
-            if next.token != Token::RRBrack {
-                it.eat(&Token::Comma, "function arguments must be comma separated")?;
-            }
-        }
-        Ok(())
-    })?;
+    let args = it.parse_comma_separated(
+        &Token::RRBrack,
+        &|it| parse_fun_arg(it, true),
+        "function arguments",
+        start,
+    )?;
 
     it.eat(&Token::RRBrack, "function arguments")?;
-    Ok(args)
+    Ok(args.into_iter().map(|a| *a).collect())
 }
 
-pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
+/// An anonymous function's argument takes no default, since `:=` there opens its body.
+pub fn parse_fun_arg(it: &mut LexIterator, default_allowed: bool) -> ParseResult {
     let start = it.start_pos("function argument")?;
+
+    // A placeholder binds nothing, so it takes neither a type nor a default.
+    if let Some(pos) = it.eat_if(&Token::Range) {
+        return Ok(Box::from(AST::new(pos, Node::Rest)));
+    }
+    if let Some(pos) = it.eat_if(&Token::Underscore) {
+        return Ok(Box::from(AST::new(pos, Node::Underscore)));
+    }
 
     let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
     let (mutable, var, ty) = match &expression_type.node {
@@ -203,12 +197,16 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
             )));
         }
     };
-    let default = it.parse_if(
-        &Token::Assign,
-        &parse_expression,
-        "function argument default",
-        start,
-    )?;
+    let default = if default_allowed {
+        it.parse_if(
+            &Token::Assign,
+            &parse_expression,
+            "function argument default",
+            start,
+        )?
+    } else {
+        None
+    };
 
     let end = default.clone().map_or(expression_type.pos, |def| def.pos);
     let node = Node::FunArg {
@@ -221,39 +219,10 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(end), node)))
 }
 
-/// Lambda args cannot be assigned a default, though whether we should even allow default arguments is debatable.
-pub fn parse_lambda_arg(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("function argument")?;
-
-    let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
-    let (mutable, var, ty) = match &expression_type.node {
-        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
-        _ => {
-            return Err(Box::from(custom(
-                "Expected expression type in function argument",
-                expression_type.pos,
-            )));
-        }
-    };
-
-    let node = Node::FunArg {
-        vararg: false,
-        mutable,
-        var,
-        ty,
-        default: None,
-    };
-    Ok(Box::from(AST::new(start.union(expression_type.pos), node)))
-}
-
 pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("forward")?;
-    let mut forwarded: Vec<AST> = vec![];
-    it.peek_while_not_token(&Token::NL, &mut |it, _| {
-        forwarded.push(*it.parse(&parse_id, "forward", start)?);
-        it.eat_if(&Token::Comma);
-        Ok(())
-    })?;
+    let forwarded = it.parse_comma_separated(&Token::NL, &parse_id, "forward", start)?;
+    let forwarded: Vec<AST> = forwarded.into_iter().map(|f| *f).collect();
 
     Ok(forwarded)
 }
@@ -802,5 +771,101 @@ mod test {
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
         source.parse::<AST>().unwrap_err();
+    }
+
+    #[test]
+    fn pure_new_empty_args_verify() {
+        let source = String::from("def pure new()");
+        let (pure, id, args, ret, raises, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(
+            id.node,
+            Node::Id {
+                lit: String::from("new")
+            }
+        );
+        assert!(args.is_empty());
+        assert_eq!(ret, None);
+        assert_eq!(raises.len(), 0);
+        assert_eq!(body, None);
+    }
+
+    #[test]
+    fn pure_new_underscore_args_verify() {
+        let source = String::from("def pure new(_)");
+        let (pure, _, args, _, _, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(args.len(), 1);
+        assert_eq!(args[0].node, Node::Underscore);
+        assert_eq!(body, None);
+    }
+
+    #[test]
+    fn pure_new_rest_args_verify() {
+        let source = String::from("def pure new(..)");
+        let (pure, _, args, _, _, body) =
+            unwrap_func_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert!(pure);
+        assert_eq!(args.len(), 1);
+        assert_eq!(args[0].node, Node::Rest);
+        assert_eq!(body, None);
+    }
+
+    /// The parser does not know that `new` is special, the checker does.
+    ///
+    /// That is what lets a misplaced placeholder be explained rather than reported as a syntax
+    /// error, and it is what a match case will need when `..` is allowed there.
+    #[test]
+    fn placeholder_args_on_ordinary_function_parse() {
+        for (source, expected) in [
+            ("def f(..) := 1", Node::Rest),
+            ("def f(_) := 1", Node::Underscore),
+        ] {
+            let (_, id, args, ..) = unwrap_func_definition!(
+                parse_direct(&String::from(source)).expect("valid definition")
+            );
+
+            assert_eq!(
+                id.node,
+                Node::Id {
+                    lit: String::from("f")
+                }
+            );
+            assert_eq!(args.len(), 1, "{source}");
+            assert_eq!(args[0].node, expected, "{source}");
+        }
+    }
+
+    /// A placeholder binds nothing, so there is nothing for a type to attach to.
+    #[test]
+    fn placeholder_arg_with_type_is_error() {
+        for source in ["def f(..: Int) := 1", "def f(_: Int) := 1"] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `new` without an argument list is a definition like any other, and the parser treats it
+    /// as one. Naming it as a function is left to the checker.
+    #[test]
+    fn new_without_args_is_a_variable_def() {
+        let source = String::from("def new\nprint(1)");
+        let (_, var, ty, expr, _) =
+            unwrap_definition!(parse_direct(&source).expect("valid definition"));
+
+        assert_eq!(
+            var.node,
+            Node::Id {
+                lit: String::from("new")
+            }
+        );
+        assert_eq!(ty, None);
+        assert_eq!(expr, None);
     }
 }

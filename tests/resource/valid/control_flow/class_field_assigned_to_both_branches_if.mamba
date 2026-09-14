@@ -1,9 +1,0 @@
-class MyClass where
-    def mut x: Int
-
-    def __init__(mut self) :=
-        if False then
-            self.x := 10
-        else
-            self.x := 20
-end

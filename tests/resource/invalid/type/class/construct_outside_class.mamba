@@ -1,0 +1,5 @@
+class Point(x: Int, y: Int)
+
+# Applying the class to its arguments is the construction primitive, and it is only in
+# scope within Point itself. Out here this must be Point.new(1, 2)
+def p := Point(1, 2)

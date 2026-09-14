@@ -22,7 +22,6 @@ pub struct Field {
     pub mutable: bool,
     pub in_class: Option<StringName>,
     pub ty: Name,
-    pub assigned_to: bool,
 }
 
 impl LookupField<&str, Field> for Context {
@@ -56,7 +55,6 @@ impl TryFrom<(&GenericField, &HashMap<Name, Name>, Position)> for Field {
                 Some(ty) => ty.substitute(generics, pos)?,
                 None => Name::empty(),
             },
-            assigned_to: field.assigned_to,
         })
     }
 }

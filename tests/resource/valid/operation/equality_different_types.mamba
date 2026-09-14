@@ -5,8 +5,8 @@ end
 
 class MyOtherClass
 
-def a := MyClass()
-def b := MyOtherClass()
+def a := MyClass.new()
+def b := MyOtherClass.new()
 
 a = b
 a != b

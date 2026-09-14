@@ -1,0 +1,5 @@
+# Without an argument list this is the field production, which is the whole reason
+# the marker takes one
+class Point(x: Int, y: Int) where
+    def new
+end

@@ -63,7 +63,7 @@ pub fn gen_flow(
             let if_expr_exp = Expected::from(ast);
 
             constr.branch_point();
-            let then_env = generate(then, env, ctx, constr)?;
+            generate(then, env, ctx, constr)?;
             if env.is_expr {
                 constr.add(
                     "then branch equal to if",
@@ -74,7 +74,7 @@ pub fn gen_flow(
             }
 
             constr.branch("if else branch", el.pos);
-            let else_env = generate(el, env, ctx, constr)?;
+            generate(el, env, ctx, constr)?;
             if env.is_expr {
                 constr.add(
                     "else branch equal to if",
@@ -85,7 +85,7 @@ pub fn gen_flow(
             }
 
             constr.reset_branches();
-            Ok(env.intersection(&then_env.union(&else_env)))
+            Ok(env.clone())
         }
         Node::IfElse { cond, then, .. } => {
             constr.add_constr(
@@ -147,6 +147,7 @@ fn constrain_cases(
         match &case.node {
             Node::Case { cond, body } => {
                 constr.branch("match arm", case.pos);
+                check_no_rest(cond)?;
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
 
                 if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
@@ -174,10 +175,22 @@ fn constrain_cases(
     }
 
     constr.reset_branches();
-    let env_union = envs.into_iter().reduce(|e1, e2| e1.union(&e2));
-    if let Some(env_union) = env_union {
-        Ok(env.intersection(&env_union))
-    } else {
-        Ok(env.clone())
+
+    Ok(env.clone())
+}
+
+/// Reject a `..` in a match case, which is where it is meant to go next.
+///
+/// A case that is not a plain identifier is not walked at all, so a `..` in one never reaches
+/// [generate]. Allowing `(2, ..)` later means matching on the elided elements here.
+fn check_no_rest(ast: &AST) -> Constrained<()> {
+    match &ast.node {
+        Node::Rest => Err(vec![TypeErr::new(
+            ast.pos,
+            "'..' is only allowed as the argument list of a bodiless 'new'",
+        )]),
+        Node::Tuple { elements } => elements.iter().try_for_each(check_no_rest),
+        Node::ExpressionType { expr, .. } => check_no_rest(expr),
+        _ => Ok(()),
     }
 }

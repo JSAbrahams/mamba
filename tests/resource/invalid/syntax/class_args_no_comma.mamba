@@ -1,0 +1,2 @@
+# Class arguments are an ordinary argument list, so they are comma separated
+class Point(a: Int b: Int)

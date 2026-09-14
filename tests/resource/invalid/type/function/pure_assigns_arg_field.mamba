@@ -1,0 +1,9 @@
+class C where
+    def mut x: Int := 1
+end
+
+# assigning a field of an argument modifies the caller's value
+def pure f(mut c: C) -> Int := do
+    c.x := 5
+    1
+end

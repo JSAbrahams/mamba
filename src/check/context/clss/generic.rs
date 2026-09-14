@@ -13,6 +13,7 @@ use crate::check::context::{arg, clss};
 use crate::check::name::string_name::StringName;
 use crate::check::name::{Any, Empty, Name};
 use crate::check::result::{TypeErr, TypeResult};
+use crate::check::{is_new_marker, is_pure_new, NEW};
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -26,6 +27,9 @@ pub struct GenericClass {
     pub fields: HashSet<GenericField>,
     pub functions: HashSet<GenericFunction>,
     pub parents: HashSet<GenericParent>,
+    /// Whether the class states that constructing it is pure, with a bodiless `def pure new(..)`
+    /// or a `new` it declares itself. Never inferred from the field initializers.
+    pub pure_new: bool,
 }
 
 impl PartialEq for GenericClass {
@@ -53,6 +57,7 @@ impl GenericClass {
                     fields: Default::default(),
                     functions: Default::default(),
                     parents: Default::default(),
+                    pure_new: false,
                 })
             }
             _ => Err(vec![TypeErr::new(id.pos, "Expected class name")]),
@@ -92,6 +97,7 @@ impl Any for GenericClass {
             fields: Default::default(),
             functions,
             parents: Default::default(),
+            pure_new: false,
         }
     }
 }
@@ -191,6 +197,10 @@ impl TryFrom<&AST> for GenericClass {
                     }
                 }
 
+                // Purity of construction is stated, never inferred. The statement is either the
+                // bodiless `def pure new(..)` or a `pure new` the class declares itself.
+                let pure_new = statements.iter().any(is_pure_new);
+
                 if class_args.is_empty() {
                     class_args.push(GenericFunctionArg {
                         is_py_type: false,
@@ -223,6 +233,7 @@ impl TryFrom<&AST> for GenericClass {
                     fields: argument_fields.union(&body_fields).cloned().collect(),
                     functions,
                     parents: parents.into_iter().map(Result::unwrap).collect(),
+                    pure_new,
                 })
             }
             Node::Trait { ty, isa, body, .. } => {
@@ -245,6 +256,7 @@ impl TryFrom<&AST> for GenericClass {
                 let (fields, functions) = get_fields_and_functions(&name, &statements, true)?;
                 Ok(GenericClass {
                     is_py_type: false,
+                    pure_new: false,
                     name,
                     pos: class.pos,
                     args: vec![GenericFunctionArg {
@@ -280,10 +292,21 @@ fn get_fields_and_functions(
 
     for statement in statements {
         match &statement.node {
+            // A bodiless `new` asserts, rather than declares, so it contributes no signature
+            // and its `..` is not an argument. Its purity is read off the body in `pure_new`.
+            Node::FunDef { .. } if is_new_marker(statement) => {}
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
                 let function = function.in_class(class, type_def, statement.pos);
                 functions.insert(function);
+            }
+            // Without an argument list it parses as a field, which is the production it would
+            // otherwise be read as.
+            Node::VariableDef { var, .. } if matches!(&var.node, Node::Id { lit } if lit == NEW) => {
+                let msg = format!(
+                    "'{NEW}' is a function, not a field. Write '{NEW}()', '{NEW}(_)' or '{NEW}(..)', for a class with no arguments, exactly one, or one or more"
+                );
+                return Err(vec![TypeErr::new(statement.pos, &msg)]);
             }
             Node::VariableDef { .. } => {
                 let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?

@@ -1,0 +1,5 @@
+# `..` says the arguments are the generated ones, and a `new` with a body is declaring its
+# own. The two cannot both be true
+class Point(x: Int, y: Int) where
+    def new(..) -> Self := return Point(0, 0)
+end

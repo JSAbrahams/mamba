@@ -1,0 +1,6 @@
+class C where
+    def double(self, x: Int) -> Int := x * 2
+
+    # double is not pure, so a pure method may not call it on self
+    def pure quadruple(self, x: Int) -> Int := self.double(x)
+end

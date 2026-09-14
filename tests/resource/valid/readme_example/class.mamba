@@ -5,14 +5,14 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(self) -> Float := self.a + self.d
+    def trace(self) -> Float := self.a + self.d
 
     # Determinant of the matrix (ad - bc)
-    def pure determinant(self) -> Float := self.a * self.d - self.b * self.c
+    def determinant(self) -> Float := self.a * self.d - self.b * self.c
 
     # Solves this matrix against the vector (u, v) by Cramer's rule.
     # A singular matrix has no unique solution, so this may fail.
-    def pure solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+    def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
         def det := self.determinant()
         if det = 0.0 then ! MatrixErr("Determinant is zero.")
         def x := u * self.d - self.b * v

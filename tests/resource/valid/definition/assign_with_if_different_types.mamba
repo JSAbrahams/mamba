@@ -2,6 +2,6 @@ class MyClass where
     def __str__(self) -> Str := "M"
 end
 
-def a := if True then 20 else MyClass()
+def a := if True then 20 else MyClass.new()
 
 print(a)

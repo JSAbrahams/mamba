@@ -1,5 +1,4 @@
-use std::fmt::Display;
-use std::fmt::Write;
+use std::fmt::{Display, Write};
 
 pub fn custom_delimited<I, D>(iterable: I, delimiter: &str, prepend: &str) -> String
 where

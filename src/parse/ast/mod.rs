@@ -44,6 +44,12 @@ impl Termination for AST {
 
 pub type OptAST = Option<Box<AST>>;
 
+/// The enclosing class, as a type.
+///
+/// Distinct from the receiver *value* of a method, which is `self`. `Self` is usable anywhere
+/// in a class body, including in an associated function that takes no `self`.
+pub const SELF_TY: &str = "Self";
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
     Import {
@@ -313,6 +319,8 @@ pub enum Node {
     },
     ReturnEmpty,
     Underscore,
+    /// One or more of something, written `..`, standing in for what is not written out.
+    Rest,
     Pass,
     Question {
         left: Box<AST>,

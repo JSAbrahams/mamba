@@ -3,5 +3,5 @@ class MyClass where
 end
 
 # Only the first element is mut, so only it may be modified through
-def (mut a, b) := (MyClass(), 10)
+def (mut a, b) := (MyClass.new(), 10)
 a.my_field := 20

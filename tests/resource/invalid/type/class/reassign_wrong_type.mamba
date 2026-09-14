@@ -2,5 +2,5 @@ class MyClass where
     def something: Int := 10
 end
 
-def my_class := MyClass()
+def my_class := MyClass.new()
 my_class.something := "A string"

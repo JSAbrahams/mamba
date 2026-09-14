@@ -6,7 +6,7 @@ use crate::check::ast::ASTTy;
 use crate::check::constrain::constraints;
 use crate::check::context::Context;
 use crate::check::result::TypeResult;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::TypeErr;
 
 mod constrain;
@@ -16,6 +16,39 @@ pub mod ast;
 pub mod context;
 pub mod name;
 pub mod result;
+
+/// The constructor a class gets for free, taking exactly its class arguments.
+///
+/// Declaring one of your own takes precedence, which is what lets a class enforce an
+/// invariant that plain construction could otherwise bypass.
+pub const NEW: &str = "new";
+
+/// Whether a statement is a bodiless `new`, whose argument list stands for the class arguments
+/// rather than declaring any: `()` for none, `(_)` for one, `(..)` for one or more.
+pub fn is_new_marker(stmt: &AST) -> bool {
+    let Node::FunDef {
+        id,
+        args,
+        body: None,
+        ..
+    } = &stmt.node
+    else {
+        return false;
+    };
+
+    matches!(&id.node, Node::Id { lit } if lit == NEW)
+        && match args[..] {
+            [] => true,
+            [ref arg] => matches!(arg.node, Node::Underscore | Node::Rest),
+            _ => false,
+        }
+}
+
+/// Whether a statement gives the class a pure `new`, by asserting it or by declaring one.
+pub fn is_pure_new(stmt: &AST) -> bool {
+    matches!(&stmt.node, Node::FunDef { pure: true, id, .. }
+        if matches!(&id.node, Node::Id { lit } if lit == NEW))
+}
 
 /// Checks whether a given [AST](mamba::parser::ast::AST) is well
 /// typed according to the specification of the language.

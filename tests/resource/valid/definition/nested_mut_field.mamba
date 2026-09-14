@@ -1,9 +1,7 @@
 class B where
     def mut my_num: Int := 10
 end
-class A where
-    def mut b: B
-end
+class A(mut b: B)
 
-def mut a := A()
+def mut a := A.new(B.new())
 a.b.my_num := 20

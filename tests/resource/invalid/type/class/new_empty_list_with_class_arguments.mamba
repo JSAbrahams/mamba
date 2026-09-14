@@ -1,0 +1,4 @@
+# `()` stands for no class arguments, and this class has two
+class Point(x: Int, y: Int) where
+    def pure new()
+end

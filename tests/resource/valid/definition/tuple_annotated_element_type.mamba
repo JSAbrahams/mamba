@@ -9,5 +9,5 @@ print(b)
 def c := a + 1
 
 # including when the element is a class, and when there is no right hand side
-def (d, e): (MyClass, Int) := (MyClass(), 10)
+def (d, e): (MyClass, Int) := (MyClass.new(), 10)
 print(d.my_field)

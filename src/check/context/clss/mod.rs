@@ -63,6 +63,8 @@ pub struct Class {
     pub fields: HashSet<Field>,
     pub parents: HashSet<TrueName>,
     pub functions: HashSet<Function>,
+    /// Whether the class asserted, with a bodiless `def pure new`, that constructing it is pure.
+    pub pure_new: bool,
 }
 
 pub trait HasParent<T> {
@@ -255,6 +257,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
+            pure_new: generic.pure_new,
             name: generic.name.substitute(generics, pos)?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
@@ -279,11 +282,17 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
 impl Class {
     pub fn constructor(&self, without_self: bool) -> Function {
+        // The `new` a class gets for free is pure only where the class says so, with a
+        // bodiless `def pure new`. Purity is never inferred from the field initializers: a
+        // guarantee that appears and disappears as unrelated code changes is worse than one
+        // that is stated.
+        let pure = self.pure_new;
+
         Function {
             is_py_type: false,
             name: self.name.clone(),
             self_mutable: None,
-            pure: false,
+            pure,
             arguments: if without_self && !self.args.is_empty() {
                 self.args.iter().skip(1).cloned().collect()
             } else {

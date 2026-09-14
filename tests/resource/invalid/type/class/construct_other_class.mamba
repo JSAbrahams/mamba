@@ -1,0 +1,6 @@
+class Point(x: Int, y: Int)
+
+class Line(a: Int) where
+    # being inside *a* class body is not enough, it must be Point's own
+    def start() -> Point := return Point(0, 0)
+end

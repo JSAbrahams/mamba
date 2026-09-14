@@ -1,0 +1,4 @@
+class Point(x: Int, y: Int)
+
+# Point declares no such associated function
+def p := Point.nope(1, 2)

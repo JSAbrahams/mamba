@@ -9,5 +9,5 @@ class Deps2(x: Int) where
     def later: Int := self.x * 2
 end
 
-def d := Deps2(3)
+def d := Deps2.new(3)
 print(d.gt)

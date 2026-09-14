@@ -1,6 +1,4 @@
 trait MyType
 trait MyType2
 
-class MyClass1: MyType, MyType2 where
-    def other: Int
-end
+class MyClass1(other: Int): MyType, MyType2

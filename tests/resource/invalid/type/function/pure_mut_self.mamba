@@ -1,0 +1,7 @@
+class C where
+    def mut x: Int := 1
+
+    # self is just another argument, so mutating it would change the result for the
+    # same inputs
+    def pure f(mut self) -> Int := 1
+end

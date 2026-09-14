@@ -1,0 +1,14 @@
+# A function in a class body that takes no self is an associated function, called on the
+# class itself rather than on an instance
+class Point(x: Int, y: Int) where
+    def new(x: Int, y: Int) -> Point := return Point(x, y)
+
+    # named alternatives sit beside new as equals
+    def origin() -> Point := return Point(0, 0)
+end
+
+def p := Point.new(3, 4)
+print(p.x)
+
+def o := Point.origin()
+print(o.y)

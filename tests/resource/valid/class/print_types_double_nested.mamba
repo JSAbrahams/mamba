@@ -1,9 +1,9 @@
 class Y(a: Float)
 
 class X(a: Float) where
-    def y: Y := Y(self.a)
+    def y: Y := Y.new(self.a)
 end
 
-def x := X(10)
+def x := X.new(10)
 
 print(x.y.a)

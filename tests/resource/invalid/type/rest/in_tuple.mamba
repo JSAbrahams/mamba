@@ -1,0 +1,2 @@
+# A tuple that is built rather than matched has every element written out
+def a := (1, ..)

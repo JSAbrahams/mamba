@@ -1,0 +1,10 @@
+# `()` stands for no class arguments. `(..)` would be wrong here: it reads as one or more
+# The assertion still binds: the derived field below is checked for purity
+class Origin() where
+    def pure new()
+
+    def x: Int := 0
+end
+
+def pure make() -> Origin := return Origin.new()
+print(make().x)

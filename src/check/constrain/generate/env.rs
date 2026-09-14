@@ -4,6 +4,7 @@ use log::trace;
 
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::context::arg::SELF;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 
@@ -11,6 +12,19 @@ use crate::check::name::true_name::TrueName;
 pub struct Environment {
     pub in_loop: bool,
     pub in_fun: bool,
+    /// Whether we are in the body of a `pure` function, where the purity rules apply.
+    pub in_pure: bool,
+    /// Mutable variables defined outside the current `pure` function's body.
+    ///
+    /// A pure function may neither read nor assign to these, since both make its result
+    /// depend on, or leak into, state its arguments do not cover.
+    pub outer_mut: HashSet<String>,
+    /// Names in scope when the current `pure` function's body began, so its arguments and
+    /// everything enclosing it.
+    ///
+    /// Anything not in here was defined by the body itself, and is destroyed on exit, so it
+    /// may be used freely.
+    pub pure_nonlocal: HashSet<String>,
     pub is_expr: bool,
     pub is_def_mode: bool,
     pub is_destruct_mode: bool,
@@ -19,8 +33,6 @@ pub struct Environment {
     pub raises_caught: HashSet<TrueName>,
 
     pub class: Option<StringName>,
-
-    pub unassigned: HashSet<String>,
 
     pub vars: HashMap<String, HashSet<(bool, Expected)>>,
     pub var_mapping: VarMapping,
@@ -38,6 +50,33 @@ impl Environment {
     pub fn in_fun(&self, in_fun: bool) -> Environment {
         Environment {
             in_fun,
+            ..self.clone()
+        }
+    }
+
+    /// Enter the body of a `pure` function.
+    ///
+    /// `outer` is the scope the function is defined in. Every mutable variable there is off
+    /// limits inside the body, since reading or assigning it makes the result depend on, or
+    /// leak into, state the arguments do not cover. The function's own arguments are not
+    /// outer, so a `mut` argument may still be assigned to.
+    ///
+    /// `self` is excluded for the same reason: a class body binds it, so it would otherwise
+    /// look enclosing, when it is really this method's own argument. The `mut self` rule
+    /// covers it instead.
+    pub fn in_pure(&self, outer: &Environment) -> Environment {
+        let outer_mut = outer
+            .vars
+            .iter()
+            .filter(|(var, _)| *var != SELF)
+            .filter(|(_, exps)| exps.iter().any(|(mutable, _)| *mutable))
+            .map(|(var, _)| var.clone())
+            .collect();
+
+        Environment {
+            in_pure: true,
+            outer_mut,
+            pure_nonlocal: self.vars.keys().cloned().collect(),
             ..self.clone()
         }
     }
@@ -173,67 +212,5 @@ impl Environment {
             vars,
             ..self.clone()
         }
-    }
-
-    /// Denote a set of variables which should be assigned to at some point.
-    pub fn with_unassigned(&self, unassigned: HashSet<String>) -> Environment {
-        Environment {
-            unassigned,
-            ..self.clone()
-        }
-    }
-
-    /// Denote that a variable was assigned to by removing it from the set of variables which
-    /// should be assigned to.
-    ///
-    /// If not in environment, then nothing happens.
-    pub fn assigned_to(&self, var: &String) -> Environment {
-        let mut unassigned = self.unassigned.clone();
-        unassigned.remove(var);
-        Environment {
-            unassigned,
-            ..self.clone()
-        }
-    }
-
-    /// Union with unassigned of other.
-    pub fn union(&self, other: &Environment) -> Environment {
-        let unassigned = self.unassigned.union(&other.unassigned);
-        Environment {
-            unassigned: unassigned.cloned().collect(),
-            ..self.clone()
-        }
-    }
-
-    /// Intersection with unassigned of other.
-    pub fn intersection(&self, other: &Environment) -> Environment {
-        let unassigned = self.unassigned.intersection(&other.unassigned);
-        Environment {
-            unassigned: unassigned.cloned().collect(),
-            ..self.clone()
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashSet;
-
-    use crate::check::constrain::generate::env::Environment;
-
-    #[test]
-    fn union_unassigned() {
-        let (env1, env2) = (Environment::default(), Environment::default());
-        let env1 = env1.with_unassigned(HashSet::from([String::from("a")]));
-        let env2 = env2.with_unassigned(HashSet::from([String::from("a")]));
-        assert_eq!(env1.unassigned.len(), 1);
-
-        let env1 = env1.assigned_to(&String::from("a"));
-        assert_eq!(env1.unassigned.len(), 0);
-        assert_eq!(env2.unassigned.len(), 1);
-
-        let env3 = env1.union(&env2);
-        assert!(env3.unassigned.contains(&String::from("a")));
-        assert_eq!(env3.unassigned.len(), 1);
     }
 }

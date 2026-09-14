@@ -8,8 +8,7 @@ use crate::common::position::Position;
 use crate::common::result::{an_or_a, format_err, Cause, WithCause, WithSource};
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
@@ -91,8 +90,12 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
 
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     let msg = format!(
-        "Expected {} token while parsing {}{parsing}, but found '{}' ({})",
-        an_or_a(expected),
+        "Expected {} while parsing {}{parsing}, but found '{}' ({})",
+        if expected.to_string().is_empty() || expected.equals_name() {
+            expected.name().to_string()
+        } else {
+            format!("'{expected}' ({})", expected.name())
+        },
         an_or_a(parsing),
         actual.token,
         actual.token.name()

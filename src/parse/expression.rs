@@ -6,8 +6,7 @@ use crate::parse::call::{parse_anon_fun, parse_call};
 use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Lex;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{expected_one_of, ParseResult};
 use crate::parse::ty::parse_id;
@@ -28,6 +27,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::LSBrack,
         Token::LCBrack,
         Token::Underscore,
+        Token::Range,
         Token::Real(String::new()),
         Token::Int(String::new()),
         Token::ENum(String::new(), String::new()),
@@ -44,7 +44,14 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match &lex.token {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
             Token::LRBrack | Token::LSBrack | Token::LCBrack => parse_collection(it),
-            Token::Underscore => parse_underscore(it),
+            Token::Underscore => {
+                let end = it.eat(&Token::Underscore, "factor")?;
+                Ok(Box::from(AST::new(start.union(end), Node::Underscore)))
+            }
+            Token::Range => {
+                let end = it.eat(&Token::Range, "factor")?;
+                Ok(Box::from(AST::new(start.union(end), Node::Rest)))
+            }
             Token::Id(_) => parse_id(it),
             Token::Real(real) => literal!(it, real.to_string(), Real),
             Token::Int(int) => literal!(it, int.to_string(), Int),
@@ -88,12 +95,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Ok(res) => parse_post_expr(&res, it),
         err => err,
     }
-}
-
-fn parse_underscore(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("underscore")?;
-    let end = it.eat(&Token::Underscore, "underscore")?;
-    Ok(Box::from(AST::new(start.union(end), Node::Underscore)))
 }
 
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
@@ -148,9 +149,10 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
     )
 }
 
+/// [Token::Range] is here but not above, or `0 .. 10` parses as a call of `0`.
 pub fn is_start_expression(tp: &Lex) -> bool {
     let start_expr = is_start_expression_exclude_unary(tp);
-    start_expr || tp.token == Token::Add || tp.token == Token::Sub
+    start_expr || tp.token == Token::Add || tp.token == Token::Sub || tp.token == Token::Range
 }
 
 #[cfg(test)]

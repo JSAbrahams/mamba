@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::process::Stdio;
+use std::process::{Command, Stdio};
 
 use assert_cmd::prelude::*;
 use tests_util::{delete_dir, resource_content_randomize, resource_path};

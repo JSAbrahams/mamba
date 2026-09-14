@@ -7,7 +7,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
     def mut z_modified: Str := "asdf"
     def mut other_field: Int := 10
 
-    def __init__(mut self, other_field: Int, z: Int) ! Err1 := do
+    def setup(mut self, other_field: Int, z: Int) ! Err1 := do
         if z > 10 then ! Err1("Something is wrong!")
         self.z_modified := "fdsa"
 

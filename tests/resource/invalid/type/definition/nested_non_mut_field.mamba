@@ -6,5 +6,5 @@ class A where
     def b: B
 end
 
-def a := A()
+def a := A.new()
 a.b.my_num := 20

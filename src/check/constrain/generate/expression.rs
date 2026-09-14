@@ -84,6 +84,13 @@ fn match_id(
             } else if env.is_destruct_mode {
                 Ok(env.remove_var(lit))
             } else if env.get_var(lit, &constr.var_mapping).is_some() {
+                if env.in_pure && env.outer_mut.contains(lit) {
+                    // Its value can change between two calls with the same arguments.
+                    let msg = format!(
+                        "A pure function cannot read '{lit}', which is a 'mut' variable defined outside it"
+                    );
+                    return Err(vec![TypeErr::new(ast.pos, &msg)]);
+                }
                 Ok(env.clone())
             } else {
                 Err(vec![TypeErr::new(

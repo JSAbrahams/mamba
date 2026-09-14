@@ -1,17 +1,25 @@
 use crate::parse::ast::node_op::NodeOp;
-use crate::parse::ast::Node;
-use crate::parse::ast::AST;
+use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::{Lex, Token};
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, expected_one_of};
-use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
+use crate::parse::result::{custom, eof_expected_one_of, expected, expected_one_of, ParseResult};
 use crate::parse::ty::{parse_expression_type, parse_id};
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
+    let expected = [
+        Token::Pass,
+        Token::Raise,
+        Token::Def,
+        Token::Using,
+        Token::For,
+        Token::While,
+        Token::Ret,
+    ];
+
     it.peek_or_err(
         &|it, lex| match lex.token {
             Token::Pass => {
@@ -30,29 +38,9 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::Using => parse_using(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
-            _ => Err(Box::from(expected_one_of(
-                &[
-                    Token::Pass,
-                    Token::Raise,
-                    Token::Def,
-                    Token::Using,
-                    Token::For,
-                    Token::While,
-                    Token::Ret,
-                ],
-                lex,
-                "statement",
-            ))),
+            _ => Err(Box::from(expected_one_of(&expected, lex, "statement"))),
         },
-        &[
-            Token::Pass,
-            Token::Raise,
-            Token::Def,
-            Token::Using,
-            Token::For,
-            Token::While,
-            Token::Ret,
-        ],
+        &expected,
         "statement",
     )
 }
@@ -114,40 +102,19 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
         Token::PowAssign,
     ];
 
-    let (token, op) = if let Some(token) = it.peek_next() {
-        match &token {
-            Lex {
-                token: Token::Assign,
-                ..
-            } => (Token::Assign, NodeOp::Assign),
-            Lex {
-                token: Token::AddAssign,
-                ..
-            } => (Token::AddAssign, NodeOp::Add),
-            Lex {
-                token: Token::SubAssign,
-                ..
-            } => (Token::SubAssign, NodeOp::Sub),
-            Lex {
-                token: Token::MulAssign,
-                ..
-            } => (Token::MulAssign, NodeOp::Mul),
-            Lex {
-                token: Token::DivAssign,
-                ..
-            } => (Token::DivAssign, NodeOp::Div),
-            Lex {
-                token: Token::PowAssign,
-                ..
-            } => (Token::PowAssign, NodeOp::Pow),
-            lex => {
-                return Err(Box::from(expected_one_of(&expect, lex, "reassignment")));
-            }
-        }
-    } else {
+    let Some(lex) = it.peek_next() else {
         return Err(Box::from(eof_expected_one_of(&expect, "reassignment")));
     };
-    it.eat(&token, "reassignment")?;
+    let op = match lex.token {
+        Token::Assign => NodeOp::Assign,
+        Token::AddAssign => NodeOp::Add,
+        Token::SubAssign => NodeOp::Sub,
+        Token::MulAssign => NodeOp::Mul,
+        Token::DivAssign => NodeOp::Div,
+        Token::PowAssign => NodeOp::Pow,
+        _ => return Err(Box::from(expected_one_of(&expect, &lex, "reassignment"))),
+    };
+    it.eat(&lex.token, "reassignment")?;
 
     let right = it.parse(&parse_expression, "reassignment", start)?;
 

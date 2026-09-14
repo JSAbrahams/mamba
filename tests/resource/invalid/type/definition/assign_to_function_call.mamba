@@ -7,5 +7,5 @@ class C where
     def my_field_accessor(self) -> Int := self.my_field
 end
 
-def a := A()
+def a := A.new()
 a.c.my_field_accessor() := 20

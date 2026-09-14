@@ -4,9 +4,8 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::check::ident::Identifier;
-use crate::check::name::match_name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::Name;
+use crate::check::name::{match_name, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -19,7 +18,6 @@ pub struct GenericField {
     pub mutable: bool,
     pub in_class: Option<StringName>,
     pub ty: Option<Name>,
-    pub assigned_to: bool,
 }
 
 pub struct GenericFields {
@@ -48,11 +46,7 @@ impl TryFrom<&AST> for GenericField {
         match &ast.node {
             // Class arguments are fields too, see `ClassArgument`.
             Node::FunArg {
-                var,
-                mutable,
-                ty,
-                default,
-                ..
+                var, mutable, ty, ..
             } => Ok(GenericField {
                 is_py_type: false,
                 name: field_name(var.deref())?,
@@ -63,7 +57,6 @@ impl TryFrom<&AST> for GenericField {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
                     None => None,
                 },
-                assigned_to: default.is_some(),
             }),
             _ => Err(vec![TypeErr::new(ast.pos, "Expected function argument")]),
         }
@@ -77,11 +70,7 @@ impl TryFrom<&AST> for GenericFields {
         Ok(GenericFields {
             fields: match &ast.node {
                 Node::VariableDef {
-                    var,
-                    ty,
-                    mutable,
-                    expr,
-                    ..
+                    var, ty, mutable, ..
                 } => {
                     let identifier = Identifier::try_from(var.deref())?;
                     match &ty {
@@ -96,7 +85,6 @@ impl TryFrom<&AST> for GenericFields {
                                     pos: ast.pos,
                                     ty: Some(ty.clone()),
                                     in_class: None,
-                                    assigned_to: expr.is_some(),
                                 })
                                 .collect())
                         }
@@ -110,7 +98,6 @@ impl TryFrom<&AST> for GenericFields {
                                 mutable: *mutable,
                                 in_class: None,
                                 ty: None,
-                                assigned_to: expr.is_some(),
                             })
                             .collect()),
                     }

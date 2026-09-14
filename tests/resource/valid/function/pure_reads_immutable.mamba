@@ -1,0 +1,11 @@
+class C where
+    def x: Int := 1
+
+    # x is not mut, so a pure method may read it
+    def pure get(self) -> Int := self.x
+end
+
+# taylor is immutable, so a pure function may read it
+def taylor := 7
+
+def pure f(c: C) -> Int := c.x + taylor

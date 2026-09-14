@@ -1,0 +1,5 @@
+class X where
+    def y: Int := 1
+    # a bare statement would run once per instance, making construction's effects invisible
+    print("No assignments here!")
+end
