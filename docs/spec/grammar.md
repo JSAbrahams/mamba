@@ -146,7 +146,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     match            ::= "match" expression match-cases
     match-cases      ::= "where" { match-case } "end"
     # the type annotation names the error a handle case catches, as in `err: MyErr => ...`
-    match-case       ::= [ "mut" ] expression [ ":" type ] "=>" expr-or-stmt
+    # the guard is checked after the pattern matches, so it can read what the pattern bound
+    match-case       ::= [ "mut" ] expression [ ":" type ] [ "if" expression ] "=>" expr-or-stmt
     
     control-flow-stmt::= while | foreach | "break" | "continue"
     while            ::= "while" expression code-block
