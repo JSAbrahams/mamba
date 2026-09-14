@@ -82,7 +82,6 @@ If you are not running a Linux distro, this will probably not work for you.
 ```sh
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
 ```
-
 #### Installing Devbox
 
 ```sh
@@ -200,6 +199,7 @@ cargo sort           # rewrite Cargo.toml into sorted order
 ```
 
 Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
+
 
 ## 📝 Procedures
 

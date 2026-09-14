@@ -21,6 +21,9 @@
 
     "nushell@latest",
     "starship@latest",
+    "carapace@latest",
+
+    "gh@latest",
 
     "aspell@latest",
     "coreutils@latest",
@@ -97,6 +100,9 @@
       ],
       "coverage": [
         "cargo llvm-cov --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
+      ],
+      "coverage-json": [
+        "cargo llvm-cov --summary-only --json --output-path ./target/cov.json --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
       ],
       "precommit": [
         "cargo fmt --all -- --check",
