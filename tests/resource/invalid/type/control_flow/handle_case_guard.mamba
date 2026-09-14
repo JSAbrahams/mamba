@@ -1,0 +1,8 @@
+# a handle becomes a Python 'except', which has nowhere to put a guard
+class MyErr(msg: Str): Exception(msg)
+
+def f() -> Int ! MyErr := 10
+
+def a := f() ! where
+    err: MyErr if True => 0
+end

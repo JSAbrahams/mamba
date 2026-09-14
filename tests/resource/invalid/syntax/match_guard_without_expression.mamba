@@ -1,0 +1,5 @@
+# a guard is an expression, so 'if' cannot be followed straight by '=>'
+match 10 where
+    n if => 1
+    _    => 2
+end

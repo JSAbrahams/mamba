@@ -41,8 +41,6 @@ use mamba::parse::ast::AST;
 #[cfg_attr(not(feature = "imports"), test_case("class", "import" => matches Err(_)))]
 #[test_case("class", "init_not_a_thing" => matches Err(_))]
 #[test_case("class", "pure_new_impure_field" => matches Err(_))]
-// The marker's argument list stands for the class arguments, so it has to say how many there
-// are: `()` none, `(_)` exactly one, `(..)` one or more. These are the mismatches.
 #[test_case("class", "new_empty_list_with_class_arguments" => matches Err(_))]
 #[test_case("class", "new_underscore_without_class_arguments" => matches Err(_))]
 #[test_case("class", "new_underscore_with_two_class_arguments" => matches Err(_))]
@@ -77,6 +75,10 @@ use mamba::parse::ast::AST;
 #[test_case("collection", "set_builder_with_no_expr" => matches Err(_))]
 #[test_case("collection", "set_no_get" => matches Err(_))]
 #[test_case("collection", "set_not_subscriptable" => matches Err(_))]
+#[test_case("control_flow", "match_not_exhaustive" => ignore matches Err(_) ; "a match used as an expression must cover every case")]
+#[test_case("control_flow", "match_guard_not_exhaustive" => ignore matches Err(_) ; "a guarded arm can always fail, so it never makes a match exhaustive")]
+#[test_case("control_flow", "match_rest_not_last" => ignore matches Err(_) ; "'..' stands for the elided tail, so it only reads as one at the end")]
+#[test_case("control_flow", "handle_case_guard" => ignore matches Err(_) ; "a handle becomes a Python except, which has nowhere to put a guard")]
 #[test_case("control_flow", "access_match_arms_variable" => matches Err(_))]
 #[test_case("control_flow", "float_and" => matches Err(_))]
 #[test_case("control_flow", "for_non_iterable" => matches Err(_))]

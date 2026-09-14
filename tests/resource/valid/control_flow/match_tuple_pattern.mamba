@@ -1,0 +1,10 @@
+# A tuple pattern binds each of its elements, unlike a tuple of literals which compares
+def pure quadrant(point: (Int, Int)) -> Str := match point where
+    (0, 0)          => "origin"
+    (x, y) if x > 0 => "right of the axis, at height {y}"
+    (x, y)          => "left of the axis, at height {y}"
+end
+
+print(quadrant((0, 0)))
+print(quadrant((2, 7)))
+print(quadrant((-2, 7)))

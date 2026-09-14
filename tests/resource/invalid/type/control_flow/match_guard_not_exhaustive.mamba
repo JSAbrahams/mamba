@@ -1,0 +1,5 @@
+# a guarded arm can always fail, so it never makes a match exhaustive
+def a := match 10 where
+    n if n > 0 => "positive"
+    n if n < 1 => "not positive"
+end
