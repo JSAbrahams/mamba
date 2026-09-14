@@ -4,10 +4,9 @@
 
 # 1.1 Inspirations of the Language
 
-The following is a list of programming languages that inspired this one in one way or another.
-This can either be certain constructs or keywords in the language, or the philosophy of the language as a whole.
-It should be noted that this is based on my personal experience with these languages.
-It may be that a certain feature of a certain language did inspire a certain feature of Mamba, but that does not mean that another language does not contain said feature, only that I encountered it there first.
+Languages that influenced Mamba, whether through a construct, a keyword, or a whole philosophy.
+This is based on personal experience, so a feature credited to one language often exists in others too.
+It only means that is where I met it first.
 
 Language  | Inspired
 ----------|------------
@@ -30,18 +29,100 @@ Smalltalk | OOP concepts, with a large emphasis on program state.
 JavaScript| Interchangeability of variables and functions, and a reliance on higher-order functions.
 Perl      | The `forward` keyword.
 
-My experience with each language varies greatly, from having used it on a near daily basis, to only having read about it online and only having a conceptual understanding of its workings.
-Below I outline a bit what each language aims to do, and how well I believe that it achieves these goals.
-The groupings might seem somewhat arbitrary to the reader, and to some extent it is.
-I grouped them mostly by what I perceived to be their intended design goals.
-Though their grouping depends heavily on the narrative, I'm sure that someone will disagree.
+## Python
 
-## The Pure OOPs: Java, Smalltalk, C#, C++, Eiffel
+The closest relative, and the host ecosystem.
+Mamba transpiles to Python, so interoperability is the point rather than an afterthought.
+It keeps Python's readability and low ceremony, and changes the rest:
 
-## The Pure Functionals: Haskell
+- Types are static and checked, with inference so you rarely write them.
+- Nothing may be `None` unless its type says `?`.
+- Errors are handled at the call that failed, with `!` and `where`, not in a `try` around a region.
+- `fin` marks what may not change.
+- Traits replace inheritance.
+- Indexing is `a(0)`, not `a[0]`.
+- `{ ... }` is a set.
+  A dictionary needs `=>` pairs.
 
-## The Somewhere in Betweens: Python, Kotlin, Scala, Swift
+The last two will trip up a Python programmer.
+Both follow from [the mapping principle](README.md#the-one-central-idea-a-mapping-is-a-mapping).
 
-## The Scripting Languages: Perl, JavaScript
+## Haskell
 
-## The Structurals: Ada, C, Rust, Go
+Mamba takes comprehension notation, a liking for immutability, and the instinct that mathematical notation is worth chasing.
+It is not a pure functional language, and the differences are structural:
+
+- Haskell makes purity the default and tracks effects in the type system.
+  Mamba makes effects the default and purity an annotation.
+  This is the biggest divergence.
+- Haskell is lazy.
+  Mamba is eager.
+- Haskell is Turing complete throughout, by choice.
+  `total` is an attempt at a termination check, which Haskell does not have.
+- Haskell threads failure through `Maybe` and `Either`.
+  Mamba declines that route on purpose, wanting failure handled next to the call.
+- Haskell has type classes.
+  Mamba has traits, which are close cousins.
+
+A Haskell programmer will find Mamba insufficiently principled.
+That is fair.
+Mamba asks how much rigour an imperative language can absorb, which is the opposite question.
+
+## Scala
+
+Scala got to the mapping idea first.
+It unifies application and indexing through `apply`, and there a `Map[A, B]` really is a `Function1[A, B]`.
+It also supplies "everything is an object" and pattern matching.
+The difference is size.
+Scala is large and expressive, where I am keeping Mamba small.
+
+## Rust
+
+Traits instead of inheritance, strictness about mutability, and `!` on a fallible call.
+Two differences stand out:
+
+- Rust is immutable by default and annotates with `mut`.
+  Mamba inverts this and annotates with `fin`, arguing that rebinding is routine in mathematical work.
+  This is the choice most likely to be regretted.
+- Rust's `Result` with `?` is the monadic approach Mamba declined.
+
+## Kotlin
+
+Null safety built into the type system rather than bolted on as an `Option`, using `?` and `?.`.
+Ranges as a language feature come from here too.
+
+## Ada, and SPARK
+
+Ada gives two things.
+Word operators over punctuation is the visible one.
+Subtypes carrying their own constraints is the deeper one, and the direct ancestor of type refinement.
+
+SPARK is the closest model for where Mamba's rigour could end up.
+The approaches differ: SPARK restricts the language and verifies what remains, while Mamba leaves the language alone and lets single definitions escalate.
+
+## Coq, Lean and Agda
+
+Where `total` and `meta` ultimately point.
+The distance is large:
+
+- They have dependent types.
+  Mamba has refinement types, which are weaker and far more automatable.
+- They require totality everywhere.
+  Mamba makes it per-function.
+- They emit proof objects that can be checked independently.
+  Mamba emits a compiler diagnostic.
+
+Lean 4 matters most here, because it is also a general purpose language.
+It shows the two can live together.
+If Mamba ever grows a real proof story, the target is not Coq.
+It is the refinement-plus-solver approach of Dafny, F\* and Liquid Haskell, where an SMT solver discharges the obligations.
+
+## R, Julia, APL and SETL
+
+R shows what a language shaped by a mathematical domain looks like, instead of one shaped by systems programming.
+Julia shows that mathematical notation can come first without the result being a toy.
+APL is the extreme case, and Iverson's phrase for it, notation as a tool of thought, is the idea I am borrowing.
+SETL built a whole language on set theory in the 1960s, and is the honest ancestor of Mamba's comprehensions.
+
+The lesson is that notation shaped by the domain can be worth the unfamiliarity.
+The caution, from APL, is that it can go much too far.
