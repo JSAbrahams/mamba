@@ -101,9 +101,17 @@ pub fn generate(
             "'..' is only allowed as the argument list of a bodiless 'new'",
         )]),
 
-        Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => {
-            Ok(env.clone())
-        }
+        // Imports are still in the grammar, and the Python backend still emits them, but the
+        // language itself has no module system. The `imports` feature turns them back on.
+        #[cfg(not(feature = "imports"))]
+        Import { .. } => Err(vec![TypeErr::new(
+            ast.pos,
+            "Imports are not part of the language",
+        )]),
+        #[cfg(feature = "imports")]
+        Import { .. } => Ok(env.clone()),
+
+        Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => Ok(env.clone()),
     }
 }
 

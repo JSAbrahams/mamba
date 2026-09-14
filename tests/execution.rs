@@ -34,22 +34,17 @@ use tests_util::{resource_path, run_cli, run_via_asm, run_via_bin, run_via_pytho
 #[test_matrix([run_via_python, run_via_bin], &["function"], "early_return.mamba" => "7\n7\n")]
 #[test_matrix([run_via_python, run_via_bin], &["function"], "both_branches_return.mamba" => "-1\n1\n")]
 #[test_matrix([run_via_python, run_via_bin], &["function"], "nested_for_sum.mamba" => "9\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "if_else_tail.mamba" => "1\n-1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "implicit_last_expr_return.mamba" => "36\n")]
 fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
 
-/// Fixtures that only run through one specific backend: either the two backends' output
-/// legitimately diverges (e.g. the Cranelift backend prints a `Bool` as `1`/`0` via `printf`,
-/// where the Python backend prints `True`/`False`), or -- for `if_else_tail.mamba` and
-/// `implicit_last_expr_return.mamba` -- the Python backend has a real, pre-existing bug
-/// unrelated to the Cranelift backend under test here: without `--annotate` (off by default),
-/// it fails to emit a `return` for a function whose body is an implicit last-expression (no
-/// `return` keyword), so the function silently returns `None` instead. `[run_via_python,  run_via_bin]` uses
-/// `Arguments::default()` (`annotate: false`), so pairing these against it would just be
-/// asserting on that separate, known-bad behavior.
+/// Fixtures that only run through one specific backend, because the two backends' output
+/// legitimately diverges.
+/// The Cranelift backend prints a `Bool` as `1`/`0` via `printf`, where the Python backend prints
+/// `True`/`False`.
 #[test_case(run_via_bin, &["function"], "print_bool.mamba" => "1\n0\n")]
-#[test_case(run_via_bin, &["function"], "if_else_tail.mamba" => "1\n-1\n")]
-#[test_case(run_via_bin, &["function"], "implicit_last_expr_return.mamba" => "36\n")]
 #[test_case(run_via_bin, &["function"], "float_var_decl.mamba" => "1\n")]
 fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
@@ -62,7 +57,7 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["definition"], "identifier_sqrt.mamba" => "9\n4\n")]
 #[test_case(run_via_python, &["class"], "associated_function.mamba" => "3\n0\n")]
 #[test_case(run_via_python, &["class"], "self_type.mamba" => "True\n")]
-#[test_case(run_via_python, &["class"], "derived_field.mamba" => "12\n12\n")]
+#[test_case(run_via_python, &["class"], "derived_field.mamba" => "4\n4\n")]
 #[test_case(run_via_python, &["class"], "pure_new_with_impure_method.mamba" => "2\n")]
 #[test_case(run_via_python, &["class"], "pure_new_written_out.mamba" => "1\n0\n")]
 #[test_case(run_via_python, &["class"], "pure_new_no_class_arguments.mamba" => "0\n")]
@@ -73,6 +68,52 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
+}
+
+/// Every example in the top-level `README.md`, actually run.
+///
+/// The AST-diff tests in `tests/check/valid.rs` only compare generated Python structurally.
+/// They cannot tell that an example a reader copies out of the README does what the README says.
+/// These do, which is the point: the README is the language's promise.
+///
+/// An example whose README block is only definitions gets a use added here, so there is output to
+/// assert on rather than an empty string.
+/// Where the block continues an earlier one, the fixture repeats that setup to stand alone.
+///
+/// An example that is *about* a construct which does not exist yet is ignored, with the reason.
+/// Those reasons match the ones on the same fixture in `tests/check/valid.rs`.
+/// Where only a line or two is unimplemented, that line is commented out in the fixture instead,
+/// so the rest still runs and the intent is still on record.
+#[test_case("ackermann" => ignore["match case guards (`case if <cond> =>`) not implemented"])]
+#[test_case("builtin_trait" => ignore["@ decorator syntax and meta trait/external impl for a built-in type not implemented"])]
+#[test_case("class" => "")]
+#[test_case("class_associated_function" => "1.0\n")]
+#[test_case("class_construction" => "3\n")]
+#[test_case("class_derived_field" => "4.0\n12.56636\n")]
+#[test_case("class_new_enforces" => "2\n")]
+#[test_case("class_with_constants" => "Currently at (4, 6), originally from (1, 2)\n")]
+#[test_case("error_handling" => "Solution is: [-4.0, 4.5]\n")]
+#[test_case("error_handling_as_expression" => "a has value 10.\n")]
+#[test_case("error_handling_desyntax_sugared" => ignore["a bare `match` on a fallible call is not checked as one, and a case cannot bind an error's constructor arguments yet"])]
+#[test_case("error_handling_early_exit" => "a has value 10.\n")]
+#[test_case("error_handling_handle_subset" => ignore["explicit Result[...] type and re-raising via `<var> = <var> !` not implemented"])]
+#[test_case("error_handling_result_type" => ignore["explicit Result[...] type not implemented, and a nested generic argument such as Union[...] does not parse"])]
+#[test_case("factorial" => "Factorial 5 is: 120.\n")]
+#[test_case("factorial_dynamic" => "120\n")]
+#[test_case("impl_trait" => ignore["`def <Trait> for <Class> where ...` external-implementation syntax and meta modifier not implemented"])]
+#[test_case("list_shorthand" => "504\n504\n")]
+#[test_case("lists" => "0\nof\n")]
+#[test_case("mutability" => "12\n")]
+#[test_case("pure_construction" => "0\n")]
+#[test_case("pure_construction_methods" => "2\n")]
+#[test_case("pure_functions" => "8.436563051146386\n")]
+#[test_case("sets_maps" => "2\n")]
+#[test_case("total_functions" => ignore["`total` keyword not implemented"])]
+#[test_case("trait_inheritance" => ignore["composing multiple parent traits not implemented"])]
+#[test_case("trait_meta" => ignore["meta modifier on trait methods not implemented"])]
+#[test_case("traits" => ignore["generics on traits and external-implementation syntax not implemented"])]
+fn readme_example_execution(file: &str) -> String {
+    run_via_python(&["readme_example"], &format!("{file}.mamba")).unwrap()
 }
 
 /// Mamba constructs that are valid (the Python backend handles all of these) but fall outside

@@ -75,14 +75,17 @@ It is computed from the class arguments rather than passed:
 
 ```mamba
 class Circle(radius: Float) where
-    def area: Float := self.radius * self.radius * 3.14159
+    def diameter: Float := self.radius * 2.0
+
+    def area(self) -> Float := self.radius * self.radius * 3.14159
 end
 
 def c := Circle.new(2.0)
 ```
 
 This exists so that you need not name every field at the construction site.
-`area` is computed once per instance and read as `c.area` like any other field.
+`diameter` is computed once per instance and read as `c.diameter` like any other field.
+`area` is a method instead, since it is a computation the caller asks for rather than a value the instance holds.
 
 A derived field must be assigned a value, unless its type is nullable.
 Without one it would hold `None` whatever its type claims, which the type checker would then believe.

@@ -16,3 +16,7 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
     def info(self) -> Str :=
         "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end
+
+def mut p := Point2D.new(1, 2)
+p.move(3, 4)
+print(p.info()) # prints 'Currently at (4, 6), originally from (1, 2)'

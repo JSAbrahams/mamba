@@ -1,0 +1,7 @@
+class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
+    def pure new(..)
+    def pure identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
+end
+
+def m := Matrix2x2.identity()
+print(m.a) # prints '1.0'

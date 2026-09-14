@@ -1,16 +1,16 @@
 class Circle: 
-    area: int = None
+    diameter: int = None
     def __init__(self, radius: int): 
         self.radius = radius
-        self.area = self.radius * self.radius * 3
+        self.diameter = self.radius * 2
 
 
     def describe(self) -> int: 
-        return self.area
+        return self.diameter
 
 
 
 c: Circle = Circle(2)
-print(c.area)
+print(c.diameter)
 print(c.describe())
 

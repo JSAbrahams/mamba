@@ -38,6 +38,7 @@ use mamba::parse::ast::AST;
 #[test_case("class", "construct_other_class" => matches Err(_))]
 #[test_case("class", "field_without_value" => matches Err(_))]
 #[test_case("class", "derived_field_passed" => matches Err(_))]
+#[cfg_attr(not(feature = "imports"), test_case("class", "import" => matches Err(_)))]
 #[test_case("class", "init_not_a_thing" => matches Err(_))]
 #[test_case("class", "pure_new_impure_field" => matches Err(_))]
 // The marker's argument list stands for the class arguments, so it has to say how many there

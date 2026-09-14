@@ -12,6 +12,11 @@ repository = "https://github.com/JSAbrahams/mamba"
 keywords = ["python", "transpiler", "compiler"]
 categories = ["parsing"]
 
+[features]
+# Imports are not part of the language, so the type checker rejects them by default.
+# The grammar and the Python backend still handle them, and this feature makes the checker accept them again.
+imports = []
+
 [dependencies]
 ansi_term = "0.12.1"   # Colors in the terminal
 clap = { version = "4.5.40", features = ["derive"] } # Compiler frontend

@@ -119,7 +119,7 @@ Below are some code examples to showcase the features of Mamba.
 
 ### ➕ Functions
 
-We can write a simple script that computes the factorial of a value given by the user.
+We can write a simple script that computes the factorial of a value.
 
 ```mamba
 # Factorial of x
@@ -128,12 +128,12 @@ def pure factorial(x: Int) -> Int := match x where
     n => n * factorial(n - 1)
 end
 
-def num := input("Compute factorial: ")
-if num.is_digit() then do
-    def result := factorial(Int(num))
+def num := 5
+if num >= 0 then do
+    def result := factorial(num)
     print("Factorial {num} is: {result}.")
 end else
-    print("Input was not an integer.")
+    print("Factorial is undefined for negative integers.")
 ```
 
 We specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
@@ -158,6 +158,8 @@ def pure factorial(x: Int) -> Int := match x where
         ans
     end
 end
+
+print(factorial(5)) # prints '120'
 ```
 
 ### 🍡 Collections
@@ -172,11 +174,12 @@ Lists make use of square brackets:
 def a := [0, 2, 51]
 def b := ["list", "of", "strings"]
 def empty_list := []
-# lists of tuples, builder syntax
-def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+# lists, builder syntax
+def a_positive := [x | x in a, x > 0]
 
 # Indexing is done using round brackets!
 print(a(0)) # prints '0'
+print(b(1)) # prints 'of'
 ```
 
 Sets and mappings, which are unordered, make use of curly brackets:
@@ -186,21 +189,19 @@ Sets and mappings, which are unordered, make use of curly brackets:
 def c := { 10, 20 }
 def d := { 3 }
 # sets, builder syntax
-def cd := { x ^ y | x in c, y in d }
+def c_squared := { x * x | x in c }
 def empty_set := {}
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }
-# maps, builder syntax
-def ef := { x => y - 2 | x in e, y = x.len() }
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
-print(ab(2)) # prints '(2, "list")'
-print(ef(1)) # prints '1'
+print(e("ree")) # prints '2'
 ```
 
-_Note_ Builder syntax currently only resolves a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`).
-Binding more than one, as in the `ab` and `ef` examples above, is future work.
+_Note_ Builder syntax currently only resolves a single bound variable, optionally filtered, as above.
+Binding more than one, as in `[(x, y) | x in a, x > 0, y in b]`, is future work.
+The value a builder produces cannot be indexed or printed yet either, since its type stays unresolved.
 
 _Note_ `{}` is always parsed as an empty set.
 There is no empty mapping literal yet.
@@ -235,6 +236,8 @@ def b := 20     # we may not modify b
 
 a := a + 2   # allowed
 # b := b + 2 # compilation error
+
+print(a) # prints '12'
 ```
 
 A binding is immutable unless we mark it `mut`, as in Rust.
@@ -377,10 +380,14 @@ This exists so you need not list every field at the construction site:
 
 ```mamba
 class Circle(radius: Float) where
-    def area: Float := self.radius * self.radius * 3.14159
+    def diameter: Float := self.radius * 2.0
+
+    def area(self) -> Float := self.radius * self.radius * 3.14159
 end
 
-def c := Circle.new(2.0)   # area is computed, never passed
+def c := Circle.new(2.0) # diameter is computed, never passed
+print(c.diameter)        # prints '4.0'
+print(c.area())          # prints '12.56636'
 ```
 
 A derived field must be assigned a value, unless its type is nullable.
@@ -551,14 +558,18 @@ def pure factorial(x: Int) -> Int := match x where
 end
 
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) -> Int := do
+def pure sin(x: Float) -> Float := do
     def mut ans := x
-    for i in (1 ..= taylor).step(2) do
-        ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 1 ..= taylor do
+        ans := ans + (x ^ (i + 2)) / factorial(i + 2)
     end
     ans
 end
+
+print(sin(1.0))
 ```
+
+_Note_ A range has no `.step(...)` yet, so the loop above walks every term rather than every other one.
 
 ### 🤚 Total functions (🇻 x+)
 
@@ -778,24 +789,24 @@ The `solve` method above raises a `MatrixErr` when the matrix is singular.
 We handle that error on-site:
 
 ```mamba
-def m := Matrix2x2(1.0, 2.0, 3.0, 4.0)
+def m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
 
 def solution := m.solve(5.0, 6.0) ! where
-    err: MatrixErr(message) => do
-        print("Could not solve system: \"{message}\"")
+    err: MatrixErr => do
+        print("Could not solve system: \"{err.message}\"")
         [0.0, 0.0] # optionally we can also return, but here we assign default value
     end
 end
 
-print("Solution is: {solution}")
+print("Solution is: {solution}") # prints 'Solution is: [-4.0, 4.5]'
 ```
 
 In the above script, if the matrix turns out to be singular, we print an error (gracefully) and assign some other value to `solution`.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
-_Note_ A case can currently only bind the error itself (`err: MatrixErr => ...`, with the message read off it as `err.message`).
-Destructuring its constructor arguments, as in `err: MatrixErr(message)` above, is future work.
+_Note_ A case can currently only bind the error itself, as above, with the message read off it as `err.message`.
+Destructuring its constructor arguments, as in `err: MatrixErr(message)`, is future work.
 
 Under the hood, `<call> ! where <cases> end` desugars to a plain `match` on the call's result:
 

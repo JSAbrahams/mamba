@@ -43,9 +43,6 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::And => bin_op!(it, start, parse_level_6, And, left.clone(), "and"),
             Token::Or => bin_op!(it, start, parse_level_6, Or, left.clone(), "or"),
-            Token::Question => {
-                bin_op!(it, start, parse_level_6, Question, left.clone(), "question")
-            }
             _ => Ok(left.clone()),
         },
         Ok(left.clone()),

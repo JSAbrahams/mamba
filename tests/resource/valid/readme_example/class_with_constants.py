@@ -23,4 +23,7 @@ class Point2D:
 
 
 
+p: Point2D = Point2D(1, 2)
+p.move(3, 4)
+print(p.info())
 
