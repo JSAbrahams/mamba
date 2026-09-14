@@ -26,7 +26,7 @@ macro_rules! inner_bin_op {
 /// 4. addition, subtraction
 /// 5. greater, greater or equal, less, less or equal, equal, not equal, is, is,
 ///    in not, is a, is not a
-/// 6. and, or, question or
+/// 6. and, or, question
 /// 7. postfix calls
 ///
 /// Newlines in front of exprsesions are ignored.

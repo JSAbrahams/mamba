@@ -16,7 +16,7 @@ A value is an expression which may be evaluated.
 
 A variable definition has the following structure:
 
-    def [ mut ] <string> := <expression>
+    def [ fin ] <identifier> [ : <type> ] := <expression>
 
 For instance, a variable `x` is assigned to as such:
 
@@ -27,59 +27,57 @@ Or:
     def fin x := <expression>
 
 Use this if `x` has to be immutable.
+A definition is mutable unless we mark it `fin`, so we reassign the first `x` but not the second:
+
+    x := <expression>
 
 ## Functions
 
 A function definition has the following structure:
 
-    def <string> ( { <expression> [ : <expression> ] } ) [ : <expression> ] [ ! ( type | "{" type { "," type } "}") ] := <expression or statement>
+    def <identifier> ( { <identifier> [ : <type> ] [ := <expression> ] } ) [ -> <type> ] [ ! ( <type> | "{" <type> { "," <type> } "}" ) ] := <expression or statement>
 
 So for instance, we can define a function as follows:
 
-    def factorial(n: Int): Int :=
-        if   n = 0 then 1
-        else n * self.factorial (n - 1) 
+    def factorial(n: Int) -> Int :=
+        if n = 0 then 1
+        else n * factorial(n - 1)
 
 A few things to note:
 
 - The function is named `factorial`
 - It takes an argument `n`, which is a `Int`.
   As such, we write `n: Int`
-- The function returns an integer, which is why we end the definition with `: Int` before proceeding to the body of the function
+- The function returns an integer, which is why we write `-> Int` before proceeding to the body of the function
 - The body of a function follows after the `:=`.
   The body of a function can either be an expression or a statement.
+  If it is more than one, it is a block, written between `do` and `end`.
 
 We must always include the types of the argument of a function.
 We may however omit the return type of a function if it is inferrable from the body.
 The return type can also be omitted if the function does not return anything.
 This is effectively the same as saying the function returns `None`.
 
+The optional `!` after the return type lists the errors the function may raise.
+See [Error Handling](../safety/error_handling.md).
+
 ### Default values
 
 We can have default values:
 
-    class MyClass
-        def my_field := 5
-        def my_method(x: Int, y: Int <- 2) := self.my_field := x + y
+    class MyClass where
+        def my_field: Int := 5
+        def my_method(self, x: Int, y: Int := 2) := self.my_field := x + y
+    end
 
 We can now call the method as such:
 
     def my_class := MyClass()
     my_class.my_method(10, 2)
 
-### Default behaviour (Language feature omitted for now, under review)
+Or, leaving `y` to its default:
 
-We can assign default behaviour to a method or function.
-To demonstrate this, we will use a toy factorial example.
-You might first write it as such:
+    my_class.my_method(10)
 
-    def factorial(n: Int): Int :=
-        if   n = 0 then 1
-        else n * self.factorial(n - 1) 
-
-However, we could make this look much better with default behaviour.
-
-    def factorial (n: Int): Int := n * self.factorial (n - 1)  # for all other values of n, this function is called
-    def factorial (0): Int      := 1                           # if n is 0, then this function is called instead
-
-As long as a version exists of a function or method with arguments, this is allowed.
+Note that a method takes an explicit `self` argument, and that its fields are reached through it.
+So it is `self.my_field`, and not a bare `my_field`.

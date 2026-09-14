@@ -366,14 +366,14 @@ mod test {
     }
 
     #[test]
-    fn quest_or_missing_alternative() {
-        let source = String::from("a ?or");
+    fn question_missing_alternative() {
+        let source = String::from("a ?");
         source.parse::<AST>().unwrap_err();
     }
 
     #[test]
-    fn quest_or_on_nothing() {
-        let source = String::from("?or");
+    fn question_on_nothing() {
+        let source = String::from("?");
         source.parse::<AST>().unwrap_err();
     }
 }

@@ -21,14 +21,16 @@ We get an error if we encounter an illegal character
 
 The parsing stage iterates over tokens and depending on the next token picks the relevant parsing function.
 
-It takes as input a vector of tokens and produces a `TokenIterator`. This iterator has multiple internal methods which
-make it easy to:
+It takes as input a vector of tokens and produces a `TokenIterator`.
+This iterator has multiple internal methods which make it easy to:
 
-- Eat a token if we expect it, which also gives the position. It errors if it is not a token we expect.
+- Eat a token if we expect it, which also gives the position.
+  It errors if it is not a token we expect.
 - Conditionally call a parse method if the next token is a certain token, or form a set of tokens.
 - Conditionally call a parse method while the next token is a certain token, or from a set of tokens.
 
-The output is an AST. The `Position` within each `AST` also allows one to generate elegant error messages. They allow
-the transpiler to print error messages where it points to where in the source something went wrong.
+The output is an AST.
+The `Position` within each `AST` also allows one to generate elegant error messages.
+It lets the transpiler point at where in the source something went wrong.
 
 We get an error if the list of tokens does not conform to the language grammar.

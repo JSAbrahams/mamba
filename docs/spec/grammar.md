@@ -16,8 +16,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          ( import-as | "{" import-as "," "}" | "{" import-as "," import-as { "," import-as } "}" )
     import-as        ::= id ( "as" id )
 
+    # a class may list several parents; a trait taking more than one parent is future work
     trait-def        ::= "trait" type-not-fun [ ":" type-not-fun ] [ code-set ]
-    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun ] [ code-set ]
+    class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ code-set ]
     
     id               ::= { character }
     id-maybe-type    ::= id [ ":" type ]
@@ -68,8 +69,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     definition       ::= variable-def | fun-def | type-def | trait-def | class-def
 
+    # type-def is a type alias / refinement (`type ... when ...`). It is future work: it has no
+    # production below, and the "type" keyword is not accepted by the parser yet.
+
     variable-def     ::= "def" [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ]
     # type checker should check for valid combination of meta, total, pure
+    # the "meta" and "total" modifiers are future work; only "pure" is implemented
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
                          ( id | overridable-op ) fun-args [ "->" type ] [ raise ] 
                          [ ":=" expression ]

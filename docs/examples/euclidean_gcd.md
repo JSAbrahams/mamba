@@ -4,8 +4,7 @@
 
 # 5.1 Euclidean Algorithm (GCD)
 
-The oldest algorithm still in common use: the greatest common divisor of `a` and `b` is the greatest common
-divisor of `b` and `a mod b`, down to a base case of `b = 0`.
+The oldest algorithm still in common use: the greatest common divisor of `a` and `b` is the greatest common divisor of `b` and `a mod b`, down to a base case of `b = 0`.
 
 ## Python
 
@@ -17,8 +16,7 @@ def gcd(a: int, b: int) -> int:
 ```
 
 Python gives no static guarantee this halts.
-You'd know it does by the same argument a mathematician would give on paper: 
-`a mod b` is always strictly smaller than `b`, and it can't go below `0`, so the second argument can only shrink finitely many times before hitting the base case.
+You'd know it does by the same argument a mathematician would give on paper: `a mod b` is always strictly smaller than `b`, and it can't go below `0`, so the second argument can only shrink finitely many times before hitting the base case.
 
 ## Mamba
 

@@ -6,39 +6,50 @@
 
 # 2.3.3 Type
 
-A type describes the properties a value of that type should have.
+A trait describes the properties a value of that type should have.
 Each such property is a definition.
-A definition is then either a method or an immutable variable.
-Only classes can implement types.
+A definition is then either a method or a variable.
+Only classes can implement traits.
 
-Say I have a server, I could define the type as follows:
+Say I have a server, I could define the trait as follows:
 
-    type Server
-        def connect:            (mut Self, IPAddress) -> Boolean ! ServerErr
-        def last_sent_message:  (Self) -> String
-        def send_message:       (mut Self, String) -> Boolean    ! ServerErr
-        def disconnect:         (mut Self) -> Boolean
+    trait Server where
+        def connect(self, ip_address: IpAddress) -> Bool ! ServerErr
+        def last_sent_message(fin self) -> Str?
+        def send_message(self, message: Str) -> Bool ! ServerErr
+        def disconnect(self) -> Bool
+    end
 
 This is akin to an abstract base class in Python, but more compact.
+A definition in a trait is a signature with no body.
+Note that each method takes an explicit `self` argument, and that `fin self` means the method may not change the state of the instance.
+
 Now any class that implements `Server` must have these definitions.
 
-    class MyServer(def ip_address: IPAddress): Server
-        def connected        <- False
-        def mut last_message <- None
+    class MyServer(ip_address: IpAddress): Server where
+        def connected: Bool := False
+        def last_message: Str? := None
 
-        def last_sent_message(self): String := self.last_message
+        def last_sent_message(fin self) -> Str? := self.last_message
 
-        def connect (mut self, ip_address: IPAddress) -> Boolean ! ServerErr :=
+        def connect(self, ip_address: IpAddress) -> Bool ! ServerErr := do
             # perform some operations here
-            self.connected := true
+            self.connected := True
             True
+        end
 
-        def send_message(mut self, message: String) -> Boolean ! ServerErr :=
+        def send_message(self, message: Str) -> Bool ! ServerErr := do
             # perform some operations here
             self.last_message := message
             True
+        end
 
-        def disconnect(mut self) -> Boolean :=
+        def disconnect(self) -> Bool := do
             # perform some operations here
-            self.connected := false
+            self.connected := False
             True
+        end
+    end
+
+The constructor argument `ip_address` is a field, and is reached as `self.ip_address` inside the body.
+A class may name more than one parent, as in `class MyServer(...): Server, Named where ... end`.

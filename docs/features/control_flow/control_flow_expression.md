@@ -20,13 +20,21 @@ or:
 
 For instance:
 
-    if b = 3 then print "b is three." else print "b is not three."
+    if b = 3 then print("b is three.") else print("b is not three.")
+
+A branch may also be a block, which is written between `do` and `end`:
+
+    if b = 3 then do
+        print("b is three.")
+        print("which is a good number.")
+    end else
+        print("b is not three.")
 
 An `if` is an expression if:
 
 - Has an `else` branch.
 - Return an `<expression>` (not a `<statement>`) in both branches.
-  An expression evaluates to a value, for instance, `10 * x` is an expression if `x` is a number for instance, whereas `print "hello world"` is a statement, as it does not return anything.
+  An expression evaluates to a value, for instance, `10 * x` is an expression if `x` is a number for instance, whereas `print("hello world")` is a statement, as it does not return anything.
 
 So, an `if` _expression_ has the form
 
@@ -34,7 +42,7 @@ So, an `if` _expression_ has the form
 
 An example would be:
 
-    def my_value = if a > 0 then 2E30 else 8E21
+    def my_value := if a > 0 then 2E30 else 8E21
 
 ### Match Expressions (or Statements)
 
@@ -43,22 +51,25 @@ We can even match based on the type of the returned expression.
 
 A `match` has the form:
 
-    match <expression> where { <expression> => <expression or statement> }
+    match <expression> where <one-or-more-cases> end
 
+Where each case has the form `<expression> => <expression or statement>`.
 An example would be (if `b` is a number):
 
     match b where
-        1 => print "one"
-        4 => print "four"
-        5 => print "five"
+        1 => print("one")
+        4 => print("four")
+        5 => print("five")
+    end
 
-We can also add a default case if:
+We can also add a default case:
 
     match b where
-        1 => print "one"
-        4 => print "four"
-        5 => print "five"
-        _ => print "this is executed if we didn't match with any other"
+        1 => print("one")
+        4 => print("four")
+        5 => print("five")
+        _ => print("this is executed if we didn't match with any other")
+    end
 
 A `match` is an expression if:
 
@@ -69,6 +80,6 @@ This can be achieved by either exhaustively covering every possible value, or by
 
 So, a `match` _expression_ has the form:
 
-    match <expression> where { <expression> => <expression> }
+    match <expression> where <one-or-more-cases> end
 
-With the additional requirement that we have an arm for every possible value of a given input type.
+With the additional requirement that every case evaluates to a value, and that we have an arm for every possible value of a given input type.
