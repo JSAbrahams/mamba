@@ -1,13 +1,21 @@
+# Starship prompt for working on Mamba.
+#
+# Copy this to .config/starship.toml to customise it; that path is gitignored and takes
+# precedence, so your own version never shows up as a working-tree change.
+#
+# Custom modules run their `when` and `command` through `sh`, not through Nushell, so those
+# strings must be POSIX shell. Nushell expression syntax silently disables the module, because a
+# failing `when` is indistinguishable from a `when` that returned false.
+
 add_newline = false
 format = """
 [┌─────────>](bold green) 🐍 $directory
 [│](bold green) \
 $username$hostname\
 $git_branch$git_state\
-$nix_shell$rust \
-${custom.line_coverage}$cmd_duration$git_status \
-\n[└─>](bold green) 
-"""
+${custom.devbox}$rust \
+${custom.line_coverage}$cmd_duration$jobs$status$git_status \
+\n[└─>](bold green) """
 
 [username]
 disabled = false
@@ -24,31 +32,52 @@ truncation_length = 5
 
 [git_branch]
 symbol = "🌱 "
+
 [git_status]
 conflicted = "⚔️  ${count}"
 staged     = "✔️  ${count}"
 modified   = "✏️  ${count}"
 untracked  = "🆕  ${count}"
 
-# unused in prompt since rust-toolchain guarantees rust (toolchain) version
+# Shown because the Cranelift and Python backends are both sensitive to the toolchain version,
+# and because Devbox and rust-toolchain.toml are only kept in step by hand.
 [rust]
 format = "🦀 ${version}"
 style = "bold yellow"
 
+# A non-zero exit code is easy to miss otherwise, since the prompt itself does not change colour.
+[status]
+disabled = false
+symbol = "✘ "
+format = '\[[$symbol$common_meaning$signal_name$maybe_int]($style)\]'
+style = "bold red"
+
 [jobs]
 symbol = "🔧 "
+format = '\[[$symbol$number]($style)\]'
+style = "bold blue"
 
 [cmd_duration]
-format = '\[⏱️ [$duration]($style)\]'  
+format = '\[⏱️ [$duration]($style)\]'
 style = "bold yellow"
 
+# Replaces the built-in nix_shell module, which reports the underlying store as
+# "impure (nix-shell-env)". What matters here is only whether the pinned environment is active.
+[custom.devbox]
+description = "Whether the Devbox environment is active"
+when = 'test -n "$DEVBOX_SHELL_ENABLED"'
+command = "echo devbox"
+format = 'via [❄️ $output]($style) '
+style = "bold blue"
+shell = ["sh"]
+
+# Line coverage from the most recent `devbox run coverage-json`.
+# PROJECT_TARGET is set by the Nushell config; the fallback keeps this working in a plain shell.
 [custom.line_coverage]
 description = "Line coverage percentage"
-when = 'test -f ($env.PROJECT_TARGET + "/cov.json")'
-# Extract the percentage from json report and pipe to printf to only print 2 decimal places
-# If file does not exist, jq will throw an error, but just forward this to /dev/null (so we 'just' print 0 percent if no coverage report) as a failsafe
-command = "jq -r '.data[0].totals.lines.percent' ($env.PROJECT_TARGET + '/cov.json') | xargs printf '%.2f%%'"
-# override in an attempt to get ugly '.line_coverage' out of prompt, but still there unfortunately
-symbol      = "🧪"
-format = '\[$symbol [$output]($style)\]'
+when = 'test -f "${PROJECT_TARGET:-./target}/cov.json"'
+# jq extracts the percentage, printf trims it to two decimal places.
+command = 'jq -r ".data[0].totals.lines.percent" "${PROJECT_TARGET:-./target}/cov.json" | xargs printf "%.2f%%"'
+format = '\[🧪 [$output]($style)\]'
 style = 'bold yellow'
+shell = ["sh"]
