@@ -3,3 +3,5 @@ def b := 20     # we may not modify b
 
 a := a + 2   # allowed
 # b := b + 2 # compilation error
+
+print(a) # prints '12'

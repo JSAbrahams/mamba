@@ -1,0 +1,9 @@
+class Circle(radius: Float) where
+    def diameter: Float := self.radius * 2.0
+
+    def area(self) -> Float := self.radius * self.radius * 3.14159
+end
+
+def c := Circle.new(2.0) # diameter is computed, never passed
+print(c.diameter)        # prints '4.0'
+print(c.area())          # prints '12.56636'

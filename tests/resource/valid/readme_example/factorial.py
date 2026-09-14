@@ -6,11 +6,11 @@ def factorial(x: int) -> int:
             return n * factorial(n - 1)
 
 
-num: str = input("Compute factorial: ")
-if num.is_digit(): 
+num: int = 5
+if num >= 0: 
     __mamba_result_existed = "result" in locals()
     __mamba_result_saved = result if __mamba_result_existed else None
-    result: int = factorial(int(num))
+    result: int = factorial(num)
     print(f"Factorial {num} is: {result}.")
     if __mamba_result_existed: 
         result = __mamba_result_saved
@@ -18,5 +18,5 @@ if num.is_digit():
         del result
 
 else: 
-    print("Input was not an integer.")
+    print("Factorial is undefined for negative integers.")
 

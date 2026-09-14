@@ -1,17 +1,13 @@
-import math
-
 a: int = 10
 b: int = 20
-
 c: int = a + b
 d: float = 10 - c
 f: float = 2.4 * d
 h: float = f / a
 j: int = 100 // 10
 l: int = 100 % 2
-n: float = math.sqrt(l)
-m: float = n ** 100
+m: int = l ** 100
 o: int = (6 * 10 ** 4)
-
 x = +10
 y = -30
+

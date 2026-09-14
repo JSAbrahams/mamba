@@ -1,7 +1,7 @@
 class Deps2(x: Int) where
     def gt: Bool := self.x > self.later
     def leq: Bool := self.x <= self.later
-    def sq: Float := sqrt self.later
+    def sq: Float := self.later / 2
     def tup: (Int, Int) := (self.x, self.later)
     def st: Set[Int] := { self.x, self.later }
     def dc: Dict[Int, Int] := { self.x => self.later }

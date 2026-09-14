@@ -93,7 +93,10 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                         Some(expr) => convert_node(
                             expr,
                             imp,
-                            &state.expand_ty(true).is_last_must_be_ret(ty.is_some()),
+                            // Keyed off the declared return type, not the emitted annotation.
+                            // `ty` is `None` whenever `--annotate` is off, which would drop the
+                            // `return` and silently yield `None`.
+                            &state.expand_ty(true).is_last_must_be_ret(ret_ty.is_some()),
                             ctx,
                         )?,
                         None => PythonCore::Pass,

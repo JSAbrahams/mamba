@@ -1,0 +1,3 @@
+# There is no slicing, so `::` is no longer a token: the two `:` do not combine
+def x := [1, 2, 3]
+x[1 :: 2]

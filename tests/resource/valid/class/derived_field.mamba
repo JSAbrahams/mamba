@@ -1,11 +1,11 @@
 # A field declared in the body is derived from the class arguments, so it need not be
 # passed at the construction site
 class Circle(radius: Int) where
-    def area: Int := self.radius * self.radius * 3
+    def diameter: Int := self.radius * 2
 
-    def pure describe(self) -> Int := return self.area
+    def pure describe(self) -> Int := return self.diameter
 end
 
 def c := Circle.new(2)
-print(c.area)
+print(c.diameter)
 print(c.describe())

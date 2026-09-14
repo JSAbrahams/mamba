@@ -195,7 +195,16 @@ pub(super) fn wrap_scoped(names: &[String], core: PythonCore) -> PythonCore {
         PythonCore::Block { statements: inner } => statements.extend(inner),
         other => statements.push(other),
     }
-    statements.extend(names.iter().map(|n| restore_or_delete(n)));
+    // A body ending in `return` or `raise` leaves the function, taking its locals with it.
+    // Restoring after that is dead code, which `append_ret` would then wrap in a `return` of its
+    // own, giving invalid Python.
+    let leaves_scope = matches!(
+        statements.last(),
+        Some(PythonCore::Return { .. } | PythonCore::Raise { .. })
+    );
+    if !leaves_scope {
+        statements.extend(names.iter().map(|n| restore_or_delete(n)));
+    }
 
     PythonCore::Block { statements }
 }

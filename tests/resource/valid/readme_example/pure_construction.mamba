@@ -1,0 +1,7 @@
+class Point(x: Int, y: Int) where
+    def pure new(..)
+end
+
+def pure origin() -> Point := Point.new(0, 0)
+
+print(origin().x) # prints '0'

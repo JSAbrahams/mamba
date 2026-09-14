@@ -359,7 +359,6 @@ fn any_node(core: &PythonCore, test: &impl Fn(&PythonCore) -> bool) -> bool {
         PythonCore::Not { expr }
         | PythonCore::AddU { expr }
         | PythonCore::SubU { expr }
-        | PythonCore::Sqrt { expr }
         | PythonCore::Return { expr }
         | PythonCore::Raise { error: expr } => any_node(expr, test),
         PythonCore::If { cond, then } => any_node(cond, test) || any_node(then, test),

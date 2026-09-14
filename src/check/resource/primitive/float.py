@@ -15,8 +15,6 @@ class float(complex):
     # def __mul__(self, other: complex) -> complex: pass
     def __mul__(self, other: Union[int, float]) -> float: pass
 
-    def sqrt(self) -> float: pass
-
     # def __truediv__(self, other: complex) -> complex: pass
     def __truediv__(self, other: Union[int, float]) -> float: pass
 

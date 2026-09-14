@@ -115,7 +115,6 @@ impl Display for Node {
             }
             Node::Index { item, range } => format!("{}[{}]", item.node, range.node),
             Node::Range { .. } => String::from("range"),
-            Node::Slice { .. } => String::from("slice"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
@@ -131,7 +130,6 @@ impl Display for Node {
             Node::FDiv { left, right } => format!("{} // {}", left.node, right.node),
             Node::Mod { left, right } => format!("{} mod {}", left.node, right.node),
             Node::Pow { left, right } => format!("{} ^ {}", left.node, right.node),
-            Node::Sqrt { expr } => format!("sqrt {}", expr.node),
             Node::Le { left, right } => format!("{} < {}", left.node, right.node),
             Node::Ge { left, right } => format!("{} > {}", left.node, right.node),
             Node::Leq { left, right } => format!("{} <= {}", left.node, right.node),
@@ -369,9 +367,6 @@ impl Node {
             Node::Pow { left, right } => Node::Pow {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
-            },
-            Node::Sqrt { expr } => Node::Sqrt {
-                expr: Box::from(expr.map(mapping)),
             },
             Node::Le { left, right } => Node::Le {
                 left: Box::from(left.map(mapping)),
@@ -793,7 +788,6 @@ impl Node {
                     right: rr,
                 },
             ) => ll.same_value(rl) && lr.same_value(rr),
-            (Node::Sqrt { expr: l }, Node::Sqrt { expr: r }) => l.same_value(r),
             (
                 Node::FDiv {
                     left: ll,
@@ -970,7 +964,6 @@ impl Node {
             | Node::ListBuilder { .. }
             | Node::Tuple { .. }
             | Node::Range { .. }
-            | Node::Slice { .. }
             | Node::Index { .. }
             | Node::Real { .. }
             | Node::Int { .. }
@@ -1008,7 +1001,6 @@ impl Node {
                 | Node::FDiv { .. }
                 | Node::Mod { .. }
                 | Node::Pow { .. }
-                | Node::Sqrt { .. }
                 | Node::Le { .. }
                 | Node::Ge { .. }
                 | Node::Leq { .. }
@@ -1654,7 +1646,6 @@ mod test {
 
         two_ast!(Node::AddU { expr: expr.clone() });
         two_ast!(Node::SubU { expr: expr.clone() });
-        two_ast!(Node::Sqrt { expr: expr.clone() });
         two_ast!(Node::Not { expr: expr.clone() });
     }
 
@@ -1941,10 +1932,6 @@ mod test {
             right: right.clone()
         }
         .is_expression());
-        assert!(Node::Sqrt {
-            expr: right.clone()
-        }
-        .is_expression());
         assert!(Node::Le {
             left: left.clone(),
             right: right.clone()
@@ -2049,10 +2036,6 @@ mod test {
         assert!(Node::Pow {
             left: left.clone(),
             right: right.clone()
-        }
-        .is_operator());
-        assert!(Node::Sqrt {
-            expr: right.clone()
         }
         .is_operator());
         assert!(Node::Le {

@@ -10,7 +10,7 @@ use crate::backend::python::convert::control_flow::{
 };
 use crate::backend::python::convert::definition::convert_def;
 use crate::backend::python::convert::handle::convert_handle;
-use crate::backend::python::convert::range_slice::convert_range_slice;
+use crate::backend::python::convert::range::convert_range;
 use crate::backend::python::convert::state::{Imports, State};
 use crate::backend::python::name::ToPy;
 use crate::backend::python::result::{GenResult, UnimplementedErr};
@@ -26,7 +26,7 @@ mod common;
 mod control_flow;
 mod definition;
 mod handle;
-mod range_slice;
+mod range;
 
 pub mod state;
 
@@ -205,13 +205,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::SubU { expr } => PythonCore::SubU {
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
-        NodeTy::Sqrt { expr } => {
-            imp.add_import("math");
-            PythonCore::Sqrt {
-                expr: Box::from(convert_node(expr, imp, state, ctx)?),
-            }
-        }
-
         NodeTy::Le { left, right } => PythonCore::Le {
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
@@ -241,7 +234,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state, ctx)?,
+        NodeTy::Range { .. } => convert_range(ast, imp, state, ctx)?,
 
         NodeTy::Underscore => PythonCore::UnderScore,
         NodeTy::Question { left, right } => PythonCore::Or {
@@ -616,38 +609,6 @@ mod tests {
     #[test]
     fn sub_unary_verify() {
         verify_unary!(SubU);
-    }
-
-    #[test]
-    fn sqrt_verify() {
-        let expr = to_pos!(Node::Id {
-            lit: String::from("expression")
-        });
-        let add_node = to_pos!(Node::Sqrt { expr });
-
-        let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
-            Ok(PythonCore::Block { statements }) => (statements[0].clone(), statements[1].clone()),
-            other => panic!("Expected unary operation but was {other:?}"),
-        };
-
-        assert_eq!(
-            import,
-            PythonCore::Import {
-                from: None,
-                import: vec![PythonCore::Id {
-                    lit: String::from("math")
-                }],
-                alias: vec![],
-            }
-        );
-        assert_eq!(
-            expr_des,
-            PythonCore::Sqrt {
-                expr: Box::from(PythonCore::Id {
-                    lit: String::from("expression")
-                })
-            }
-        );
     }
 
     #[test]

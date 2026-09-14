@@ -1,0 +1,12 @@
+# `sqrt` is no longer a keyword, so it is an ordinary name like any other.
+# As an operator it could not be a variable, a field, or a method called on a value
+def sqrt := 3
+def n := sqrt * sqrt
+
+class Vec(x: Int) where
+    def sqrt: Int := self.x
+end
+
+def v := Vec.new(4)
+print(n)
+print(v.sqrt)

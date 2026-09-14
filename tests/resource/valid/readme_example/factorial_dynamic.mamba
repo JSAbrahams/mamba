@@ -6,3 +6,5 @@ def pure factorial(x: Int) -> Int := match x where
         ans
     end
 end
+
+print(factorial(5)) # prints '120'

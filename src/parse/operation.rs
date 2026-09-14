@@ -19,17 +19,17 @@ macro_rules! bin_op {
 
 /// Parse an operation.
 ///
-/// Precedence is as follows, from top to bottom:
-/// 1. exponent
-/// 2. unary and, unary or, bitwise ones complement
+/// Precedence is as follows, from tightest binding to loosest, each level parsed by the
+/// `parse_level_` function it is numbered after:
+/// 1. exponent, and the null-coalescing `?`
+/// 2. unary plus, unary minus, not
 /// 3. multiplication, division, floor division, modulus, range, range inclusive
 /// 4. addition, subtraction
-/// 5. greater, greater or equal, less, less or equal, equal, not equal, is, is,
-///    in not, is a, is not a
-/// 6. and, or, question
-/// 7. postfix calls
+/// 5. greater, greater or equal, less, less or equal, equal, not equal, in
+/// 6. and, or
 ///
-/// Newlines in front of exprsesions are ignored.
+/// A call, a property access and an index bind tighter than any of them.
+/// Newlines in front of expressions are ignored.
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
     it.eat_while(&Token::NL);
 
@@ -43,9 +43,6 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::And => bin_op!(it, start, parse_level_6, And, left.clone(), "and"),
             Token::Or => bin_op!(it, start, parse_level_6, Or, left.clone(), "or"),
-            Token::Question => {
-                bin_op!(it, start, parse_level_6, Question, left.clone(), "question")
-            }
             _ => Ok(left.clone()),
         },
         Ok(left.clone()),
@@ -93,19 +90,20 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
 fn parse_level_3(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (3)")?;
     let left = it.parse(&parse_level_2, "operation", start)?;
-    macro_rules! match_range_slice {
-        ($it:expr, $token:ident, $incl:expr, $node:ident, $msg:expr) => {{
-            $it.eat(&Token::$token, $msg)?;
-            let to = $it.parse(&parse_expression, $msg, start)?;
+    /// A second `..` after the bound is the step, as in `0 .. 10 .. 2`.
+    macro_rules! range {
+        ($it:expr, $token:ident, $incl:expr) => {{
+            $it.eat(&Token::$token, "range")?;
+            let to = $it.parse(&parse_expression, "range", start)?;
             let (to, step, end) = match to.node {
-                Node::$node { from, to, .. } => (from.clone(), Some(to.clone()), to.pos),
+                Node::Range { from, to, .. } => (from.clone(), Some(to.clone()), to.pos),
                 _ => {
-                    let step = $it.parse_if(&Token::$node, &parse_expression, $msg, start)?;
+                    let step = $it.parse_if(&Token::Range, &parse_expression, "range", start)?;
                     (to.clone(), step.clone(), step.map_or(to.pos, |ast| ast.pos))
                 }
             };
 
-            let node = Node::$node {
+            let node = Node::Range {
                 from: left.clone(),
                 to,
                 inclusive: $incl,
@@ -121,10 +119,8 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::Div => bin_op!(it, start, parse_level_3, Div, left.clone(), "div"),
             Token::FDiv => bin_op!(it, start, parse_level_3, FDiv, left.clone(), "floor div"),
             Token::Mod => bin_op!(it, start, parse_level_3, Mod, left.clone(), "mod"),
-            Token::Range => match_range_slice!(it, Range, false, Range, "range"),
-            Token::RangeIncl => match_range_slice!(it, RangeIncl, true, Range, "range"),
-            Token::Slice => match_range_slice!(it, Slice, false, Slice, "range"),
-            Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
+            Token::Range => range!(it, Range, false),
+            Token::RangeIncl => range!(it, RangeIncl, true),
             _ => Ok(left.clone()),
         },
         Ok(left.clone()),
@@ -147,8 +143,6 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
         un_op!(it, parse_level_2, Add, AddU, "plus")
     } else if it.eat_if(&Token::Sub).is_some() {
         un_op!(it, parse_level_2, Sub, SubU, "subtract")
-    } else if it.eat_if(&Token::Sqrt).is_some() {
-        un_op!(it, parse_expression, Sqrt, Sqrt, "square root")
     } else if it.eat_if(&Token::Not).is_some() {
         un_op!(it, parse_expression, Not, Not, "not")
     } else {
@@ -550,16 +544,31 @@ mod test {
         );
     }
 
+    /// `sqrt` is an ordinary identifier, so it stands alone and it can be called.
+    ///
+    /// As an operator it was neither: bare `sqrt` was a parse error, and `x.sqrt()` could not
+    /// parse at all, because the name never reached the parser as an identifier.
     #[test]
-    fn sqrt_verify() {
-        let source = String::from("sqrt some_num");
-        let ast = parse_direct(&source).unwrap();
-
-        let expr = verify_is_un_operation!(Sqrt, ast);
+    fn sqrt_is_an_identifier() {
+        let ast = parse_direct(&String::from("sqrt")).unwrap();
         assert_eq!(
-            expr.node,
+            ast.first().expect("script empty.").node,
             Node::Id {
-                lit: String::from("some_num")
+                lit: String::from("sqrt")
+            }
+        );
+
+        let ast = parse_direct(&String::from("x.sqrt()")).unwrap();
+        let Node::PropertyCall { property, .. } = &ast.first().expect("script empty.").node else {
+            panic!("was {:?}", ast.first().map(|a| a.node.clone()))
+        };
+        let Node::FunctionCall { name, .. } = &property.node else {
+            panic!("was {:?}", property.node)
+        };
+        assert_eq!(
+            name.node,
+            Node::Id {
+                lit: String::from("sqrt")
             }
         );
     }
@@ -735,12 +744,6 @@ mod test {
     #[test]
     fn not_missing_value() {
         let source = String::from("not");
-        source.parse::<AST>().unwrap_err();
-    }
-
-    #[test]
-    fn sqrt_missing_value() {
-        let source = String::from("sqrt");
         source.parse::<AST>().unwrap_err();
     }
 }

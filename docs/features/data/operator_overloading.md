@@ -8,7 +8,6 @@
 
 We can overload the following operators of the language:
 
-- `sqrt`
 - `+` and `-`
 - `*`, `/`, and `//`
 - `^` and `mod`
@@ -26,10 +25,6 @@ Say we define a `Vec2` class as such:
 ```mamba
 class Vec2(x: Float, y: Float) where
     def +(self, other: Vec2) -> Vec2 := Vec2(self.x + other.x, self.y + other.y)
-
-    # we can also overload a unary operator
-    # when overloading, the default return value is the type itself, in this case Vec2
-    def sqrt(self) -> Vec2 := Vec2(sqrt self.x, sqrt self.y)
 
     def to_string(self) -> Str := "({self.x}, {self.y})"
 end

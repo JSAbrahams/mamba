@@ -44,14 +44,18 @@ Keyword | Use
 `not`   | Negation of a boolean value
 `and`   | And operator
 `or`    | Or operator
-`is`    | Check whether an instance is another instance
 
 ## Mathematical Operators
 
 Keyword | Use
 ---|---
-`mod`   | Modulus operator
-`sqrt`  | Square root operator
+`mod`   | Modulus operator, which resolves to `__mod__` on the left operand
+
+## Membership
+
+Keyword | Use
+---|---
+`in`    | Membership test, as in `1 in [1, 2]`
 
 ## Control flow Expressions
 

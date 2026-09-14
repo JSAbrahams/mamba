@@ -4,12 +4,11 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::{gen_vec, generate, Constrained};
-use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
+use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, STRING};
 use crate::check::context::function::python::CONTAINS;
 use crate::check::context::function::python::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB,
 };
-use crate::check::context::function::SQRT;
 use crate::check::context::Context;
 use crate::check::name::string_name::StringName;
 use crate::check::name::Name;
@@ -26,11 +25,7 @@ pub fn gen_op(
         Node::In { left, right } => gen_magic(CONTAINS, ast, right, left, env, ctx, constr),
         Node::Range { .. } => {
             gen_primitive(ast, RANGE, env, constr)?;
-            gen_range(ast, env, ctx, constr, "range")
-        }
-        Node::Slice { .. } => {
-            gen_primitive(ast, SLICE, env, constr)?;
-            gen_range(ast, env, ctx, constr, "slice")
+            gen_range(ast, env, ctx, constr)
         }
 
         Node::Real { .. } => gen_primitive(ast, FLOAT, env, constr),
@@ -60,35 +55,6 @@ pub fn gen_op(
         Node::Eq { left, right } => gen_magic(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
-        Node::Sqrt { expr } => {
-            let ty = Type {
-                name: Name::from(FLOAT),
-            };
-            constr.add(
-                "square root",
-                &Expected::from(ast),
-                &Expected::new(ast.pos, &ty),
-                env,
-            );
-
-            let access = Expected::new(
-                expr.pos,
-                &Access {
-                    entity: Box::new(Expected::from(expr)),
-                    name: Box::from(Expected::new(
-                        expr.pos,
-                        &Function {
-                            name: StringName::from(SQRT),
-                            args: vec![Expected::from(expr)],
-                        },
-                    )),
-                },
-            );
-
-            constr.add("square root", &Expected::from(ast), &access, env);
-            generate(expr, env, ctx, constr)
-        }
-
         Node::Not { expr } => {
             let bool = Expected::new(
                 ast.pos,
@@ -128,15 +94,10 @@ pub fn gen_range(
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
-    range_slice: &str,
 ) -> Constrained {
-    let (from, to, step) = match &ast.node {
-        Node::Range { from, to, step, .. } if range_slice == "range" => (from, to, step),
-        Node::Slice { from, to, step, .. } if range_slice == "slice" => (from, to, step),
-        _ => {
-            let msg = format!("Expected {range_slice}, was {}", ast.node);
-            return Err(vec![TypeErr::new(ast.pos, &msg)]);
-        }
+    let Node::Range { from, to, step, .. } = &ast.node else {
+        let msg = format!("Expected range, was {}", ast.node);
+        return Err(vec![TypeErr::new(ast.pos, &msg)]);
     };
 
     let int_exp = &Expected::new(
@@ -145,25 +106,10 @@ pub fn gen_range(
             name: Name::from(INT),
         },
     );
-    constr.add(
-        &format!("{range_slice} from"),
-        &Expected::from(from),
-        int_exp,
-        env,
-    );
-    constr.add(
-        &format!("{range_slice} to"),
-        &Expected::from(to),
-        int_exp,
-        env,
-    );
+    constr.add("range from", &Expected::from(from), int_exp, env);
+    constr.add("range to", &Expected::from(to), int_exp, env);
     if let Some(step) = step {
-        constr.add(
-            &format!("{range_slice} step"),
-            &Expected::from(step),
-            int_exp,
-            env,
-        );
+        constr.add("range step", &Expected::from(step), int_exp, env);
     }
 
     generate(from, env, ctx, constr)?;

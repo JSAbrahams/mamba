@@ -1,0 +1,9 @@
+class FractionErr(message: Str): Exception(message)
+
+class Fraction(num: Int, den: Int) where
+    def pure new(num: Int, den: Int) -> Self ! FractionErr :=
+        if den = 0 then ! FractionErr("Denominator is zero") else Fraction(num, den)
+end
+
+def half := Fraction.new(1, 2) !
+print(half.den) # prints '2'

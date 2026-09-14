@@ -72,7 +72,7 @@ pub fn generate(
         }
         Set { .. } | List { .. } | Tuple { .. } | Dict { .. } => gen_coll(ast, env, ctx, constr),
 
-        Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
+        Range { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } | ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),
 
@@ -84,7 +84,6 @@ pub fn generate(
         Eq { .. } | Neq { .. } => gen_op(ast, env, ctx, constr),
         Mod { .. } => gen_op(ast, env, ctx, constr),
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
-        Sqrt { .. } => gen_op(ast, env, ctx, constr),
 
         And { .. } | Or { .. } | Not { .. } => gen_op(ast, env, ctx, constr),
 
@@ -102,9 +101,17 @@ pub fn generate(
             "'..' is only allowed as the argument list of a bodiless 'new'",
         )]),
 
-        Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => {
-            Ok(env.clone())
-        }
+        // Imports are still in the grammar, and the Python backend still emits them, but the
+        // language itself has no module system. The `imports` feature turns them back on.
+        #[cfg(not(feature = "imports"))]
+        Import { .. } => Err(vec![TypeErr::new(
+            ast.pos,
+            "Imports are not part of the language",
+        )]),
+        #[cfg(feature = "imports")]
+        Import { .. } => Ok(env.clone()),
+
+        Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => Ok(env.clone()),
     }
 }
 

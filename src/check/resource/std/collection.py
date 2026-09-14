@@ -36,7 +36,7 @@ class list(Generic[T], collection[T]):
 
     def __iter__(self) -> list_iterator[T]: pass
 
-    def __getitem__(self, item: Union[int, slice]) -> T: pass
+    def __getitem__(self, item: int) -> T: pass
 
     def __setitem__(self, item: int, value: T) -> bool: pass
 
@@ -56,7 +56,7 @@ class Tuple(Generic[T], collection[T]):
 
     def __iter__(self) -> tuple_iterator[T]: pass
 
-    def __getitem__(self, item: Union[int, slice]) -> T: pass
+    def __getitem__(self, item: int) -> T: pass
 
     def __str__(self) -> str: pass
 

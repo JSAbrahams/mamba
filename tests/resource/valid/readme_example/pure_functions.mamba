@@ -1,16 +1,21 @@
+# taylor is immutable, its value does not change during execution
+def taylor := 7
+
+# factorial must itself be pure, since sin calls it
 def pure factorial(x: Int) -> Int := match x where
     0 => 1
     n => n * factorial(n - 1)
 end
 
-# taylor is immutable, its value does not change during execution
-def taylor := 7
-
 # the sin function is pure, its output depends solely on the input
-def pure sin(x: Int) -> Int := do
+def pure sin(x: Float) -> Float := do
     def mut ans := x
-    for i in (1 ..= taylor).step(2) do
-        ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
+    # range .step(...) is not implemented yet, so we walk every term instead
+    # for i in (1 ..= taylor).step(2) do
+    for i in 1 ..= taylor do
+        ans := ans + (x ^ (i + 2)) / factorial(i + 2)
     end
     ans
 end
+
+print(sin(1.0))

@@ -1,10 +1,49 @@
-def m := Matrix2x2(1.0, 2.0, 3.0, 4.0)
+class MatrixErr(message: Str): Exception(message)
+
+class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
+    # Accessor for matrix contents
+    def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
+
+    # Trace of the matrix (a + d)
+    def trace(self) -> Float := self.a + self.d
+
+    # Determinant of the matrix (ad - bc)
+    def determinant(self) -> Float := self.a * self.d - self.b * self.c
+
+    # Solves this matrix against the vector (u, v) by Cramer's rule.
+    # A singular matrix has no unique solution, so this may fail.
+    def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+        def det := self.determinant()
+        if det = 0.0 then ! MatrixErr("Determinant is zero.")
+        def x := u * self.d - self.b * v
+        def y := self.a * v - u * self.c
+        [x / det, y / det]
+    end
+
+    def scale(mut self, factor: Float) := do
+        self.a := self.a * factor
+        self.b := self.b * factor
+        self.c := self.c * factor
+        self.d := self.d * factor
+    end
+
+    # Reset turns this matrix into a 2x2 identity matrix, regardless of the initial value.
+    def reset(mut self) := do
+        self.a := 1.0
+        self.b := 0.0
+        self.c := 0.0
+        self.d := 1.0
+    end
+end
+
+def m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
 
 def solution := m.solve(5.0, 6.0) ! where
-    err: MatrixErr(message) => do
-        print("Could not solve system: \"{message}\"")
+    # binding the error's constructor arguments, as `err: MatrixErr(message)`, is future work
+    err: MatrixErr => do
+        print("Could not solve system: \"{err.message}\"")
         [0.0, 0.0] # optionally we can also return, but here we assign default value
     end
 end
 
-print("Solution is: {solution}")
+print("Solution is: {solution}") # prints 'Solution is: [-4.0, 4.5]'

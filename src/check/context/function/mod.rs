@@ -18,8 +18,6 @@ use crate::common::position::Position;
 
 pub const PRINT: &str = "print";
 
-pub const SQRT: &str = "sqrt";
-
 pub mod generic;
 pub mod python;
 

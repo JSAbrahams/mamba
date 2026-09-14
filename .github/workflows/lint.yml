@@ -29,8 +29,9 @@ jobs:
           enable-cache: 'true'
 
       # `devbox run lint` is the same script contributors run locally: cargo fmt --check,
-      # cargo clippy --all-features -D warnings, cargo sort --check, and actionlint over these
-      # workflow files. Keeping CI on the script rather than on its own copy of the commands
-      # means the two cannot drift apart.
+      # cargo clippy --all-features --all-targets -D warnings, cargo sort --check, and actionlint
+      # over these workflow files. --all-targets is what puts the test and bench code under clippy
+      # too, not just the library and binary. Keeping CI on the script rather than on its own copy
+      # of the commands means the two cannot drift apart.
       - name: Lint
         run: devbox run lint

@@ -173,7 +173,7 @@ Working today:
 - Static typing with inference, null safety with `?`, on-site error handling with `!` and `where`.
 - Mutability distinction with `mut`, and traits.
 - Round-bracket application for functions, lists and maps.
-- `=` as structural equality, `:=` as definition, word operators, `^` and `mod`, ranges, slices.
+- `=` as structural equality, `:=` as definition, word operators, `^` and `mod`, and ranges.
 - Set, list and map literals, and single-variable comprehensions.
 - `do ... end` sequences and `where ... end` sets.
 - Two backends, Python and an experimental native one via Cranelift.

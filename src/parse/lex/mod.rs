@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn operators() {
-        let source = String::from("+ - * / ^ mod sqrt i");
+        let source = String::from("+ - * / ^ mod i");
         let tokens = tokenize(&source).unwrap();
         assert_eq!(
             tokens,
@@ -131,11 +131,7 @@ mod tests {
                     token: Token::Mod,
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 15), CaretPos::new(1, 19)),
-                    token: Token::Sqrt,
-                },
-                Lex {
-                    pos: Position::new(CaretPos::new(1, 20), CaretPos::new(1, 21)),
+                    pos: Position::new(CaretPos::new(1, 15), CaretPos::new(1, 16)),
                     token: Token::Id(String::from("i")),
                 },
             ]
