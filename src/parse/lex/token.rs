@@ -42,7 +42,7 @@ pub enum Token {
     BSlash,
 
     Id(String),
-    Fin,
+    Mut,
     Assign,
     AddAssign,
     SubAssign,
@@ -170,7 +170,7 @@ impl fmt::Display for Token {
             Token::DoublePoint => write!(f, ":"),
             Token::BSlash => write!(f, "\\"),
 
-            Token::Fin => write!(f, "fin"),
+            Token::Mut => write!(f, "mut"),
             Token::Assign => write!(f, ":="),
             Token::AddAssign => write!(f, "+="),
             Token::SubAssign => write!(f, "-="),

@@ -89,10 +89,10 @@ impl TryFrom<&AST> for GenericFields {
                             let ty = Name::try_from(ty.deref())?;
                             Ok(match_name(&identifier, &ty, ast.pos)?
                                 .iter()
-                                .map(|(id, (inner_mut, ty))| GenericField {
+                                .map(|(id, (_, ty))| GenericField {
                                     is_py_type: false,
                                     name: id.clone(),
-                                    mutable: *mutable || *inner_mut,
+                                    mutable: *mutable,
                                     pos: ast.pos,
                                     ty: Some(ty.clone()),
                                     in_class: None,
@@ -103,11 +103,11 @@ impl TryFrom<&AST> for GenericFields {
                         None => Ok(identifier
                             .fields(var.pos)?
                             .iter()
-                            .map(|(inner_mut, name)| GenericField {
+                            .map(|(_, name)| GenericField {
                                 is_py_type: false,
                                 name: name.clone(),
                                 pos: ast.pos,
-                                mutable: *mutable || *inner_mut,
+                                mutable: *mutable,
                                 in_class: None,
                                 ty: None,
                                 assigned_to: expr.is_some(),

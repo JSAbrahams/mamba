@@ -13,53 +13,46 @@ The traits, classes and error types it builds on are written in current syntax, 
 In certain situations, we want to make sure that certain methods can only be called when an instance of a class is in a certain state.
 This can be achieved using type aliases and type refinement.
 
-I have a trait `Server`:
+I have a trait `Matrix`:
 
-    trait Server where
-        def is_connected(fin self) -> Bool
-        def last_sent_message(fin self) -> Str?
-        def send_message(self, message: Str) -> Bool ! ServerErr
-        def disconnect(self) -> Bool ! ServerErr
+    trait Matrix where
+        def determinant(self) -> Float
+        def is_invertible(self) -> Bool
+        def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr
+        def kernel_basis(self) -> List[Float] ! MatrixErr
     end
 
-    class ServerErr(msg: Str): Exception(msg)
+    class MatrixErr(msg: Str): Exception(msg)
 
 And I define the following type aliases:
 
-    type ConnectedHTTPServer: HTTPServer when
-        self.is_connected() else ServerErr("Not connected.")
+    type InvertibleMatrix2x2: Matrix2x2 when
+        self.is_invertible() else MatrixErr("Matrix is singular.")
 
-    type DisconnectedHTTPServer: HTTPServer when
-        not self.is_connected() else ServerErr("Already connected.")
+    type SingularMatrix2x2: Matrix2x2 when
+        not self.is_invertible() else MatrixErr("Matrix is invertible.")
 
 We can do the following:
 
-    class HTTPServer(ip_address: IpAddress): Server where
-        def connected: Bool := False
-        def last_message: Str? := None
+    class Matrix2x2(a: Float, b: Float, c: Float, d: Float): Matrix where
+        def determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-        def is_connected(fin self) -> Bool := self.connected
+        def is_invertible(self) -> Bool := self.determinant() != 0.0
 
-        def last_sent_message(fin self) -> Str? := self.last_message
-
-        def connect(self: DisconnectedHTTPServer, ip_address: IpAddress) -> Bool ! ServerErr := do
-            # perform some operations here
-            self.connected := True
-            True
+        # Solves this matrix against the vector (u, v) by Cramer's rule.
+        def solve(self: InvertibleMatrix2x2, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+            def det := self.determinant()
+            def x := u * self.d - self.b * v
+            def y := self.a * v - u * self.c
+            [x / det, y / det]
         end
 
-        def send_message(self: ConnectedHTTPServer, message: Str) -> Bool ! ServerErr := do
-            # perform some operations here
-            self.last_message := message
-            True
-        end
-
-        def disconnect(self: ConnectedHTTPServer) -> Bool ! ServerErr := do
-            # perform some operations here
-            self.connected := False
-            True
+        # A singular 2x2 matrix maps the whole plane onto a line, so its kernel
+        # is spanned by a single non-zero vector.
+        def kernel_basis(self: SingularMatrix2x2) -> List[Float] ! MatrixErr := do
+            if self.a = 0.0 and self.b = 0.0 then [1.0, 0.0] else [self.b, -self.a]
         end
     end
 
-The state of the server is now part of each method's signature.
-`send_message` can only be called on a `ConnectedHTTPServer`, and `connect` only on a `DisconnectedHTTPServer`.
+Whether the matrix is invertible is now part of each method's signature.
+`solve` can only be called on an `InvertibleMatrix2x2`, and `kernel_basis` only on a `SingularMatrix2x2`.

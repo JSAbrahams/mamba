@@ -1,4 +1,4 @@
-def i := 0
+def mut i := 0
 while i < 3 do
     print(i)
     i := i + 1

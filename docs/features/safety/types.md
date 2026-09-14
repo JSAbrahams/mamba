@@ -23,7 +23,7 @@ To this end, we use types.
 A user defines a class `Composer`, which defines the behaviour of a composer:
 
     class Composer(name: Str) where
-        def composer_method(fin self) -> Int := 10
+        def composer_method(self) -> Int := 10
     end
 
 And then we define the `my_function` as such:
@@ -52,6 +52,19 @@ The type of every variable is inferred from the context in which it is used.
 
 The program is still statically typed, but now we don't require the developer to write everything out in full.
 
+## Unbounded integers
+
+`Int` is arbitrary-precision by design.
+It has no width, no maximum, and no wrapping behaviour.
+A number that silently wraps is a correctness bug.
+`Nat`, the non-negative integers, is a refinement of `Int` and inherits this.
+`Nat` is future work, see [`Nat`](#nat) below.
+
+Compiling to machine code with `--bin` or `--asm` lowers `Int` to a fixed-width 64-bit integer.
+However, the two backends are meant to agree.
+The divergence is therefore a known limitation, not intended behaviour.
+Arbitrary-precision arithmetic in the Cranelift backend is future work.
+
 ## Type Aliases and Type Refinement
 
 _Note_ Everything from here on is future work.
@@ -79,35 +92,33 @@ To use such a function, we must explicitly cast a `Composer`:
 This draws on concepts of **Design by Contract** philosophy.
 
 Furthermore, it also allows us to explicitly define the state of an object, something which is often left ambiguous.
-For instance, we can say a server is connected or disconnected by doing the following:
+For instance, we can say a matrix is invertible or singular by doing the following:
 
-    trait Server where
-        def connected: Bool
-        def send_message(self, message: Str) -> Str
+    trait Matrix where
+        def determinant(self) -> Float
+        def solve(self, u: Float, v: Float) -> List[Float]
     end
 
-    type ConnectedServer: Server when
-        self.connected else "Server is not connected"
+    type InvertibleMatrix: Matrix when
+        self.determinant() != 0.0 else "Matrix is singular"
 
-And we may then elsewhere implement this `Server` trait:
+And we may then elsewhere implement this `Matrix` trait:
 
-    class MyServer: Server where
-        def connected: Bool := False
+    class Matrix2x2(a: Float, b: Float, c: Float, d: Float): Matrix where
+        def determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-        def connect(self, ip: IpAddress) := pass
-
-        # You can only call this function if I am a connected server
-        def send_message(self: ConnectedServer, message: Str) -> Str := pass
+        # You can only call this function if I am an invertible matrix
+        def solve(self: InvertibleMatrix, u: Float, v: Float) -> List[Float] := pass
     end
 
-This is a rather trivial example, but it shows how we can explicitly name the different states of a server.
+This is a rather trivial example, but it shows how we can explicitly name the different states of a matrix.
 
 ## Type aliases
 
 In some cases, for readability we might want to write a type alias.
 Say we have the following method:
 
-    def distance_remaining(fin self, covered: Int) -> Int := self.total - covered
+    def distance_remaining(self, covered: Int) -> Int := self.total - covered
 
 The above seems simple, but there are two issues:
 
@@ -129,7 +140,7 @@ Type `Kilometer` can do everything an `Int` can (we can use all the same operato
 (This is a recurring theme, source code ideally should speak for itself without relying heavily on documentation.)
 We can rewrite the method as so:
 
-    def distance_remaining(fin self, covered: Kilometer) -> Kilometer := self.total - covered
+    def distance_remaining(self, covered: Kilometer) -> Kilometer := self.total - covered
 
 ## Type Refinement
 
@@ -260,3 +271,17 @@ So now:
     def b := g(a) # we don't have to cast a to an EvenNum, it is already of that type
 
     def c := h(x)  # function h never raises an error
+
+### `Nat`
+
+`Nat`, the non-negative integers, is defined as a refinement rather than as a separate primitive:
+
+    type Nat: Int when
+        self >= 0 else "{self} is negative"
+
+Zero is in the set.
+That matters wherever `Nat` is used as a measure, since `0.abs()` and `"".len()` are both `0`.
+
+`Nat` is closed under addition but not under subtraction.
+Subtracting a larger `Nat` leaves the domain, so an operation that may do so returns `Nat?`.
+See [Total Functions](../functions/total_functions.md#partial-subtraction-in-strictlydecreases) for the case that motivates it.

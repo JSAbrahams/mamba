@@ -35,7 +35,7 @@ Keyword | Use
 Keyword | Use
 ---|---
 `def`     | Denote definition
-`fin`     | Denote defined variable is immutable
+`mut`     | Denote binding is mutable
 `pure`    | Denote function is pure
 
 ## Boolean operators

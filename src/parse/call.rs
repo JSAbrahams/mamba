@@ -133,7 +133,7 @@ mod test {
                         Node::FunArg {
                             var: id1,
                             ty: None,
-                            mutable: true,
+                            mutable: false,
                             ..
                         },
                     ..
@@ -143,7 +143,7 @@ mod test {
                         Node::FunArg {
                             var: id2,
                             ty: None,
-                            mutable: true,
+                            mutable: false,
                             ..
                         },
                     ..

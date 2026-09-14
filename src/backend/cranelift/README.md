@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="../../image/logo.svg" height="150" alt="Mamba logo"/>
+    <img src="../../../image/logo.svg" height="150" alt="Mamba logo"/>
 </p>
 
 # Cranelift
@@ -29,6 +29,8 @@ Only a small slice of Mamba compiles down to machine code, enforced by simply er
 
 - `Int`, `Bool`, `Float` primitives.
   There are no collections, classes, or traits, and no strings beyond a `print` argument.
+  `Int` lowers to `I64`, which is a known limitation rather than a design choice.
+  See "Bounded integers" below.
 - Arithmetic (`+ - * /`) and comparison (`< <= > >= == !=`) operators, over `Int` or `Float`.
   `operation.rs`'s `lower_arith` and `lower_cmp` check the *operand's* resolved type, not just that it is some supported primitive.
   That is how they pick `iadd`/`fadd` and friends, and `icmp`/`fcmp`, since Cranelift has no single opcode for both.
@@ -44,6 +46,25 @@ Only a small slice of Mamba compiles down to machine code, enforced by simply er
   A `%f`-style call needs SysV variadic-call ABI plumbing, setting `%al` to the vector-register count, which this backend does not have yet.
 
 Every other top-level statement in a file is collected into a synthetic `main`, since machine code needs an explicit entry point the way a `.mamba` file's top-to-bottom script execution doesn't.
+
+## Bounded integers
+
+`Int` is arbitrary-precision by design, as [the language docs](../../../docs/features/safety/types.md#unbounded-integers) describe.
+The Python backend gets that for free from Python's own `int`.
+Here `primitive.rs` maps it to `types::I64`.
+Arithmetic therefore wraps at 64 bits.
+A program that exceeds that range silently disagrees with the same program run through the Python backend.
+
+This is a bug, not a documented narrowing of the subset.
+Everything else in the list above errors with `BackendErr::unimplemented` when it is out of scope.
+This one compiles and quietly produces a different answer.
+`tests/execution.rs` runs most fixtures through both backends and asserts they print the same thing.
+A fixture in the overflow range would fail there rather than go unnoticed.
+
+There are two plausible fixes.
+One is to lower `Int` to a heap-allocated bignum, with runtime support calls.
+The other is to prove a range bound per value in the checker, falling back to a bignum only where that fails.
+Both are future work.
 
 ## Layout
 

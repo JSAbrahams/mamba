@@ -65,7 +65,8 @@ Names are at the core of the type checker, and are used to check whether a type 
 - A `Name` is the interface.
   It contains a set of `TrueName`s, as it represents a type union.
 - A `TrueName` contains two booleans.
-  These are whether something is nullable, and whether something is mutable.
+  These are whether something is nullable, and whether the binding it was read from was `mut`.
+  Mutability is deliberately not part of a name's identity, so `PartialEq`, `Hash` and `Ord` skip it and it only affects how the name is displayed.
   It also contains a `NameVariant`.
 - A `NameVariant` may be one of the following:
     - `StringName`, which is the actual name of a type.

@@ -12,7 +12,7 @@ Ackermann's function halts for every input but cannot be marked `total` in Mamba
 
 ```mamba
 # some syntax here such as guard arms which are not in the language yet
-def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) where
+def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
     (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
@@ -39,10 +39,41 @@ Comparing `(m, n)` lexicographically, with `m` dominant, works: the outer call a
 Other systems accept this shape directly: ACL2 by measuring into the ordinals below `ε₀`, and structural checkers built on the size-change principle (Lee, Jones, Ben-Amram, *The Size-Change Principle for Program Termination*, POPL 2001), including Agda's, by tracking that some combination of argument positions decreases along every call path rather than one designated one.
 Generalising `Measurable` from a flat scalar to a lexicographic tuple, an ordinal, or a multi-argument call-graph analysis is future work.
 
+## Partial subtraction in `StrictlyDecreases`
+
+Measures land in `Nat`, the non-negative integers.
+Zero is in the set, which is what makes the codomain bounded below.
+A measure needs that to serve as a termination argument.
+See [Types](../safety/types.md#nat) for `Nat` itself, which is future work.
+
+`Nat` is closed under addition but not under subtraction.
+That makes `StrictlyDecreases.subtract` a partial operation, and its signature says so:
+
+```mamba
+def meta subtract(self, other: Self) -> Nat? := self.measure() - other.measure()
+```
+
+When `other.measure()` exceeds `self.measure()`, the difference has no representative in `Nat`.
+There is no value to return, so the result is `None`.
+
+The other tempting option is to saturate at zero, in the style of a truncated subtraction.
+However, `None` and `0` carry different claims.
+`0` says the two measures were equal, which is a real answer and is for all intens and purposes a silent failure.
+The latter is something we wish to avoid at all costs in the pursuit of correctness.
+`None` says the subtraction left the domain.
+
+Partiality costs nothing in decidability.
+Which case holds is settled by `self.measure() >= other.measure()`.
+Because `subtract` is `meta`, both the arithmetic and that decision happen at compile time.
+A measure comparison that leaves the domain is caught at the definition site, not at runtime.
+
 ## `Measurable` and custom types
 
 `Measurable` cannot currently be implemented for custom types.
-Doing so safely needs two things: `measure()` must be total, deterministic, and pure, into a well-founded (bounded-below) codomain such as `PosInt`; and the compiler must re-verify the decrease at each call site rather than trusting a type's `Measurable` implementation on its own.
+Doing so safely needs two things.
+First, `measure()` must be total, deterministic, and pure, into a well-founded (bounded-below) codomain such as `Nat`.
+Second, the compiler must re-verify the decrease at each call site.
+It cannot trust a type's `Measurable` implementation on its own.
 Given both, `measure()`'s specific logic doesn't matter for soundness, only that it's such a mapping.
 
 This is the same model Coq, Agda, Lean, and ACL2 already use for user-defined well-founded recursion:

@@ -16,8 +16,8 @@ We can also create key-value pairs as such:
 `<expression> => <expression>`
 If Mamba detects we are building a data-structure which only contains such values, it becomes a dictionary.
 
-As with any other definition, a collection is mutable unless we mark it `fin`.
-A `fin` collection cannot be reassigned.
+As with any other definition, a collection is immutable unless we mark it `mut`.
+A collection without `mut` cannot be reassigned.
 
 ## Set
 
@@ -26,10 +26,10 @@ A set is an unordered collection of unique items, meaning that we cannot access 
 
 Below we show some examples of how a set may be used:
 
-    # A set may be immutable
-    def fin animals := { "dog", "cat", "mouse" }
-    # Or mutable
-    def instruments := { "piano", "violin", "flute" }
+    # A set is immutable by default
+    def animals := { "dog", "cat", "mouse" }
+    # Unless we ask for a mutable one
+    def mut instruments := { "piano", "violin", "flute" }
 
     # I can iterate over a set
     for animal in animals do print(animal) end

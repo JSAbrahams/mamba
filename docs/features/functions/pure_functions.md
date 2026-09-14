@@ -11,7 +11,7 @@ Wherever a call to it appears, that call could be replaced by its result, and th
 Concretely, for a pure function `f`, if `x = y` then `f(x) = f(y)`.
 
 It also relies on the rules the README lists:
-`fin self`, no calling impure functions, only reading `fin` fields or calling `pure` methods on arguments.
+a `self` that is not `mut`, no calling impure functions, only reading fields that are not `mut` or calling `pure` methods on arguments.
 Those rules exist so that nothing reachable from a pure function's arguments can be mutated out from under it, directly or indirectly.
 
 Purity says nothing about termination on its own.

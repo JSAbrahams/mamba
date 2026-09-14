@@ -8,7 +8,7 @@ class C where
 end
 
 class D where
-    def fin my_field: Int := 10
+    def my_field: Int := 10
 end
 
 def a := A()

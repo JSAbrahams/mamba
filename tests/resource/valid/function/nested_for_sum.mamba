@@ -1,4 +1,4 @@
-def total := 0
+def mut total := 0
 for i in 0 .. 3 do
     for j in 0 .. 3 do
         total := total + 1

@@ -1,10 +1,10 @@
-class Y(a: Float)
+class Y(mut a: Float)
 
 class X(a: Float) where
-    def y: Y := Y(self.a)
+    def mut y: Y := Y(self.a)
 end
 
-def x := X(10)
+def mut x := X(10)
 
 x.y.a := x.y.a + 2
 x.y.a := x.y.a - 3

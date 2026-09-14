@@ -34,7 +34,7 @@ Mamba is similar to Python, but with a few key features:
 - Pure functions, or, functions without side effects
 - Meta functions, for reasoning about the language itself
 
-See [docs](/docs/) for a more extensive overview of the language philosophy.
+See [docs](docs/) for a more extensive overview of the language philosophy.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
 There therefore exists some interoperability with Python code.
@@ -139,6 +139,8 @@ end else
 We specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
 This is part of the signature of the function, and is required (it cannot be inferred).
 This means that the compiler will check for us that factorial is only used with integers as argument.
+`Int` is unbounded by design, with no width and no wrapping.
+See [docs/features/safety/types.md](docs/features/safety/types.md#unbounded-integers).
 Also note that:
 
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
@@ -151,7 +153,7 @@ _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic
 def factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
-        def ans := 1
+        def mut ans := 1
         for i in 1 ..= n do ans := ans * i end
         ans
     end
@@ -200,6 +202,9 @@ print(ef(1)) # prints '1'
 _Note_ Builder syntax currently only resolves a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`).
 Binding more than one, as in the `ab` and `ef` examples above, is future work.
 
+_Note_ `{}` is always parsed as an empty set.
+There is no empty mapping literal yet.
+
 In a way, a list is a type of mapping where the keys are the indexes of each item.
 So:
 
@@ -224,16 +229,19 @@ Therefore, we index indexable collections (mappings and lists) using the `collec
 
 Mutability gives us the power to modify an instance in the language after it is created:
 
-```
-def a := 10     # we may modify a
-def fin b := 20 # we may not modify b
+```mamba
+def mut a := 10 # we may modify a
+def b := 20     # we may not modify b
 
 a := a + 2   # allowed
 # b := b + 2 # compilation error
 ```
 
-We opt to make mutability the default (unlike say in Rust, where you have to use the `mut` keyword to make something mutable).
-The reason for doing so is domain; Mamba is geared more for mathematical use, for lack of a better term, meaning this design choice follows from the language philosophy.
+A binding is immutable unless we mark it `mut`, as in Rust.
+This holds everywhere a name is bound, so it covers variables, function arguments, the `self` argument of a method, and class fields.
+The reason is domain.
+Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
+Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.
 
 ### 📋 Types, Properties, and Classes
 
@@ -243,38 +251,48 @@ A class is essentially a blueprint for the behaviour of an instance.
 In Mamba, like Python and Rust, each function in a class has an explicit `self` argument, which gives access to the state of this instance.
 Such a function is called a method.
 We can for each method state whether we can modify the state of `self` by stating whether it is mutable or not.
-If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its state.
+If we write `self`, it is immutable and we cannot change its state, whereas if we write `mut self`, we can.
 We can do the same for any argument to a function, for that matter.
 
-We showcase this using a simple dummy `Matrix` object.
+We showcase this using a simple `Matrix2x2` object.
 You will also see some "pure" functions, these will be explained later.
 
 ```mamba
 class MatrixErr(message: Str): Exception(message)
 
-class Matrix2x2(a: Int, b: Int, c: Int, d: Int) where
+class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     # Accessor for matrix contents
-    def contents(fin self) -> List[Int] := [self.a, self.b, self.c, self.d]
+    def contents(self) -> List[Float] := [self.a, self.b, self.c, self.d]
 
     # Trace of the matrix (a + d)
-    def pure trace(fin self) -> Int := self.a + self.d
+    def pure trace(self) -> Float := self.a + self.d
 
-    # Determinant recomputation (pure function)
-    def pure determinant(fin self) -> Int := self.a * self.d - self.b * self.c
+    # Determinant of the matrix (ad - bc)
+    def pure determinant(self) -> Float := self.a * self.d - self.b * self.c
 
-    def scale(self, factor: Int) := do
+    # Solves this matrix against the vector (u, v) by Cramer's rule.
+    # A singular matrix has no unique solution, so this may fail.
+    def pure solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
+        def det := self.determinant()
+        if det = 0.0 then ! MatrixErr("Determinant is zero.")
+        def x := u * self.d - self.b * v
+        def y := self.a * v - u * self.c
+        [x / det, y / det]
+    end
+
+    def scale(mut self, factor: Float) := do
         self.a := self.a * factor
         self.b := self.b * factor
         self.c := self.c * factor
         self.d := self.d * factor
     end
 
-    # Reset turns this matrix into an 2x2 identity matrix, regardless of the initial value.
-    def reset(self) := do
-        self.a := 1
-        self.b := 0
-        self.c := 0
-        self.d := 1
+    # Reset turns this matrix into a 2x2 identity matrix, regardless of the initial value.
+    def reset(mut self) := do
+        self.a := 1.0
+        self.b := 0.0
+        self.c := 0.0
+        self.d := 1.0
     end
 end
 ```
@@ -302,21 +320,21 @@ We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def x: Int := self.ORIGIN_X
-    def y: Int := self.ORIGIN_Y
+    def mut x: Int := self.ORIGIN_X
+    def mut y: Int := self.ORIGIN_Y
 
-    def move(self, dx: Int, dy: Int) := do
+    def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx
         self.y := self.y + dy
     end
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
-    def reset(self) := do
+    def reset(mut self) := do
         self.x := self.ORIGIN_X
         self.y := self.ORIGIN_Y
     end
 
-    def info(fin self) -> Str := 
+    def info(self) -> Str :=
         "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
 end
 ```
@@ -335,13 +353,13 @@ trait Iterator[T] where
 end
 
 class RangeIter(_start: Int, _end: Int) where
-    def _current: Int := _start
+    def mut _current: Int := _start
 end
 
 def Iterator[Int] for RangeIter where
     def has_next(self) -> Bool := self._current < self._end
 
-    def next(self) -> Int? := if self.has_next() then do
+    def next(mut self) -> Int? := if self.has_next() then do
         def value := self._current
         self._current := self._current + 1
         value
@@ -379,7 +397,7 @@ For use to be able to compare two instances, the instance must implement the `Eq
 By default, functions are not pure.
 When we mark a function `pure`, restrictions are enforced by the language:
 
-- `self` **must** be final (if this is a method).
+- `self` **must not** be `mut` (if this is a method).
   This means that it cannot mutate the values of self.
   It should be noted that if we mutate self and call a method again, then the output might be different.
   But, this makes sense!
@@ -391,7 +409,7 @@ Some additional rules hold for calling and assigning to passed arguments to upho
 - Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
 - An argument may be assigned to, as this will not modify the original reference.
 - The field of an argument may not be assigned to, as this will modify the original reference.
-- One may only read fields of an argument which are final (`fin`).
+- One may only read fields of an argument which are not `mut`.
 - One may only call methods of an argument which are pure (`pure`).
 - It should be emphasized that all of the above also hold for accesses to `self` in the case of methods.
 
@@ -401,11 +419,11 @@ Immutable variables and pure functions make it easier to write declarative progr
 
 ```mamba
 # taylor is immutable, its value does not change during execution
-def fin taylor := 7
+def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) -> Int := do
-    def ans := x
+    def mut ans := x
     for i in (1 ..= taylor).step(2) do
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     end
@@ -454,7 +472,7 @@ Not every function that obviously halts can be marked `total`.
 
 ```mamba
 # some syntax here such as guard arms which are not in the language yet
-def ackermann(m: PosInt, n: PosInt) -> PosInt := match (m, n) where
+def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
     (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
@@ -475,7 +493,7 @@ Take for instance this naive implementation of the Fibonacci sequence:
 
 ```mamba
 ## Fibonacci, implemented using recursion and not dynamic programming
-def total pure fibonacci(x: PosInt) -> Int := match x where
+def total pure fibonacci(x: Nat) -> Int := match x where
     0 => 0
     1 => 1
     n => fibonacci(n - 1) + fibonacci(n - 2)
@@ -504,36 +522,63 @@ However, this is ripe for abuse, so instead, we require that each argument imple
 # if we implement strictly decreasing, we must implement measure
 # These are non-overridable method which uses this measure
 trait StrictlyDecreases: Measurable where
-    def fin meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
-    def fin meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
-    def fin meta subtract(self, other: Self) -> Measurable := self.measure() - other.measure()
+    def meta decreases(self, other: Self) -> Bool := self.measure() < other.measure()
+    def meta equal(self, other: Self) -> Bool := self.measure() = other.measure()
+    def meta subtract(self, other: Self) -> Nat? := self.measure() - other.measure()
 
     # this we must implement
     def meta measure(self) -> Measurable
 end
 ```
 
-This avoids abuse of `decreases` (i.e. one could write `def fin meta decreases(self, other: Self) := True`).
+This avoids abuse of `decreases` (i.e. one could write `def meta decreases(self, other: Self) := True`).
 Instead, ordering is reduced to numeric ordering, which is verifiable and depends on the output of a pure function.
 It is for instance defined for the built-in primitive `Int`.
 
 ```mamba
-# Measure for Int returns abs(self), landing in PosInt, since a measure needs a bounded-below domain
+# Measure for Int returns abs(self), landing in Nat, since a measure needs a bounded-below domain
 def StrictlyDecreases for Int where
     def meta measure(self) -> Measurable := self.abs()
 end
 
-# For string, we as an example use the length of the string (also a PosInt)
+# For string, we as an example use the length of the string (also a Nat)
 def StrictlyDecreases for Str where
-    def meta measure(self) -> Measurable := self.len() 
+    def meta measure(self) -> Measurable := self.len()
 end
 ```
 
-Both of the above return a `PosInt`, which is part of the library and implements the `Measurable` trait.
-This is a special built-in trait of the language, which as of writing cannot be implemented for custom types.
+Both of the above return a `Nat`, the non-negative integers.
+`Nat` is part of the library and implements the `Measurable` trait.
+`Measurable` is a special built-in trait of the language.
+As of writing it cannot be implemented for custom types.
+Zero is in `Nat`, which is what a measure needs.
+Both `0.abs()` and `"".len()` are `0`.
+
+`Nat` is a refinement of `Int`, not a separate primitive, and is future work.
+Like `Int`, it is unbounded rather than a fixed-width unsigned integer.
+See [docs/features/safety/types.md](docs/features/safety/types.md#nat) for its definition.
+
+`Nat` is closed under addition but not under subtraction.
+That is why `subtract` above is partial.
+When `other` measures larger than `self`, the difference lands outside `Nat`.
+There is no value to hand back, so `subtract` yields `None`.
+
+This is deliberately not an error.
+Leaving the domain is not a fault to report.
+It is a question with no answer, and `Nat?` is how the language already says that.
+
+It is equally deliberately not saturation at zero.
+`None` and `0` have to stay distinct.
+`0` says the two measures were equal.
+`None` says the subtraction left the domain.
+Collapsing them would report a decrease where there was none.
+That is the unsoundness `Measurable` exists to rule out, so `decreases` never reads `None` as a decrease.
+Since `subtract` is `meta`, which of the two it yields is settled at compile time.
 
 Implementing `Measurable` for custom types is future work.
-`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `PosInt`; the compiler verifies the decrease independently at each call site regardless of which type `measure()` is defined on.
+`measure()` only needs to be total, deterministic, and pure, into a bounded-below codomain such as `Nat`.
+The compiler verifies the decrease independently at each call site.
+Which type `measure()` is defined on does not matter.
 See [docs/features/functions/total_functions.md](docs/features/functions/total_functions.md#measurable-and-custom-types) for the reasoning.
 
 ```mamba
@@ -544,7 +589,7 @@ meta trait Measurable: Add, Sub, Eq, Comparable
 
 # Built in to the standard library
 # The idea is that this allows performing arithmetic not just at runtime but at compile-time.
-def Measurable for Int 
+def Measurable for Int
 # The following is already defined for Int, but for the sake of our example:
 # {
 #     def meta less_than(self, other: Int) -> Bool := self < other
@@ -600,28 +645,23 @@ Arguably it may be easier to just use Monads, similar to Rust's solution.
 But, we are operating in a different domain, so that may be overly verbose for our purposes.
 
 Let's continue with our matrix example.
-Before, we simply discarded the error by appending `!` to `last_op`.
-Instead, we now handle the error on-site:
+The `solve` method above raises a `MatrixErr` when the matrix is singular.
+We handle that error on-site:
 
 ```mamba
-def m := Matrix(1.0, 2.0, 3.0, 4.0)
+def m := Matrix2x2(1.0, 2.0, 3.0, 4.0)
 
-if m.is_invertible() then
-    def inv := m.inverse()
-else
-    print("Matrix is singular (not invertible).")
-
-def last_op := m.last_op() ! where
+def solution := m.solve(5.0, 6.0) ! where
     err: MatrixErr(message) => do
-        print("Error when getting last op: \"{message}\"")
-        "N/A" # optionally we can also return, but here we assign default value
+        print("Could not solve system: \"{message}\"")
+        [0.0, 0.0] # optionally we can also return, but here we assign default value
     end
 end
 
-print("Last operation was: {last_op}")
+print("Solution is: {solution}")
 ```
 
-In the above script, we will always print an error (gracefully) and assign some other value to `last_op`.
+In the above script, if the matrix turns out to be singular, we print an error (gracefully) and assign some other value to `solution`.
 Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
@@ -631,8 +671,8 @@ Destructuring its constructor arguments, as in `err: MatrixErr(message)` above, 
 Under the hood, `<call> ! where <cases> end` desugars to a plain `match` on the call's result:
 
 ```mamba
-match m.last_op() where
-    err: MatrixErr(message) => print("Error when getting last op: \"{message}\"")
+match m.solve(5.0, 6.0) where
+    err: MatrixErr(message) => print("Could not solve system: \"{message}\"")
 end
 ```
 
@@ -668,7 +708,7 @@ with_error_handling()
 
 We can also opt to not do any error handling, making the type of `a`:
 
-```
+```mamba
 def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
 ```
 

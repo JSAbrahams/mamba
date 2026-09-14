@@ -21,7 +21,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ code-set ]
     
     id               ::= { character }
-    id-maybe-type    ::= id [ ":" type ]
+    id-maybe-type    ::= [ "mut" ] id [ ":" type ]
 
     type-not-fun     ::= id [ generics ]
     type             ::= id [ generics ] [ "->" type ]
@@ -72,7 +72,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # type-def is a type alias / refinement (`type ... when ...`). It is future work: it has no
     # production below, and the "type" keyword is not accepted by the parser yet.
 
-    variable-def     ::= "def" [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ]
+    # a binding is immutable unless marked "mut", which id-maybe-type carries for
+    # arguments and "self" as well as for variables
+    variable-def     ::= "def" ( id-maybe-type | [ "mut" ] collection ) [ ":=" expression ]
     # type checker should check for valid combination of meta, total, pure
     # the "meta" and "total" modifiers are future work; only "pure" is implemented
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]

@@ -1,6 +1,6 @@
 class X where
-    def z: Int
+    def mut z: Int
 
-    def __init__(self, x: Int) :=
+    def __init__(mut self, x: Int) :=
         self.y := x
 end

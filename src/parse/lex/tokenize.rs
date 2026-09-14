@@ -243,7 +243,7 @@ fn as_op_or_id(string: String) -> Token {
         "forward" => Token::Forward,
 
         "def" => Token::Def,
-        "fin" => Token::Fin,
+        "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,

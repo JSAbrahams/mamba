@@ -1,6 +1,6 @@
-class X(a: Float)
+class X(mut a: Float)
 
-def x := X(10)
+def mut x := X(10)
 
 x.a += 2
 x.a -= 3

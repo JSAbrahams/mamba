@@ -40,11 +40,9 @@ pub fn cranelift_type_of_name(name: &Name, pos: Position) -> BackendResult<Type>
         })
 }
 
-/// The single primitive class name a resolved [Name] refers to, if it is exactly one non-generic,
-/// non-nullable name -- i.e. not a union of multiple types, and not a generic instantiation like
-/// `List[Int]`. Every type this backend supports is shaped this way. Mutability is *not*
-/// disqualifying -- it's a property of the binding (and Mamba function arguments are mutable by
-/// default), not of the underlying machine representation, which is identical either way.
+/// The single primitive class name a resolved [Name] refers to, if it is exactly one non-generic,  non-nullable name.
+/// I.e. not a union of multiple types, and not a generic instantiation like `List[Int]`.
+/// Every type this backend supports is shaped this way.
 fn primitive_name(name: &Name) -> Option<&str> {
     let mut names = name.names.iter();
     let true_name = names.next()?;
