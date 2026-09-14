@@ -1,0 +1,5 @@
+# '..' stands for the elements not written out, so it only reads as one at the end
+def a := match (1, 2, 3) where
+    (.., 3) => "ends with three"
+    _       => "anything else"
+end
