@@ -31,12 +31,12 @@ if [ $? -ne 0 ]; then
 fi
 
 log_info "Running cargo clippy"
-cargo clippy -- -D warnings
+cargo clippy --all-targets -- -D warnings
 if [ $? -ne 0 ]; then
     log_error "cargo clippy found issues. Please fix them before committing."
     exit 1
 fi
-cargo clippy --all-features --release -- -D warnings
+cargo clippy --all-features --all-targets --release -- -D warnings
 if [ $? -ne 0 ]; then
     log_error "cargo clippy found issues. Please fix them before committing."
     exit 1

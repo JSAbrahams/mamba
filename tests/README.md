@@ -256,23 +256,21 @@ See `tests/resource/invalid/type/class/parent_function_type.mamba` and `parent_t
 bound variable when constructing the head expression's scope.
 A second `in` generator, or a local `y = ...` binding, both produce "Undefined variable: y".
 That happens even though the condition parses and checks fine on its own.
-Confirmed with minimal repros for list-, set-, and dict-builders; only
-a single bound variable (optionally filtered, e.g. `[x | x in a, x > 0]`) currently works. This
-affects two of the `readme_example` fixtures, `lists` and `sets_maps`.
-See their `=> ignore[...]` reasons in `tests/check/valid.rs`.
+Confirmed with minimal repros for list-, set-, and dict-builders.
+Only a single bound variable, optionally filtered, as in `[x | x in a, x > 0]`, currently works.
+The value a builder produces also stays unresolved, so it cannot be indexed or printed.
+The `readme_example` fixtures `lists` and `sets_maps` keep the multi-variable form as a commented-out line and use the single-variable one instead, so they still run.
 It is also called out in the README's Collections section.
 
-## Known generator bug: `--annotate` can emit invalid Python for a shadowed loop variable in tail position
+## Fixed generator bug: invalid Python for a shadowed variable in tail position
 
-`readme_example/factorial_dynamic` (`tests/check/valid.rs`) is ignored because `--annotate` (`Arguments { annotate: true, .. }`, which `tests_util::test_directory` always sets) generates syntactically invalid Python when a `def`-shadowed loop variable is *also* the trailing expression of a `match` case that becomes a function's return value.
-The root cause is in `append_ret`, in `src/backend/python/convert/mod.rs`.
-It blindly recurses into the *last statement* of a `Block`, to turn it into a `return`.
-But `wrap_scoped`, in `src/backend/python/convert/control_flow.rs`, appends a scope-restore `if/else` as that last statement for cleanup, not as the value.
-That restore looks like `if __mamba_i_existed: i = ... else: del i`.
-So `append_ret` recurses into the restore branches themselves, emitting `return i = __mamba_i_saved` and `return del i`.
-`--annotate` is already documented as "currently still buggy" in the CLI help, in `src/cli.rs`.
-This is one concrete reproduction of that.
-Fixing it means either having `wrap_scoped` run outside/after `append_ret`, or teaching `append_ret` to skip over a trailing scope-restore `IfElse` and target the statement before it instead.
+`wrap_scoped`, in `src/backend/python/convert/control_flow.rs`, appends a scope-restore `if/else` after the body it guards.
+`append_ret`, in `src/backend/python/convert/mod.rs`, turns the *last statement* of a `Block` into a `return`.
+So a body ending in a `def`-shadowed name that is also the tail expression got `return i = __mamba_i_saved` and `return del i`, which is not valid Python.
+
+`wrap_scoped` now omits the restore when the body already ends in `return` or `raise`.
+Control leaves the function there, taking its locals with it, so the restore was dead code to begin with.
+`readme_example/factorial_dynamic` was the reproduction and is now an active test in all three of `tests/parse/valid.rs`, `tests/check/valid.rs` and `tests/execution.rs`.
 
 ## Un-ignoring an `invalid` test: don't drop the `=> matches Err(_)` with the `=> ignore[...]`
 
@@ -289,15 +287,14 @@ Those are `collection/dictionary_assume_not_optional`, `definition/nested_non_mu
 Their `ignore[...]` reasons are therefore accurate, and they are *not* stale.
 They only appear to pass if the matcher is dropped.
 
-## Known generator bug: a single-expression body loses its `return` when `--annotate` is off
+## Fixed generator bug: a single-expression body lost its `return` when `--annotate` was off
 
-`def free_fn(x: Int) -> Int := x + 1` generates `def free_fn(x): x + 1`, with no `return`.
-The function therefore silently evaluates to `None`.
-Adding `-a`/`--annotate` generates the correct `return x + 1`.
-This affects plain functions and methods alike, and any body that is a bare expression rather than a `do ... end` block (a `do ... end` body, as in `tests/resource/valid/function/return_last_expression.mamba`, returns correctly either way).
+`def free_fn(x: Int) -> Int := x + 1` generated `def free_fn(x): x + 1`, with no `return`, so the function silently evaluated to `None`.
+The cause was in `convert_def`, in `src/backend/python/convert/definition.rs`: the `is_last_must_be_ret` flag was keyed off the *emitted annotation* rather than the declared return type, and that annotation is `None` whenever `--annotate` is off.
+It now reads the declared return type, so the `return` is emitted either way.
 
-Worth emphasising because **no `--annotate` is the CLI default**, so this is the default output path, and because the fixture suite cannot catch it: `tests_util::test_directory` always sets `annotate: true`, and `tests/check/valid.rs`'s only `annotate: false` case is `to_python_with_args`'s `collection/tuple`.
-The runtime tests in `tests/execution.rs` do go through the CLI, so that is the natural place for a regression test once this is fixed.
+This mattered because no `--annotate` is the CLI default, and the fixture suite cannot see it: `tests_util::test_directory` always sets `annotate: true`.
+`tests/execution.rs` does go through the default path, so `function/if_else_tail` and `function/implicit_last_expr_return` moved from `bin_only_execution` into the shared `execution` matrix, where both backends must now agree.
 
 ## Known generator bug: `--annotate` emits a forward reference for a method typed with its own class
 

@@ -240,7 +240,7 @@ mod tests {
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 1);
-        assert_eq_constr!(all_constr[0].constraints, vec![c1, c2, c3])
+        assert_eq_constr!(all_constr[0].constraints, [c1, c2, c3])
     }
 
     #[test]

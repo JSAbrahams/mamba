@@ -94,7 +94,7 @@
       "test-ci": "cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci",
       "lint": [
         "cargo fmt --all -- --check",
-        "cargo clippy --all-features -- -D warnings",
+        "cargo clippy --all-features --all-targets -- -D warnings",
         "cargo sort --check",
         "actionlint"
       ],
@@ -109,8 +109,8 @@
         "cargo check --tests --all",
         "cargo check --tests --all --release",
         "cargo sort --check",
-        "cargo clippy -- -D warnings",
-        "cargo clippy --all-features --release -- -D warnings",
+        "cargo clippy --all-targets -- -D warnings",
+        "cargo clippy --all-features --all-targets --release -- -D warnings",
         "cargo check --benches --release",
         "cargo check --benches --release --all-features"
       ]

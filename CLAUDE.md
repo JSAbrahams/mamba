@@ -25,7 +25,7 @@ cargo build                       # build the transpiler
 cargo run -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
 cargo test --package mamba        # run the full test suite (matches CI)
 cargo fmt --all -- --check        # check formatting (CI enforces this)
-cargo clippy --all-features -- -D warnings  # lint (CI enforces this, treats warnings as errors)
+cargo clippy --all-features --all-targets -- -D warnings  # lint (CI enforces this, treats warnings as errors)
 ```
 
 CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`.
@@ -35,8 +35,9 @@ To reproduce a CI test run exactly:
 cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
 ```
 
-Note that CI's clippy step does *not* pass `--tests`.
-Lints that only fire inside `#[cfg(test)]` code are therefore not enforced.
+CI's clippy step passes `--all-targets`.
+Lints are therefore enforced in test code too, not just in the library and binary.
+That covers `#[cfg(test)]` modules and the integration tests under `tests/`.
 
 Running the test suite requires a `python3` on `PATH`.
 That is `python3.10` on Linux, `python3` on macOS, and `python` on Windows.
@@ -66,7 +67,7 @@ git config core.hooksPath .githooks
 ```
 
 The `pre-commit` hook runs several checks.
-These are `cargo fmt --check`, `cargo check --tests --all` in debug and release, `cargo sort --check`, `cargo clippy -D warnings` in debug and release with all features, and `cargo check --benches`.
+These are `cargo fmt --check`, `cargo check --tests --all` in debug and release, `cargo sort --check`, `cargo clippy --all-targets -D warnings` in debug and release with all features, and `cargo check --benches`.
 `cargo sort --check` is there because Cargo.toml dependencies must stay alphabetically sorted.
 The `commit-msg` hook enforces Conventional-Commits-style subject lines.
 The form is `<type>: <summary>`.

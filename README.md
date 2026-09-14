@@ -176,6 +176,8 @@ def b := ["list", "of", "strings"]
 def empty_list := []
 # lists, builder syntax
 def a_positive := [x | x in a, x > 0]
+# lists of tuples, builder syntax binding more than one variable, not resolved yet
+# def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
 # Indexing is done using round brackets!
 print(a(0)) # prints '0'
@@ -194,6 +196,8 @@ def empty_set := {}
 
 # maps
 def e := { "do" => 1, "ree" => 2, "meee" => 3 }
+# maps, builder syntax binding more than one variable, not resolved yet
+# def ef := { x => y - 2 | x in e, y = x.len() }
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(e("ree")) # prints '2'
