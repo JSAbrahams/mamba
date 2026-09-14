@@ -1,0 +1,4 @@
+def xs := [(1, 2)]
+for (a: Int, b) in xs do
+    print(a)
+end

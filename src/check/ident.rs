@@ -132,7 +132,13 @@ impl TryFrom<&AST> for Identifier {
             Node::Id { lit } => Ok(Identifier::from((true, lit.as_str()))),
             Node::ExpressionType { expr, mutable, .. } => {
                 let identifier = Identifier::try_from(expr.deref())?;
-                Ok(identifier.as_mutable(*mutable))
+                if identifier.is_tuple() {
+                    // Each element carries its own marker, so the outer one must not override it.
+                    // The parser rejects `mut` on a tuple, so there is nothing to propagate here.
+                    Ok(identifier)
+                } else {
+                    Ok(identifier.as_mutable(*mutable))
+                }
             }
             Node::Tuple { elements } => {
                 let elements = elements

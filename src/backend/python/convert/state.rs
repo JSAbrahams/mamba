@@ -54,9 +54,9 @@ impl State {
         }
     }
 
-    pub fn tuple_literal(&self) -> State {
+    pub fn tuple_literal(&self, tup_lit: bool) -> State {
         State {
-            tup_lit: true,
+            tup_lit,
             ..self.clone()
         }
     }

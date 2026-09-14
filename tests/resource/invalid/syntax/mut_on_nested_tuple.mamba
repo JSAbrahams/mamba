@@ -1,0 +1,2 @@
+# the marker goes on the elements at every depth, so this must be `((mut a, mut b), c)`
+def (mut (a, b), c) := ((10, 20), 30)

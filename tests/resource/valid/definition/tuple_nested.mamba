@@ -1,0 +1,10 @@
+# A nested identifier destructures a nested tuple, rather than flattening into a
+# three-element binding
+def ((a, b), c) := ((10, 20), 30)
+print(a)
+print(b)
+print(c)
+
+# the same shape, annotated
+def ((d, e), f): ((Int, Int), Int) := ((40, 50), 60)
+print(d + e + f)

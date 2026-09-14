@@ -1,0 +1,2 @@
+# the inner identifier binds two names, the inner literal has three elements
+def ((a, b), c) := ((10, 20, 25), 30)

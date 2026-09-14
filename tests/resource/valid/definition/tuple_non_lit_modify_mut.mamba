@@ -5,5 +5,5 @@ end
 def f() -> (MyClass, Int) :=
     (MyClass(), 10)
 
-def mut (a, b) := f()
+def (mut a, mut b) := f()
 a.my_field := 20

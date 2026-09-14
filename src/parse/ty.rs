@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use crate::common::position::Position;
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::iterator::LexIterator;
@@ -7,7 +8,12 @@ use crate::parse::lex::token::Token;
 use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected_one_of};
 
-pub fn parse_id(it: &mut LexIterator) -> ParseResult {
+/// Parse an identifier, or a tuple of identifiers.
+///
+/// At a binding site each tuple element may carry its own [Token::Mut], which is what
+/// `binding` allows. Elsewhere, such as a `for` loop's variable, nothing is bound and `mut`
+/// is meaningless, so it is not accepted.
+fn parse_id_or_tuple(it: &mut LexIterator, binding: bool) -> ParseResult {
     it.peek_or_err(
         &|it, lex| match &lex.token {
             Token::Id(id) => {
@@ -18,7 +24,9 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let mut elements = vec![];
                 let start = it.eat(&Token::LRBrack, "identifier tuple")?;
                 it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-                    elements.push(*it.parse(&parse_expr_no_type, "identifier", start)?);
+                    let element =
+                        it.parse(&|it| parse_tuple_element(it, binding), "identifier", start)?;
+                    elements.push(*element);
                     it.eat_if(&Token::Comma);
                     Ok(())
                 })?;
@@ -35,6 +43,57 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
         &[Token::Id(String::new())],
         "identifier",
     )
+}
+
+/// Eat an optional [Token::Mut], then parse the identifier it marks.
+///
+/// A tuple is one binding per element, so the marker goes on the elements and never on the
+/// tuple itself. This holds at every depth, so `(mut (a, b), c)` is rejected just as
+/// `mut (a, b)` is, rather than silently ignoring the marker.
+fn parse_maybe_mut_id(
+    it: &mut LexIterator,
+    binding: bool,
+    start: Position,
+) -> ParseResult<(bool, Box<AST>)> {
+    let mutable = binding && it.eat_if(&Token::Mut).is_some();
+    let expr = it.parse(&|it| parse_id_or_tuple(it, binding), "identifier", start)?;
+
+    if mutable && matches!(expr.node, Node::Tuple { .. }) {
+        let msg = format!("Cannot mark an identifier tuple '{}'", Token::Mut);
+        return Err(Box::from(custom(&msg, start.union(expr.pos))));
+    }
+    Ok((mutable, expr))
+}
+
+/// One element of an identifier tuple, which never takes a type annotation.
+///
+/// At a binding site the element carries its own [Token::Mut], and is wrapped in a
+/// [Node::ExpressionType] to hold it. Elsewhere the identifier is returned bare.
+fn parse_tuple_element(it: &mut LexIterator, binding: bool) -> ParseResult {
+    let start = it.start_pos("identifier tuple element")?;
+    let (mutable, expr) = parse_maybe_mut_id(it, binding, start)?;
+
+    if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
+        return Err(Box::from(custom(
+            "Type annotation not allowed here",
+            annotation_pos,
+        )));
+    }
+    if !binding {
+        return Ok(expr);
+    }
+
+    let end = expr.pos;
+    let node = Node::ExpressionType {
+        expr,
+        mutable,
+        ty: None,
+    };
+    Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+pub fn parse_id(it: &mut LexIterator) -> ParseResult {
+    parse_id_or_tuple(it, false)
 }
 
 pub fn parse_generics(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
@@ -155,24 +214,9 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(end), node)))
 }
 
-pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("expression no type")?;
-    let expr = it.parse(&parse_id, "expression no type", start)?;
-    if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
-        Err(Box::from(custom(
-            "Type annotation not allowed here",
-            annotation_pos,
-        )))
-    } else {
-        Ok(expr)
-    }
-}
-
 pub fn parse_expression_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression type")?;
-    let mutable = it.eat_if(&Token::Mut).is_some();
-
-    let expr = it.parse(&parse_id, "expression type", start)?;
+    let (mutable, expr) = parse_maybe_mut_id(it, true, start)?;
     let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression type", start)?;
     let end = ty.clone().map_or(expr.pos, |t| t.pos);
 

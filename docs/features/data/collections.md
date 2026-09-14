@@ -67,6 +67,13 @@ We can also define several variables at once by destructuring one:
 
     def (a, b) := (10, 20)
 
+Destructuring nests, so an element may itself be a tuple:
+
+    def ((a, b), c) := ((10, 20), 30)
+
+Each element is its own binding, so `mut` goes on the elements rather than on the tuple.
+See [Defining Variables](defining_variables.md).
+
 ## Dictionary
 
 A map is created using `{` ... `}`, where each mapping is represented as such: `key => value`.

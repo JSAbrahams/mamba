@@ -1,0 +1,4 @@
+# Per-element mut, with the tuple's type annotated
+def (mut a, b): (Int, Int) := (10, 20)
+a := 30
+print(a)

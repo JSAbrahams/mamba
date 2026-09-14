@@ -211,10 +211,14 @@ Both are a single `it.eat_if(&Token::Mut).is_some()`.
 Because every binding site funnels through those, one marker covers variables, function arguments, class constructor arguments and `self`.
 So it is `def mut a := 10`, `def f(mut a: Int)`, `class X(mut a: Int)` and `def f(mut self)`.
 
-Two shapes are worth knowing.
-A tuple takes one marker for the whole binding, as `def mut (a, b) := (1, 2)`.
-Per-element mutability, as in `def (mut a, b) := ...`, does not parse.
-That is a known gap, recorded by the `ignore[...]` on `definition/tuple_modify_inner_mut` in `tests/check/invalid.rs`.
+A tuple takes one marker per element, as `def (mut a, mut b) := (1, 2)`.
+Marking the tuple itself, as `def mut (a, b)`, is a parse error.
+The reason is that `mut` belongs to a binding, and a tuple introduces one binding per element.
+`parse_binding_id` and `parse_binding_element` in `src/parse/ty.rs` parse the elements.
+Two places must then leave those per-element flags alone.
+They are `Identifier::try_from` in `src/check/ident.rs`, and `id_from_var` in `src/check/constrain/generate/definition.rs`.
+Both previously forced every element to the definition's own flag via `as_mutable`.
+Destructuring a list or set, as `def [a, b]`, does not parse at all.
 
 What is actually enforced is narrower than what is written down.
 Reassigning a binding that is not `mut` is an error, and so is reassigning through a receiver that is not `mut`.
@@ -264,5 +268,9 @@ A general request to fix or clean something up is not such an instruction.
 Read-only inspection is always fine.
 That means `git status`, `git log`, `git diff`, `git show` and `git branch --list`.
 Prefer those for orienting yourself.
+
+`git mv` is allowed without asking, for renaming or moving a tracked file.
+Prefer it over a plain `mv`, which git records as a delete plus an add.
+It stages the rename, which is expected and is how git records one.
 
 When a task does seem to call for changing history or branches, describe the commands and let the user run them, unless they have said otherwise.

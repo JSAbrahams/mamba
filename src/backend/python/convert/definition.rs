@@ -14,7 +14,7 @@ use crate::{ASTTy, Context};
 pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     match &ast.node {
         NodeTy::VariableDef { var, expr, ty, .. } => {
-            let var = convert_node(var, imp, &state.tuple_literal(), ctx)?;
+            let var = convert_node(var, imp, &state.tuple_literal(true), ctx)?;
             let state = state.in_tup(match var.clone() {
                 PythonCore::Tuple { elements } => elements.len(),
                 _ => 1,

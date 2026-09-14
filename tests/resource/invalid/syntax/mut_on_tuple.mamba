@@ -1,0 +1,3 @@
+# Mutability belongs to each binding, so a tuple takes one marker per element:
+# this must be `def (mut a, mut b)`
+def mut (a, b) := (10, 20)

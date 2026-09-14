@@ -21,7 +21,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" type-not-fun { "," type-not-fun } ] [ code-set ]
     
     id               ::= { character }
-    id-maybe-type    ::= [ "mut" ] id [ ":" type ]
+    # "mut" marks one binding, so it may only precede an id, never a tuple
+    # an id-tuple therefore takes one marker per element, at every depth
+    id-tuple         ::= "(" id-element { "," id-element } ")"
+    id-element       ::= [ "mut" ] id | id-tuple
+    id-maybe-type    ::= ( [ "mut" ] id | id-tuple ) [ ":" type ]
 
     type-not-fun     ::= id [ generics ]
     type             ::= id [ generics ] [ "->" type ]
@@ -74,7 +78,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     # a binding is immutable unless marked "mut", which id-maybe-type carries for
     # arguments and "self" as well as for variables
-    variable-def     ::= "def" ( id-maybe-type | [ "mut" ] collection ) [ ":=" expression ]
+    # destructuring a list or set, as in `def [a, b]`, is future work and does not parse
+    variable-def     ::= "def" id-maybe-type [ ":=" expression ]
     # type checker should check for valid combination of meta, total, pure
     # the "meta" and "total" modifiers are future work; only "pure" is implemented
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]

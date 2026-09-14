@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use itertools::enumerate;
-
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
@@ -207,6 +205,108 @@ pub fn constrain_args(
     Ok(env_with_args.is_expr(exp_expression))
 }
 
+/// Give every leaf of an unannotated identifier its own temporary type, and mirror the
+/// identifier's shape in the returned [Name].
+///
+/// A nested identifier therefore yields a nested tuple type, so `((a, b), c)` binds three
+/// names against a two-element tuple rather than collapsing into a flat three-element one.
+///
+/// `expr` is the expression the identifier is bound to, where that expression is visible as
+/// a tuple literal. Its elements are then constrained against the matching leaves, which is
+/// what lets a literal's element types flow into the bindings. It is [None] once the
+/// expression is opaque, such as a call, and the whole type is unified instead.
+fn bind_identifier(
+    identifier: &Identifier,
+    expr: Option<&AST>,
+    env: &mut Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) -> TypeResult<Name> {
+    match identifier {
+        Identifier::Single(f_mut, call) => {
+            let f_name = call.object(pos)?;
+            let name = constr.temp_name();
+            constr.insert_var(&f_name);
+
+            let ty = Expected::new(pos, &Type { name: name.clone() });
+            *env = env.insert_var(*f_mut, &f_name, &ty, &constr.var_mapping);
+
+            let var = AST::new(pos, Id { lit: f_name });
+            constr.add(
+                "variable with only expression",
+                &Expected::from(&var),
+                &ty,
+                env,
+            );
+
+            if let Some(expr) = expr {
+                let expr_ty = Expected::new(expr.pos, &Type { name: name.clone() });
+                constr.add(
+                    "tuple literal element",
+                    &expr_ty,
+                    &Expected::from(expr),
+                    env,
+                );
+            }
+            Ok(name)
+        }
+        Identifier::Multi(identifiers) => {
+            // Only see through an actual tuple literal, and only when the arity lines up.
+            // Anything else leaves the elements opaque, to be unified as a whole below.
+            let elements = match expr.map(|e| &e.node) {
+                Some(Node::Tuple { elements }) if elements.len() == identifiers.len() => {
+                    elements.iter().map(Some).collect()
+                }
+                Some(Node::Tuple { elements }) => {
+                    let msg = format!(
+                        "Expected tuple of {} elements, was {}",
+                        identifiers.len(),
+                        elements.len()
+                    );
+                    return Err(vec![TypeErr::new(expr.map_or(pos, |e| e.pos), &msg)]);
+                }
+                _ => vec![None; identifiers.len()],
+            };
+
+            let names = identifiers
+                .iter()
+                .zip(elements)
+                .map(|(identifier, expr)| bind_identifier(identifier, expr, env, constr, pos))
+                .collect::<TypeResult<Vec<Name>>>()?;
+            Ok(Name::tuple(&names))
+        }
+    }
+}
+
+/// Tie one element of an annotated identifier tuple to its own type.
+///
+/// An annotated definition only constrains the whole binding, which for a tuple leaves each element's type unpinned.
+/// A later use of the element then cannot resolve methods on it.
+/// The unannotated path already does this via its temporary names.
+fn constrain_tuple_element(
+    identifier: &Identifier,
+    f_name: &str,
+    f_ty: &Expected,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) {
+    if identifier.is_tuple() {
+        let element = AST::new(
+            pos,
+            Id {
+                lit: String::from(f_name),
+            },
+        );
+        constr.add(
+            "tuple element with type",
+            &Expected::from(&element),
+            f_ty,
+            env,
+        );
+    }
+}
+
 pub fn id_from_var(
     var: &AST,
     ty: &Option<Name>,
@@ -221,16 +321,21 @@ pub fn id_from_var(
     }
 
     let mut env = env.clone();
-    let identifier = Identifier::try_from(var)?.as_mutable(mutable);
+    // A tuple's elements each carry their own `mut`, so only a single binding takes its
+    // mutability from the definition itself. The parser rejects `mut` on a tuple.
+    let identifier = Identifier::try_from(var)?;
+    let identifier = if identifier.is_tuple() {
+        identifier
+    } else {
+        identifier.as_mutable(mutable)
+    };
     match (ty, expr) {
         (Some(ty), Some(expr)) => {
-            let mut names = vec![];
             for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
-                names.push(name.clone());
-
                 constr.insert_var(&f_name);
-                let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+                let f_ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(f_mut, &f_name, &f_ty, &constr.var_mapping);
+                constrain_tuple_element(&identifier, &f_name, &f_ty, &env, constr, var.pos);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
@@ -250,8 +355,9 @@ pub fn id_from_var(
         (Some(ty), None) => {
             for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
                 constr.insert_var(&f_name);
-                let ty = Expected::new(var.pos, &Type { name: name.clone() });
-                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+                let f_ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(f_mut, &f_name, &f_ty, &constr.var_mapping);
+                constrain_tuple_element(&identifier, &f_name, &f_ty, &env, constr, var.pos);
             }
 
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
@@ -263,67 +369,8 @@ pub fn id_from_var(
             );
         }
         (None, Some(expr)) => {
-            let mut temp_names = vec![];
-            let fields = identifier.fields(var.pos)?;
-            for (f_mut, name) in &fields {
-                let temp_name = constr.temp_name();
-                temp_names.push(temp_name.clone());
-
-                constr.insert_var(name);
-                let ty = Expected::new(
-                    var.pos,
-                    &Type {
-                        name: temp_name.clone(),
-                    },
-                );
-                env = env.insert_var(mutable && *f_mut, name, &ty, &constr.var_mapping);
-
-                let var = AST::new(var.pos, Id { lit: name.clone() });
-                constr.add(
-                    "variable with only expression",
-                    &Expected::from(&var),
-                    &ty,
-                    &env,
-                );
-            }
-
-            let exp_expr = if temp_names.len() > 1 {
-                // if tuple literal, deconstruct elements in generate stage
-                if let Node::Tuple { elements } = &expr.node {
-                    if elements.len() == temp_names.len() {
-                        for (i, (expr, ty)) in enumerate(elements.iter().zip(&temp_names)) {
-                            let expr_exp = Expected::from(expr);
-                            let expr_ty = Expected::new(expr.pos, &Type { name: ty.clone() });
-
-                            let msg = format!("tuple literal element {i}");
-                            constr.add(&msg, &expr_ty, &expr_exp, &env);
-                        }
-                    } else {
-                        let msg = format!(
-                            "Expected tuple of {} elements, was {}",
-                            temp_names.len(),
-                            elements.len()
-                        );
-                        return Err(vec![TypeErr::new(expr.pos, &msg)]);
-                    }
-                }
-
-                Expected::new(
-                    expr.pos,
-                    &Type {
-                        name: Name::tuple(&temp_names),
-                    },
-                )
-            } else if let Some(first) = temp_names.first() {
-                Expected::new(
-                    expr.pos,
-                    &Type {
-                        name: first.clone(),
-                    },
-                )
-            } else {
-                panic!("cannot have empty identifier")
-            };
+            let name = bind_identifier(&identifier, Some(expr), &mut env, constr, var.pos)?;
+            let exp_expr = Expected::new(expr.pos, &Type { name });
 
             constr.add(
                 "variable with only expression",
@@ -342,7 +389,7 @@ pub fn id_from_var(
             let any = Expected::any(var.pos);
             for (f_mut, f_name) in identifier.fields(var.pos)? {
                 constr.insert_var(&f_name);
-                env = env.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
+                env = env.insert_var(f_mut, &f_name, &any, &constr.var_mapping);
             }
         }
     }
