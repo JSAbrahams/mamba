@@ -66,6 +66,13 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["class"], "redundant_new.mamba" => "1\n")]
 #[test_case(run_via_python, &["class"], "parent_literal_argument.mamba" => "404\n2\n")]
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
+// Match patterns and guards. These carry the real verification for the feature: the AST diff in
+// `tests/check/valid.rs` is vacuous for a `match`, because `python-parser` cannot parse PEP 634
+// and silently truncates both sides. See tests/README.md.
+#[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba" => "on the y axis\non the x axis\noff both axes\n")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba" => "yes\nno\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => ignore["match case guards do not parse"])]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => ignore["a tuple case pattern binds nothing, and its guard does not parse"])]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
