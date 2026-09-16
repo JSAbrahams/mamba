@@ -5,7 +5,7 @@ authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which converts Mamba files to Python 3 files"
 edition = "2021"
 license-file = "LICENSE"
-rust-version = "1.80.0"
+rust-version = "1.96.0"
 
 readme = "README.md"
 repository = "https://github.com/JSAbrahams/mamba"
@@ -30,7 +30,8 @@ itertools = "0.8.2"     # Tools to make iterating over collections easier
 log = "0.4"             # Log frontend
 loggerv = "0.7"         # Logger which accepts -vvv flag
 pathdiff = "0.1.0"      # Traverse directories (Mamba projects)
-python-parser = "0.1.0" # Parse Python, both in tests and to generate Mamba IR
+ruff_python_ast = "0.0.13" # Python AST nodes, and range-insensitive AST comparison
+ruff_python_parser = "0.0.13" # Parse Python, both in tests and to generate Mamba IR
 target-lexicon = "0.12.16" # Parse a --target triple for the Cranelift backend
 tempfile = "3.1.0"      # Stage object files before linking them into a --bin executable
 

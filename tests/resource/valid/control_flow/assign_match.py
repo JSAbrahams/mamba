@@ -1,6 +1,6 @@
 c: bool = True
 match c:
     case True:
-        my_var = 10
+        my_var: int = 10
     case False:
-        my_var = 20
+        my_var: int = 20

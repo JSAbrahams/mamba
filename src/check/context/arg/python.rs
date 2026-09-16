@@ -1,4 +1,4 @@
-use python_parser::ast::Expression;
+use ruff_python_ast::ParameterWithDefault;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::name::Name;
@@ -6,18 +6,16 @@ use crate::common::position::Position;
 
 pub const SELF: &str = "self";
 
-impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFunctionArg {
-    fn from(
-        (name, ty, default): (&String, &Option<Expression>, &Option<Expression>),
-    ) -> GenericFunctionArg {
+impl From<&ParameterWithDefault> for GenericFunctionArg {
+    fn from(parameter: &ParameterWithDefault) -> GenericFunctionArg {
         GenericFunctionArg {
             is_py_type: true,
-            name: name.clone(),
-            has_default: default.is_some(),
+            name: parameter.parameter.name.as_str().to_string(),
+            has_default: parameter.default.is_some(),
             pos: Position::invisible(),
             vararg: false,
             mutable: true,
-            ty: ty.clone().map(|e| Name::from(&e)),
+            ty: parameter.parameter.annotation.as_deref().map(Name::from),
         }
     }
 }

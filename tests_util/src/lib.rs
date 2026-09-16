@@ -8,15 +8,17 @@ use std::process::Command;
 
 use assert_cmd::prelude::*;
 use itertools::{EitherOrBoth, Itertools};
-use python_parser::ast::Statement;
+use ruff_python_ast::comparable::ComparableStmt;
+use ruff_python_ast::Stmt;
 use tempfile::tempdir_in;
 
 use mamba::backend::Backend;
+use mamba::check::context::python::python_stmts;
 use mamba::common::delimit::newline_delimited;
 use mamba::{transpile_dir, Arguments};
 
 #[cfg(target_os = "linux")]
-pub static PYTHON: &str = "python3.10";
+pub static PYTHON: &str = "python3.14";
 #[cfg(target_os = "macos")]
 pub static PYTHON: &str = "python3";
 #[cfg(target_os = "windows")]
@@ -185,9 +187,19 @@ pub fn test_directory_args(
     delete_dir(&output_path).map_err(|_| OutTestErr(vec![]))?;
     let (check_ast, check_src, out_ast, out_src) = res?;
 
-    // Convert to newline delimited string for more readable diff
-    let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
-    let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
+    // Convert to newline delimited string for more readable diff. Compared as ComparableStmt,
+    // whose Debug output, unlike Stmt's, leaves out the source range every node carries: two
+    // structurally equal files are not written at identical offsets.
+    let check_string = newline_delimited(
+        check_ast
+            .iter()
+            .map(|stmt| format!("{:?}", ComparableStmt::from(stmt))),
+    );
+    let out_string = newline_delimited(
+        out_ast
+            .iter()
+            .map(|stmt| format!("{:?}", ComparableStmt::from(stmt))),
+    );
 
     let longest_line = out_src
         .lines()
@@ -238,7 +250,7 @@ pub fn fallable(
     output_file: &str,
     file_name: &str,
     arguments: &Arguments,
-) -> OutTestRet<(Vec<Statement>, String, Vec<Statement>, String)> {
+) -> OutTestRet<(Vec<Stmt>, String, Vec<Stmt>, String)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
@@ -404,8 +416,6 @@ pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Erro
     }
 }
 
-pub fn python_src_to_stmts(python_src: &String) -> Vec<Statement> {
-    python_parser::file_input(python_parser::make_strspan(python_src.as_ref()))
-        .unwrap()
-        .1
+pub fn python_src_to_stmts(python_src: &str) -> Vec<Stmt> {
+    python_stmts(python_src).expect("parse python source")
 }

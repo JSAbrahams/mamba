@@ -13,7 +13,7 @@ Rust** that converts `.mamba` source files into `.py` (Python 3) source files. T
 The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json`.
 Versions are pinned in `devbox.lock`.
 Devbox is a layer over Nix.
-It supplies the Rust toolchain, Python 3.10, and the cargo helpers the hooks and CI call.
+It supplies the Rust toolchain, Python 3.14, and the cargo helpers the hooks and CI call.
 `devbox shell` enters the environment.
 `devbox run -- <cmd>` runs a single command in it.
 The cargo commands below assume you are inside that environment.
@@ -40,11 +40,12 @@ Lints are therefore enforced in test code too, not just in the library and binar
 That covers `#[cfg(test)]` modules and the integration tests under `tests/`.
 
 Running the test suite requires a `python3` on `PATH`.
-That is `python3.10` on Linux, `python3` on macOS, and `python` on Windows.
+That is `python3.14` on Linux, `python3` on macOS, and `python` on Windows.
 See `tests_util/src/lib.rs` for the exact names.
 The requirement exists because generated Python output is validated with `python -m py_compile`.
-Devbox pins `python@3.10.18` for this.
-If you change the version there, change `tests_util::PYTHON` to match.
+Devbox pins `python@3.14.4` for this.
+If you change the version there, change `tests_util::PYTHON` and `check::context::python::PYTHON_VERSION` to match.
+The latter is the version `ruff_python_parser` parses as, both for the stub files and for the AST diff in `tests_util`.
 
 To run a single test:
 

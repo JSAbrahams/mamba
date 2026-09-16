@@ -1,4 +1,4 @@
-use python_parser::ast::Funcdef;
+use ruff_python_ast::StmtFunctionDef;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function::generic::GenericFunction;
@@ -33,8 +33,8 @@ pub const SUPER: &str = "super";
 pub const GET_ITEM: &str = "__getitem__";
 pub const SET_ITEM: &str = "__setitem__";
 
-impl From<&Funcdef> for GenericFunction {
-    fn from(func_def: &Funcdef) -> GenericFunction {
+impl From<&StmtFunctionDef> for GenericFunction {
+    fn from(func_def: &StmtFunctionDef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
             name: StringName::from(func_def.name.as_str()),
@@ -42,46 +42,42 @@ impl From<&Funcdef> for GenericFunction {
             pos: Position::invisible(),
             arguments: func_def
                 .parameters
-                .positional_args
+                .posonlyargs
                 .iter()
-                .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
+                .chain(func_def.parameters.args.iter())
+                .map(GenericFunctionArg::from)
                 .collect(),
             raises: Name::empty(),
             in_class: None,
-            ret_ty: func_def.return_type.as_ref().map(Name::from),
+            ret_ty: func_def.returns.as_deref().map(Name::from),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::ops::Deref;
-
-    use python_parser::ast::{CompoundStatement, Funcdef, Statement};
+    use ruff_python_ast::{Stmt, StmtFunctionDef};
 
     use crate::check::context::function::generic::GenericFunction;
+    use crate::check::context::python::python_stmts;
     use crate::check::name::string_name::StringName;
     use crate::check::name::{Empty, Name};
 
-    fn fun_def(stmt: &Statement) -> Funcdef {
+    fn fun_def(stmt: &Stmt) -> StmtFunctionDef {
         match &stmt {
-            Statement::Compound(compound) => match compound.deref() {
-                CompoundStatement::Funcdef(funcdef) => funcdef.clone(),
-                other => panic!("Not func def but {other:?}"),
-            },
-            other => panic!("Not compound statement but {other:?}"),
+            Stmt::FunctionDef(func_def) => func_def.clone(),
+            other => panic!("Not func def but {other:?}"),
         }
     }
 
     #[test]
     fn from_py() {
         let source = "def f(a: int, b, c: Str, d: Str = 'default') -> complex: pass";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let funcdef: Funcdef = fun_def(first);
-        let generic_function = GenericFunction::from(&funcdef);
+        let func_def: StmtFunctionDef = fun_def(first);
+        let generic_function = GenericFunction::from(&func_def);
 
         assert!(generic_function.is_py_type);
         assert_eq!(generic_function.name, StringName::from("f"));
