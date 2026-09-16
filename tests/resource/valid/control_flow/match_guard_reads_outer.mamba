@@ -1,0 +1,10 @@
+# A guard may read a variable from outside the match, not just what the pattern bound
+def limit := 10
+
+def pure under(x: Int, bound: Int) -> Str := match x where
+    n if n < bound => "under"
+    _              => "over"
+end
+
+print(under(5, limit))
+print(under(50, limit))

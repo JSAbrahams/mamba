@@ -1,0 +1,8 @@
+# a handle case must name the exception type it catches
+class MyErr(msg: Str): Exception(msg)
+
+def f() -> Int ! MyErr := 10
+
+def a := f() ! where
+    err => 0
+end

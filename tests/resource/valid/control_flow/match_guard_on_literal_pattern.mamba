@@ -1,0 +1,11 @@
+# A guard may sit on a literal pattern, which binds nothing
+def flag := True
+
+def pure check(x: Int) -> Str := match x where
+    0 if flag => "zero and flagged"
+    0         => "zero"
+    _         => "other"
+end
+
+print(check(0))
+print(check(1))

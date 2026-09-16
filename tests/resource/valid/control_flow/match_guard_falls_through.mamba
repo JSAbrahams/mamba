@@ -1,0 +1,10 @@
+# A failing guard falls through to the next arm rather than failing the match
+def pure magnitude(x: Int) -> Str := match x where
+    n if n > 100 => "big"
+    n if n > 10  => "medium"
+    _            => "small"
+end
+
+print(magnitude(500))
+print(magnitude(50))
+print(magnitude(5))

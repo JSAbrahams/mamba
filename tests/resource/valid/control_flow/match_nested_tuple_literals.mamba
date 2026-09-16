@@ -1,0 +1,10 @@
+# A nested tuple pattern of literals compares structurally, element by element
+def pure describe(p: ((Int, Int), Int)) -> Str := match p where
+    ((0, 0), 0) => "all zero"
+    ((0, 0), _) => "flat"
+    _           => "other"
+end
+
+print(describe(((0, 0), 0)))
+print(describe(((0, 0), 5)))
+print(describe(((1, 2), 3)))

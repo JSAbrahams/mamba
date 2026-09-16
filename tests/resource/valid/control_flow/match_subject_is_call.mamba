@@ -1,0 +1,9 @@
+# The subject of a match may be any expression, including a call
+def pure f() -> Int := 3
+
+def a := match f() where
+    3 => "three"
+    _ => "other"
+end
+
+print(a)

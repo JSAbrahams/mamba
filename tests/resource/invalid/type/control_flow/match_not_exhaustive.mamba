@@ -1,4 +1,4 @@
-# the value is used, so every arm must be covered, and 0 alone does not cover Int
+# every arm must be covered, and 0 alone does not cover Int
 def a := match 10 where
     0 => "zero"
 end

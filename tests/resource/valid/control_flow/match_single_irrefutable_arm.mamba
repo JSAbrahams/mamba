@@ -1,0 +1,6 @@
+# One arm that always matches is enough to be exhaustive
+def a := match 10 where
+    n => n + 1
+end
+
+print(a)

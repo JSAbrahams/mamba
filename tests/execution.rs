@@ -66,13 +66,28 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["class"], "redundant_new.mamba" => "1\n")]
 #[test_case(run_via_python, &["class"], "parent_literal_argument.mamba" => "404\n2\n")]
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
-// Match patterns and guards. These carry the real verification for the feature: the AST diff in
-// `tests/check/valid.rs` is vacuous for a `match`, because `python-parser` cannot parse PEP 634
-// and silently truncates both sides. See tests/README.md.
+// Match patterns and guards. The AST diff in `tests/check/valid.rs` covers these too, since the
+// move to `ruff_python_parser`, but these assert on what the output actually does when run.
 #[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba" => "on the y axis\non the x axis\noff both axes\n")]
 #[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba" => "yes\nno\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => ignore["match case guards do not parse"])]
-#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => ignore["a tuple case pattern binds nothing, and its guard does not parse"])]
+#[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => "negative\npositive\nzero\n")]
+#[test_case(run_via_python, &["control_flow"], "match_first_arm_wins.mamba" => "positive\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_falls_through.mamba" => "big\nmedium\nsmall\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_calls_function.mamba" => "even\nodd\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_literal_pattern.mamba" => "zero and flagged\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_wildcard.mamba" => "over\nunder\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_reads_outer.mamba" => "under\nover\n")]
+#[test_case(run_via_python, &["control_flow"], "match_compound_guard.mamba" => "single digit\nout of range\nzero\n")]
+#[test_case(run_via_python, &["control_flow"], "match_literal_str.mamba" => "hi\ncya\n?\n")]
+#[test_case(run_via_python, &["control_flow"], "match_negative_int_literal.mamba" => "minus one\nzero\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_literals.mamba" => "all zero\nflat\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_in_for_body.mamba" => "zero\none\nmany\n")]
+// The outer `n` is 1, and the arm binds `n` to 10. The generated `case n:` leaks that binding
+// into the enclosing scope, so this prints 10. `if` guards the same shadowing correctly.
+#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => ignore["a capture pattern leaks out of its arm and clobbers the shadowed outer variable"])]
+#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => ignore["a match assigned without an annotation leaves the variable untyped"])]
+#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => ignore["a tuple case pattern does not bind into the guard or body"])]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => ignore["a tuple case pattern does not bind into the guard or body"])]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
@@ -91,7 +106,7 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 /// Those reasons match the ones on the same fixture in `tests/check/valid.rs`.
 /// Where only a line or two is unimplemented, that line is commented out in the fixture instead,
 /// so the rest still runs and the intent is still on record.
-#[test_case("ackermann" => ignore["match case guards (`case if <cond> =>`) not implemented"])]
+#[test_case("ackermann" => "9\n")]
 #[test_case("builtin_trait" => ignore["@ decorator syntax and meta trait/external impl for a built-in type not implemented"])]
 #[test_case("class" => "")]
 #[test_case("class_associated_function" => "1.0\n")]

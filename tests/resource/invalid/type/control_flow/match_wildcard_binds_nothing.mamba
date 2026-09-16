@@ -1,0 +1,4 @@
+# '_' matches one thing and binds nothing, so it cannot be read in the arm body
+def a := match 10 where
+    _ => _
+end

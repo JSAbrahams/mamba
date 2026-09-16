@@ -1,0 +1,5 @@
+# a guard must be a condition, and a Str is not one
+def a := match 10 where
+    n if "yes" => 1
+    _          => 2
+end

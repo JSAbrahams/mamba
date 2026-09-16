@@ -1,0 +1,3 @@
+# a match needs 'end' after its arms
+match 10 where
+    0 => 1

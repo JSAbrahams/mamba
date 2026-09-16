@@ -1,0 +1,10 @@
+# An arm body may be a do ... end block, whose last expression is its value
+def a := match 2 where
+    2 => do
+        def doubled := 2 * 2
+        doubled
+    end
+    _ => 0
+end
+
+print(a)
