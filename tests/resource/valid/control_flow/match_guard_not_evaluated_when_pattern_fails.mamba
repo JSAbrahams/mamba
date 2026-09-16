@@ -1,0 +1,8 @@
+# A guard is only evaluated once its pattern has matched.
+# The first arm's guard would divide by zero, but its pattern never matches, so it never runs.
+def pure safe(p: (Int, Int)) -> Str := match p where
+    (1, n) if 10 / n > 1 => "unreachable"
+    _                    => "safe"
+end
+
+print(safe((0, 0)))

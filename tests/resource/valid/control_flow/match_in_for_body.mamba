@@ -1,0 +1,8 @@
+# A match may appear as a statement in a loop body
+for i in 0 ..= 2 do
+    match i where
+        0 => print("zero")
+        1 => print("one")
+        _ => print("many")
+    end
+end

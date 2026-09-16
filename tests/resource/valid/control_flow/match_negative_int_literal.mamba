@@ -1,0 +1,10 @@
+# Negative integer literals are patterns like any other
+def pure sign_of(x: Int) -> Str := match x where
+    -1 => "minus one"
+    0  => "zero"
+    _  => "other"
+end
+
+print(sign_of(-1))
+print(sign_of(0))
+print(sign_of(7))

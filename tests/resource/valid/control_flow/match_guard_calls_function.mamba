@@ -1,0 +1,10 @@
+# A guard may call a function
+def pure is_even(x: Int) -> Bool := x mod 2 = 0
+
+def pure parity(x: Int) -> Str := match x where
+    n if is_even(n) => "even"
+    _               => "odd"
+end
+
+print(parity(4))
+print(parity(5))

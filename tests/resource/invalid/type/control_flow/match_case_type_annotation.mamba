@@ -1,0 +1,5 @@
+# a type annotation on a match case is undefined; it only means something on a handle case
+def a := match 10 where
+    n: Int => 1
+    _      => 2
+end

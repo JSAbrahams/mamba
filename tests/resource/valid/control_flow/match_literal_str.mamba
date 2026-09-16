@@ -1,0 +1,10 @@
+# Matching on Str literals
+def pure greet(s: Str) -> Str := match s where
+    "hello" => "hi"
+    "bye"   => "cya"
+    _       => "?"
+end
+
+print(greet("hello"))
+print(greet("bye"))
+print(greet("what"))

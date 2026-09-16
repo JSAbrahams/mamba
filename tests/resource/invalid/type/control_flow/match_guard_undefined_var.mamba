@@ -1,0 +1,5 @@
+# a guard is an ordinary expression, so it may not read an undefined variable
+def a := match 10 where
+    n if undefined_bound > 0 => 1
+    _                        => 2
+end

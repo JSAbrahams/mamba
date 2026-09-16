@@ -1,0 +1,4 @@
+# a match needs 'where' before its arms
+match 10
+    0 => 1
+end
