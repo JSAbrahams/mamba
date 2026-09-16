@@ -1,1 +1,1 @@
-def input(in: str) -> str: pass
+def input(prompt: str) -> str: pass

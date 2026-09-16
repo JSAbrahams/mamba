@@ -71,7 +71,7 @@ It isn't at 100% today for two very different reasons, and they should be treate
 ## Python-stub files are also test surface, not just runtime data
 
 `src/check/resource/primitive/*.py` and `src/check/resource/std/*.py` are real Python source.
-They are parsed with `python_parser` once per `check_all` call, to seed `Context` with built-in class, function and field signatures.
+They are parsed with `ruff_python_parser` once per `check_all` call, to seed `Context` with built-in class, function and field signatures.
 See `check/context/python.rs::python_files` and `check/context/clss/python.rs`.
 Several parsing branches depend entirely on *what these stub files contain*.
 Those branches live in `check/context/field/python.rs`, `check/context/parameter/python.rs`, `check/context/python.rs`, and `check/name/true_name/python.rs`.
@@ -311,3 +311,34 @@ Several of these tests write to shared, fixed paths under `tests/resource/valid/
 This was not introduced by the coverage work in this file.
 It is a pre-existing test isolation issue, worth a look if it starts flaking in CI.
 Workaround: run with `-- --test-threads=1` if it flakes.
+
+## The AST diff now covers every statement, `match` included
+
+`test_directory` compares the transpiler's output against the reference `.py` by diffing parsed Python ASTs.
+That used to go through `python-parser 0.1.0`, which predates PEP 634 and cannot parse a `match` statement.
+Its `file_input` was a `fold_many0`, so it stopped at the first statement it could not parse and silently discarded the rest, on both sides of the diff.
+The two truncated ASTs then compared equal whatever the arms said.
+
+It now goes through `ruff_python_parser`, which parses the whole file or fails loudly.
+Swapping it in immediately exposed four reference `.py` files that had been wrong for as long as they existed.
+Three `match` fixtures were missing the type annotation the generator emits under `--annotate`.
+`error/nested_exception.py` caught `Exception` where the fixture handles only `MyException1`.
+All four were corrected to what the transpiler actually produces.
+
+Two consequences worth knowing.
+Statements are compared as `ComparableStmt`, not `Stmt`, because every ruff node carries a source range and two structurally equal files are not written at identical offsets.
+And the stub files under `src/check/resource/` must now be syntactically valid Python, which two of them were not.
+
+## Stub files must parse as real Python, and one still does not
+
+`check/context/python.rs` reads every `.py` file in `src/check/resource/primitive` and `src/check/resource/std`.
+Anything without a `.py` extension is skipped, so a `__pycache__` directory (which appears the moment anything runs the interpreter over one of these) does not break context building.
+
+`std/input.py` used to declare `def input(in: str)`, and `std/optional.py` used to declare `class None:`.
+Both are syntax errors: `in` and `None` are keywords.
+They are now `prompt` and `NoneType`, the names CPython itself uses, and `python_to_concrete` maps `NoneType` back to Mamba's `None`.
+
+`std/builtins.py` remains invalid for a different reason.
+`__debug__: bool = True` parses, so `ruff_python_parser` accepts it, but CPython rejects it at compile time with `SyntaxError: cannot assign to __debug__`.
+The file exists to give context building one typed and one untyped module-level assignment to parse, which it still does.
+Worth replacing `__debug__` with a name that is assignable if these files ever get run through `py_compile` as a test of their own.

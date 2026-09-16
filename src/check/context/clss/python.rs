@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ops::Deref;
 
-use python_parser::ast::{Classdef, CompoundStatement, Statement};
+use ruff_python_ast::{Stmt, StmtClassDef};
 
 use crate::check::context::clss;
 use crate::check::context::clss::generic::GenericClass;
@@ -35,37 +34,46 @@ pub const UNION: &str = "Union";
 pub const ANY: &str = "Any";
 
 pub const NONE: &str = "None";
+pub const NONE_PRIMITIVE: &str = "NoneType";
 pub const EXCEPTION: &str = "Exception";
 
-/// Create a [GenericClass] from [ClassDef].
+/// Create a [GenericClass] from [StmtClassDef].
 ///
 /// - Init is removed from function list, it is the built-in constructor
-impl TryFrom<&Classdef> for GenericClass {
+impl TryFrom<&StmtClassDef> for GenericClass {
     type Error = Vec<TypeErr>;
 
-    fn try_from(class_def: &Classdef) -> TypeResult<GenericClass> {
+    fn try_from(class_def: &StmtClassDef) -> TypeResult<GenericClass> {
         let (mut functions, mut fields) = (HashSet::new(), HashSet::new());
-        let generics = GenericParameters::from(&class_def.arguments).parameters;
+        let arguments = class_def.arguments.as_deref();
+        let generics = arguments.map_or(vec![], |arguments| {
+            GenericParameters::from(arguments).parameters
+        });
 
-        class_def.code.iter().for_each(|statement| match statement {
-            Statement::Assignment(variables, _) => {
-                let gen_fields = GenericFields::from((variables, &None)).fields;
+        class_def.body.iter().for_each(|statement| match statement {
+            Stmt::Assign(assign) => {
+                let gen_fields = GenericFields::from((assign.targets.as_slice(), None)).fields;
                 fields = fields.union(&gen_fields).cloned().collect();
             }
-            Statement::TypedAssignment(variables, ty, _) => {
-                let gen_fields = GenericFields::from((variables, &Some(ty.clone()))).fields;
+            Stmt::AnnAssign(assign) => {
+                let gen_fields = GenericFields::from((
+                    std::slice::from_ref(assign.target.as_ref()),
+                    Some(assign.annotation.as_ref()),
+                ))
+                .fields;
                 fields = fields.union(&gen_fields).cloned().collect();
             }
-            Statement::Compound(compound) => {
-                if let CompoundStatement::Funcdef(func_def) = compound.deref() {
-                    functions.insert(GenericFunction::from(func_def));
-                }
+            Stmt::FunctionDef(func_def) => {
+                functions.insert(GenericFunction::from(func_def));
             }
             _ => {}
         });
 
         let generic_names: Vec<Name> = generics.iter().map(|g| Name::from(&g.name)).collect();
-        let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let class = StringName::new(
+            python_to_concrete(class_def.name.as_str()).as_str(),
+            &generic_names,
+        );
         let functions: Vec<GenericFunction> = functions
             .into_iter()
             .map(|f| f.in_class(&class, false, Position::invisible()))
@@ -95,12 +103,14 @@ impl TryFrom<&Classdef> for GenericClass {
                 .filter(|f| f.name != StringName::from(INIT))
                 .map(|f| f.in_class(&class, false, Position::invisible()))
                 .collect(),
-            parents: class_def
-                .arguments
-                .iter()
-                .map(GenericParent::from)
-                .filter(|parent| StringName::from(&parent.name).name != "Generic")
-                .collect(),
+            parents: arguments.map_or(HashSet::new(), |arguments| {
+                arguments
+                    .args
+                    .iter()
+                    .map(GenericParent::from)
+                    .filter(|parent| StringName::from(&parent.name).name != "Generic")
+                    .collect()
+            }),
         }
         .all_pure(true)
     }
@@ -124,7 +134,7 @@ pub fn python_to_concrete(name: &str) -> String {
 
         UNION => String::from(clss::UNION),
         CALLABLE => String::from(clss::CALLABLE),
-        NONE => String::from(clss::NONE),
+        NONE | NONE_PRIMITIVE => String::from(clss::NONE),
         EXCEPTION => String::from(clss::EXCEPTION),
         ANY => String::from(clss::ANY),
 
@@ -135,34 +145,30 @@ pub fn python_to_concrete(name: &str) -> String {
 #[cfg(test)]
 mod test {
     use std::convert::TryFrom;
-    use std::ops::Deref;
 
     use itertools::Itertools;
-    use python_parser::ast::{Classdef, CompoundStatement, Statement};
+    use ruff_python_ast::{Stmt, StmtClassDef};
 
     use crate::check::context::clss::generic::GenericClass;
+    use crate::check::context::python::python_stmts;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
     use crate::check::name::{Empty, Name};
 
-    fn class_def(stmt: &Statement) -> Classdef {
+    fn class_def(stmt: &Stmt) -> StmtClassDef {
         match &stmt {
-            Statement::Compound(compound) => match compound.deref() {
-                CompoundStatement::Classdef(classdef) => classdef.clone(),
-                other => panic!("Not class def but {other:?}"),
-            },
-            other => panic!("Not compound statement but {other:?}"),
+            Stmt::ClassDef(class_def) => class_def.clone(),
+            other => panic!("Not class def but {other:?}"),
         }
     }
 
     #[test] // # See 317, #318, and #319 for why variables are after constructor
     fn from_py_fields() {
         let source = "class MyClass:\n    def __init__(self): pass\n    b: int = 10\n    a: int\n";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(first);
+        let class_def: StmtClassDef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -179,7 +185,7 @@ mod test {
         assert!(field.is_py_type);
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert!(field.mutable);
-        assert_eq!(field.ty, None); // See #318
+        assert_eq!(field.ty, Some(Name::from("Int"))); // Closes #318
 
         let field = fields.next().expect("field");
         assert_eq!(field.name, String::from("b"));
@@ -194,11 +200,10 @@ mod test {
     fn from_py_fields_in_init() {
         let source =
             "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(first);
+        let class_def: StmtClassDef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -217,11 +222,10 @@ mod test {
     fn from_py_functions() {
         let source =
             "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(first);
+        let class_def: StmtClassDef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -249,11 +253,10 @@ mod test {
     #[test]
     fn from_py_parents() {
         let source = "class MyClass(ParentClass, P2):\n    pass\n";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(first);
+        let class_def: StmtClassDef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         assert_eq!(generic_class.name, StringName::from("MyClass"));
@@ -277,11 +280,10 @@ mod test {
     #[test]
     fn from_class_with_generic() {
         let source = "class MyClass(Generic[T], P2):\n    pass\n";
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+        let statements = python_stmts(source).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let class_def: Classdef = class_def(first);
+        let class_def: StmtClassDef = class_def(first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         let name = StringName::new("MyClass", &[Name::from("T")]);

@@ -18,7 +18,7 @@ def f(x: int) -> int:
 def g() -> int:
     try:
         return f(2)
-    except Exception as err:
+    except MyException1 as err:
         return 10
 
 g()

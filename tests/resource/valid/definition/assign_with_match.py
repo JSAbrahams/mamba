@@ -1,7 +1,7 @@
 match 40:
     case 2:
-        a = 3
+        a: int = 3
     case 4:
-        a = 30
+        a: int = 30
     case _:
-        a = 300
+        a: int = 300

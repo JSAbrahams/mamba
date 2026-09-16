@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use python_parser::ast::{Expression, SetItem};
+use ruff_python_ast::Expr;
 
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::name::Name;
 use crate::common::position::Position;
 
-impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
-    fn from((ids, ty): (&Vec<Expression>, &Option<Expression>)) -> GenericFields {
+impl From<(&[Expr], Option<&Expr>)> for GenericFields {
+    fn from((ids, ty): (&[Expr], Option<&Expr>)) -> GenericFields {
         let fields = GenericFields {
             fields: ids
                 .iter()
@@ -31,67 +31,54 @@ impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
     }
 }
 
-impl From<(&Expression, &Option<Expression>)> for GenericFields {
-    fn from((id, _): (&Expression, &Option<Expression>)) -> GenericFields {
-        GenericFields::from(id)
-    }
-}
-
-impl From<&Expression> for GenericFields {
-    fn from(id: &Expression) -> GenericFields {
+impl From<&Expr> for GenericFields {
+    fn from(id: &Expr) -> GenericFields {
         GenericFields {
-            fields: (match id {
-                Expression::Name(name) => vec![GenericField {
+            fields: match id {
+                Expr::Name(name) => HashSet::from([GenericField {
                     is_py_type: true,
-                    name: name.clone(),
+                    name: name.id.as_str().to_string(),
                     pos: Position::invisible(),
                     mutable: true,
                     in_class: None,
                     ty: None,
-                }],
-                Expression::TupleLiteral(items) => items
+                }]),
+                Expr::Tuple(tuple) => tuple
+                    .elts
                     .iter()
-                    .filter(|item| matches!(item, SetItem::Unique(_)))
-                    .filter(|item| match &item {
-                        SetItem::Star(_) => false,
-                        SetItem::Unique(expr) => matches!(expr, Expression::Name(_)),
-                    })
-                    .map(|item| match &item {
-                        SetItem::Star(_) => unreachable!(),
-                        SetItem::Unique(expression) => match expression {
-                            Expression::Name(name) => GenericField {
-                                is_py_type: true,
-                                name: name.clone(),
-                                pos: Position::invisible(),
-                                mutable: false,
-                                in_class: None,
-                                ty: None,
-                            },
-                            _ => unreachable!(),
-                        },
+                    .filter_map(|element| match element {
+                        Expr::Name(name) => Some(GenericField {
+                            is_py_type: true,
+                            name: name.id.as_str().to_string(),
+                            pos: Position::invisible(),
+                            mutable: false,
+                            in_class: None,
+                            ty: None,
+                        }),
+                        _ => None,
                     })
                     .collect(),
-                _ => vec![],
-            })
-            .iter()
-            .cloned()
-            .collect::<HashSet<_>>(),
+                _ => HashSet::new(),
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use python_parser::ast::Statement;
+    use ruff_python_ast::{Expr, Stmt};
 
     use crate::check::context::field::generic::GenericFields;
+    use crate::check::context::python::python_stmts;
 
-    fn assignment_targets(source: &str) -> (Vec<python_parser::ast::Expression>, bool) {
-        let (_, statements) =
-            python_parser::file_input(python_parser::make_strspan(source)).expect("parse source");
+    fn assignment_targets(source: &str) -> (Vec<Expr>, Option<Expr>) {
+        let statements = python_stmts(source).expect("parse source");
         match statements.first().expect("non empty statements") {
-            Statement::Assignment(left, _) => (left.clone(), false),
-            Statement::TypedAssignment(left, _, _) => (left.clone(), true),
+            Stmt::Assign(assign) => (assign.targets.clone(), None),
+            Stmt::AnnAssign(assign) => (
+                vec![assign.target.as_ref().clone()],
+                Some(assign.annotation.as_ref().clone()),
+            ),
             other => panic!("Not an assignment but {other:?}"),
         }
     }
@@ -99,7 +86,7 @@ mod test {
     #[test]
     fn single_name() {
         let (left, _) = assignment_targets("x = 0");
-        let fields = GenericFields::from((&left, &None)).fields;
+        let fields = GenericFields::from((left.as_slice(), None)).fields;
 
         assert_eq!(fields.len(), 1);
         let field = fields.iter().next().expect("field");
@@ -110,12 +97,8 @@ mod test {
 
     #[test]
     fn typed_single_name() {
-        let (left, _) = assignment_targets("x: int = 0");
-        let fields = GenericFields::from((
-            &left,
-            &Some(python_parser::ast::Expression::Name(String::from("int"))),
-        ))
-        .fields;
+        let (left, ty) = assignment_targets("x: int = 0");
+        let fields = GenericFields::from((left.as_slice(), ty.as_ref())).fields;
 
         assert_eq!(fields.len(), 1);
         let field = fields.iter().next().expect("field");
@@ -125,13 +108,12 @@ mod test {
 
     #[test]
     fn tuple_destructuring() {
-        // A single *parenthesized* tuple target (`(a, b) = 0, 0`) parses as one
-        // `Expression::TupleLiteral`, unlike the unparenthesized `a, b = 0, 0` (which the parser
-        // treats as two separate assignment targets, each going through the `Expression::Name`
-        // branch instead). A tuple target cannot be annotated in Python either way, so this
-        // always goes through the untyped `From<(&Vec<Expression>, &Option<Expression>)>` path.
+        // A tuple target is one `Expr::Tuple`, parenthesized or not, so `a, b = 0, 0` and
+        // `(a, b) = 0, 0` both go through the `Expr::Tuple` branch rather than the
+        // `Expr::Name` one. A tuple target cannot be annotated in Python either way, so this
+        // always goes through the untyped path.
         let (left, _) = assignment_targets("(a, b) = 0, 0");
-        let fields = GenericFields::from((&left, &None)).fields;
+        let fields = GenericFields::from((left.as_slice(), None)).fields;
 
         assert_eq!(fields.len(), 2);
         let mut names: Vec<&String> = fields.iter().map(|f| &f.name).collect();

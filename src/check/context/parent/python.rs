@@ -1,24 +1,23 @@
-use std::ops::Deref;
-
-use python_parser::ast::{Argument, Expression, Subscript};
+use ruff_python_ast::Expr;
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::python::subscript_elements;
 use crate::check::name::true_name::TrueName;
 use crate::check::name::{Empty, Name};
 use crate::common::position::Position;
 
-impl From<&Argument> for GenericParent {
-    fn from(argument: &Argument) -> GenericParent {
-        let name = match argument {
-            Argument::Positional(Expression::Name(name)) => {
-                StringName::from(python_to_concrete(name).as_str())
-            }
-            Argument::Positional(Expression::Subscript(expr, generics)) => {
-                if let Expression::Name(name) = expr.deref() {
-                    let generics: Vec<Name> = generics.iter().map(Name::from).collect();
-                    StringName::new(python_to_concrete(name).as_ref(), &generics)
+impl From<&Expr> for GenericParent {
+    fn from(expression: &Expr) -> GenericParent {
+        let name = match expression {
+            Expr::Name(name) => StringName::from(python_to_concrete(name.id.as_str()).as_str()),
+            Expr::Subscript(subscript) => {
+                if let Expr::Name(name) = subscript.value.as_ref() {
+                    let generics: Vec<Name> = subscript_elements(&subscript.slice)
+                        .map(Name::from)
+                        .collect();
+                    StringName::new(python_to_concrete(name.id.as_str()).as_ref(), &generics)
                 } else {
                     StringName::empty()
                 }
@@ -31,15 +30,6 @@ impl From<&Argument> for GenericParent {
             is_py_type: true,
             name,
             pos: Position::invisible(),
-        }
-    }
-}
-
-impl From<&Subscript> for Name {
-    fn from(sub: &Subscript) -> Self {
-        match sub {
-            Subscript::Simple(expr) => Name::from(expr),
-            _ => Name::empty(),
         }
     }
 }
