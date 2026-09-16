@@ -47,7 +47,7 @@ Windows contributors have two options:
 - **Plain Windows is best effort.**
   The transpiler is expected to work, and CI does run the test suite on `windows-latest`, so the main paths are covered.
   But you will be installing the toolchain yourself via rustup, and version alignment is then on you.
-  The more niche corners are likelier to differ or to be unsupported, particularly anything touching paths, the `python3.10` versus `python` executable name, or the Cranelift backend's `cc` linker step.
+  The more niche corners are likelier to differ or to be unsupported, particularly anything touching paths, the `python3.14` versus `python` executable name, or the Cranelift backend's `cc` linker step.
   If you hit something that looks platform-specific, say so in the issue, and prefer WSL if you can.
 
 ### 📦 Using Devbox
@@ -57,7 +57,7 @@ It gives you a shell containing exactly the tools this project needs:
 
 - the Rust toolchain (`rustc`, `cargo`, `rustfmt`, `clippy`) and `rust-analyzer`
 - `cargo-nextest`, `cargo-llvm-cov` and `cargo-sort`, which the git hooks and CI call
-- Python 3.10, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
+- Python 3.14, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
 - `nushell` and `starship`, so you get the project's shell and prompt
 - the odds and ends: `clang` (its `cc` links the `--bin` output), `llvm`, `git`, `jq`, `direnv`, an editor
 
@@ -138,14 +138,15 @@ Two pins have to be changed in pairs, because something outside Devbox also read
   Devbox covers Linux and macOS, but the Windows CI job installs the toolchain with rustup, which reads `rust-toolchain.toml`.
   Contributors not using Devbox read it too.
   If the two drift apart, `devbox shell` prints a warning on entry, and Windows silently builds with a different compiler than everyone else.
-- **`python` must match `tests_util::PYTHON`.**
-  The test suite invokes the interpreter by name, as `python3.10` on Linux.
+- **`python` must match `tests_util::PYTHON` and `check::context::python::PYTHON_VERSION`.**
+  The test suite invokes the interpreter by name, as `python3.14` on Linux.
+  `PYTHON_VERSION` is the version `ruff_python_parser` parses as, which must be the same one.
   See [Tests and coverage](#-tests-and-coverage) below.
 
 ### 🧪 Tests and coverage
 
-The test suite needs a Python 3.10 on `PATH`.
-It shells out to `python3.10` by name on Linux.
+The test suite needs a Python 3.14 on `PATH`.
+It shells out to `python3.14` by name on Linux.
 This is because generated Python is validated by compiling and running it.
 Devbox provides this.
 
