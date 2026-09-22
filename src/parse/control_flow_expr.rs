@@ -80,11 +80,13 @@ pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 fn parse_match_case(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match case")?;
     let cond = it.parse(&parse_expression_maybe_type, "match case", start)?;
+    let guard = it.parse_if(&Token::If, &parse_expression, "match case guard", start)?;
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", start)?;
 
     let node = Node::Case {
         cond,
+        guard,
         body: body.clone(),
     };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
@@ -167,6 +169,7 @@ mod test {
                         Node::Case {
                             cond: cond1,
                             body: expr1,
+                            ..
                         },
                     ..
                 },
@@ -175,6 +178,7 @@ mod test {
                         Node::Case {
                             cond: cond2,
                             body: expr2,
+                            ..
                         },
                     ..
                 },

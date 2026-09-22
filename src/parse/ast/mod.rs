@@ -290,6 +290,7 @@ pub enum Node {
     },
     Case {
         cond: Box<AST>,
+        guard: Option<Box<AST>>,
         body: Box<AST>,
     },
     For {

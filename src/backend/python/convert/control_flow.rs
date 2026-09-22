@@ -71,7 +71,7 @@ pub fn convert_cntrl_flow(
 
             let mut cases = vec![];
             for case in match_cases {
-                if let NodeTy::Case { cond, body } = &case.node {
+                if let NodeTy::Case { cond, guard, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         let body_core = convert_node(body.as_ref(), imp, state, ctx)?;
                         cases.push(PythonCore::Case {
