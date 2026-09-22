@@ -370,8 +370,11 @@ impl From<(&Node, &Finished)> for NodeTy {
                     .map(|ast| ASTTy::from((ast, finished)))
                     .collect(),
             },
-            Node::Case { cond, body } => NodeTy::Case {
+            Node::Case { cond, guard, body } => NodeTy::Case {
                 cond: Box::from(ASTTy::from((cond, finished))),
+                guard: guard
+                    .as_ref()
+                    .map(|guard| Box::from(ASTTy::from((guard.as_ref(), finished)))),
                 body: Box::from(ASTTy::from((body, finished))),
             },
             Node::For { expr, col, body } => NodeTy::For {

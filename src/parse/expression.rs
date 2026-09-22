@@ -107,6 +107,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_index(pre, it)?;
                 parse_post_expr(&res, it)
             }
+            Token::If => Ok(Box::from(pre.clone())),
             _ if is_start_expression_exclude_unary(lex) => {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)

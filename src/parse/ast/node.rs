@@ -412,8 +412,9 @@ impl Node {
                 cond: Box::from(cond.map(mapping)),
                 cases: cases.iter().map(|c| c.map(mapping)).collect(),
             },
-            Node::Case { cond, body } => Node::Case {
+            Node::Case { cond, guard, body } => Node::Case {
                 cond: Box::from(cond.map(mapping)),
+                guard: guard.as_ref().map(|guard| Box::from(guard.map(mapping))),
                 body: Box::from(body.map(mapping)),
             },
             Node::For { expr, col, body } => Node::For {
@@ -901,8 +902,25 @@ impl Node {
                     cases: rc,
                 },
             ) => lco.same_value(rco) && equal_vec(lc, rc),
-            (Node::Case { cond: lc, body: lb }, Node::Case { cond: rc, body: rb }) => {
-                lc.same_value(rc) && lb.same_value(rb)
+            (
+                Node::Case {
+                    cond: lc,
+                    guard: lg,
+                    body: lb,
+                },
+                Node::Case {
+                    cond: rc,
+                    guard: rg,
+                    body: rb,
+                },
+            ) => {
+                lc.same_value(rc)
+                    && match (lg, rg) {
+                        (Some(lg), Some(rg)) => lg.same_value(rg),
+                        (None, None) => true,
+                        _ => false,
+                    }
+                    && lb.same_value(rb)
             }
             (
                 Node::For {
@@ -1671,6 +1689,12 @@ mod test {
         });
         two_ast!(Node::Case {
             cond: cond.clone(),
+            guard: None,
+            body: body.clone()
+        });
+        two_ast!(Node::Case {
+            cond: cond.clone(),
+            guard: Some(third.clone()),
             body: body.clone()
         });
         two_ast!(Node::Range {
