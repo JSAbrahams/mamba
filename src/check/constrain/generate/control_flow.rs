@@ -26,6 +26,10 @@ pub fn gen_flow(
             let (raises, errs): (Vec<Result<_, _>>, Vec<Result<_, _>>) = cases
                 .iter()
                 .map(|c| match &c.node {
+                    // A handle case becomes a Python `except`, which has nowhere to put a guard.
+                    Node::Case {
+                        guard: Some(guard), ..
+                    } => Err(TypeErr::new(guard.pos, "Handle case cannot have a guard")),
                     Node::Case { cond, .. } => match &cond.node {
                         Node::ExpressionType { ty: Some(ty), .. } => TrueName::try_from(ty)
                             .map_err(|errs| errs.first().expect("At least one").clone()),
@@ -145,7 +149,7 @@ fn constrain_cases(
     let mut envs = vec![];
     for case in cases {
         match &case.node {
-            Node::Case { cond, body } => {
+            Node::Case { cond, guard, body } => {
                 constr.branch("match arm", case.pos);
                 check_no_rest(cond)?;
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
@@ -159,6 +163,17 @@ fn constrain_cases(
                             env,
                         );
                     }
+                }
+
+                // Generated after the pattern is tied to the subject, and in the environment the
+                // pattern produced, so the guard can read what the pattern bound.
+                if let Some(guard) = guard {
+                    let guard_env = cond_env.is_def_mode(false);
+                    constr.add_constr(
+                        &Constraint::truthy("match arm guard", &Expected::from(guard)),
+                        &guard_env,
+                    );
+                    generate(guard, &guard_env, ctx, constr)?;
                 }
 
                 let body_env = generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
