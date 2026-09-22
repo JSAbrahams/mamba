@@ -325,8 +325,9 @@ fn append_assign(
                 .map(|c| append_assign(c, assign_to, name, imp))
                 .collect(),
         },
-        PythonCore::Case { expr, body } => PythonCore::Case {
+        PythonCore::Case { expr, guard, body } => PythonCore::Case {
             expr: expr.clone(),
+            guard: guard.clone(),
             body: Box::from(append_assign(body, assign_to, name, imp)),
         },
         PythonCore::TryExcept {
@@ -384,8 +385,9 @@ fn append_ret(core: &PythonCore) -> PythonCore {
             expr: expr.clone(),
             cases: cases.iter().map(append_ret).collect(),
         },
-        PythonCore::Case { expr, body } => PythonCore::Case {
+        PythonCore::Case { expr, guard, body } => PythonCore::Case {
             expr: expr.clone(),
+            guard: guard.clone(),
             body: Box::from(append_ret(body)),
         },
         PythonCore::TryExcept {
@@ -958,7 +960,11 @@ mod tests {
         let body = to_pos!(Node::Int {
             lit: String::from("9999")
         });
-        let case = to_pos_unboxed!(Node::Case { cond, body });
+        let case = to_pos_unboxed!(Node::Case {
+            cond,
+            guard: None,
+            body
+        });
         let handle = to_pos!(Node::Handle {
             expr_or_stmt,
             cases: vec![case]
