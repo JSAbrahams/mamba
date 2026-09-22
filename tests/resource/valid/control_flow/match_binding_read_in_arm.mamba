@@ -1,0 +1,8 @@
+# A pattern binder can be read in its own arm, and takes the subject's type.
+# It can here shadow the outer 'n', which is what this is really about: without the
+# outer 'def n', the same arm checks fine.
+def n := 1
+
+match 10 where
+    n => print(n)
+end

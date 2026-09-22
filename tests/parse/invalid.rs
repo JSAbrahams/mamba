@@ -26,6 +26,11 @@ use mamba::parse::result::ParseResult;
 #[test_case("slice_notation_removed"=> matches Err(_))]
 #[test_case("unrecognized_character"=> matches Err(_))]
 #[test_case("pure_new_without_arguments"=> matches Err(_))]
+#[test_case("match_guard_without_expression"=> matches Err(_))]
+#[test_case("match_without_where"=> matches Err(_))]
+#[test_case("match_without_end"=> matches Err(_))]
+#[test_case("match_case_without_arrow"=> matches Err(_))]
+#[test_case("match_no_arms"=> ignore matches Err(_) ; "a match needs at least one arm, and zero arms generates Python that does not compile")]
 fn syntax(file_name: &str) -> ParseResult<()> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(false, &["syntax"], &file_name).unwrap();

@@ -1,6 +1,11 @@
-# some syntax here such as guard arms which are not in the language yet
-def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
+# Int, where the README and docs/features/functions/total_functions.md both write Nat.
+# Nat is a refinement of Int and is future work, and typing `m - 1` as Nat needs interval
+# refinement on top of it. See docs/features/safety/types.md#interval-refinement
+# def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
+def ackermann(m: Int, n: Int) -> Int := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
     (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
 end
+
+print(ackermann(2, 3)) # prints '9'

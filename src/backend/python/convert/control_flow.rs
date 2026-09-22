@@ -71,16 +71,21 @@ pub fn convert_cntrl_flow(
 
             let mut cases = vec![];
             for case in match_cases {
-                if let NodeTy::Case { cond, body } = &case.node {
+                if let NodeTy::Case { cond, guard, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         let body_core = convert_node(body.as_ref(), imp, state, ctx)?;
+                        let pattern_state =
+                            state.is_last_must_be_ret(false).must_assign_to(None, None);
+                        let guard = guard
+                            .as_ref()
+                            .map(|guard| {
+                                convert_node(guard.as_ref(), imp, &pattern_state, ctx)
+                                    .map(Box::from)
+                            })
+                            .transpose()?;
                         cases.push(PythonCore::Case {
-                            expr: Box::from(convert_node(
-                                expr.as_ref(),
-                                imp,
-                                &state.is_last_must_be_ret(false).must_assign_to(None, None),
-                                ctx,
-                            )?),
+                            expr: Box::from(convert_node(expr.as_ref(), imp, &pattern_state, ctx)?),
+                            guard,
                             body: Box::from(scope_guarded(body.as_ref(), body_core)),
                         })
                     }

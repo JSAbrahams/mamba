@@ -8,7 +8,7 @@
 
 _Note_ Static typing and type inference, covered first, are implemented.
 Type aliases and type refinement, covered from "Type Aliases and Type Refinement" onwards, are future work.
-That includes the `type ... when ...` notation, the `isa` operator, and `as` casts.
+That includes the `type ... when ...` notation, the `is_instance` function, and `as` casts.
 
 Often a distinction is made between static and dynamic typing.
 
@@ -45,7 +45,7 @@ Instead, we can use type inference.
 The type of every variable is inferred from the context in which it is used.
 
     def x := 10                 # x has type Int, we know this because 10 is an Int
-    def c := Complex(10, 20)    # c has type Complex
+    def c := Complex.new(10, 20)    # c has type Complex
     def y := 20.1               # 20.1 uses decimal notation, so we know y is a Float
 
     def z: Float := 10.5        # In some situations however, you still might want to explicitly mention the type
@@ -84,7 +84,7 @@ To use such a function, we must explicitly cast a `Composer`:
 
     def chopin := Composer("Chopin")
 
-    if chopin isa DeadComposer then do
+    if is_instance(chopin, DeadComposer) then do
         def years_ago := my_function(chopin)                    # chopin is dynamically casted to a DeadComposer
         print("{chopin.name} died {years_ago} years ago.")
     end
@@ -224,17 +224,22 @@ During casting, the defined conditions are checked, and the respective error is 
     def y: EvenNum := random_int()
     def third := g(y)
 
-    # We can also use isa to check that the conditions hold without raising an error
+    # We can also use is_instance to check that the conditions hold without raising an error
     def a := random_int()
     # notice how we don't have to cast a to an EvenNum if the condition holds.
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
-    def fourth := if a isa EvenNum then g(a) else 0
+    def fourth := if is_instance(a, EvenNum) then g(a) else 0
 
     # If it can be statically verified that the properties hold, it is not necessary to handle any type specific errors
     def c := 2
     def fifth := g(c)
 
     # first, second, third, fourth, and fifth all have type Int
+
+Note that `a` is an `Int`, and nothing casts it, yet `g(a)` is accepted.
+That branch only runs when `is_instance(a, EvenNum)` held, so `a` is an `EvenNum` there and an `Int` everywhere else.
+Narrowing a type from what was declared to what a particular branch guarantees is called flow narrowing.
+See [Flow narrowing](#flow-narrowing) for more details.
 
 We can also use it as a sort of post-condition of the function.
 We ensure that the function returns an `EvenNum`:
@@ -258,8 +263,8 @@ We can even ensure that the function never returns an error:
     def h(x: EvenNum) -> EvenNum := do
         print("this number is even: {x}")
         def y := x + some_other_function(x)
-        if y isa EvenNum then
-            y # type sensitive flow ensure that this is an EvenNum
+        if is_instance(y, EvenNum) then
+            y # flow narrowing ensures that this is an EvenNum
         else x
     end
 
@@ -285,3 +290,96 @@ That matters wherever `Nat` is used as a measure, since `0.abs()` and `"".len()`
 `Nat` is closed under addition but not under subtraction.
 Subtracting a larger `Nat` leaves the domain, so an operation that may do so returns `Nat?`.
 See [Total Functions](../functions/total_functions.md#partial-subtraction-in-strictlydecreases) for the case that motivates it.
+
+### Flow narrowing
+Flow narrowing is what the checker knows at one particular point, given the tests that guard it.
+A test that a value satisfies a refinement narrows that value in the branch where the test holds.
+In the branch where it fails, it narrows to the complement, where that complement can be written down.
+
+This is also why `is_instance` is a function the compiler knows about rather than an ordinary call.
+An ordinary call returns a `Bool` and tells the checker nothing about its argument.
+
+So far every example has narrowed on an `if`.
+Facts reach a point from three places.
+The first is the branches of an `if`.
+The second is the guard on a `match` arm, which holds for that arm's body.
+The third is the negated guards of every earlier arm, which hold for every later one, because a later arm is only reached when all the earlier ones failed.
+
+That third source is the one that does the most work:
+
+    def classify(x: Str?) -> Str := match x where
+        n if n = None => "nothing"
+        n             => n.upper()   # n is Str here, since the arm above did not match
+    end
+
+Flow narrowing is deliberately limited.
+It narrows membership of a union or of a refinement.
+It does not reason about arithmetic.
+Knowing `m != 0` tells it nothing about `m - 1`, because that is a fact about a derived value rather than about `m` itself.
+Closing that gap is what the next section is for.
+
+All of this is erased at compile time.
+Narrowing changes what the checker accepts, never what the generated Python does.
+
+### Interval refinement
+
+`Nat` is `Int` refined by `self >= 0`.
+Flow narrowing alone cannot type Ackermann's function, which is the case [Total Functions](../functions/total_functions.md) is built around:
+
+    def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
+        (m, n) if m = 0 => n + 1
+        (m, n) if n = 0 => ackermann(m - 1, 1)
+        (m, n)          => ackermann(m - 1, ackermann(m, n - 1))
+    end
+
+Read flow-insensitively, `m - 1` has type `Nat?`, since subtraction can leave the domain.
+That forces the whole signature down to `Int`.
+Read with the guards in hand, it cannot: the second arm is only reached when `m = 0` failed.
+
+Interval refinement is the smallest addition that closes this.
+Every integer carries a known range at each point in the program, and `Nat` is the range `Int[0..]`.
+Ranges narrow on comparisons, and join back together where branches merge.
+
+For the three arms above:
+
+| arm | known on entry | obligation | discharged by |
+|---|---|---|---|
+| `if m = 0` | `m, n` in `[0..]` | `n + 1` is `Nat` | `[0..] + 1` is `[1..]`, inside `[0..]` |
+| `if n = 0` | `m` in `[1..]` | `m - 1` is `Nat` | `[1..] - 1` is `[0..]` |
+| catch-all | `m, n` in `[1..]` | `m - 1`, `n - 1` are `Nat` | same, for each |
+
+One detail decides whether this works at all.
+Negating `m = 0` gives a disequality, and a range cannot represent "everything except zero".
+It narrows here only because `Int` is discrete, so `m >= 0` together with `m != 0` gives `m >= 1`.
+A disequality against a range endpoint has to be handled for that step, or Ackermann silently fails to narrow and the feature does nothing for the one example that motivates it.
+
+Ranges are not relational.
+A range records what is known about one value against constants.
+It cannot record how two values relate, so this does not typecheck even though it holds:
+
+    def difference(a: Nat, b: Nat) -> Nat := if a >= b then a - b else 0
+
+`a >= b` is a fact about a pair.
+Recovering it needs either a relational domain, which tracks bounds on `a - b` directly, or a solver.
+That is a larger step, and it is the one that also covers `StrictlyDecreases.subtract`, whose guard has exactly this shape.
+
+Whichever is chosen, the arithmetic stays restricted to `Add`, `Sub`, `Eq` and `Comparable`.
+That is the same Presburger fragment [Total Functions](../functions/total_functions.md#measurable-and-custom-types) already requires of `Measurable`, and for the same reason.
+Multiplication between two non-constant values leaves it and is the hard boundary in both cases.
+
+This stays a narrowing rather than an inference, in keeping with the rest of the language.
+A signature is still written out in full.
+The checker either discharges the obligation or reports the one it could not, naming the facts it had:
+
+    Cannot prove 'm - 1' is Nat
+      m is in [1..] here, from Nat and from 'm = 0' failing on the arm above
+
+Both sections above are future work.
+
+**Further reading:**
+
+- P. Cousot, R. Cousot, *Abstract Interpretation: A Unified Lattice Model for Static Analysis of Programs by Construction or Approximation of Fixpoints*, POPL 1977.
+- A. Miné, *The Octagon Abstract Domain*, Higher-Order and Symbolic Computation 19, 2006.
+- P. Rondon, M. Kawaguchi, R. Jhala, *Liquid Types*, PLDI 2008.
+- N. Vazou, E. Seidel, R. Jhala, D. Vytiniotis, S. Peyton Jones, *Refinement Types for Haskell*, ICFP 2014.
+- S. Tobin-Hochstadt, M. Felleisen, *Logical Types for Untyped Languages*, ICFP 2010.

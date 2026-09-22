@@ -308,6 +308,7 @@ pub enum NodeTy {
     },
     Case {
         cond: Box<ASTTy>,
+        guard: Option<Box<ASTTy>>,
         body: Box<ASTTy>,
     },
     For {

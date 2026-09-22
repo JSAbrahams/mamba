@@ -342,3 +342,93 @@ They are now `prompt` and `NoneType`, the names CPython itself uses, and `python
 `__debug__: bool = True` parses, so `ruff_python_parser` accepts it, but CPython rejects it at compile time with `SyntaxError: cannot assign to __debug__`.
 The file exists to give context building one typed and one untyped module-level assignment to parse, which it still does.
 Worth replacing `__debug__` with a name that is assignable if these files ever get run through `py_compile` as a test of their own.
+
+## Match arm guards are in; patterns still do not bind
+
+`match` arm guards (`n if n < 0 => ...`) parse, check and generate.
+A guard is generated after the arm's pattern is tied to the subject, and in the environment the pattern produced, so it can read what the pattern bound.
+It is constrained to `Bool` via `Constraint::truthy`.
+A handle case is rejected if it carries one, since a handle becomes a Python `except` with nowhere to put it.
+
+What is not in yet is pattern *binding*.
+A tuple pattern still binds nothing, which is what `control_flow/match_tuple_pattern` is ignored for.
+
+`readme_example/ackermann` passes despite that, and it is worth knowing why, because it is not evidence that binding works.
+Its guards read `m` and `n`, which are also the names of the function's own parameters, and the subject is the tuple `(m, n)`.
+So the guard resolves those names to the parameters rather than to the pattern, and the values are the same either way.
+Generated Python is correct regardless, because there the capture pattern rebinds both names before the guard runs.
+`match_tuple_pattern` uses `x` and `y`, which exist nowhere else, and fails with `Undefined variable: x`.
+
+### Exhaustiveness is decided but not implemented
+
+Every `match` must be exhaustive, as an expression and as a statement alike.
+The four `invalid` fixtures for it are registered with `ignore matches Err(_)` until the check lands.
+See [Match Expressions](../docs/features/control_flow/control_flow_expression.md#every-match-must-be-exhaustive).
+
+Two `valid` fixtures are non-exhaustive today and will have to gain a default arm when the check is turned on:
+
+- `control_flow/match_stmt`, in both its outer `match` and the `"a"`/`"c"` one nested inside it.
+- `error/nested_exception`, whose `match x` covers `0`, `1` and `2` only.
+
+Both have a reference `.py` that has to be regenerated once their arms change.
+
+## Four bugs the new pattern-matching fixtures found
+
+These came out of writing fixtures against the intended semantics rather than against the checker, and each has a fixture registered `ignore`d with the matching reason.
+
+**A match assigned without an annotation leaves the variable untyped.**
+`def a := match 10 where 0 => 1 ; _ => 2 end` is accepted, but every later use of `a` then fails.
+`print(a)` gives `In print, we expect @1, was @1.__str__(@1)`, and `a + 1` gives the same shape on `__add__`, so this is not about `__str__`.
+`def a: Int := match ...` is accepted and works, and so is `def a := if True then 1 else 2` followed by `print(a)`, so `if` does not have this problem.
+Fixtures: `match_wildcard_only`, `match_single_irrefutable_arm`, `match_subject_is_call`, `match_arm_body_block`.
+
+**A capture binding that shadows an outer name cannot be read in its arm.**
+`match 10 where n => print(n) end` checks fine on its own.
+Put `def n := 1` above it and the same arm fails with `Cannot infer type within print`.
+Renaming the outer variable to anything else makes it check again, so the trigger is the shadowing, not the read.
+Fixture: `match_binding_read_in_arm`.
+
+**A capture binding leaks out of its arm and clobbers the shadowed outer variable.**
+`case n:` in Python binds in the enclosing scope, and nothing scope-guards it.
+An `if` branch that shadows the same way emits `__mamba_n_existed`/`__mamba_n_saved` around the body and restores the outer value.
+A `match` arm emits no such guard, because the binding comes from the pattern rather than from a `def` in the body, which is all `scope_guarded` looks at.
+`match_dont_remove_shadowed` is named for exactly this and cannot catch it: its outer `n` is `10` and its subject is `10`, so the leaked value equals the original.
+Fixture: `match_shadow_restores_outer`, whose outer `n` is `1` against a subject of `10`, so the leak is visible.
+
+**A top-level function named `size` is renamed but its call sites are not.**
+`def pure size(x: Int) -> Str := ...` emits `def __size__(...)` while `size(500)` stays as written, so the output dies with `NameError: name 'size' is not defined`.
+`src/backend/python/convert/definition.rs` maps `"size"` to `"__size__"` for every function definition, not just for a method on a class.
+Not a pattern-matching bug, and it has no fixture yet.
+Found because a fixture here happened to name a function `size`; it is now `magnitude`.
+
+### Two checker gaps that reach Python as a syntax or name error
+
+Both are accepted today and produce output that CPython rejects, so they fail loudly rather than silently, but they should be caught at check time.
+
+- `match_wildcard_binds_nothing`: `_ => _` is accepted, and `_` in the body becomes a Python `NameError`.
+- `match_case_type_annotation`: `n: Int => 1` has its annotation dropped, leaving a bare capture that makes every later arm unreachable, which CPython rejects with `SyntaxError: name capture 'n' makes remaining patterns unreachable`. A type annotation on a match case is undefined by decision, so this should be rejected outright.
+
+### `different_type_shadow` is a copy of `undefined_var_in_match_arm`
+
+`tests/resource/invalid/type/control_flow/different_type_shadow.mamba` and `undefined_var_in_match_arm.mamba` are byte-identical.
+Both are `match 10 where n => print(x) end`, which fails because `x` is undefined.
+Neither one tests shadowing with a different type, which is what the first name claims.
+
+## `--run-ignored all` reports an ignored *valid* fixture as PASS even when it is broken
+
+The mirror of the `invalid` trap above, and worth knowing before trusting a green run.
+
+`#[test_case("control_flow", "x" => ignore["reason"])]` expands to a test named `..._expects_inconclusiveempty`.
+There is no expected value, so the returned `OutTestRet` is discarded rather than asserted on.
+Running it with `--run-ignored all` therefore passes whatever the fixture does, including returning `Err`.
+
+Every ignored `valid` fixture in this file was confirmed to fail by transpiling it directly, not by un-ignoring it:
+
+```sh
+cargo build
+./target/debug/mamba -i tests/resource/valid/control_flow/<name>.mamba -o /tmp/out -a
+```
+
+An active registration has no `=>` clause at all, as in `#[test_case("control_flow", "match_first_arm_wins")]`.
+That form does assert, since a returned `Err` fails the test.
+So un-ignoring means deleting the whole `=> ignore[...]`, and the check that it really works is that it still passes in an ordinary run.

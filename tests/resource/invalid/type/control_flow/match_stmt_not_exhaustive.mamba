@@ -1,0 +1,4 @@
+# a match must be exhaustive even as a statement, where its value is discarded
+match 10 where
+    0 => print("zero")
+end

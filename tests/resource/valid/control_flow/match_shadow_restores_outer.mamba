@@ -1,0 +1,9 @@
+# A pattern binder shadows an outer variable only for its arm.
+# After the match, the outer variable holds what it did before.
+def n := 1
+
+match 10 where
+    n => print("in arm")
+end
+
+print(n)
