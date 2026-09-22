@@ -47,43 +47,25 @@ This README:
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-The quickest way to get a complete environment is [Devbox](https://www.jetify.com/devbox).
+The quickest way to get a complete environment is to use [Devbox](https://www.jetify.com/devbox).
 It sets up all the tooling for you.
-That means the pinned Rust toolchain, the Python the test suite needs, and the cargo helpers the git hooks call.
-It also gives you nushell and starship.
 Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`.
-So every contributor gets byte-identical versions.
-CI runs this same environment, so what passes locally is what passes in CI.
+The CI also runs this same environment, so what passes locally is what passes in CI.
 
 **We recommend developing on a Unix-like system, meaning Linux or macOS.**
-That is what gives you Nix, and therefore Devbox, and therefore that alignment.
+That is what gives you Nix, and therefore allows use of Devbox.
 On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install) and follow the Linux instructions inside it.
 Developing on plain Windows is supported on a best-effort basis: the test suite does run there in CI, but you install the toolchain yourself, and the more niche corners are likelier to differ.
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the details.
 
 Devbox is a thin layer over the [Nix](https://nixos.org/) package manager.
-This means **Nix needs to be installed first**.
-Devbox will offer to install it for you on first run.
-Installing it yourself up front is the smoother path:
+This means **Nix needs to be installed first**:
 
 ```sh
 # 1. Install Nix, in case you do not have it
 sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon
-```
-
-Note that no experimental features need enabling, unlike the Nix flake this replaces.
-Devbox does not use flakes.
-
-```sh
 # 2. Install Devbox
 curl -fsSL https://get.jetify.com/devbox | bash
-```
-
-The installer places a single `devbox` binary in `/usr/local/bin`.
-It therefore asks for `sudo`.
-Run it as your normal user, not as root.
-
-```sh
 # 3. Start the environment, with nushell and starship set up already
 devbox shell
 ```
@@ -92,15 +74,6 @@ The first `devbox shell` takes a while, as it downloads every pinned package.
 Afterwards it is near-instant.
 Entering the shell also points `git` at the project's hooks (`.githooks`).
 You therefore get the pre-commit checks automatically.
-
-To run a one-off command without entering the shell, use `devbox run`:
-
-```sh
-devbox run build          # cargo build
-devbox run test           # cargo test --package mamba
-devbox run lint           # cargo fmt --check, clippy, cargo sort --check
-devbox run precommit      # everything the pre-commit hook runs
-```
 
 A more minimal setup, to just get started:
 
@@ -167,23 +140,6 @@ print(factorial(5)) # prints '120'
 In Mamba, sets, lists, and maps are first class citizens.
 They are baked into the language, including its grammar.
 
-Lists make use of square brackets:
-
-```mamba
-# lists
-def a := [0, 2, 51]
-def b := ["list", "of", "strings"]
-def empty_list := []
-# lists, builder syntax
-def a_positive := [x | x in a, x > 0]
-# lists of tuples, builder syntax binding more than one variable, not resolved yet
-# def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
-
-# Indexing is done using round brackets!
-print(a(0)) # prints '0'
-print(b(1)) # prints 'of'
-```
-
 Sets and mappings, which are unordered, make use of curly brackets:
 
 ```mamba
@@ -205,10 +161,26 @@ print(e("ree")) # prints '2'
 
 _Note_ Builder syntax currently only resolves a single bound variable, optionally filtered, as above.
 Binding more than one, as in `[(x, y) | x in a, x > 0, y in b]`, is future work.
-The value a builder produces cannot be indexed or printed yet either, since its type stays unresolved.
 
 _Note_ `{}` is always parsed as an empty set.
-There is no empty mapping literal yet.
+
+Lists, however, make use of square brackets.
+However, indexing is still done using `(` and `)`:
+
+```mamba
+# lists
+def a := [0, 2, 51]
+def b := ["list", "of", "strings"]
+def empty_list := []
+# lists, builder syntax
+def a_positive := [x | x in a, x > 0]
+# lists of tuples, builder syntax binding more than one variable, not resolved yet
+# def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+
+# Indexing is done using round brackets!
+print(a(0)) # prints '0'
+print(b(1)) # prints 'of'
+```
 
 In a way, a list is a type of mapping where the keys are the indexes of each item.
 So:
@@ -224,9 +196,8 @@ def numbers := { 0 => 32, 1 => 504, 2 => 59 }
 ```
 
 Where we iterate over the list in the order of the keys.
-
 Unlike C-style languages (which are nearly the whole world at this point), we index collections using `collection(<expression>)`.
-We namely don't distinguish between a mapping and a function, because a function is (generally speaking) also a type of mapping.
+We don't distinguish between a mapping and a function call, because a function is (generally speaking) also a type of mapping.
 The above mapping, for instance, is a representation of some function with a very small domain (only three items).
 Therefore, we index indexable collections (mappings and lists) using the `collection(<expression>)` notation.
 
@@ -247,22 +218,14 @@ print(a) # prints '12'
 A binding is immutable unless we mark it `mut`, as in Rust.
 This holds everywhere a name is bound, so it covers variables, function arguments, the `self` argument of a method, and class fields.
 A tuple is one binding per element, so it takes one marker per element, as in `def (mut a, b) := (10, 20)`.
-The reason is domain.
-Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
-Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.
 
 ### 📋 Types, Properties, and Classes
 
-Next, we introduce the concept of a class.
 A class is essentially a blueprint for the behaviour of an instance.
-
 In Mamba, like Python and Rust, a function in a class may take an explicit `self` argument, which gives access to the state of this instance.
 Such a function is called a method.
 
 A method is an ordinary function whose first argument is the instance, named `self` by convention.
-`p.move(1, 2)` and `move(p, 1, 2)` differ in spelling, not in kind, and the second is what the first means.
-A function in a class body that takes no `self` simply a function that needs no instance, and is called on the class.
-
 Because `self` is just an argument, it obeys the argument rules.
 We say whether a method may modify the instance by marking that argument, exactly as we would any other.
 Write `self` and it is immutable, write `mut self` and it is not.
@@ -309,11 +272,6 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
 end
 ```
 
-None of these methods can be `pure`, which is worth dwelling on.
-`scale` and `reset` mutate the matrix, so the four fields must be `mut`.
-A pure function may not read a `mut` field, so no method reading `a` to `d` qualifies.
-See [Pure functions](#-pure-functions--041) below.
-
 Notice how `self` is not mutable in `trace`, meaning we can only read variables, whereas in `scale`, `self` is mutable, so we can change properties of `self`.
 _In general_, the notation of a class is:
 
@@ -321,7 +279,8 @@ _In general_, the notation of a class is:
 
 The body of the class is optional, i.e. one can create "just" a data class.
 Class arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`).
-There is no `def` prefix.
+Note that in some situations you want to maybe pass an argument to a constructor of a class which should not become a field.
+We elaborate a bit more on this when we elaborate on constructing a class instance.
 
 As for the class body:
 
@@ -331,14 +290,11 @@ As for the class body:
   Put that work in an explicit `new` instead, where the signature shows it.
 - It is denoted using a code set: Using `where` and `end`.
   This is because the concept of order is not defined in a class body.
-- In future, we may generalize the code-set notation to mean a set of statements which may be executed in arbitrary order, and thus **also in parallel**.
-  Therefore baking parallel computations into the semantics of the language, as opposed to a library.
-  However, this idea is still in its infancy.
 
-#### Constructing a class
+#### Constructing a class instance
 
-Mamba has no constructor to define or override.
-A class is constructed through `new`, which every class gets for free, taking exactly its class arguments:
+A class is constructed through a function call.
+This function is called `new` by convention (only), which every class gets for free, taking exactly its class arguments:
 
 ```mamba
 class Point(x: Int, y: Int)
@@ -346,11 +302,9 @@ class Point(x: Int, y: Int)
 def p := Point.new(3, 4)
 ```
 
-Applying the class to its arguments, as `Point(3, 4)`, is the underlying primitive, and it is only in scope **within `Point` itself**.
-Outside, it does not resolve.
-That is deliberate.
-If it were public, `new` would be advisory: a caller could sidestep it, and two spellings of the same thing would coexist forever.
-Because it is not, declaring your own `new` is the only way in, and it can therefore enforce something:
+The `new` function does exist, but we don't require writing it out in full as a feature of convenience.
+If you want to have a new with custom behaviour, you can explicitly define it.
+This then of course overwrites the existing `new`.
 
 ```mamba
 class Fraction(num: Int, den: Int) where
@@ -359,11 +313,10 @@ class Fraction(num: Int, den: Int) where
 end
 ```
 
-A declared `new` replaces the generated one.
 `Self` names the enclosing class, and works in a method and in an associated function alike.
-
 A function in a class body that takes no `self` is an **associated function**, called on the class rather than on an instance.
-That is what makes `new` ordinary rather than special, and it means named alternatives sit beside it as equals:
+You can also have multiple associate functions all of which function as constructors.
+Again, those coming from Rust will likely be familiar with the concept: 
 
 ```mamba
 class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
@@ -373,9 +326,6 @@ end
 
 def m := Matrix2x2.identity()
 ```
-
-Those who have worked with structured languages such as Rust will find this very familiar.
-Constructors are not a feature of the language but enforced by convention.
 
 #### Derived fields
 
@@ -395,15 +345,12 @@ print(c.area())          # prints '12.56636'
 ```
 
 A derived field must be assigned a value, unless its type is nullable.
-Without one it would silently hold `None` whatever its type claims.
-If you meant to pass it, make it a class argument instead.
-
 We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
-class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def mut x: Int := self.ORIGIN_X
-    def mut y: Int := self.ORIGIN_Y
+class Point2D(x_0: Int, y_0: Int) where
+    def mut x: Int := self.x_0
+    def mut y: Int := self.y_0
 
     def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx
@@ -412,12 +359,12 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
 
     # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
     def reset(mut self) := do
-        self.x := self.ORIGIN_X
-        self.y := self.ORIGIN_Y
+        self.x := self.x_0
+        self.y := self.y_0
     end
 
     def info(self) -> Str :=
-        "Currently at ({self.x}, {self.y}), originally from ({self.ORIGIN_X}, {self.ORIGIN_Y})"
+        "Currently at ({self.x}, {self.y}), originally from ({self.x_0}, {self.y_0})"
 end
 ```
 
@@ -452,9 +399,6 @@ end
 Prefer using an adjective (e.g. `Iterable`, `Hashable`, `Comparable`) when defining a trait, as this describes something a class and its instances can do.
 The syntax here is `trait <id> where <one-or-more-definitions> end` and we use it as `def <trait> for <class>`.
 
-_Note_ Implementing a trait externally, with `def <trait> for <class> where ... end` as in the `RangeIter` example above, is future work.
-For now a class states the traits it implements in its own declaration (`class Person(name: Str): Named where ... end`) and defines their methods in its own body.
-
 Lastly, like Rust, types (traits) can also be used as generics.
 This would allow, for instance, for defining a `Hash` trait and enforcing for a hashmap that keys implement said trait.
 We can also compose traits, which means that when we define the composite trait for a class we have to implement all definitions at once.
@@ -465,9 +409,6 @@ E.g.
 ```mamba
 trait Ordered[T]: Equality, Comparable
 ```
-
-_Note_ A trait may currently name at most one parent trait (`trait Ordered[T]: Equality`); composing several, as above, is future work.
-A _class_, on the other hand, can already list several parents (`class MyClass: MyType, MyType2 where ... end`).
 
 ### 🔒 Pure functions (🇻 0.4.1+)
 
@@ -615,7 +556,9 @@ Not every function that obviously halts can be marked `total`.
 **Ackermann's function** is the classic example:
 
 ```mamba
-# some syntax here such as guard arms which are not in the language yet
+# Nat is future work: typing `m - 1` as Nat needs interval refinement, which uses the failed
+# guard of the arm above to know that m is at least 1.
+# See docs/features/safety/types.md#interval-refinement
 def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)

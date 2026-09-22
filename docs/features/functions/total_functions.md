@@ -11,7 +11,9 @@
 Ackermann's function halts for every input but cannot be marked `total` in Mamba:
 
 ```mamba
-# some syntax here such as guard arms which are not in the language yet
+# Nat is future work: typing `m - 1` as Nat needs interval refinement, which uses the failed
+# guard of the arm above to know that m is at least 1.
+# See [Interval refinement](../safety/types.md#interval-refinement)
 def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)
