@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn it_stmt_as_expression() {
-        let src = "def a := if True then 10 else 20";
+        let src = "let a := if True then 10 else 20";
         let ast = src.parse::<AST>().unwrap();
         let result = check_all(&[ast]).unwrap();
 
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn it_stmt_as_expression_int_and_str() {
-        let src = "def a := if True then 10 else \"asdf\"";
+        let src = "let a := if True then 10 else \"asdf\"";
         let ast = src.parse::<AST>().unwrap();
         let result = check_all(&[ast]).unwrap();
 

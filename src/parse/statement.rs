@@ -2,7 +2,7 @@ use crate::parse::ast::node_op::NodeOp;
 use crate::parse::ast::{Node, AST};
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
-use crate::parse::definition::parse_definition;
+use crate::parse::definition::{parse_fun_def, parse_variable_def};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
@@ -14,6 +14,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
         Token::Pass,
         Token::Raise,
         Token::Def,
+        Token::Let,
         Token::Using,
         Token::For,
         Token::While,
@@ -34,7 +35,8 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                 };
                 Ok(Box::from(AST::new(lex.pos.union(error.pos), node)))
             }
-            Token::Def => parse_definition(it),
+            Token::Def => parse_fun_def(it),
+            Token::Let => parse_variable_def(it),
             Token::Using => parse_using(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
@@ -174,6 +176,7 @@ pub fn is_start_statement(tp: &Token) -> bool {
     matches!(
         tp,
         Token::Def
+            | Token::Let
             | Token::Mut
             | Token::For
             | Token::While

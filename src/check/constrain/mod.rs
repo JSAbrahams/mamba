@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn it_stmt_as_expression() {
-        let src = "def a := if True then 10 else 20";
+        let src = "let a := if True then 10 else 20";
         let ast = src.parse().unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap())
             .unwrap()
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn it_stmt_as_expression_none() {
-        let src = "def a := if True then 10 else None";
+        let src = "let a := if True then 10 else None";
         let ast = src.parse::<AST>().unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap())
             .unwrap()

@@ -43,7 +43,7 @@ We can define a type `PositiveInt`, which has as a property that, if `x` is a `P
 Then, if `f` has as domain all positive integers, we can say that argument `x` must be a `PositiveInt`, and we can be sure that in the body of said function `x` will always be positive.
 
 Mamba however does also use type inference so applications don't become overly verbose.
-So we can write `def x := 10` as opposed to writing `def x: Int := 10` (which is also correct).
+So we can write `let x := 10` as opposed to writing `let x: Int := 10` (which is also correct).
 Here it is obvious that `x` is an integer, so it is not required to state it explicitly.
 
 ### Null Safety

@@ -38,17 +38,17 @@ In some programming languages, we have to explicitly state the type of each vari
 This however makes the application rather verbose.
 Take for instance:
 
-    def x: Int := 10                     # x is obviously an integer
-    def c: Complex := Complex(10, 20)    # from the right hand side it is already clear that c is complex
+    let x: Int := 10                     # x is obviously an integer
+    let c: Complex := Complex(10, 20)    # from the right hand side it is already clear that c is complex
 
 Instead, we can use type inference.
 The type of every variable is inferred from the context in which it is used.
 
-    def x := 10                 # x has type Int, we know this because 10 is an Int
-    def c := Complex(10, 20)    # c has type Complex
-    def y := 20.1               # 20.1 uses decimal notation, so we know y is a Float
+    let x := 10                 # x has type Int, we know this because 10 is an Int
+    let c := Complex(10, 20)    # c has type Complex
+    let y := 20.1               # 20.1 uses decimal notation, so we know y is a Float
 
-    def z: Float := 10.5        # In some situations however, you still might want to explicitly mention the type
+    let z: Float := 10.5        # In some situations however, you still might want to explicitly mention the type
 
 The program is still statically typed, but now we don't require the developer to write everything out in full.
 
@@ -82,10 +82,10 @@ We now rewrite my_function so it only works for `DeadComposer`s:
 Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function.
 To use such a function, we must explicitly cast a `Composer`:
 
-    def chopin := Composer("Chopin")
+    let chopin := Composer("Chopin")
 
     if chopin isa DeadComposer then do
-        def years_ago := my_function(chopin)                    # chopin is dynamically casted to a DeadComposer
+        let years_ago := my_function(chopin)                    # chopin is dynamically casted to a DeadComposer
         print("{chopin.name} died {years_ago} years ago.")
     end
 
@@ -210,29 +210,29 @@ We can cast any variable that is an `Int` to `EvenNum`.
 During casting, the defined conditions are checked, and the respective error is thrown if a condition does not hold:
 
     # We can cast x to an EvenNum, which might give an error
-    def x := random_int() # here x is an Int
-    def y := x as EvenNum
-    def first := g(y)
+    let x := random_int() # here x is an Int
+    let y := x as EvenNum
+    let first := g(y)
 
     # We can also pass it immediately if we want, in which case it is casted to EvenNum
-    def z := random_int()
-    def second := g(z)
+    let z := random_int()
+    let second := g(z)
     # which is the same as
-    def second_with_cast := g(z as EvenNum)
+    let second_with_cast := g(z as EvenNum)
 
     # Or just say that the variable is an EvenNum upon instantiation
-    def y: EvenNum := random_int()
-    def third := g(y)
+    let y: EvenNum := random_int()
+    let third := g(y)
 
     # We can also use isa to check that the conditions hold without raising an error
-    def a := random_int()
+    let a := random_int()
     # notice how we don't have to cast a to an EvenNum if the condition holds.
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
-    def fourth := if a isa EvenNum then g(a) else 0
+    let fourth := if a isa EvenNum then g(a) else 0
 
     # If it can be statically verified that the properties hold, it is not necessary to handle any type specific errors
-    def c := 2
-    def fifth := g(c)
+    let c := 2
+    let fifth := g(c)
 
     # first, second, third, fourth, and fifth all have type Int
 
@@ -241,7 +241,7 @@ We ensure that the function returns an `EvenNum`:
 
     def g(x: EvenNum) -> EvenNum ! Err := do
         print("this number is even: {x}")
-        def y := x + some_other_function(x)
+        let y := x + some_other_function(x)
         y as EvenNum
     end
 
@@ -249,7 +249,7 @@ Or:
 
     def g(x: EvenNum) -> EvenNum ! Err := do
         print("this number is even: {x}")
-        def y: EvenNum := x + some_other_function(x)
+        let y: EvenNum := x + some_other_function(x)
         y
     end
 
@@ -257,7 +257,7 @@ We can even ensure that the function never returns an error:
 
     def h(x: EvenNum) -> EvenNum := do
         print("this number is even: {x}")
-        def y := x + some_other_function(x)
+        let y := x + some_other_function(x)
         if y isa EvenNum then
             y # type sensitive flow ensure that this is an EvenNum
         else x
@@ -265,12 +265,12 @@ We can even ensure that the function never returns an error:
 
 So now:
 
-    def x := 10  # here x is an Int
-    def a := g(x as EvenNum)
+    let x := 10  # here x is an Int
+    let a := g(x as EvenNum)
 
-    def b := g(a) # we don't have to cast a to an EvenNum, it is already of that type
+    let b := g(a) # we don't have to cast a to an EvenNum, it is already of that type
 
-    def c := h(x)  # function h never raises an error
+    let c := h(x)  # function h never raises an error
 
 ### `Nat`
 

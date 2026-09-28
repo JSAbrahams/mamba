@@ -50,6 +50,7 @@ pub enum Token {
     DivAssign,
     PowAssign,
     Def,
+    Let,
 
     Real(String),
     Int(String),
@@ -175,6 +176,7 @@ impl fmt::Display for Token {
             Token::PowAssign => write!(f, "^="),
             Token::DivAssign => write!(f, "/="),
             Token::Def => write!(f, "def"),
+            Token::Let => write!(f, "let"),
 
             Token::Id(id) => write!(f, "{id}"),
             Token::Real(real) => write!(f, "{real}"),

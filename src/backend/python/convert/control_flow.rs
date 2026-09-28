@@ -33,7 +33,7 @@ pub fn convert_cntrl_flow(
 
                         // A ternary's arms are expressions, not statements -- `is_valid_in_ternary`
                         // already rules out anything (a `Block`, in particular) that could contain
-                        // a `def`, so there's nothing here that needs scope-guarding.
+                        // a `let`, so there's nothing here that needs scope-guarding.
                         PythonCore::Ternary {
                             cond,
                             then: Box::from(convert_node(then, imp, &state, ctx)?),
@@ -97,7 +97,7 @@ pub fn convert_cntrl_flow(
             // Unlike an `if`/`case` branch, `body` runs every iteration -- the guard has to
             // wrap the *whole loop* (set up once before it, torn down once after), not `body`
             // itself, or a second iteration would "save" the value the first iteration's own
-            // shadowing def already left behind, not the real outer one.
+            // shadowing `let` already left behind, not the real outer one.
             wrap_scoped(&direct_def_names(body), while_core)
         }
         NodeTy::For { expr, col, body } => {
@@ -128,8 +128,8 @@ pub fn convert_cntrl_flow(
     })
 }
 
-/// Wrap `core` (the already-converted form of `body`) so any `def` directly inside `body` (not
-/// nested deeper -- a `def` inside a further-nested block is that block's own responsibility,
+/// Wrap `core` (the already-converted form of `body`) so any `let` directly inside `body` (not
+/// nested deeper -- a `let` inside a further-nested block is that block's own responsibility,
 /// handled when *it* is converted) doesn't leak or overwrite an outer variable of the same name
 /// once this block exits. `body` runs at most once here (an `if`/`case` branch), so the guard can
 /// wrap `core` itself directly -- contrast [`wrap_scoped`], used where the body is a loop.
@@ -137,7 +137,7 @@ pub(super) fn scope_guarded(body: &ASTTy, core: PythonCore) -> PythonCore {
     wrap_scoped(&direct_def_names(body), core)
 }
 
-/// The names `body` directly `def`s at its own top level -- i.e. not inside a further-nested
+/// The names `body` directly binds with `let` at its own top level -- i.e. not inside a further-nested
 /// block. `body` is either a single statement or a `NodeTy::Block` of statements, matching how
 /// Mamba represents a block/branch body.
 fn direct_def_names(body: &ASTTy) -> Vec<String> {
@@ -163,10 +163,10 @@ fn direct_def_names(body: &ASTTy) -> Vec<String> {
 /// pair per name in `names` -- so each of those names' bindings, as `core` leaves them, never
 /// escape to whatever called this. A no-op (`core` unchanged) when `names` is empty.
 ///
-/// This is the whole mechanism behind Mamba having real block scoping for `def`, unlike Python
+/// This is the whole mechanism behind Mamba having real block scoping for `let`, unlike Python
 /// (which this backend must still *behave* like Python for everything else -- e.g. reassigning
 /// an outer variable with `:=`, which isn't a new binding, is untouched by this and keeps working
-/// exactly as before; only fresh bindings introduced by `def` are undone here).
+/// exactly as before; only fresh bindings introduced by `let` are undone here).
 ///
 /// Whether a name was already bound has to be decided at runtime (via `locals()`), since nothing
 /// has kept scope information around by the time code generation runs:

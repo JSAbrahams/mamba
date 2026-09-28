@@ -28,7 +28,7 @@ Because this is explicit, we know this at compile time.
 If we try to call a function or access a definition of the result directly we get a type error:
 
     # type error! called `is_digit` on an object which might be None
-    def digit := my_function(names, "hello").is_digit()
+    let digit := my_function(names, "hello").is_digit()
 
 _Note_ Calling a method only if the value is not `None`, with the safe-call operator `?.`, is future work.
 
@@ -38,12 +38,12 @@ In some situations, we want to have a default value.
 In such situations, we use the `?` operator.
 Note that both sides of the operator must be of the same type.
 
-    def maybe_world: Str? := my_function(names, "world")
-    def world := maybe_world ? "world"
+    let maybe_world: Str? := my_function(names, "world")
+    let world := maybe_world ? "world"
 
     # here, world is of type Str
 
-    def other := my_function(names, "other")
+    let other := my_function(names, "other")
 
     # here, other is of type Str?, as we do not know whether it is a Str or None
 

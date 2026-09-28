@@ -14,17 +14,17 @@ Below we have an example script:
 
     from graph import Graph
 
-    def first := 1
-    def last  := 5
+    let first := 1
+    let last  := 5
 
-    def nodes := { x | x in first ..= last }
-    def graph := Graph(nodes)
+    let nodes := { x | x in first ..= last }
+    let graph := Graph(nodes)
 
     graph.connect(first, 4, 20)
     graph.connect(4, 3, 40)
     graph.connect(3, last, 60)
 
-    def distance := graph.calculate_distance(first, last)
+    let distance := graph.calculate_distance(first, last)
 
     print("distance travelled from {first} to {last} is {distance}.")
 

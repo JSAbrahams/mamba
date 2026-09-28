@@ -37,8 +37,8 @@ def g(x: Int): Int := if x > 2 then x + 2 else x - 2
 # f may return undefined
 def f(x: Int): Int? := if x > 2 then x * 7 else undefined
 
-def x <- f(2)?.is_even() # is_even is called, and we get true
-def y <- f(3)?.is_even() # f(3) is undefined, so is_even() is never called and y is now also undefined
+let x <- f(2)?.is_even() # is_even is called, and we get true
+let y <- f(3)?.is_even() # f(3) is undefined, so is_even() is never called and y is now also undefined
 
 # note that both x and y have type Bool?, meaning that they may both be undefined.
 ```

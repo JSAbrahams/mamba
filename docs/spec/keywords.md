@@ -33,7 +33,8 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`def`     | Denote definition
+`let`     | Define a value
+`def`     | Define a function or method
 `mut`     | Denote binding is mutable
 `pure`    | Denote function is pure
 

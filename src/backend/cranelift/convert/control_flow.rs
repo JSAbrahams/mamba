@@ -9,11 +9,11 @@ use crate::check::ast::{ASTTy, NodeTy};
 
 impl<'a> FnLower<'a> {
     /// Lower `ast` as a statement within its own scope: any variable binding it introduces --
-    /// most directly a `def` that shadows an outer variable, but also a for-loop's own control
+    /// most directly a `let` that shadows an outer variable, but also a for-loop's own control
     /// variable (`lower_for` relies on this for that) -- is undone once `ast` is done, so it
     /// never persists past the block it belongs to.
     ///
-    /// This is the whole mechanism behind Mamba having real block scoping for `def`, unlike
+    /// This is the whole mechanism behind Mamba having real block scoping for `let`, unlike
     /// Python (which this backend must still *behave* like Python for everything else -- e.g.
     /// reassigning an outer variable with `:=`, which isn't a new binding, still works exactly as
     /// expected; only fresh bindings are undone here, since a `:=` never touches `self.vars`, only

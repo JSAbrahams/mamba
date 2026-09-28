@@ -186,8 +186,8 @@ looking for `where` (`parse_expr_or_stmt` in `expr_or_stmt.rs`).
 
 ### Class arguments
 
-Class constructor arguments are always fields, stored on `self` — no `def` prefix (`class X(a: Int)`, not
-`class X(def a: Int)`; `parse_class` in `src/parse/class.rs` rejects the latter). Inside the class body they
+Class constructor arguments are always fields, stored on `self` — no `let` prefix (`class X(a: Int)`, not
+`class X(let a: Int)`; `parse_class` in `src/parse/class.rs` rejects the latter). Inside the class body they
 must be accessed via `self.a`, never bare `a` — `self` is bound (typed as the class) while checking a class
 body (`gen_class` in `src/check/constrain/generate/class.rs`), the same way a method's own `self` argument is.
 
@@ -202,6 +202,15 @@ declared later in the body, which would still be `None` at that point otherwise.
 in `src/check/context/clss/generic.rs` (context building, runs before any of this) must likewise treat a bare
 statement as "not part of the signature" rather than rejecting it.
 
+## Definitions: `let` for values, `def` for functions
+
+`let` binds a value, and `def` defines a function or method.
+The parser dispatches on the keyword alone, in `parse_statement` in `src/parse/statement.rs`.
+`let` goes to `parse_variable_def` and `def` to `parse_fun_def`, both in `src/parse/definition.rs`.
+So `def` always takes an argument list and never `mut`, and `let` never takes `pure`.
+A class field is a value, so it is `let`, and a lambda bound to a name is too, as in `let f := \x := x + 1`.
+External trait implementation, `def <Trait> for <Class> where ... end`, is future work and keeps `def`.
+
 ## Mutability: `mut`, and the absence of `fin`
 
 Every binding is immutable unless marked `mut`.
@@ -211,16 +220,16 @@ If you see `fin` anywhere, it is stale and should be fixed.
 `mut` is parsed by `parse_expression_type` in `src/parse/ty.rs`, and by `parse_expression_maybe_type` in `src/parse/control_flow_expr.rs` for match cases.
 Both are a single `it.eat_if(&Token::Mut).is_some()`.
 Because every binding site funnels through those, one marker covers variables, function arguments, class constructor arguments and `self`.
-So it is `def mut a := 10`, `def f(mut a: Int)`, `class X(mut a: Int)` and `def f(mut self)`.
+So it is `let mut a := 10`, `def f(mut a: Int)`, `class X(mut a: Int)` and `def f(mut self)`.
 
-A tuple takes one marker per element, as `def (mut a, mut b) := (1, 2)`.
-Marking the tuple itself, as `def mut (a, b)`, is a parse error.
+A tuple takes one marker per element, as `let (mut a, mut b) := (1, 2)`.
+Marking the tuple itself, as `let mut (a, b)`, is a parse error.
 The reason is that `mut` belongs to a binding, and a tuple introduces one binding per element.
 `parse_binding_id` and `parse_binding_element` in `src/parse/ty.rs` parse the elements.
 Two places must then leave those per-element flags alone.
 They are `Identifier::try_from` in `src/check/ident.rs`, and `id_from_var` in `src/check/constrain/generate/definition.rs`.
 Both previously forced every element to the definition's own flag via `as_mutable`.
-Destructuring a list or set, as `def [a, b]`, does not parse at all.
+Destructuring a list or set, as `let [a, b]`, does not parse at all.
 
 What is actually enforced is narrower than what is written down.
 Reassigning a binding that is not `mut` is an error, and so is reassigning through a receiver that is not `mut`.

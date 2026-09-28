@@ -29,7 +29,7 @@ Note that each method takes an explicit `self` argument, and that `self` means t
 Now any class that implements `Vector` must have these definitions.
 
     class Vector2(mut x: Float, mut y: Float): Vector where
-        def mut last_factor: Float? := None
+        let mut last_factor: Float? := None
 
         def norm(self) -> Float := (self.x * self.x + self.y * self.y) ^ 0.5
 
@@ -44,7 +44,7 @@ Now any class that implements `Vector` must have these definitions.
         end
 
         def normalise(mut self) -> Bool ! VectorErr := do
-            def length := self.norm()
+            let length := self.norm()
             if length = 0.0 then ! VectorErr("Cannot normalise the zero vector.")
             self.scale(1.0 / length)
         end

@@ -49,15 +49,15 @@ print(simulate_bb2(20))
 ```mamba
 # list/map index assignment isn't implemented yet
 def simulate_bb2(max_steps: Int) -> Int := do
-    def mut tape := {}
-    def mut head := 0
-    def mut state := 0
-    def mut steps := 0
+    let mut tape := {}
+    let mut head := 0
+    let mut state := 0
+    let mut steps := 0
     for i in 0 .. max_steps do
         if state != 2 then do
-            def symbol := if head in tape then tape(head) else 0
-            def move := if state = 0 then (if symbol = 0 then 1 else -1) else (if symbol = 0 then -1 else 1)
-            def next_state := if state = 0 then 1 else (if symbol = 0 then 0 else 2)
+            let symbol := if head in tape then tape(head) else 0
+            let move := if state = 0 then (if symbol = 0 then 1 else -1) else (if symbol = 0 then -1 else 1)
+            let next_state := if state = 0 then 1 else (if symbol = 0 then 0 else 2)
             tape(head) := 1
             head := head + move
             state := next_state

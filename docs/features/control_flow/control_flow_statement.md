@@ -44,7 +44,7 @@ If we also want to print 10, we use the inclusive `..=` range operator:
 
 We can also iterate over a set.
 
-    def my_set := { "first", "second", "third", "last" }
+    let my_set := { "first", "second", "third", "last" }
     for item in my_set do print(item) end
 
 A `for` can never be used as an expression, as it does not evaluate to anything.

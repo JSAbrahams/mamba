@@ -234,7 +234,7 @@ impl<'a> FnLower<'a> {
                 let ty = cranelift_type(expr)?;
                 let value = self.lower_expr(expr)?;
                 // `ty` (from the checker) and `value`'s own Cranelift type can disagree for an
-                // Int-shaped literal initializing a declared-`Float` variable (e.g. `def x:
+                // Int-shaped literal initializing a declared-`Float` variable (e.g. `let x:
                 // Float := 2`) -- `lower_expr` always builds an Int-shaped literal as `Int`
                 // (see its own doc comment), so convert here if the declared type says
                 // otherwise.

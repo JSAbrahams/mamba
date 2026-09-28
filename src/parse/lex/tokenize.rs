@@ -239,6 +239,7 @@ fn as_op_or_id(string: String) -> Token {
         "forward" => Token::Forward,
 
         "def" => Token::Def,
+        "let" => Token::Let,
         "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
@@ -297,14 +298,14 @@ mod test {
 
     #[test]
     fn class_with_body_class_right_after() -> Result<(), Box<LexErr>> {
-        let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
+        let source = "class MyClass\n    let var := 10\nclass MyClass1\n";
         let tokens =
             tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Class);
         assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
         assert_eq!(tokens[2].token, Token::NL);
-        assert_eq!(tokens[3].token, Token::Def);
+        assert_eq!(tokens[3].token, Token::Let);
         assert_eq!(tokens[4].token, Token::Id(String::from("var")));
         assert_eq!(tokens[5].token, Token::Assign);
         assert_eq!(tokens[6].token, Token::Int(String::from("10")));

@@ -41,9 +41,9 @@ We can do the following:
 
         # Solves this matrix against the vector (u, v) by Cramer's rule.
         def solve(self: InvertibleMatrix2x2, u: Float, v: Float) -> List[Float] ! MatrixErr := do
-            def det := self.determinant()
-            def x := u * self.d - self.b * v
-            def y := self.a * v - u * self.c
+            let det := self.determinant()
+            let x := u * self.d - self.b * v
+            let y := self.a * v - u * self.c
             [x / det, y / det]
         end
 

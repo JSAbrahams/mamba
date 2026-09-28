@@ -15,7 +15,7 @@ class Point(x: Int, y: Int)
 ```
 
 `x` and `y` are fields, stored on `self` and readable as `p.x` from outside.
-There is no `def` prefix and no separate constructor to write.
+There is no `let` prefix and no separate constructor to write.
 
 This is the only way a value enters an object from outside.
 Mamba has no `__init__`, and declaring one is an error.
@@ -25,7 +25,7 @@ Mamba has no `__init__`, and declaring one is an error.
 Every class gets a `new` taking exactly its class arguments:
 
 ```mamba
-def p := Point.new(3, 4)
+let p := Point.new(3, 4)
 ```
 
 Applying the class to its arguments, as `Point(3, 4)`, is the underlying primitive.
@@ -62,7 +62,7 @@ class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
     def diagonal(a: Float, d: Float) -> Self := return Matrix2x2(a, 0.0, 0.0, d)
 end
 
-def m := Matrix2x2.identity()
+let m := Matrix2x2.identity()
 ```
 
 `Self` names the enclosing class as a type.
@@ -75,12 +75,12 @@ It is computed from the class arguments rather than passed:
 
 ```mamba
 class Circle(radius: Float) where
-    def diameter: Float := self.radius * 2.0
+    let diameter: Float := self.radius * 2.0
 
     def area(self) -> Float := self.radius * self.radius * 3.14159
 end
 
-def c := Circle.new(2.0)
+let c := Circle.new(2.0)
 ```
 
 This exists so that you need not name every field at the construction site.
@@ -140,7 +140,7 @@ end
 ```
 
 The list is not optional, so `def pure new` on its own is an error.
-Without it the assertion is written in exactly the grammar a field uses, since `def <name>` with no parentheses is how a field is declared.
+A `def` always defines a function, and a function always has an argument list.
 It would then not merely resemble a field, it would be one, while the thing it describes is a function.
 
 The assertion is checked against the derived field initializers, since those are the only thing construction runs.
@@ -157,7 +157,7 @@ Methods are untouched:
 ```mamba
 class Counter(start: Int) where
     def pure new(..)
-    def mut count: Int := self.start
+    let mut count: Int := self.start
 
     def tick(mut self) := do
         self.count := self.count + 1

@@ -255,7 +255,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         } => {
             let expr_core = convert_node(expr, imp, state, ctx)?;
             // The `as alias` binding is a fresh name too (like a for-loop's own control
-            // variable), not just whatever `expr` itself directly `def`s -- guard it the same
+            // variable), not just whatever `expr` itself directly binds with `let` -- guard it the same
             // way.
             let expr_core = match &alias.node {
                 NodeTy::Id { lit } => wrap_scoped(std::slice::from_ref(lit), expr_core),
@@ -813,7 +813,7 @@ mod tests {
             }
         );
         // `alias` (`other`) is a fresh binding for the `with` block's own scope, so `expr` is
-        // wrapped the same way a shadowing `def` would be -- see `scope_guarded`/`wrap_scoped`.
+        // wrapped the same way a shadowing `let` would be -- see `scope_guarded`/`wrap_scoped`.
         let PythonCore::Block { statements } = *expr else {
             panic!("Expected a scope-guarded with-as expr, was {expr:?}");
         };

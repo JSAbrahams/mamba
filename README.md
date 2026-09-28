@@ -128,9 +128,9 @@ def pure factorial(x: Int) -> Int := match x where
     n => n * factorial(n - 1)
 end
 
-def num := 5
+let num := 5
 if num >= 0 then do
-    def result := factorial(num)
+    let result := factorial(num)
     print("Factorial {num} is: {result}.")
 end else
     print("Factorial is undefined for negative integers.")
@@ -143,6 +143,8 @@ This means that the compiler will check for us that factorial is only used with 
 See [docs/features/safety/types.md](docs/features/safety/types.md#unbounded-integers).
 Also note that:
 
+- A value is bound with `let` and a function is defined with `def`, so the first word of a definition says which it is.
+  See [docs/features/data/defining_variables.md](docs/features/data/defining_variables.md#why-let-and-def) for why.
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
 - For a match expression or statement we denote cases starting with `where` and ending with `end`, as this is a _set_ of cases which we match on.
   You can read `match x where ... end`, where we read this as "match `x` on this set of conditions in `where ... end`".
@@ -153,7 +155,7 @@ _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic
 def pure factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
-        def mut ans := 1
+        let mut ans := 1
         for i in 1 ..= n do ans := ans * i end
         ans
     end
@@ -171,13 +173,13 @@ Lists make use of square brackets:
 
 ```mamba
 # lists
-def a := [0, 2, 51]
-def b := ["list", "of", "strings"]
-def empty_list := []
+let a := [0, 2, 51]
+let b := ["list", "of", "strings"]
+let empty_list := []
 # lists, builder syntax
-def a_positive := [x | x in a, x > 0]
+let a_positive := [x | x in a, x > 0]
 # lists of tuples, builder syntax binding more than one variable, not resolved yet
-# def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+# let ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
 # Indexing is done using round brackets!
 print(a(0)) # prints '0'
@@ -188,16 +190,16 @@ Sets and mappings, which are unordered, make use of curly brackets:
 
 ```mamba
 # sets
-def c := { 10, 20 }
-def d := { 3 }
+let c := { 10, 20 }
+let d := { 3 }
 # sets, builder syntax
-def c_squared := { x * x | x in c }
-def empty_set := {}
+let c_squared := { x * x | x in c }
+let empty_set := {}
 
 # maps
-def e := { "do" => 1, "ree" => 2, "meee" => 3 }
+let e := { "do" => 1, "ree" => 2, "meee" => 3 }
 # maps, builder syntax binding more than one variable, not resolved yet
-# def ef := { x => y - 2 | x in e, y = x.len() }
+# let ef := { x => y - 2 | x in e, y = x.len() }
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(e("ree")) # prints '2'
@@ -214,13 +216,13 @@ In a way, a list is a type of mapping where the keys are the indexes of each ite
 So:
 
 ```mamba
-def numbers := [32, 504, 59]
+let numbers := [32, 504, 59]
 ```
 
 Is essentially just shorthand for
 
 ```mamba
-def numbers := { 0 => 32, 1 => 504, 2 => 59 }
+let numbers := { 0 => 32, 1 => 504, 2 => 59 }
 ```
 
 Where we iterate over the list in the order of the keys.
@@ -235,8 +237,8 @@ Therefore, we index indexable collections (mappings and lists) using the `collec
 Mutability gives us the power to modify an instance in the language after it is created:
 
 ```mamba
-def mut a := 10 # we may modify a
-def b := 20     # we may not modify b
+let mut a := 10 # we may modify a
+let b := 20     # we may not modify b
 
 a := a + 2   # allowed
 # b := b + 2 # compilation error
@@ -246,7 +248,7 @@ print(a) # prints '12'
 
 A binding is immutable unless we mark it `mut`, as in Rust.
 This holds everywhere a name is bound, so it covers variables, function arguments, the `self` argument of a method, and class fields.
-A tuple is one binding per element, so it takes one marker per element, as in `def (mut a, b) := (10, 20)`.
+A tuple is one binding per element, so it takes one marker per element, as in `let (mut a, b) := (10, 20)`.
 The reason is domain.
 Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
 Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.
@@ -285,10 +287,10 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     # Solves this matrix against the vector (u, v) by Cramer's rule.
     # A singular matrix has no unique solution, so this may fail.
     def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
-        def det := self.determinant()
+        let det := self.determinant()
         if det = 0.0 then ! MatrixErr("Determinant is zero.")
-        def x := u * self.d - self.b * v
-        def y := self.a * v - u * self.c
+        let x := u * self.d - self.b * v
+        let y := self.a * v - u * self.c
         [x / det, y / det]
     end
 
@@ -321,7 +323,7 @@ _In general_, the notation of a class is:
 
 The body of the class is optional, i.e. one can create "just" a data class.
 Class arguments are always fields, stored on `self` (e.g. `self.a`, accessible externally as `matrix.a`).
-There is no `def` prefix.
+There is no `let` prefix.
 
 As for the class body:
 
@@ -343,7 +345,7 @@ A class is constructed through `new`, which every class gets for free, taking ex
 ```mamba
 class Point(x: Int, y: Int)
 
-def p := Point.new(3, 4)
+let p := Point.new(3, 4)
 ```
 
 Applying the class to its arguments, as `Point(3, 4)`, is the underlying primitive, and it is only in scope **within `Point` itself**.
@@ -371,7 +373,7 @@ class Matrix2x2(a: Float, b: Float, c: Float, d: Float) where
     def pure identity() -> Self := return Matrix2x2(1.0, 0.0, 0.0, 1.0)
 end
 
-def m := Matrix2x2.identity()
+let m := Matrix2x2.identity()
 ```
 
 Those who have worked with structured languages such as Rust will find this very familiar.
@@ -384,12 +386,12 @@ This exists so you need not list every field at the construction site:
 
 ```mamba
 class Circle(radius: Float) where
-    def diameter: Float := self.radius * 2.0
+    let diameter: Float := self.radius * 2.0
 
     def area(self) -> Float := self.radius * self.radius * 3.14159
 end
 
-def c := Circle.new(2.0) # diameter is computed, never passed
+let c := Circle.new(2.0) # diameter is computed, never passed
 print(c.diameter)        # prints '4.0'
 print(c.area())          # prints '12.56636'
 ```
@@ -402,8 +404,8 @@ We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
-    def mut x: Int := self.ORIGIN_X
-    def mut y: Int := self.ORIGIN_Y
+    let mut x: Int := self.ORIGIN_X
+    let mut y: Int := self.ORIGIN_Y
 
     def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx
@@ -435,14 +437,14 @@ trait Iterator[T] where
 end
 
 class RangeIter(_start: Int, _end: Int) where
-    def mut _current: Int := _start
+    let mut _current: Int := _start
 end
 
 def Iterator[Int] for RangeIter where
     def has_next(self) -> Bool := self._current < self._end
 
     def next(mut self) -> Int? := if self.has_next() then do
-        def value := self._current
+        let value := self._current
         self._current := self._current + 1
         value
     end else None
@@ -517,14 +519,14 @@ The generated `new` already has them; this only asserts a property of it.
 
 The list still has to say how many arguments there are, so there are three spellings: `new()` for a class with none, `new(_)` for a class with exactly one, and `new(..)` for one or more.
 Read `_` as one thing and `..` as one or more, which is what they will mean in a match case such as `(2, ..)` when implemented.
-Everywhere else they are an error, as is the bare `def pure new`, which would otherwise be written in the grammar a field uses.
+Everywhere else they are an error, as is the bare `def pure new`, since `def` always takes an argument list.
 
 The assertion is then checked against the derived field initializers, which are the only thing construction runs:
 
 ```mamba
 class Seeded(n: Int) where
     def pure new(..)
-    def seed: Int := random()   # rejected, random is not pure
+    let seed: Int := random()   # rejected, random is not pure
 end
 ```
 
@@ -536,7 +538,7 @@ Note that `def pure new(..)` constrains construction only, never the methods:
 ```mamba
 class Counter(start: Int) where
     def pure new(..)
-    def mut count: Int := self.start
+    let mut count: Int := self.start
 
     # perfectly fine, purity was never claimed for methods
     def tick(mut self) := do
@@ -553,7 +555,7 @@ Immutable bindings and pure functions together make a program declarative, with 
 
 ```mamba
 # taylor is immutable, its value does not change during execution
-def taylor := 7
+let taylor := 7
 
 # factorial must itself be pure, since sin calls it
 def pure factorial(x: Int) -> Int := match x where
@@ -563,7 +565,7 @@ end
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Float) -> Float := do
-    def mut ans := x
+    let mut ans := x
     for i in 1 ..= taylor do
         ans := ans + (x ^ (i + 2)) / factorial(i + 2)
     end
@@ -775,7 +777,7 @@ Meta functions exist primarily as the logical bedrock for provable `total` funct
 A secondary benefit is performance: a meta computation runs once, at compile time, rather than being recomputed at every call.
 
 - A meta function is defined as `def meta my_function(<args>) := ...`.
-- A meta variable is defined `def meta my_var: MyType := ...`, with type annotations being non-optional.
+- A meta variable is defined `let meta my_var: MyType := ...`, with type annotations being non-optional.
 - A meta trait is defined as `meta trait MyTrait ...`.
   Within a meta trait, all definitions are also meta.
 
@@ -793,9 +795,9 @@ The `solve` method above raises a `MatrixErr` when the matrix is singular.
 We handle that error on-site:
 
 ```mamba
-def m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
+let m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
 
-def solution := m.solve(5.0, 6.0) ! where
+let solution := m.solve(5.0, 6.0) ! where
     err: MatrixErr => do
         print("Could not solve system: \"{err.message}\"")
         [0.0, 0.0] # optionally we can also return, but here we assign default value
@@ -833,7 +835,7 @@ def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
 
 ```mamba
 def with_error_handling() := do
-    def a: Int := function_may_throw_err() ! where
+    let a: Int := function_may_throw_err() ! where
         err: MyErr => do
             print("We have a problem: {err.message}.")
             return  # we return, halting execution
@@ -853,7 +855,7 @@ with_error_handling()
 We can also opt to not do any error handling, making the type of `a`:
 
 ```mamba
-def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
+let a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
 ```
 
 By extension, if we don't handle all cases, then the union becomes smaller.
@@ -864,7 +866,7 @@ So if we don't want to handle any of the exception cases at a given point, we ju
 The exception(s) must be handled further up the stack.
 
 ```mamba
-def a := function_may_throw_err() !
+let a := function_may_throw_err() !
 # if `function_may_throw_err` returned an exception, we will never reach this point
 print("a has value {a}.")
 ```
@@ -872,7 +874,7 @@ print("a has value {a}.")
 This also gives an alternative way to write the above example, where we only care about a subset of the exceptions here.
 
 ```mamba
-def a: Result[Int, MyErr] := function_may_throw_err() ! where
+let a: Result[Int, MyErr] := function_may_throw_err() ! where
     err: MyOtherErr => do
         print("We have another problem: {err.message}.")
         0  # ... or we assign default value 0 to a

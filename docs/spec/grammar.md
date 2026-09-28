@@ -94,8 +94,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     # a binding is immutable unless marked "mut", which id-maybe-type carries for
     # arguments and "self" as well as for variables
-    # destructuring a list or set, as in `def [a, b]`, is future work and does not parse
-    variable-def     ::= "def" id-maybe-type [ ":=" expression ]
+    # destructuring a list or set, as in `let [a, b]`, is future work and does not parse
+    variable-def     ::= "let" id-maybe-type [ ":=" expression ]
+    # "def" always defines a function, so it always takes an argument list and never "mut"
     # type checker should check for valid combination of meta, total, pure
     # the "meta" and "total" modifiers are future work; only "pure" is implemented
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
