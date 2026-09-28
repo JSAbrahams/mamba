@@ -1,11 +1,11 @@
-def a := 10
-def b := 4.6
-def c := 4.2E2
-def illegal := e * def other
+let a := 10
+let b := 4.6
+let c := 4.2E2
+let illegal := e * let other
 
-def d := 0
+let d := 0
 while e < f, b do do
-    def g := h * i
+    let g := h * i
     j := k mod 2 + "300"
 end
 

@@ -1,5 +1,5 @@
 class C where
-    def mut x: Int := 1
+    let mut x: Int := 1
 end
 
 # x is mut, so it can differ between two calls with the same argument

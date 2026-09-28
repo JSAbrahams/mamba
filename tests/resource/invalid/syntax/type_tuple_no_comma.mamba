@@ -1,1 +1,1 @@
-def a: (Int Str) := (1, "b")
+let a: (Int Str) := (1, "b")

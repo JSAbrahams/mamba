@@ -1,13 +1,13 @@
 class Deps2(x: Int) where
-    def gt: Bool := self.x > self.later
-    def leq: Bool := self.x <= self.later
-    def sq: Float := self.later / 2
-    def tup: (Int, Int) := (self.x, self.later)
-    def st: Set[Int] := { self.x, self.later }
-    def dc: Dict[Int, Int] := { self.x => self.later }
-    def ifv: Int := if self.gt then self.x else self.later
-    def later: Int := self.x * 2
+    let gt: Bool := self.x > self.later
+    let leq: Bool := self.x <= self.later
+    let sq: Float := self.later / 2
+    let tup: (Int, Int) := (self.x, self.later)
+    let st: Set[Int] := { self.x, self.later }
+    let dc: Dict[Int, Int] := { self.x => self.later }
+    let ifv: Int := if self.gt then self.x else self.later
+    let later: Int := self.x * 2
 end
 
-def d := Deps2.new(3)
+let d := Deps2.new(3)
 print(d.gt)

@@ -1,4 +1,4 @@
-def n := 10
+let n := 10
 
 match 10 where
     n =>

@@ -1,5 +1,5 @@
-def x := 20
-def a: Int := if x > 10 then
+let x := 20
+let a: Int := if x > 10 then
     if x > 30 then
         do
             print("string")

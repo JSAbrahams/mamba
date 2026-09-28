@@ -1,5 +1,5 @@
-def a := 10
-def b := 4
+let a := 10
+let b := 4
 if a < b then print(1) else print(0)
 if a <= b then print(1) else print(0)
 if a > b then print(1) else print(0)

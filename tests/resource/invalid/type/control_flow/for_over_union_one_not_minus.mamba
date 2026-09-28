@@ -1,4 +1,4 @@
-def x: {Range, String} := "MyString"
+let x: {Range, String} := "MyString"
 
 for i in x do
     print(i - 1)

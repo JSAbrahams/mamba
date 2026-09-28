@@ -2,6 +2,6 @@
 class Base(code: Int, offset: Int)
 class Derived(): Base(404, 1 + 1)
 
-def d := Derived.new()
+let d := Derived.new()
 print(d.code)
 print(d.offset)

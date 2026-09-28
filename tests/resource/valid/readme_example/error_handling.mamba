@@ -13,10 +13,10 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     # Solves this matrix against the vector (u, v) by Cramer's rule.
     # A singular matrix has no unique solution, so this may fail.
     def solve(self, u: Float, v: Float) -> List[Float] ! MatrixErr := do
-        def det := self.determinant()
+        let det := self.determinant()
         if det = 0.0 then ! MatrixErr("Determinant is zero.")
-        def x := u * self.d - self.b * v
-        def y := self.a * v - u * self.c
+        let x := u * self.d - self.b * v
+        let y := self.a * v - u * self.c
         [x / det, y / det]
     end
 
@@ -36,9 +36,9 @@ class Matrix2x2(mut a: Float, mut b: Float, mut c: Float, mut d: Float) where
     end
 end
 
-def m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
+let m := Matrix2x2.new(1.0, 2.0, 3.0, 4.0)
 
-def solution := m.solve(5.0, 6.0) ! where
+let solution := m.solve(5.0, 6.0) ! where
     # binding the error's constructor arguments, as `err: MatrixErr(message)`, is future work
     err: MatrixErr => do
         print("Could not solve system: \"{err.message}\"")

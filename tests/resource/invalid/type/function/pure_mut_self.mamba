@@ -1,5 +1,5 @@
 class C where
-    def mut x: Int := 1
+    let mut x: Int := 1
 
     # self is just another argument, so mutating it would change the result for the
     # same inputs

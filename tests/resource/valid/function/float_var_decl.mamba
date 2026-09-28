@@ -1,2 +1,2 @@
-def x: Float := 2
+let x: Float := 2
 print(x = 2.0)

@@ -3,4 +3,4 @@ class MyClass[A: UnknownType] where
 end
 
 # should error because suddenly we are using an ill-typed class.
-def my_class := MyClass[10]()
+let my_class := MyClass[10]()

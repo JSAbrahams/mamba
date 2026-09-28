@@ -3,7 +3,7 @@ class MyErr2(msg: String): Exception(msg)
 
 def f(x: Int) -> Int ! { MyErr1, MyErr2 } := x
 
-def a := f(10) ! where
+let a := f(10) ! where
     MyErr1 => do
         print("Something went wrong")
         -1

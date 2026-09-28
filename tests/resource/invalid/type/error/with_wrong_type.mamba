@@ -1,4 +1,4 @@
-def my_string := "my string"
+let my_string := "my string"
 
 using my_string as my_int: Int do
     print("error")

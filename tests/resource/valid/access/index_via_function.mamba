@@ -4,5 +4,5 @@ def j() -> Range := 0 ..= 2
 
 def f() -> Int := 1
 
-def x := [1, 2, 3]
+let x := [1, 2, 3]
 x[f()]

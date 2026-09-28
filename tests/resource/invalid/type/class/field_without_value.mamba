@@ -1,4 +1,4 @@
 class C where
     # derived from nothing, so it would silently hold None whatever its type says
-    def z: Int
+    let z: Int
 end

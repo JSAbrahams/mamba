@@ -3,7 +3,7 @@
 class Counter(start: Int) where
     def pure new(..)
 
-    def mut count: Int := self.start
+    let mut count: Int := self.start
 
     def tick(mut self) := do
         self.count := self.count + 1
@@ -11,5 +11,5 @@ class Counter(start: Int) where
     end
 end
 
-def mut c := Counter.new(1)
+let mut c := Counter.new(1)
 c.tick()

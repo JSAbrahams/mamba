@@ -2,8 +2,8 @@ class InnerClass[A] where
     def inner(a: A) -> A := a
 end
 class OuterClass[B] where
-    def inner_class: InnerClass[B]
+    let inner_class: InnerClass[B]
 end
 
-def outer_class := OuterClass()
+let outer_class := OuterClass()
 print(outer_class.inner_class.inner("hello world"))

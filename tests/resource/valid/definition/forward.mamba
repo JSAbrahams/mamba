@@ -1,1 +1,1 @@
-def x := 5 forward y, z
+let x := 5 forward y, z

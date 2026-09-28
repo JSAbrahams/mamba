@@ -1,5 +1,5 @@
-def i := 100
-def mut total := 0
+let i := 100
+let mut total := 0
 for i in 0 ..= 3 do total := total + i end
 print(total)
 print(i)

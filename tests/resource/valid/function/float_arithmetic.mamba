@@ -1,6 +1,6 @@
 def compute(a: Float, b: Float) -> Float := do
-    def diff := a - b
-    def quot := a / b
+    let diff := a - b
+    let quot := a / b
     return diff * quot
 end
 

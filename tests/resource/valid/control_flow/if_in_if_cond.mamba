@@ -1,6 +1,6 @@
-def a := True
-def b := True
-def c := False
+let a := True
+let b := True
+let c := False
 
-def d := if a then b else c
-def e := if d then b else c
+let d := if a then b else c
+let e := if d then b else c

@@ -1,6 +1,6 @@
 def f() -> Int ! Exception := 10
 
-def x:= if True then
+let x:= if True then
     f() ! where
         err: Exception => 3
     end

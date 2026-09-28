@@ -4,5 +4,5 @@ class Point(x: Int, y: Int) where
     def new(..)
 end
 
-def p := Point.new(1, 2)
+let p := Point.new(1, 2)
 print(p.x)

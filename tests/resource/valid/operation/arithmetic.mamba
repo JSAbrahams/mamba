@@ -1,14 +1,14 @@
-def a := 10
-def b := 20
+let a := 10
+let b := 20
 
-def c := a + b
-def d := 10 - c
-def f := 2.4 * d
-def h := f / a
-def j := 100 // 10
-def l := 100 mod 2
-def m := l ^ 100
-def o := 6E4
+let c := a + b
+let d := 10 - c
+let f := 2.4 * d
+let h := f / a
+let j := 100 // 10
+let l := 100 mod 2
+let m := l ^ 100
+let o := 6E4
 
-def x := +10
-def y := -30
+let x := +10
+let y := -30

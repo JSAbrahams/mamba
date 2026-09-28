@@ -1,2 +1,2 @@
-def (mut a, b): (Int, Int) := (10, 20)
+let (mut a, b): (Int, Int) := (10, 20)
 b := 30

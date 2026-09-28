@@ -2,7 +2,7 @@ class MyErr(message: Str): Exception
 
 def function_may_throw_err() -> Int ! MyErr := 10
 
-def a := function_may_throw_err() ! where
+let a := function_may_throw_err() ! where
     err: MyErr => do
         print("We have a problem: {err.message}.")
         20

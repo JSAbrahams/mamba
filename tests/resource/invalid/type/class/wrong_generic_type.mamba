@@ -2,4 +2,4 @@ class MyClass[A: String] where
     def my_fun(x: A) -> A := x
 end
 
-def my_class := MyClass[Int]()
+let my_class := MyClass[Int]()

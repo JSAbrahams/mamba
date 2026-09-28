@@ -3,7 +3,7 @@ def fun_a() -> Int? := do
     if True and True then print("hello")
     if False or True then print("world")
 
-    def a := None ? 11
+    let a := None ? 11
     if True then return 10 else return None
 end
 
@@ -21,7 +21,7 @@ def fun_v(y: Str, ab: Str -> Str -> Bool) -> Str -> Bool := return ab(y)
 
 class MyClass(a: Int, b: Int) where
     def some_function(self, c: Int) -> Int := do
-        def mut d := 20
+        let mut d := 20
         d := 10 + 30
         return c + 20 + d
     end

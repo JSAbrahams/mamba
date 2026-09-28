@@ -2,6 +2,6 @@ class MyClass(a: Int) where
     def f(self) -> Bool := self.a <= 10
 end
 
-def a := MyClass.new(10)
+let a := MyClass.new(10)
 
 a.f()

@@ -1,10 +1,10 @@
 class B where
-    def my_num: Int := 10
+    let my_num: Int := 10
 end
 
 class A where
-    def b: B
+    let b: B
 end
 
-def a := A.new()
+let a := A.new()
 a.b.my_num := 20

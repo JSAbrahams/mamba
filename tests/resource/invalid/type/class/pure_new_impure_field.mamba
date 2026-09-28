@@ -4,5 +4,5 @@ class Seeded(n: Int) where
     # asserts pure construction, but the derived field below breaks it
     def pure new(..)
 
-    def seed: Int := seed()
+    let seed: Int := seed()
 end

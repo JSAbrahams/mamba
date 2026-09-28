@@ -1,2 +1,2 @@
-def a := Exception.new()
-def b := Exception.new("b")
+let a := Exception.new()
+let b := Exception.new("b")

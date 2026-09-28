@@ -1,7 +1,7 @@
 class Cyclic(x: Int) where
-    def a: Int := self.b + self.x
-    def b: Int := self.a + self.x
+    let a: Int := self.b + self.x
+    let b: Int := self.a + self.x
 end
 
-def c := Cyclic.new(3)
+let c := Cyclic.new(3)
 print(c.a)

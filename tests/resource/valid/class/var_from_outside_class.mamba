@@ -1,4 +1,4 @@
-def message := "may be mutable, for now"
+let message := "may be mutable, for now"
 
 class MyClass where
     def f(self) := print(message)

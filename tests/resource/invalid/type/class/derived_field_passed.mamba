@@ -1,6 +1,6 @@
 class Circle(radius: Int) where
-    def diameter: Int := self.radius * 2
+    let diameter: Int := self.radius * 2
 end
 
 # diameter is derived, so new takes only radius
-def c := Circle.new(2, 12)
+let c := Circle.new(2, 12)

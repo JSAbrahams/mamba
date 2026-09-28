@@ -1,4 +1,4 @@
-def a := True
-def b := False
+let a := True
+let b := False
 if a = b then print(1) else print(0)
 if a != b then print(1) else print(0)

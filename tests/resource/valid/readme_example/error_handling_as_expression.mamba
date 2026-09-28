@@ -4,7 +4,7 @@ class MyOtherErr(message: Str): Exception(message)
 def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
 
 def with_error_handling() := do
-    def a: Int := function_may_throw_err() ! where
+    let a: Int := function_may_throw_err() ! where
         err: MyErr => do
             print("We have a problem: {err.message}.")
             return  # we return, halting execution

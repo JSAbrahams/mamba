@@ -4,5 +4,5 @@ class Point(x: Int, y: Int) where
     def origin() -> Self := return Point(0, 0)
 end
 
-def o := Point.origin()
+let o := Point.origin()
 print(o.x)

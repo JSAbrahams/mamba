@@ -2,7 +2,7 @@ class Y(x: Int)
 
 class X(mut y: Y)
 
-def mut x := X.new(Y.new(10))
+let mut x := X.new(Y.new(10))
 
 # X has no field x, only y
 x.x := 2.5

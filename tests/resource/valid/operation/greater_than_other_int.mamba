@@ -2,7 +2,7 @@ class MyClass(a: Int) where
     def f(self, other: MyClass) -> Bool := self.a > other.a
 end
 
-def a := MyClass.new(10)
-def b := MyClass.new(20)
+let a := MyClass.new(10)
+let b := MyClass.new(20)
 
 a.f(b)

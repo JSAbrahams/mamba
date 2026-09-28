@@ -1,14 +1,14 @@
 # sets
-def c := { 10, 20 }
-def d := { 3 }
+let c := { 10, 20 }
+let d := { 3 }
 # sets, builder syntax
-def c_squared := { x * x | x in c }
-def empty_set := {}
+let c_squared := { x * x | x in c }
+let empty_set := {}
 
 # maps
-def e := { "do" => 1, "ree" => 2, "meee" => 3 }
+let e := { "do" => 1, "ree" => 2, "meee" => 3 }
 # maps, builder syntax binding more than one variable, not resolved yet
-# def ef := { x => y - 2 | x in e, y = x.len() }
+# let ef := { x => y - 2 | x in e, y = x.len() }
 
 # indexing works for lists and maps/mappings (sets cannot be indexed because these are unordered)
 print(e("ree")) # prints '2'

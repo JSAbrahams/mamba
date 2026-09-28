@@ -266,7 +266,7 @@ It is also called out in the README's Collections section.
 
 `wrap_scoped`, in `src/backend/python/convert/control_flow.rs`, appends a scope-restore `if/else` after the body it guards.
 `append_ret`, in `src/backend/python/convert/mod.rs`, turns the *last statement* of a `Block` into a `return`.
-So a body ending in a `def`-shadowed name that is also the tail expression got `return i = __mamba_i_saved` and `return del i`, which is not valid Python.
+So a body ending in a `let`-shadowed name that is also the tail expression got `return i = __mamba_i_saved` and `return del i`, which is not valid Python.
 
 `wrap_scoped` now omits the restore when the body already ends in `return` or `raise`.
 Control leaves the function there, taking its locals with it, so the restore was dead code to begin with.
