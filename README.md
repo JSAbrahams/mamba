@@ -612,6 +612,8 @@ It switches the checker into a stricter mode that only accepts the fixed, mechan
 Write something outside that shape, however obviously it halts to a human reader, and it is rejected.
 This is the same trade-off `const fn` makes in Rust or `constexpr` makes in C++.
 
+_Note_ `total` is a reserved keyword, and `def total` parses, but none of the rules above are checked yet.
+
 It's worth being explicit that this really is a strict subset, not a temporary gap we intend to close later.
 Not every function that obviously halts can be marked `total`.
 **Ackermann's function** is the classic example:
@@ -780,6 +782,9 @@ A secondary benefit is performance: a meta computation runs once, at compile tim
 - A meta variable is defined `let meta my_var: MyType := ...`, with type annotations being non-optional.
 - A meta trait is defined as `meta trait MyTrait ...`.
   Within a meta trait, all definitions are also meta.
+
+_Note_ `meta` is a reserved keyword, and `def meta` parses, but none of the rules above are checked yet.
+A meta variable and a meta trait do not parse yet.
 
 ### ⚠ Error handling
 

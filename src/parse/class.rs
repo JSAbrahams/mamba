@@ -72,6 +72,8 @@ fn resolve_self_ty(ast: &AST, class: &AST) -> Box<AST> {
                 .collect(),
         },
         Node::FunDef {
+            meta,
+            total,
             pure,
             id,
             args,
@@ -79,6 +81,8 @@ fn resolve_self_ty(ast: &AST, class: &AST) -> Box<AST> {
             raises,
             body,
         } => Node::FunDef {
+            meta: *meta,
+            total: *total,
             pure: *pure,
             id: id.clone(),
             args: args

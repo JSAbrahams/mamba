@@ -6,6 +6,8 @@
 
 # 2.5.3 Meta Functions
 
+_Note_ `meta` is a reserved keyword, and `def meta` parses, but nothing described here is checked yet.
+
 A meta function's totality is checked syntactically:
 Its body is held to the same restrictions as a `total` function, so the compiler never has to run a meta function to know it terminates, only inspect its shape.
 This is what makes evaluating `meta` functions at compile time safe, and avoids a circular dependency on the compiler compiling itself.

@@ -9,6 +9,8 @@ use crate::parse::ty::{parse_expression_type, parse_id, parse_type};
 
 pub fn parse_fun_def(it: &mut LexIterator) -> ParseResult {
     let start = it.eat(&Token::Def, "function definition")?;
+    let meta = it.eat_if(&Token::Meta).is_some();
+    let total = it.eat_if(&Token::Total).is_some();
     let pure = it.eat_if(&Token::Pure).is_some();
 
     macro_rules! op {
@@ -74,6 +76,8 @@ pub fn parse_fun_def(it: &mut LexIterator) -> ParseResult {
 
     let node = Node::FunDef {
         id,
+        meta,
+        total,
         pure,
         args: fun_args,
         ret: ret_ty,
@@ -854,5 +858,85 @@ mod test {
     fn let_with_args_is_error() {
         let source = String::from("let f(x) := x");
         source.parse::<AST>().unwrap_err();
+    }
+
+    #[test]
+    fn function_modifiers_verify() {
+        for (source, expected) in [
+            ("def f() := d", (false, false, false)),
+            ("def meta f() := d", (true, false, false)),
+            ("def total f() := d", (false, true, false)),
+            ("def pure f() := d", (false, false, true)),
+            ("def total pure f() := d", (false, true, true)),
+            ("def meta total pure f() := d", (true, true, true)),
+        ] {
+            let ast = parse_direct(&String::from(source)).expect("valid definition");
+            match &ast.first().expect("script empty.").node {
+                Node::FunDef {
+                    meta,
+                    total,
+                    pure,
+                    id,
+                    ..
+                } => {
+                    assert_eq!((*meta, *total, *pure), expected, "{source}");
+                    assert_eq!(
+                        id.node,
+                        Node::Id {
+                            lit: String::from("f")
+                        }
+                    );
+                }
+                other => panic!("Expected fundef but was {other:?}."),
+            }
+        }
+    }
+
+    /// The modifiers have a fixed order, as in `def meta total pure`.
+    #[test]
+    fn modifiers_wrong_order() {
+        for source in [
+            "def pure total f() := d",
+            "def total meta f() := d",
+            "def pure meta f() := d",
+            "def total total f() := d",
+        ] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `meta`, `total` and `pure` are keywords, so nothing can be named after them.
+    ///
+    /// Each source parses with an ordinary name in place of `NAME`, so the keyword is what fails it.
+    #[test]
+    fn modifier_is_not_a_name() {
+        for source in [
+            "let NAME := 5",
+            "let mut NAME := 0",
+            "let NAME: Int := 5",
+            "let (a, NAME) := (1, 2)",
+            "def NAME() := 1",
+            "def f(NAME: Int) := 1",
+            "def f(mut NAME: Int) := 1",
+            "class Point(NAME: Int)",
+            "class Point where\n    let NAME: Int := 5\nend",
+            "for NAME in xs do print(NAME) end",
+            "print(\\NAME := NAME + 1)",
+            "print(NAME)",
+            "NAME := 5",
+            "print(point.NAME)",
+        ] {
+            let plain = source.replace("NAME", "amount");
+            parse_direct(&plain).unwrap_or_else(|err| panic!("{plain} should parse: {err:?}"));
+
+            for keyword in ["meta", "total", "pure"] {
+                let source = source.replace("NAME", keyword);
+                source
+                    .parse::<AST>()
+                    .expect_err(&format!("{source} should not parse"));
+            }
+        }
     }
 }

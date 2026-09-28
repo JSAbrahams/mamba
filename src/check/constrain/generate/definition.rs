@@ -29,6 +29,8 @@ pub fn gen_def(
             body,
             raises,
             id: _,
+            meta: _,
+            total: _,
             pure,
         } => {
             if *pure {

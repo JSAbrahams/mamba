@@ -1,5 +1,5 @@
 let i := 100
-let mut total := 0
-for i in 0 ..= 3 do total := total + i end
-print(total)
+let mut acc := 0
+for i in 0 ..= 3 do acc := acc + i end
+print(acc)
 print(i)

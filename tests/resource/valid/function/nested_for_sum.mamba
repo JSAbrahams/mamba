@@ -1,7 +1,7 @@
-let mut total := 0
+let mut acc := 0
 for i in 0 .. 3 do
     for j in 0 .. 3 do
-        total := total + 1
+        acc := acc + 1
     end
 end
-print(total)
+print(acc)

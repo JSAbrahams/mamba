@@ -1,3 +1,3 @@
-let mut total := 0
-if total = 0 then total := total + 5
-print(total)
+let mut acc := 0
+if acc = 0 then acc := acc + 5
+print(acc)

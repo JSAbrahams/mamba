@@ -98,7 +98,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     variable-def     ::= "let" id-maybe-type [ ":=" expression ]
     # "def" always defines a function, so it always takes an argument list and never "mut"
     # type checker should check for valid combination of meta, total, pure
-    # the "meta" and "total" modifiers are future work; only "pure" is implemented
+    # all three are keywords and parse, but only "pure" is checked; "meta" and "total" are future work
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
                          ( id | overridable-op ) fun-args [ "->" type ] [ raise ] 
                          [ ":=" expression ]

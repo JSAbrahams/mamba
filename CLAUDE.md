@@ -208,6 +208,8 @@ statement as "not part of the signature" rather than rejecting it.
 The parser dispatches on the keyword alone, in `parse_statement` in `src/parse/statement.rs`.
 `let` goes to `parse_variable_def` and `def` to `parse_fun_def`, both in `src/parse/definition.rs`.
 So `def` always takes an argument list and never `mut`, and `let` never takes `pure`.
+`meta`, `total` and `pure` are keywords, parsed onto `Node::FunDef` in the fixed order `def meta total pure`.
+Only `pure` is checked; `meta` and `total` are reserved, and their gaps have `ignore[...]` fixtures.
 A class field is a value, so it is `let`, and a lambda bound to a name is too, as in `let f := \x := x + 1`.
 External trait implementation, `def <Trait> for <Class> where ... end`, is future work and keeps `def`.
 

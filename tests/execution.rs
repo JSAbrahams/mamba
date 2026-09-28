@@ -100,7 +100,7 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case("error_handling_result_type" => ignore["explicit Result[...] type not implemented, and a nested generic argument such as Union[...] does not parse"])]
 #[test_case("factorial" => "Factorial 5 is: 120.\n")]
 #[test_case("factorial_dynamic" => "120\n")]
-#[test_case("impl_trait" => ignore["`def <Trait> for <Class> where ...` external-implementation syntax and meta modifier not implemented"])]
+#[test_case("impl_trait" => ignore["`def <Trait> for <Class> where ...` external-implementation syntax not implemented"])]
 #[test_case("list_shorthand" => "504\n504\n")]
 #[test_case("lists" => "0\nof\n")]
 #[test_case("mutability" => "12\n")]
@@ -108,9 +108,9 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case("pure_construction_methods" => "2\n")]
 #[test_case("pure_functions" => "8.436563051146386\n")]
 #[test_case("sets_maps" => "2\n")]
-#[test_case("total_functions" => ignore["`total` keyword not implemented"])]
+#[test_case("total_functions" => ignore["`Nat` type not implemented"])]
 #[test_case("trait_inheritance" => ignore["composing multiple parent traits not implemented"])]
-#[test_case("trait_meta" => ignore["meta modifier on trait methods not implemented"])]
+#[test_case("trait_meta" => ignore["`Measurable` trait not implemented"])]
 #[test_case("traits" => ignore["generics on traits and external-implementation syntax not implemented"])]
 fn readme_example_execution(file: &str) -> String {
     run_via_python(&["readme_example"], &format!("{file}.mamba")).unwrap()

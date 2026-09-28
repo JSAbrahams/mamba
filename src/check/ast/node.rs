@@ -115,6 +115,7 @@ impl From<(&Node, &Finished)> for NodeTy {
                 ret,
                 raises,
                 body,
+                ..
             } => NodeTy::FunDef {
                 pure: *pure,
                 id: Box::from(ASTTy::from((id, finished))),

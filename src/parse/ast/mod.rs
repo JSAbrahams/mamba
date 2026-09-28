@@ -84,6 +84,8 @@ pub enum Node {
         forward: Vec<AST>,
     },
     FunDef {
+        meta: bool,
+        total: bool,
         pure: bool,
         id: Box<AST>,
         args: Vec<AST>,

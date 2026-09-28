@@ -31,6 +31,8 @@ pub enum Token {
     Trait,
     Class,
     Pure,
+    Total,
+    Meta,
 
     As,
     Import,
@@ -156,6 +158,8 @@ impl fmt::Display for Token {
         match self.clone() {
             Token::From => write!(f, "from"),
             Token::Pure => write!(f, "pure"),
+            Token::Total => write!(f, "total"),
+            Token::Meta => write!(f, "meta"),
             Token::Trait => write!(f, "trait"),
             Token::Class => write!(f, "class"),
 

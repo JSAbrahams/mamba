@@ -118,7 +118,7 @@ This is a rather trivial example, but it shows how we can explicitly name the di
 In some cases, for readability we might want to write a type alias.
 Say we have the following method:
 
-    def distance_remaining(self, covered: Int) -> Int := self.total - covered
+    def distance_remaining(self, covered: Int) -> Int := self.distance - covered
 
 The above seems simple, but there are two issues:
 
@@ -126,7 +126,7 @@ The above seems simple, but there are two issues:
   Kilometers, meters?
   We can of course rename the variable, but in certain situations this makes the code rather verbose.
 * We do no bounds checking here.
-  What if covered is more than the total, or negative?
+  What if covered is more than the distance, or negative?
   We could add these bounds checks to the method.
   However, this makes the method more verbose.
   Ideally, we want the method to express in a concise manner what it does without having a majority of the method being error handling code.
@@ -140,7 +140,7 @@ Type `Kilometer` can do everything an `Int` can (we can use all the same operato
 (This is a recurring theme, source code ideally should speak for itself without relying heavily on documentation.)
 We can rewrite the method as so:
 
-    def distance_remaining(self, covered: Kilometer) -> Kilometer := self.total - covered
+    def distance_remaining(self, covered: Kilometer) -> Kilometer := self.distance - covered
 
 ## Type Refinement
 

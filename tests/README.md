@@ -342,3 +342,12 @@ They are now `prompt` and `NoneType`, the names CPython itself uses, and `python
 `__debug__: bool = True` parses, so `ruff_python_parser` accepts it, but CPython rejects it at compile time with `SyntaxError: cannot assign to __debug__`.
 The file exists to give context building one typed and one untyped module-level assignment to parse, which it still does.
 Worth replacing `__debug__` with a name that is assignable if these files ever get run through `py_compile` as a test of their own.
+
+## Known checker gap: `total` and `meta` parse but are not checked
+
+`total` and `meta` are keywords, so neither can be used as a name.
+`parse_fun_def` in `src/parse/definition.rs` records them on `Node::FunDef`, in the order `def meta total pure`.
+Nothing in `src/check/` reads either flag yet.
+So a `total` function may call a partial one or loop with `while`, and `def meta` is accepted outside the standard library.
+Each of those has an ignored fixture in `tests/resource/invalid/type/function/`: `total_calls_partial`, `total_while` and `meta_outside_std`.
+`valid/function/total_calls_total` pins that a correct `total` function still checks and generates, so it stays valid once the rules are enforced.

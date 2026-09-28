@@ -211,6 +211,8 @@ impl Node {
                 forward: forward.iter().map(|f| f.map(mapping)).collect(),
             },
             Node::FunDef {
+                meta,
+                total,
                 pure,
                 id,
                 args: fun_args,
@@ -218,6 +220,8 @@ impl Node {
                 raises,
                 body,
             } => Node::FunDef {
+                meta,
+                total,
                 pure,
                 id: Box::from(id.map(mapping)),
                 args: fun_args.iter().map(|a| a.map(mapping)).collect(),
@@ -519,6 +523,8 @@ impl Node {
             }
             (
                 Node::FunDef {
+                    meta: lme,
+                    total: lto,
                     pure: lpu,
                     id: li,
                     args: la,
@@ -527,6 +533,8 @@ impl Node {
                     body: lb,
                 },
                 Node::FunDef {
+                    meta: rme,
+                    total: rto,
                     pure: rpu,
                     id: ri,
                     args: ra,
@@ -535,7 +543,9 @@ impl Node {
                     body: rb,
                 },
             ) => {
-                lpu == rpu
+                lme == rme
+                    && lto == rto
+                    && lpu == rpu
                     && li.same_value(ri)
                     && equal_vec(la, ra)
                     && equal_optional(lret, rret)
@@ -1333,6 +1343,8 @@ mod test {
             forward: vec![*first.clone()]
         });
         two_ast!(Node::FunDef {
+            meta: false,
+            total: false,
             pure: false,
             id: first.clone(),
             args: vec![*second.clone()],

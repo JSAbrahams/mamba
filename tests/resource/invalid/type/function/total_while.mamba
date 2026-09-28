@@ -1,0 +1,6 @@
+# A while loop need not terminate, so a total function may not contain one
+def total count_down(x: Int) -> Int := do
+    let mut y := x
+    while y > 0 do y := y - 1 end
+    y
+end
