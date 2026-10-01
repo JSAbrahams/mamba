@@ -1,7 +1,7 @@
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::{types, InstBuilder, Value};
-use cranelift_frontend::FunctionBuilder;
 
+use crate::backend::cranelift::convert::int::Arith;
 use crate::backend::cranelift::convert::FnLower;
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
@@ -10,24 +10,9 @@ impl<'a> FnLower<'a> {
     /// Lower a binary arithmetic operation, a comparison, or a unary `+`/`-`.
     pub(super) fn lower_operation(&mut self, ast: &ASTTy) -> BackendResult<Value> {
         match &ast.node {
-            NodeTy::Add { left, right } => self.lower_arith(
-                left,
-                right,
-                |b, a, c| b.ins().iadd(a, c),
-                |b, a, c| b.ins().fadd(a, c),
-            ),
-            NodeTy::Sub { left, right } => self.lower_arith(
-                left,
-                right,
-                |b, a, c| b.ins().isub(a, c),
-                |b, a, c| b.ins().fsub(a, c),
-            ),
-            NodeTy::Mul { left, right } => self.lower_arith(
-                left,
-                right,
-                |b, a, c| b.ins().imul(a, c),
-                |b, a, c| b.ins().fmul(a, c),
-            ),
+            NodeTy::Add { left, right } => self.lower_arith(left, right, Arith::Add),
+            NodeTy::Sub { left, right } => self.lower_arith(left, right, Arith::Sub),
+            NodeTy::Mul { left, right } => self.lower_arith(left, right, Arith::Mul),
             NodeTy::Div { left, right } => self.lower_div(left, right),
             NodeTy::Le { left, right } => {
                 self.lower_cmp(left, right, IntCC::SignedLessThan, FloatCC::LessThan)
@@ -60,24 +45,18 @@ impl<'a> FnLower<'a> {
         }
     }
 
-    /// Lower a binary arithmetic operation, picking `int_op` or `float_op` depending on whether
-    /// either operand turns out to be `Float` -- `Int` and `Float` need different opcodes
-    /// entirely (`iadd` vs `fadd` and so on), unlike comparisons where only the condition code
-    /// differs. See [`Self::float_pair`]'s doc comment for how "either operand is `Float`" is
-    /// decided.
-    fn lower_arith(
-        &mut self,
-        left: &ASTTy,
-        right: &ASTTy,
-        int_op: impl Fn(&mut FunctionBuilder, Value, Value) -> Value,
-        float_op: impl Fn(&mut FunctionBuilder, Value, Value) -> Value,
-    ) -> BackendResult<Value> {
+    /// Lower a binary arithmetic operation, as a `Float` one if either operand turns out to be `Float`.
+    /// See [`Self::float_pair`]'s doc comment for how that is decided.
+    /// Otherwise it is an `Int` one, which never wraps: see [`Self::int_arith`].
+    fn lower_arith(&mut self, left: &ASTTy, right: &ASTTy, op: Arith) -> BackendResult<Value> {
         let l = self.lower_expr(left)?;
         let r = self.lower_expr(right)?;
-        match self.float_pair(l, r) {
-            Some((l, r)) => Ok(float_op(&mut self.builder, l, r)),
-            None => Ok(int_op(&mut self.builder, l, r)),
-        }
+        Ok(match (self.float_pair(l, r), op) {
+            (Some((l, r)), Arith::Add) => self.builder.ins().fadd(l, r),
+            (Some((l, r)), Arith::Sub) => self.builder.ins().fsub(l, r),
+            (Some((l, r)), Arith::Mul) => self.builder.ins().fmul(l, r),
+            (None, _) => self.int_arith(op, l, r),
+        })
     }
 
     /// Lower Mamba's `/`, which -- like Python's `/` -- is always true (float) division: unlike
@@ -97,19 +76,21 @@ impl<'a> FnLower<'a> {
         Ok(self.builder.ins().fdiv(l, r))
     }
 
-    /// Lower unary negation (`-x`), picking `ineg`/`fneg` by `expr`'s actual Cranelift value
-    /// type (no promotion to consider -- there's only the one operand).
+    /// Lower unary negation (`-x`), by `expr`'s actual Cranelift value type.
+    /// An `Int` is subtracted from zero, since negating the smallest small integer overflows it.
     fn lower_negate(&mut self, expr: &ASTTy) -> BackendResult<Value> {
         let value = self.lower_expr(expr)?;
         if self.builder.func.dfg.value_type(value) == types::F64 {
             Ok(self.builder.ins().fneg(value))
         } else {
-            Ok(self.builder.ins().ineg(value))
+            let zero = self.builder.ins().iconst(types::I64, 0);
+            Ok(self.int_arith(Arith::Sub, zero, value))
         }
     }
 
     /// Lower a comparison, picking `icmp`/`fcmp` (with the matching condition code) depending on
     /// whether either operand turns out to be `Float`. See [`Self::float_pair`]'s doc comment.
+    /// Two `Int` operands go through [`Self::int_cmp`], and only two `Bool` ones are a plain `icmp`.
     fn lower_cmp(
         &mut self,
         left: &ASTTy,
@@ -121,6 +102,9 @@ impl<'a> FnLower<'a> {
         let r = self.lower_expr(right)?;
         match self.float_pair(l, r) {
             Some((l, r)) => Ok(self.builder.ins().fcmp(float_cc, l, r)),
+            None if self.builder.func.dfg.value_type(l) == types::I64 => {
+                Ok(self.int_cmp(int_cc, l, r))
+            }
             None => Ok(self.builder.ins().icmp(int_cc, l, r)),
         }
     }
@@ -146,9 +130,5 @@ impl<'a> FnLower<'a> {
         let l = if l_is_float { l } else { self.int_to_float(l) };
         let r = if r_is_float { r } else { self.int_to_float(r) };
         Some((l, r))
-    }
-
-    fn int_to_float(&mut self, value: Value) -> Value {
-        self.builder.ins().fcvt_from_sint(types::F64, value)
     }
 }

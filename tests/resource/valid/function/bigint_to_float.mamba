@@ -1,0 +1,14 @@
+def a := 1208925819614629174706176
+if a / 1024 = 1180591620717411303424.0 then print(1) else print(0)
+if a > 1.5 then print(1) else print(0)
+
+def exact: Float := 18446744073709551616
+if exact = 18446744073709551616.0 then print(1) else print(0)
+
+def small_tie := 9007199254740993
+if small_tie / 1 = 9007199254740992.0 then print(1) else print(0)
+def tie := 1208925819614629308923904
+if tie / 1 = 1208925819614629174706176.0 then print(1) else print(0)
+def above_tie := 1208925819614629308923905
+if above_tie / 1 = 1208925819614629443141632.0 then print(1) else print(0)
+if above_tie / 1 = 1208925819614629174706176.0 then print(1) else print(0)

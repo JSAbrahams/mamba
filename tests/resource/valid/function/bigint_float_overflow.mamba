@@ -1,0 +1,3 @@
+def mut big := 1
+for i in 0 .. 1100 do big := big * 2 end
+if big / 2 > 1.0 then print(1) else print(0)

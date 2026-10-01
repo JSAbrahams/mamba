@@ -1,0 +1,9 @@
+def mut power := 1
+for i in 0 .. 200 do power := power * 2 end
+print(power)
+
+def start := 18446744073709551616
+def stop := start + 3
+def mut total := 0
+for i in start ..= stop do total := total + i end
+print(total)

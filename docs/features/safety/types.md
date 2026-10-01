@@ -54,16 +54,28 @@ The program is still statically typed, but now we don't require the developer to
 
 ## Unbounded integers
 
-`Int` is arbitrary-precision by design.
+`Int` is unbounded by design.
 It has no width, no maximum, and no wrapping behaviour.
 A number that silently wraps is a correctness bug.
 `Nat`, the non-negative integers, is a refinement of `Int` and inherits this.
 `Nat` is future work, see [`Nat`](#nat) below.
 
-Compiling to machine code with `--bin` or `--asm` lowers `Int` to a fixed-width 64-bit integer.
-However, the two backends are meant to agree.
-The divergence is therefore a known limitation, not intended behaviour.
-Arbitrary-precision arithmetic in the Cranelift backend is future work.
+    def a := 18446744073709551617    # larger than 2^64
+    def b := 36893488147419103232
+    print(a + b)                     # 55340232221128654849
+
+A large number makes a program slower, not wrong.
+This is one half of a wider goal, see [Slow Rather Than Stopped](../../philosophy/safety.md#slow-rather-than-stopped).
+
+Both backends agree on this.
+The Python backend gets it from Python's own `int`.
+Compiling to machine code with `--bin` or `--asm` uses arbitrary-precision arithmetic.
+A value that fits a machine word stays in one, and only a larger value moves to the heap.
+See [the Cranelift backend](../../../src/backend/cranelift/README.md#unbounded-integers) for how.
+
+A `Float` is not unbounded.
+Converting an `Int` beyond its range stops the program with an error, instead of carrying on with infinity.
+Dividing with `/` gives a `Float`, so that is where such a conversion usually happens.
 
 ## Type Aliases and Type Refinement
 
