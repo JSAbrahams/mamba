@@ -1,0 +1,19 @@
+def double(n: Int) -> Int := do
+    def mut total := n
+    total := total + n
+    return total
+end
+
+def largest(a: Int, b: Int) -> Int := do
+    if a < b then return b
+    def copy := a
+    return copy
+end
+
+def a := 18446744073709551617
+def b := 36893488147419103232
+print(double(a))
+print(largest(a, b))
+print(largest(b, a))
+double(b)
+print(a)

@@ -1,0 +1,7 @@
+def a := 18446744073709551617
+def b: Int := -36893488147419103232
+def c: Int := -18446744073709551617
+print(a + b)
+print(b + a)
+print(a + c)
+print(b + c)

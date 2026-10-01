@@ -2,6 +2,7 @@ use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{types, InstBuilder, TrapCode};
 
 use crate::backend::cranelift::convert::common::fun_name;
+use crate::backend::cranelift::convert::int::Arith;
 use crate::backend::cranelift::convert::FnLower;
 use crate::backend::cranelift::primitive::cranelift_type;
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
@@ -18,9 +19,16 @@ impl<'a> FnLower<'a> {
     /// reassigning an outer variable with `:=`, which isn't a new binding, still works exactly as
     /// expected; only fresh bindings are undone here, since a `:=` never touches `self.vars`, only
     /// the value already tracked by whichever `Variable` the name already resolves to).
+    ///
+    /// What those bindings own is released here, unless `ast` returned, which already released it.
     fn lower_scoped_stmt(&mut self, ast: &ASTTy) -> BackendResult<bool> {
         let snapshot = self.vars.clone();
+        let live = self.live.len();
         let result = self.lower_stmt(ast);
+        if let Ok(false) = result {
+            self.release_from(live);
+        }
+        self.live.truncate(live);
         self.vars = snapshot;
         result
     }
@@ -126,15 +134,17 @@ impl<'a> FnLower<'a> {
             ));
         }
 
+        // The loop owns its counter, bound and step, since the body may reassign what they were read from.
+        let live = self.live.len();
         let from_value = self.lower_expr(from)?;
+        let loop_var = self.bind(from_value);
         let to_value = self.lower_expr(to)?;
+        let to_var = self.bind(to_value);
         let step_value = match step {
             Some(step) => self.lower_expr(step)?,
-            None => self.builder.ins().iconst(types::I64, 1),
+            None => self.builder.ins().iconst(types::I64, 1 << 1),
         };
-
-        let loop_var = self.new_var(ty);
-        self.builder.def_var(loop_var, from_value);
+        let step_var = self.bind(step_value);
 
         let header_block = self.builder.create_block();
         let body_block = self.builder.create_block();
@@ -148,7 +158,8 @@ impl<'a> FnLower<'a> {
         } else {
             IntCC::SignedLessThan
         };
-        let cond = self.builder.ins().icmp(cc, current, to_value);
+        let to_value = self.builder.use_var(to_var);
+        let cond = self.int_cmp(cc, current, to_value);
         self.builder
             .ins()
             .brif(cond, body_block, &[], exit_block, &[]);
@@ -156,19 +167,22 @@ impl<'a> FnLower<'a> {
         self.builder.switch_to_block(body_block);
         let snapshot = self.vars.clone();
         self.vars.insert(var_name, (loop_var, ty));
-        let result = self.lower_stmt(body);
+        let result = self.lower_scoped_stmt(body);
         self.vars = snapshot;
         // If the body definitely returned (an early `return` inside the loop), `body_block` is
         // already filled -- adding the increment/back-edge would panic, and there's no next
         // iteration to run anyway, so skip straight to `exit_block` without touching it further.
         if !result? {
             let current = self.builder.use_var(loop_var);
-            let next = self.builder.ins().iadd(current, step_value);
-            self.builder.def_var(loop_var, next);
+            let step_value = self.builder.use_var(step_var);
+            let next = self.int_arith(Arith::Add, current, step_value);
+            self.assign(loop_var, next);
             self.builder.ins().jump(header_block, &[]);
         }
 
         self.builder.switch_to_block(exit_block);
+        self.release_from(live);
+        self.live.truncate(live);
         Ok(())
     }
 
@@ -188,16 +202,18 @@ impl<'a> FnLower<'a> {
             .ins()
             .brif(cond_value, then_block, &[], else_block, &[]);
 
+        // Each arm returns, releasing what it bound, so the other arm must not see those bindings.
+        let live = self.live.len();
         self.builder.switch_to_block(then_block);
         self.lower_tail(then)?;
+        self.live.truncate(live);
 
         self.builder.switch_to_block(else_block);
         match el {
             Some(el) => self.lower_tail(el)?,
-            None => {
-                self.builder.ins().return_(&[]);
-            }
+            None => self.ret(&[]),
         }
+        self.live.truncate(live);
         Ok(())
     }
 }

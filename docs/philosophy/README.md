@@ -166,6 +166,54 @@ The trade-off is that `total` accepts a fixed, mechanically checkable subset, an
 Ackermann's function is the standing example.
 That is the same bargain `const fn` makes in Rust.
 
+## Python's arithmetic, compiled
+
+Performance is not the main goal, but native speed is still wanted where it comes cheaply.
+The aim is to make it very easy to produce a binary on the fly, for instance to work through a mathematical challenge.
+
+```sh
+mamba -i challenge.mamba -o challenge --bin
+./challenge
+```
+
+That gives the arithmetic flexibility of Python, eventually in a compiled environment.
+An `Int` grows as large as the answer needs, and a number that fits a machine word is still handled as one.
+The native backend covers a small slice of the language today, see [what is built](#what-is-built-and-what-is-not) below.
+
+Mamba is not as flexible as a systems language such as Rust, or to a lesser extent Go.
+Some design choices have been made for the programmer.
+An integer has no chosen width, memory is managed for you, and a result is computed rather than abandoned.
+See [Slow Rather Than Stopped](safety.md#slow-rather-than-stopped) for that last one.
+Each of those costs speed and control that a systems language would hand back.
+
+### Prior art
+
+None of this is new.
+Several mature tools already compile Python, or a subset of it.
+The list below is not complete.
+
+Tool | What it compiles | Integers
+---|---|---
+[Nuitka](https://nuitka.net/) | All of Python, to C that runs on `libpython`. | Unbounded, as CPython's own.
+[Cython](https://cython.org/) | Python extended with C types, to C extension modules. | Unbounded, unless declared as a C type.
+[mypyc](https://mypyc.readthedocs.io/) | Type-annotated Python, to C extension modules. | Unbounded, with small values kept inline in a tagged word.
+[Numba](https://numba.pydata.org/) | Numeric functions, just in time. | Fixed width, wrapping on overflow.
+[Codon](https://docs.exaloop.io/) | A statically typed variant of Python, ahead of time. | 64-bit, with wider fixed widths on request.
+[Shed Skin](https://shedskin.readthedocs.io/) | A restricted, implicitly typed subset, to C++. | Fixed width.
+
+They fall into two groups.
+The first three keep Python's semantics, and lean on the CPython runtime to do so.
+The last three generate code that does not go through Python objects, and give up unbounded integers along the way.
+
+Mamba's native backend sits between the two.
+It keeps unbounded integers, in a standalone binary with no Python runtime.
+It can do that only because Mamba is a different, statically typed language, so it does not have to honour Python's dynamic semantics.
+The technique is borrowed as well.
+Keeping small integers inline in a tagged word is what mypyc does, and what Lisp and Smalltalk systems did long before.
+
+Anyone who wants to compile Python should use one of the tools above.
+Mamba is a toy with its own notation, and the native backend is there to make that notation quick to run.
+
 ## What is built, and what is not
 
 Working today:
@@ -177,6 +225,7 @@ Working today:
 - Set, list and map literals, and single-variable comprehensions.
 - `do ... end` sequences and `where ... end` sets.
 - Two backends, Python and an experimental native one via Cranelift.
+- Unbounded `Int`, on both backends.
 
 Notation not yet backed by semantics:
 
@@ -227,8 +276,9 @@ Ordered by how much each would sharpen the language's identity.
 
 ## Non-goals
 
-- Performance.
-  The Python backend makes that somebody else's problem.
+- Performance as the main goal.
+  Mamba does not compete with a systems language.
+  Native speed is still wanted where it comes cheaply, see [Python's arithmetic, compiled](#pythons-arithmetic-compiled).
 - Replacing Python.
   Mamba compiles to it and is happy alongside it.
 - Purity as a global discipline.

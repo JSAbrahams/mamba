@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cranelift_codegen::ir::{types, AbiParam, InstBuilder, Signature, Value};
 use cranelift_frontend::{FunctionBuilder, Variable};
@@ -7,6 +7,7 @@ use cranelift_object::ObjectModule;
 
 use crate::backend::cranelift::convert::definition::{define_function, define_main, fun_signature};
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
+use crate::backend::cranelift::runtime::{define_runtime, Runtime};
 use crate::check::ast::{ASTTy, NodeTy};
 use crate::check::context::function::PRINT;
 use crate::Context;
@@ -15,6 +16,7 @@ mod call;
 mod common;
 mod control_flow;
 mod definition;
+mod int;
 mod operation;
 
 /// Declared user functions, keyed by their Mamba name -- shared across every function body so
@@ -43,6 +45,7 @@ pub(super) fn lower_program(
     };
 
     let call_conv = module.isa().default_call_conv();
+    let runtime = define_runtime(module)?;
 
     // Pass 1: declare every top-level function's signature, so calls to a function defined later
     // in the file still resolve.
@@ -63,23 +66,16 @@ pub(super) fn lower_program(
     let mut asm = vec![];
     for statement in statements {
         match &statement.node {
-            NodeTy::FunDef {
-                id,
-                args,
-                ret,
-                body,
-                ..
-            } => {
+            NodeTy::FunDef { id, args, body, .. } => {
                 let name = common::fun_name(id)?;
                 let func_id = *funcs.get(&name).expect("declared in pass 1");
-                let sig = fun_signature(args, ret.as_ref(), call_conv, statement)?;
                 let text = define_function(
                     module,
                     func_id,
-                    sig,
                     args,
                     body.as_deref(),
                     &funcs,
+                    &runtime,
                     want_asm,
                 )?;
                 if let Some(text) = text {
@@ -98,7 +94,9 @@ pub(super) fn lower_program(
     let main_id = module
         .declare_function("main", Linkage::Export, &main_sig)
         .map_err(|e| BackendErr::new(ast_ty.pos, &e.to_string()))?;
-    let main_text = define_main(module, main_id, main_sig, &main_body, &funcs, want_asm)?;
+    let main_text = define_main(
+        module, main_id, main_sig, &main_body, &funcs, &runtime, want_asm,
+    )?;
     if let Some(main_text) = main_text {
         asm.push((String::from("main"), main_text));
     }
@@ -114,6 +112,11 @@ struct FnLower<'a> {
     var_seq: u32,
     funcs: &'a Funcs,
     puts_id: FuncId,
+    runtime: &'a Runtime,
+    /// `Int` values that own a reference nothing has consumed yet.
+    temps: HashSet<Value>,
+    /// The variables that own an `Int`, innermost scope last.
+    live: Vec<Variable>,
 }
 
 impl<'a> FnLower<'a> {
@@ -150,11 +153,11 @@ impl<'a> FnLower<'a> {
             // shape works too, for both void and value-returning functions.
             NodeTy::Return { expr } => {
                 let value = self.lower_expr(expr)?;
-                self.builder.ins().return_(&[value]);
+                self.ret(&[value]);
                 Ok(true)
             }
             NodeTy::ReturnEmpty => {
-                self.builder.ins().return_(&[]);
+                self.ret(&[]);
                 Ok(true)
             }
             other => Err(BackendErr::unimplemented(
@@ -170,11 +173,11 @@ impl<'a> FnLower<'a> {
         match &ast.node {
             NodeTy::Return { expr } => {
                 let value = self.lower_expr(expr)?;
-                self.builder.ins().return_(&[value]);
+                self.ret(&[value]);
                 Ok(())
             }
             NodeTy::ReturnEmpty => {
-                self.builder.ins().return_(&[]);
+                self.ret(&[]);
                 Ok(())
             }
             NodeTy::Block { statements } => match statements.split_last() {
@@ -185,14 +188,14 @@ impl<'a> FnLower<'a> {
                     self.lower_tail(last)
                 }
                 None => {
-                    self.builder.ins().return_(&[]);
+                    self.ret(&[]);
                     Ok(())
                 }
             },
             NodeTy::IfElse { cond, then, el } => self.lower_if_else_tail(cond, then, el.as_deref()),
             _ => {
                 let value = self.lower_expr(ast)?;
-                self.builder.ins().return_(&[value]);
+                self.ret(&[value]);
                 Ok(())
             }
         }
@@ -209,12 +212,7 @@ impl<'a> FnLower<'a> {
             // Since `ast.ty` turns out to be an unreliable signal for this even when it looks unambiguous,
             // it can resolve to `Float` from unifying against an operator's own polymorphic parameter type,
             // even when the concrete value everything else around it expects is `Int`.
-            NodeTy::Int { lit } => {
-                let value: i64 = lit.parse().map_err(|_| {
-                    BackendErr::new(ast.pos, &format!("Invalid int literal '{lit}'"))
-                })?;
-                Ok(self.builder.ins().iconst(types::I64, value))
-            }
+            NodeTy::Int { lit } => self.int_literal(lit, ast.pos),
             NodeTy::Bool { lit } => Ok(self.builder.ins().iconst(types::I8, i64::from(*lit))),
             NodeTy::Real { lit } => {
                 let value: f64 = lit.parse().map_err(|_| {

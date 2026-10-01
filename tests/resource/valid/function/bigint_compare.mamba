@@ -1,0 +1,12 @@
+def a := 18446744073709551617
+def b := 36893488147419103232
+def c: Int := -36893488147419103233
+def d := 18446744073709551617
+if a < b then print(1) else print(0)
+if b <= a then print(1) else print(0)
+if a = d then print(1) else print(0)
+if a != d then print(1) else print(0)
+if a != b then print(1) else print(0)
+if c < a then print(1) else print(0)
+if c > 5 then print(1) else print(0)
+if a >= 5 then print(1) else print(0)

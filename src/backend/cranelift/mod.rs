@@ -18,6 +18,7 @@ use crate::{check_sources, strip_source_paths, Context};
 mod convert;
 mod link;
 mod primitive;
+mod runtime;
 
 pub mod result;
 

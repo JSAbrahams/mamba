@@ -40,9 +40,36 @@ fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
 
+/// `Int` is unbounded, so both backends must print the same digits once a value outgrows a machine word.
+/// The operands in the `bigint_add*` fixtures each exceed 2^64.
+/// `bigint_boundary` crosses 2^62 in both directions, which is where the Cranelift backend moves a value to the heap and back.
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add.mamba" => "55340232221128654849\n55340232221128654849\n36893488147419103234\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add_carry.mamba" => "680564733841876926926749214863536422910\n340282366920938463463374607431768211456\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add_negative.mamba" => "-18446744073709551615\n-18446744073709551615\n0\n-55340232221128654849\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_sub.mamba" => "-18446744073709551615\n18446744073709551615\n0\n18446744073709551616\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_mul.mamba" => "-680564733841876926963642703010955526144\n1361129467683753853853498429727072845824\n0\n18446744073709551617\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_boundary.mamba" => "4611686018427387904\n-4611686018427387905\n4611686018427387903\n-4611686018427387904\n21267647932558653957237540927630737409\n21267647932558653966460912964485513216\n4611686018427387904\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_compare.mamba" => "1\n0\n1\n0\n1\n1\n0\n1\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_factorial.mamba" => "15511210043330985984000000\n265252859812191058636308480000000\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_for_loop.mamba" => "1606938044258990275541962092341162602522202993782792835301376\n73786976294838206470\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_function.mamba" => "36893488147419103234\n36893488147419103232\n36893488147419103232\n18446744073709551617\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_literal.mamba" => "0\n4611686018427387903\n4611686018427387904\n1000000000000000000\n1000000000000000000000000000000000000\n123456789012345678901234567890123456789012345678901234567890\n")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_to_float.mamba" => "1\n1\n1\n1\n1\n1\n0\n")]
+fn unbounded_int_execution(run: Runner, dirs: &[&str], file: &str) -> String {
+    run(dirs, file).unwrap()
+}
+
+/// A `Float` cannot hold every `Int`, and 2^1100 is past its range.
+/// Both backends stop with an error, rather than carry on with infinity.
+#[test_case(run_via_python)]
+#[test_case(run_via_bin)]
+fn int_too_large_for_float(run: Runner) {
+    run(&["function"], "bigint_float_overflow.mamba").expect_err("2^1100 does not fit a Float");
+}
+
 /// Fixtures that only run through one specific backend, because the two backends' output
 /// legitimately diverges.
-/// The Cranelift backend prints a `Bool` as `1`/`0` via `printf`, where the Python backend prints
+/// The Cranelift backend prints a `Bool` as `1`/`0`, where the Python backend prints
 /// `True`/`False`.
 #[test_case(run_via_bin, &["function"], "print_bool.mamba" => "1\n0\n")]
 #[test_case(run_via_bin, &["function"], "float_var_decl.mamba" => "1\n")]

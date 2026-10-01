@@ -47,3 +47,34 @@ As with most languages, Mamba also uses bounds checking.
 Unlike Python however, we don't wrap the value around if we access outside the bounds of an array, but we raise an error, which should be handled.
 This should ideally make it easier to track down bugs, which might otherwise be undetected for some time.
 This adheres somewhat to the **fail fast** philosophy.
+
+## Slow Rather Than Stopped
+
+A Mamba program should ideally never crash because a value or a computation grew large.
+It should become much slower instead, and still compute the result.
+The goal is to always produce the answer, no matter the cost.
+
+Two cases matter most:
+
+- Very large numbers.
+  `Int` has no maximum and never wraps.
+  A number that outgrows a machine word moves to a representation that can hold it, and arithmetic on it takes longer.
+  See [Types](../features/safety/types.md#unbounded-integers).
+- Very deep recursion.
+  A recursive call should not fail because the call stack reached a fixed size.
+  A deep chain of calls should cost time and memory, not end the program.
+
+This does not conflict with failing fast.
+An access outside the bounds of a list is a mistake in the program, so it is reported.
+A large number or a deep recursion is not a mistake, so the program carries on.
+
+Performance is not the main goal, see [Python's arithmetic, compiled](README.md#pythons-arithmetic-compiled).
+A wrong answer and a crash are both worse than a slow answer.
+The common case stays fast regardless, since a number that fits a machine word is handled as one.
+
+The Python backend inherits Python's recursion limit, and the native backend overflows its stack.
+Both are gaps, not intended behaviour.
+
+Some limits remain by nature.
+Memory is finite, so a large enough number or a deep enough recursion still runs out of it.
+A `Float` is bounded, so converting an `Int` beyond its range stops with an error, rather than yielding infinity.
