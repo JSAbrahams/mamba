@@ -1,9 +1,9 @@
-def b := 40
+let b := 40
 
 if True then print("hello world")
 if False then "hello" else "world"
 
-def mut cond := True and False
+let mut cond := True and False
 cond := True or False
 
 if cond then do
@@ -15,7 +15,7 @@ if cond then do
     else
         "ccc"
 
-    def iii := "iii"
+    let iii := "iii"
     if cond or False then
         "hhh"
     else iii

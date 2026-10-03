@@ -8,7 +8,7 @@ end
 
 def pure shifted() -> Point := return Point.new(1, 2)
 
-def p := shifted()
+let p := shifted()
 print(p.x)
-def o := Point.origin()
+let o := Point.origin()
 print(o.y)

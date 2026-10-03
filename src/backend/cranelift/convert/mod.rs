@@ -204,7 +204,7 @@ impl<'a> FnLower<'a> {
             // Int/Bool/Real literals' own resolved `ty` can come back widened to a union.
             // E.g. a literal argument to `print`, whose parameter accepts several printable types unifies to that broader union rather than staying just `Int`).
             // However,  the node  variant itself already tells us the literal's true type, so there's no need to consult `ast.ty` at all here.
-            // An Int-shaped literal that Mamba's numeric-literal daptation means is really meant as a `Float` (e.g. `def x: Float := 2`, or `x > 0.0`) is *not* handled here.
+            // An Int-shaped literal that Mamba's numeric-literal daptation means is really meant as a `Float` (e.g. `let x: Float := 2`, or `x > 0.0`) is *not* handled here.
             // Instead, it's handled contextually, by whichever caller ends up comparing this value's actual Cranelift type against a sibling value's (see `operation.rs`'s docs).
             // Since `ast.ty` turns out to be an unreliable signal for this even when it looks unambiguous,
             // it can resolve to `Float` from unifying against an operator's own polymorphic parameter type,

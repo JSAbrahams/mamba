@@ -37,11 +37,11 @@ Now we can use the `Vec2` as follows:
 ```mamba
 from vec2 import Vec2
 
-def a := Vec2(1.0, 2.0)
-def b := Vec2(2.0, 3.0)
+let a := Vec2(1.0, 2.0)
+let b := Vec2(2.0, 3.0)
 
 # the `+` operator of Vec2 has been overloaded
-def c := a + b
+let c := a + b
 print(c.to_string()) # prints (3.0, 5.0)
 ```
 

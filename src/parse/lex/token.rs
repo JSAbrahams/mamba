@@ -31,6 +31,8 @@ pub enum Token {
     Trait,
     Class,
     Pure,
+    Total,
+    Meta,
 
     As,
     Import,
@@ -50,6 +52,7 @@ pub enum Token {
     DivAssign,
     PowAssign,
     Def,
+    Let,
 
     Real(String),
     Int(String),
@@ -155,6 +158,8 @@ impl fmt::Display for Token {
         match self.clone() {
             Token::From => write!(f, "from"),
             Token::Pure => write!(f, "pure"),
+            Token::Total => write!(f, "total"),
+            Token::Meta => write!(f, "meta"),
             Token::Trait => write!(f, "trait"),
             Token::Class => write!(f, "class"),
 
@@ -175,6 +180,7 @@ impl fmt::Display for Token {
             Token::PowAssign => write!(f, "^="),
             Token::DivAssign => write!(f, "/="),
             Token::Def => write!(f, "def"),
+            Token::Let => write!(f, "let"),
 
             Token::Id(id) => write!(f, "{id}"),
             Token::Real(real) => write!(f, "{real}"),

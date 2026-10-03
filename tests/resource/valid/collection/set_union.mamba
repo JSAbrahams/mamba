@@ -1,1 +1,1 @@
-def b := { 10, "string", True }
+let b := { 10, "string", True }

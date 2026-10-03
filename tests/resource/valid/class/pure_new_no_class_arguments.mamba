@@ -3,7 +3,7 @@
 class Origin() where
     def pure new()
 
-    def x: Int := 0
+    let x: Int := 0
 end
 
 def pure make() -> Origin := return Origin.new()

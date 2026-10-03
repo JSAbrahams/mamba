@@ -1,6 +1,6 @@
 def g() -> Int ! Exception :=
     ! Exception("A")
 
-def a := g() ! where
+let a := g() ! where
     err: Exception => 10
 end

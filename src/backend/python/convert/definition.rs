@@ -427,6 +427,8 @@ mod test {
             id: to_pos!(Node::Id {
                 lit: String::from("fun")
             }),
+            meta: false,
+            total: false,
             pure: false,
             args: vec![
                 to_pos_unboxed!(Node::FunArg {
@@ -492,6 +494,8 @@ mod test {
             id: to_pos!(Node::Id {
                 lit: String::from("fun")
             }),
+            meta: false,
+            total: false,
             pure: false,
             args: vec![to_pos_unboxed!(Node::FunArg {
                 vararg: false,
@@ -540,6 +544,8 @@ mod test {
             id: to_pos!(Node::Id {
                 lit: String::from("fun")
             }),
+            meta: false,
+            total: false,
             pure: false,
             args: vec![
                 to_pos_unboxed!(Node::Id {

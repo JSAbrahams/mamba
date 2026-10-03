@@ -1,7 +1,7 @@
 def pure factorial(x: Int) -> Int := match x where
     0 => 1
     n => do
-        def mut ans := 1
+        let mut ans := 1
         for i in 1 ..= n do ans := ans * i end
         ans
     end

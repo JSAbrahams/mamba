@@ -3,4 +3,4 @@ class MyOtherErr(message: Str): Exception(message)
 
 def function_may_throw_err() -> Int ! { MyErr, MyOtherErr } := 10
 
-def a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()
+let a: Result[Int, Union[MyErr, MyOtherErr]] := function_may_throw_err()

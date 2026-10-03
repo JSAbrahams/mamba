@@ -1,8 +1,8 @@
 class MyClass where
-    def something: String := "my string"
+    let something: String := "my string"
 end
 
-def my_class := MyClass.new()
-def b := my_class.something
+let my_class := MyClass.new()
+let b := my_class.something
 
-def c: Int := b
+let c: Int := b

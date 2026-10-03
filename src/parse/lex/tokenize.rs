@@ -233,12 +233,15 @@ fn as_op_or_id(string: String) -> Token {
         "trait" => Token::Trait,
         "class" => Token::Class,
         "pure" => Token::Pure,
+        "total" => Token::Total,
+        "meta" => Token::Meta,
         "as" => Token::As,
 
         "import" => Token::Import,
         "forward" => Token::Forward,
 
         "def" => Token::Def,
+        "let" => Token::Let,
         "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
@@ -297,14 +300,14 @@ mod test {
 
     #[test]
     fn class_with_body_class_right_after() -> Result<(), Box<LexErr>> {
-        let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
+        let source = "class MyClass\n    let var := 10\nclass MyClass1\n";
         let tokens =
             tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
 
         assert_eq!(tokens[0].token, Token::Class);
         assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
         assert_eq!(tokens[2].token, Token::NL);
-        assert_eq!(tokens[3].token, Token::Def);
+        assert_eq!(tokens[3].token, Token::Let);
         assert_eq!(tokens[4].token, Token::Id(String::from("var")));
         assert_eq!(tokens[5].token, Token::Assign);
         assert_eq!(tokens[6].token, Token::Int(String::from("10")));
@@ -458,6 +461,24 @@ mod test {
             );
         }
 
+        Ok(())
+    }
+
+    #[test]
+    fn modifiers_are_keywords() -> Result<(), Box<LexErr>> {
+        let source = "def meta total pure f totally subtotal total_ metadata";
+        let tokens =
+            tokenize(source).map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Def);
+        assert_eq!(tokens[1].token, Token::Meta);
+        assert_eq!(tokens[2].token, Token::Total);
+        assert_eq!(tokens[3].token, Token::Pure);
+        assert_eq!(tokens[4].token, Token::Id(String::from("f")));
+        assert_eq!(tokens[5].token, Token::Id(String::from("totally")));
+        assert_eq!(tokens[6].token, Token::Id(String::from("subtotal")));
+        assert_eq!(tokens[7].token, Token::Id(String::from("total_")));
+        assert_eq!(tokens[8].token, Token::Id(String::from("metadata")));
         Ok(())
     }
 }

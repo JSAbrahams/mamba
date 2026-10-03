@@ -1,6 +1,6 @@
 class MyClass where
-    def a: Int := 10
-    def b: Int := self.a + 1
+    let a: Int := 10
+    let b: Int := self.a + 1
 end
 
-def my_class := MyClass.new()
+let my_class := MyClass.new()

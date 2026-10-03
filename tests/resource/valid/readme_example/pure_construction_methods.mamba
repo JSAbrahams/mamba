@@ -1,6 +1,6 @@
 class Counter(start: Int) where
     def pure new(..)
-    def mut count: Int := self.start
+    let mut count: Int := self.start
 
     # perfectly fine, purity was never claimed for methods
     def tick(mut self) := do
@@ -9,5 +9,5 @@ class Counter(start: Int) where
     end
 end
 
-def mut c := Counter.new(1)
+let mut c := Counter.new(1)
 c.tick() # prints '2'

@@ -1,4 +1,4 @@
-def old := 10
+let old := 10
 
 using old as new do
     print(old + 10)

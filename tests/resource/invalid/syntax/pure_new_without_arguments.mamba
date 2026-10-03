@@ -1,4 +1,4 @@
-# `pure` belongs to a function, and without an argument list this is a definition
+# `def` always defines a function, so it always takes an argument list
 class Point(x: Int, y: Int) where
     def pure new
 end

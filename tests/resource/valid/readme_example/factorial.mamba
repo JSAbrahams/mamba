@@ -4,9 +4,9 @@ def pure factorial(x: Int) -> Int := match x where
     n => n * factorial(n - 1)
 end
 
-def num := 5
+let num := 5
 if num >= 0 then do
-    def result := factorial(num)
+    let result := factorial(num)
     print("Factorial {num} is: {result}.")
 end else
     print("Factorial is undefined for negative integers.")

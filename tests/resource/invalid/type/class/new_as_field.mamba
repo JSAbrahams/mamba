@@ -1,5 +1,4 @@
-# Without an argument list this is the field production, which is the whole reason
-# the marker takes one
+# `new` names the constructor, so a field cannot take it
 class Point(x: Int, y: Int) where
-    def new
+    let new
 end

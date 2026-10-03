@@ -1,5 +1,5 @@
-def mut other := 20
-def my_variable := if True then do
+let mut other := 20
+let my_variable := if True then do
     other := 30
     20
 end else

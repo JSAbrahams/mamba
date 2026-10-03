@@ -1,4 +1,4 @@
 def send(message: Str) := do
-    def mut _message: Str? := None
+    let mut _message: Str? := None
     _message := message
 end

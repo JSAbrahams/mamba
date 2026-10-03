@@ -1,2 +1,2 @@
-def a: Str := "my_string"
+let a: Str := "my_string"
 print(a)

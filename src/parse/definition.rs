@@ -4,29 +4,44 @@ use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{custom, ParseResult};
+use crate::parse::result::{custom, expected_one_of, ParseResult};
 use crate::parse::ty::{parse_expression_type, parse_id, parse_type};
 
-pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("definition")?;
-    it.eat(&Token::Def, "definition")?;
+pub fn parse_fun_def(it: &mut LexIterator) -> ParseResult {
+    let start = it.eat(&Token::Def, "function definition")?;
+    let meta = it.eat_if(&Token::Meta).is_some();
+    let total = it.eat_if(&Token::Total).is_some();
     let pure = it.eat_if(&Token::Pure).is_some();
 
     macro_rules! op {
         ($it:expr, $op:ident) => {{
-            let end = $it.eat(&Token::$op, "definition")?;
+            let end = $it.eat(&Token::$op, "function definition")?;
             let node = Node::Id {
                 lit: format!("{}", NodeOp::$op),
             };
-            let ast = AST::new(start.union(end), node);
-            parse_fun_def(&ast, pure, $it)
+            Ok(Box::from(AST::new(end, node)))
         }};
     }
 
-    let res = it.peek_or_err(
-        &|it, lex| match lex.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack if !pure => parse_variable_def(it),
-
+    let expected = [
+        Token::Id(String::new()),
+        Token::Add,
+        Token::Sub,
+        Token::Mul,
+        Token::FDiv,
+        Token::Div,
+        Token::Pow,
+        Token::Mod,
+        Token::Eq,
+        Token::Ge,
+        Token::Le,
+    ];
+    let id = it.peek_or_err(
+        &|it, lex| match &lex.token {
+            Token::Id(id) => {
+                let end = it.eat(&Token::Id(id.clone()), "function definition")?;
+                Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
+            }
             Token::Add => op!(it, Add),
             Token::Sub => op!(it, Sub),
             Token::Mul => op!(it, Mul),
@@ -37,96 +52,17 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
             Token::Eq => op!(it, Eq),
             Token::Ge => op!(it, Ge),
             Token::Le => op!(it, Le),
-            _ => parse_var_or_fun_def(it, pure),
+            _ => Err(Box::from(expected_one_of(
+                &expected,
+                lex,
+                "function definition",
+            ))),
         },
-        &[
-            Token::Id(String::new()),
-            Token::LRBrack,
-            Token::LCBrack,
-            Token::LSBrack,
-            Token::Add,
-            Token::Sub,
-            Token::Mul,
-            Token::FDiv,
-            Token::Div,
-            Token::Pow,
-            Token::Mod,
-            Token::Eq,
-            Token::Ge,
-            Token::Le,
-        ],
-        "definition",
+        &expected,
+        "function definition",
     )?;
 
-    Ok(Box::new(AST {
-        pos: res.pos.union(start),
-        node: res.node.clone(),
-    }))
-}
-
-fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
-    let start = it.start_pos("function definition")?;
-    let id = *it.parse(
-        &parse_expression_type,
-        "variable or function definition",
-        start,
-    )?;
-
-    match &id.node {
-        Node::ExpressionType { ty: Some(_), .. } | Node::TypeTup { .. } if !pure => {
-            parse_variable_def_id(&id, it)
-        }
-        Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
-            &|it, lex| match lex.token {
-                Token::LRBrack => parse_fun_def(&id, pure, it),
-                _ if !pure => parse_variable_def_id(&id, it),
-                _ => {
-                    let msg = format!("Definition cannot have {} identifier", Token::Pure);
-                    Err(Box::from(custom(&msg, id.pos)))
-                }
-            },
-            {
-                let node = Node::VariableDef {
-                    mutable: *mutable,
-                    var: expr.clone(),
-                    ty: None,
-                    expr: None,
-                    forward: vec![],
-                };
-                Ok(Box::from(AST::new(id.pos.union(id.pos), node)))
-            },
-        ),
-        _ => Err(Box::from(custom(
-            "definition must start with id type",
-            id.pos,
-        ))),
-    }
-}
-
-fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("function definition")?;
     let fun_args = it.parse_vec(&parse_fun_args, "function definition", start)?;
-
-    let id = match &id.node {
-        Node::ExpressionType { expr, mutable, ty } => match (mutable, ty) {
-            (_, None) => expr.clone(),
-            (_, Some(_)) => {
-                return Err(Box::from(custom(
-                    "Function identifier cannot have type",
-                    expr.pos,
-                )))
-            }
-        },
-        Node::Id { .. } => Box::from(id.clone()),
-
-        _ => {
-            return Err(Box::from(custom(
-                "Function definition not given id or operator",
-                id.pos,
-            )))
-        }
-    };
-
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", start)?;
     let raises = it.parse_vec_if(&Token::Raise, &parse_raises, "raises", start)?;
     let body = it.parse_if(&Token::Assign, &parse_expr_or_stmt, "function body", start)?;
@@ -140,6 +76,8 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
 
     let node = Node::FunDef {
         id,
+        meta,
+        total,
         pure,
         args: fun_args,
         ret: ret_ty,
@@ -225,9 +163,11 @@ pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(forwarded)
 }
 
-fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
-    let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", id.pos)?;
-    let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", id.pos)?;
+pub fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
+    let start = it.eat(&Token::Let, "variable definition")?;
+    let id = it.parse(&parse_expression_type, "variable definition", start)?;
+    let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", start)?;
+    let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", start)?;
     let (mutable, var, ty) = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
         _ => {
@@ -250,13 +190,7 @@ fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
         expr: expression,
         forward,
     };
-    Ok(Box::from(AST::new(id.pos.union(end), node)))
-}
-
-fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("variable definition")?;
-    let id = it.parse(&parse_expression_type, "variable definition", start)?;
-    parse_variable_def_id(&id, it)
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]
@@ -300,7 +234,7 @@ mod test {
 
     #[test]
     fn empty_definition_verify() {
-        let source = String::from("def a");
+        let source = String::from("let a");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
@@ -318,7 +252,7 @@ mod test {
 
     #[test]
     fn definition_verify() {
-        let source = String::from("def a := 10");
+        let source = String::from("let a := 10");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -345,7 +279,7 @@ mod test {
 
     #[test]
     fn mutable_definition_verify() {
-        let source = String::from("def mut a := 10");
+        let source = String::from("let mut a := 10");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -372,7 +306,7 @@ mod test {
 
     #[test]
     fn private_definition_verify() {
-        let source = String::from("def a := 10");
+        let source = String::from("let a := 10");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -399,7 +333,7 @@ mod test {
 
     #[test]
     fn typed_definition_verify() {
-        let source = String::from("def a: Object := 10");
+        let source = String::from("let a: Object := 10");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -439,7 +373,7 @@ mod test {
 
     #[test]
     fn forward_empty_definition_verify() {
-        let source = String::from("def a forward b, c");
+        let source = String::from("let a forward b, c");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -469,7 +403,7 @@ mod test {
 
     #[test]
     fn forward_definition_verify() {
-        let source = String::from("def a := MyClass forward b, c");
+        let source = String::from("let a := MyClass forward b, c");
         let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
@@ -730,8 +664,8 @@ mod test {
     }
 
     #[test]
-    fn def_mut_private_wrong_order() {
-        let source = String::from("def mut private a ");
+    fn let_mut_private_wrong_order() {
+        let source = String::from("let mut private a ");
         source.parse::<AST>().unwrap_err();
     }
 
@@ -761,13 +695,13 @@ mod test {
 
     #[test]
     fn handle_no_branches() {
-        let source = String::from("def a handle");
+        let source = String::from("let a handle");
         source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn handle_no_indentation() {
-        let source = String::from("def a handle\nerr: Err => b");
+        let source = String::from("let a handle\nerr: Err => b");
         source.parse::<AST>().unwrap_err();
     }
 
@@ -849,11 +783,10 @@ mod test {
         }
     }
 
-    /// `new` without an argument list is a definition like any other, and the parser treats it
-    /// as one. Naming it as a function is left to the checker.
+    /// `let` binds a value, so a field named `new` is still a field.
     #[test]
-    fn new_without_args_is_a_variable_def() {
-        let source = String::from("def new\nprint(1)");
+    fn let_new_is_a_variable_def() {
+        let source = String::from("let new\nprint(1)");
         let (_, var, ty, expr, _) =
             unwrap_definition!(parse_direct(&source).expect("valid definition"));
 
@@ -865,5 +798,145 @@ mod test {
         );
         assert_eq!(ty, None);
         assert_eq!(expr, None);
+    }
+
+    /// `def` always defines a function, so it always takes an argument list.
+    #[test]
+    fn def_without_args_is_error() {
+        for source in ["def new", "def x := 10", "def pure x := 5"] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// A function is not a binding, so `mut` cannot follow `def`.
+    #[test]
+    fn def_mut_is_error() {
+        for source in [
+            "def mut f(x) := x",
+            "def mut f()",
+            "def pure mut f(x) := x",
+            "def mut x := 10",
+        ] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `pure` belongs to a function, and `let` binds a value.
+    #[test]
+    fn let_pure_is_error() {
+        for source in [
+            "let pure x := 5",
+            "let pure f(x) := x",
+            "let mut pure x := 5",
+        ] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `total` belongs to a function, and `let` binds a value.
+    #[test]
+    fn let_total_is_error() {
+        for source in [
+            "let total x := 5",
+            "let total pure x := 5",
+            "let total f(x) := x",
+        ] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `let` binds a value, so it takes no argument list.
+    #[test]
+    fn let_with_args_is_error() {
+        let source = String::from("let f(x) := x");
+        source.parse::<AST>().unwrap_err();
+    }
+
+    #[test]
+    fn function_modifiers_verify() {
+        for (source, expected) in [
+            ("def f() := d", (false, false, false)),
+            ("def meta f() := d", (true, false, false)),
+            ("def total f() := d", (false, true, false)),
+            ("def pure f() := d", (false, false, true)),
+            ("def total pure f() := d", (false, true, true)),
+            ("def meta total pure f() := d", (true, true, true)),
+        ] {
+            let ast = parse_direct(&String::from(source)).expect("valid definition");
+            match &ast.first().expect("script empty.").node {
+                Node::FunDef {
+                    meta,
+                    total,
+                    pure,
+                    id,
+                    ..
+                } => {
+                    assert_eq!((*meta, *total, *pure), expected, "{source}");
+                    assert_eq!(
+                        id.node,
+                        Node::Id {
+                            lit: String::from("f")
+                        }
+                    );
+                }
+                other => panic!("Expected fundef but was {other:?}."),
+            }
+        }
+    }
+
+    /// The modifiers have a fixed order, as in `def meta total pure`.
+    #[test]
+    fn modifiers_wrong_order() {
+        for source in [
+            "def pure total f() := d",
+            "def total meta f() := d",
+            "def pure meta f() := d",
+            "def total total f() := d",
+        ] {
+            String::from(source)
+                .parse::<AST>()
+                .expect_err(&format!("{source} should not parse"));
+        }
+    }
+
+    /// `meta`, `total` and `pure` are keywords, so nothing can be named after them.
+    ///
+    /// Each source parses with an ordinary name in place of `NAME`, so the keyword is what fails it.
+    #[test]
+    fn modifier_is_not_a_name() {
+        for source in [
+            "let NAME := 5",
+            "let mut NAME := 0",
+            "let NAME: Int := 5",
+            "let (a, NAME) := (1, 2)",
+            "def NAME() := 1",
+            "def f(NAME: Int) := 1",
+            "def f(mut NAME: Int) := 1",
+            "class Point(NAME: Int)",
+            "class Point where\n    let NAME: Int := 5\nend",
+            "for NAME in xs do print(NAME) end",
+            "print(\\NAME := NAME + 1)",
+            "print(NAME)",
+            "NAME := 5",
+            "print(point.NAME)",
+        ] {
+            let plain = source.replace("NAME", "amount");
+            parse_direct(&plain).unwrap_or_else(|err| panic!("{plain} should parse: {err:?}"));
+
+            for keyword in ["meta", "total", "pure"] {
+                let source = source.replace("NAME", keyword);
+                source
+                    .parse::<AST>()
+                    .expect_err(&format!("{source} should not parse"));
+            }
+        }
     }
 }

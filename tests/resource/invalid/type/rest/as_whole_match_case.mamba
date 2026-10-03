@@ -1,4 +1,4 @@
-def t := 1
+let t := 1
 
 match t where
     .. => print("a")

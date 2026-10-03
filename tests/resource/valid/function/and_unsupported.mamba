@@ -1,3 +1,3 @@
-def a := True
-def b := False
+let a := True
+let b := False
 if a and b then print(1) else print(0)

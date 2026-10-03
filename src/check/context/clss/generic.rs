@@ -300,12 +300,9 @@ fn get_fields_and_functions(
                 let function = function.in_class(class, type_def, statement.pos);
                 functions.insert(function);
             }
-            // Without an argument list it parses as a field, which is the production it would
-            // otherwise be read as.
+            // `new` names the constructor, so a field cannot take it.
             Node::VariableDef { var, .. } if matches!(&var.node, Node::Id { lit } if lit == NEW) => {
-                let msg = format!(
-                    "'{NEW}' is a function, not a field. Write '{NEW}()', '{NEW}(_)' or '{NEW}(..)', for a class with no arguments, exactly one, or one or more"
-                );
+                let msg = format!("'{NEW}' is the constructor, so it cannot be a field");
                 return Err(vec![TypeErr::new(statement.pos, &msg)]);
             }
             Node::VariableDef { .. } => {
@@ -352,7 +349,7 @@ mod test {
     #[test]
     fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
         let source =
-            "class MyClass(mut a: Int, b: Int): Parent(b) where\n    def c: Int := a + b\nend";
+            "class MyClass(mut a: Int, b: Int): Parent(b) where\n    let c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -405,7 +402,7 @@ mod test {
         assert!(!field.is_py_type);
         assert!(field.mutable);
 
-        // `b` is a bare (non-`def`) constructor argument, which is still instance state stored
+        // `b` is a class argument rather than a `let` field, which is still instance state stored
         // on `self` (just without an explicit field declaration), so it is a field too.
         let field = fields.next().expect("Field");
         assert_eq!(field.name, "b");
@@ -426,7 +423,7 @@ mod test {
 
     #[test]
     fn from_class() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass where\n    def c: Int := a + b\nend";
+        let source = "class MyClass where\n    let c: Int := a + b\nend";
         let ast = parse_direct(source)
             .expect("valid class syntax")
             .into_iter()
@@ -466,7 +463,7 @@ mod test {
 
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
-        let source = "class MyClass[T] where\n    def c: T\nend";
+        let source = "class MyClass[T] where\n    let c: T\nend";
         let ast = parse_direct(source)
             .expect("valid type syntax")
             .into_iter()

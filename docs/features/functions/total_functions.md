@@ -6,6 +6,8 @@
 
 # 2.5.2 Total Functions
 
+_Note_ `total` is a reserved keyword, and `def total` parses, but nothing described here is checked yet.
+
 ## Ackermann's function
 
 Ackermann's function halts for every input but cannot be marked `total` in Mamba:

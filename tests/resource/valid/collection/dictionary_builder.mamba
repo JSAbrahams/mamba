@@ -1,4 +1,4 @@
-def a := { 20, 30, 40 }
-def b := { "do", "re", "mi" }
+let a := { 20, 30, 40 }
+let b := { "do", "re", "mi" }
 
-def i := { "str" => x + 10 | x in a }
+let i := { "str" => x + 10 | x in a }

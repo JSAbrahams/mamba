@@ -102,7 +102,7 @@ A good first step is to log the error.
 In this case, we simply print it:
 
 ```mamba
-def l := g(9) ! where
+let l := g(9) ! where
     err: MyErr => do
         print(err)
         0
@@ -122,7 +122,7 @@ In that case, the code after would only be executed if no error occurred:
 
 ```mamba
 def use_g() := do
-    def l := g(9) ! where
+    let l := g(9) ! where
         err: MyErr => do
             print(err)
             return
@@ -144,7 +144,7 @@ We do not have to handle an error where it occurs.
 Appending a bare `!` to a call passes the error on, to be handled further up the stack:
 
 ```mamba
-def l := g(9) !
+let l := g(9) !
 # if g raised an error, we will never reach this point
 print("l has value {l}.")
 ```

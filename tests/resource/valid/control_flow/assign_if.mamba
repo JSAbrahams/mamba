@@ -1,4 +1,4 @@
-def my_var := if True then do
+let my_var := if True then do
     print("then")
     10
 end else do

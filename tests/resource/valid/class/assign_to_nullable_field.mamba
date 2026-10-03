@@ -1,5 +1,5 @@
 class Vector2() where
-    def mut _label: Str? := None
+    let mut _label: Str? := None
 
     def relabel(mut self, x: Str) :=
         self._label := x

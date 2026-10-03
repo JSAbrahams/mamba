@@ -7,8 +7,8 @@ class Point(x: Int, y: Int) where
     def origin() -> Point := return Point(0, 0)
 end
 
-def p := Point.new(3, 4)
+let p := Point.new(3, 4)
 print(p.x)
 
-def o := Point.origin()
+let o := Point.origin()
 print(o.y)

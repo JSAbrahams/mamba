@@ -2,7 +2,7 @@ class MyClass where
     def something(self) -> String := return "my string"
 end
 
-def my_class := MyClass.new()
-def b := my_class.something()
+let my_class := MyClass.new()
+let b := my_class.something()
 
-def c: Int := b
+let c: Int := b

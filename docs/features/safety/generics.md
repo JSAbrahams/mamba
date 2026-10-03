@@ -16,7 +16,7 @@ A `trait` or `class` may have a generic parameter.
 To demonstrate generics, we will use an incomplete implementation of a graph.
 
     trait Node where
-        def id: Int
+        let id: Int
         def to_hash(self) -> Int
     end
 
@@ -42,8 +42,8 @@ Now we write the main script.
     from graph import Graph
     from node import MyNode, OtherNode
 
-    def graph := Graph({ MyNode(1), MyNode(2) })
-    def other_graph := Graph({ OtherNode(1) })
+    let graph := Graph({ MyNode(1), MyNode(2) })
+    let other_graph := Graph({ OtherNode(1) })
 
     print(graph.contains(MyNode(1)))
     print(other_graph.contains(OtherNode(1)))

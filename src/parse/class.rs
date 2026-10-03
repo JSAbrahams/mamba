@@ -72,6 +72,8 @@ fn resolve_self_ty(ast: &AST, class: &AST) -> Box<AST> {
                 .collect(),
         },
         Node::FunDef {
+            meta,
+            total,
             pure,
             id,
             args,
@@ -79,6 +81,8 @@ fn resolve_self_ty(ast: &AST, class: &AST) -> Box<AST> {
             raises,
             body,
         } => Node::FunDef {
+            meta: *meta,
+            total: *total,
             pure: *pure,
             id: id.clone(),
             args: args
@@ -126,7 +130,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Class, "class")?;
     let ty = it.parse(&parse_type, "class", start)?;
 
-    // Class arguments are always fields, never `def`-prefixed. They are otherwise an ordinary
+    // Class arguments are always fields, never `let`-prefixed. They are otherwise an ordinary
     // argument list, which is what the generated `new` takes.
     let args = if it.peek_if(&|lex: &Lex| lex.token == Token::LRBrack) {
         it.parse_vec(&parse_fun_args, "class arguments", start)?
@@ -440,7 +444,7 @@ mod test {
 
     #[test]
     fn class_with_single_line_body_no_newline() -> Result<(), Box<ParseErr>> {
-        let source = "class MyClass\n    def var := 10";
+        let source = "class MyClass\n    let var := 10";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
@@ -450,7 +454,7 @@ mod test {
 
     #[test]
     fn class_with_single_line_body_newline() -> Result<(), Box<ParseErr>> {
-        let source = "class MyClass\n    def var := 10\n";
+        let source = "class MyClass\n    let var := 10\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
@@ -460,7 +464,7 @@ mod test {
 
     #[test]
     fn class_with_body_class_right_after() -> Result<(), Box<ParseErr>> {
-        let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
+        let source = "class MyClass\n    let var := 10\nclass MyClass1\n";
         source
             .parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))

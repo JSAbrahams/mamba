@@ -1,2 +1,2 @@
-def a := { 20 => "asdf", 30 => "asdf" }
-def i: Int := a(20)
+let a := { 20 => "asdf", 30 => "asdf" }
+let i: Int := a(20)

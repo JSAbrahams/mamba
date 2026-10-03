@@ -1,4 +1,4 @@
-def mut a: Float := 10
+let mut a: Float := 10
 
 a += 2
 a -= 3

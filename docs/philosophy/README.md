@@ -45,8 +45,8 @@ Mamba collapses it:
 
 ```mamba
 def f(x: Int) -> Int := x + 1
-def a := [10, 20, 30]
-def m := { "hello" => 1, "world" => 2 }
+let a := [10, 20, 30]
+let m := { "hello" => 1, "world" => 2 }
 
 print(f(2))        # 3,  a function applied
 print(a(1))        # 20, a list applied
@@ -76,7 +76,7 @@ See [what is built](#what-is-built-and-what-is-not) below.
 `=` asks whether two things are equal.
 
 ```mamba
-def x := 2
+let x := 2
 if x = 2 then print("yes")
 ```
 
@@ -126,8 +126,8 @@ The idea is still in its infancy.
 ### Comprehensions are set-builder notation
 
 ```mamba
-def evens := { x | x in numbers, x mod 2 = 0 }
-def squares := [x ^ 2 | x in numbers]
+let evens := { x | x in numbers, x mod 2 = 0 }
+let squares := [x ^ 2 | x in numbers]
 ```
 
 This is `{ x | x ∈ N, x ≡ 0 mod 2 }` with the symbols spelled out.

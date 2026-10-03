@@ -1,18 +1,18 @@
 class MyGeneric: Str
 
 trait SuperInterface where
-    def bar: Int
+    let bar: Int
 end
 
 trait MyInterface: SuperInterface where
-    def required_field: Int
+    let required_field: Int
     def higher_order(self) -> Int
 end
 
 # some class
 class MyClass(my_field: Int, mut other_field: Str := "Hello"): MyInterface where
-    def required_field: Int := 100
-    def private_field: Int := 20
+    let required_field: Int := 100
+    let private_field: Int := 20
 
     def fun_a(mut self) := self.other_field := "my field is {self.required_field}"
     def fun_b(self) := print("this field is private: {self.private_field}!")

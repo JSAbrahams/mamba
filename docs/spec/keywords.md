@@ -33,9 +33,12 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`def`     | Denote definition
+`let`     | Define a value
+`def`     | Define a function or method
 `mut`     | Denote binding is mutable
 `pure`    | Denote function is pure
+`total`   | Denote function is total (reserved, not yet checked)
+`meta`    | Denote function is evaluated at compile time (reserved, not yet checked)
 
 ## Boolean operators
 

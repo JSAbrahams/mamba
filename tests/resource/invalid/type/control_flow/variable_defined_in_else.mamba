@@ -1,6 +1,6 @@
 if False then
     print("something")
 else
-    def x := 10
+    let x := 10
 
 x + 10

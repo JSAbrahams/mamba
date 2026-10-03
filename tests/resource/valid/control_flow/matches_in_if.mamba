@@ -1,4 +1,4 @@
-def x:= if True then
+let x:= if True then
     match 10 where
         2 => 3
         _ => 4

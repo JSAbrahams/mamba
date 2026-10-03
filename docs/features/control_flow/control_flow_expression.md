@@ -42,7 +42,7 @@ So, an `if` _expression_ has the form
 
 An example would be:
 
-    def my_value := if a > 0 then 2E30 else 8E21
+    let my_value := if a > 0 then 2E30 else 8E21
 
 ### Match Expressions (or Statements)
 

@@ -3,4 +3,4 @@ if True then
 else
     print(20)
 
-def a := if False then 20 else 30
+let a := if False then 20 else 30

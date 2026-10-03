@@ -1,8 +1,8 @@
 class MyClass where
-    def mut a: Int := 20
+    let mut a: Int := 20
     def f(mut self, x: Int) -> Int := self.a := x + 20
 end
 
-def my_class := MyClass.new()
+let my_class := MyClass.new()
 # should not be allowed, self is not mut!
 my_class.f(10)

@@ -11,11 +11,11 @@ use mamba::parse::result::ParseResult;
 #[test_case("top_lvl_class_access"=> matches Err(_))]
 #[test_case("type_annotation_in_tuple"=> matches Err(_))]
 #[test_case("pure_variable_def"=> matches Err(_))]
-#[test_case("mut_without_def"=> matches Err(_))]
+#[test_case("mut_without_let"=> matches Err(_))]
 #[test_case("mut_on_tuple"=> matches Err(_))]
 #[test_case("mut_on_nested_tuple"=> matches Err(_))]
 #[test_case("type_annotation_in_for_tuple"=> matches Err(_))]
-#[test_case("def_collection_destructure"=> matches Err(_))]
+#[test_case("let_collection_destructure"=> matches Err(_))]
 #[test_case("class_parent_bad_token"=> matches Err(_))]
 #[test_case("class_parent_arg_bad_token"=> matches Err(_))]
 // Every comma-separated list requires its commas, per `{ "," item }` in the grammar.

@@ -1,0 +1,4 @@
+def partial_double(x: Int) -> Int := x * 2
+
+# partial_double is not total, so a total function may not call it
+def total quadruple(x: Int) -> Int := partial_double(x)

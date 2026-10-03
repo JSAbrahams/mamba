@@ -266,7 +266,7 @@ It is also called out in the README's Collections section.
 
 `wrap_scoped`, in `src/backend/python/convert/control_flow.rs`, appends a scope-restore `if/else` after the body it guards.
 `append_ret`, in `src/backend/python/convert/mod.rs`, turns the *last statement* of a `Block` into a `return`.
-So a body ending in a `def`-shadowed name that is also the tail expression got `return i = __mamba_i_saved` and `return del i`, which is not valid Python.
+So a body ending in a `let`-shadowed name that is also the tail expression got `return i = __mamba_i_saved` and `return del i`, which is not valid Python.
 
 `wrap_scoped` now omits the restore when the body already ends in `return` or `raise`.
 Control leaves the function there, taking its locals with it, so the restore was dead code to begin with.
@@ -342,3 +342,12 @@ They are now `prompt` and `NoneType`, the names CPython itself uses, and `python
 `__debug__: bool = True` parses, so `ruff_python_parser` accepts it, but CPython rejects it at compile time with `SyntaxError: cannot assign to __debug__`.
 The file exists to give context building one typed and one untyped module-level assignment to parse, which it still does.
 Worth replacing `__debug__` with a name that is assignable if these files ever get run through `py_compile` as a test of their own.
+
+## Known checker gap: `total` and `meta` parse but are not checked
+
+`total` and `meta` are keywords, so neither can be used as a name.
+`parse_fun_def` in `src/parse/definition.rs` records them on `Node::FunDef`, in the order `def meta total pure`.
+Nothing in `src/check/` reads either flag yet.
+So a `total` function may call a partial one or loop with `while`, and `def meta` is accepted outside the standard library.
+Each of those has an ignored fixture in `tests/resource/invalid/type/function/`: `total_calls_partial`, `total_while` and `meta_outside_std`.
+`valid/function/total_calls_total` pins that a correct `total` function still checks and generates, so it stays valid once the rules are enforced.

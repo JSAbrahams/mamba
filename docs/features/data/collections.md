@@ -27,9 +27,9 @@ A set is an unordered collection of unique items, meaning that we cannot access 
 Below we show some examples of how a set may be used:
 
     # A set is immutable by default
-    def animals := { "dog", "cat", "mouse" }
+    let animals := { "dog", "cat", "mouse" }
     # Unless we ask for a mutable one
-    def mut instruments := { "piano", "violin", "flute" }
+    let mut instruments := { "piano", "violin", "flute" }
 
     # I can iterate over a set
     for animal in animals do print(animal) end
@@ -41,7 +41,7 @@ Below we show some examples of how a set may be used:
     instruments := { "piano", "trombone" }
 
     # I can derive a new set from an existing one using set-builder notation
-    def described := { item + " is an instrument" | item in instruments }
+    let described := { item + " is an instrument" | item in instruments }
 
 _Note_ The standard library does not define methods on a `Set` yet, so there is no `add` or `remove`.
 Iteration, containment with `in`, and the set-builder notation above are what is available today.
@@ -53,7 +53,7 @@ A list is created using `[` ... `]`, or by using the list-builder notation.
 A list is ordered, and can be accessed using an index: `list(1)`.
 Note that we index using round brackets, and not square ones.
 
-    def xs := [ 4, 9, 16 ]
+    let xs := [ 4, 9, 16 ]
     print(xs(0)) # prints '4'
 
 ## Tuple
@@ -61,15 +61,15 @@ Note that we index using round brackets, and not square ones.
 A tuple is created using `(` ... `)`.
 A tuple is a fixed-size collection, where each item may have a different type.
 
-    def t := (1, "two")
+    let t := (1, "two")
 
 We can also define several variables at once by destructuring one:
 
-    def (a, b) := (10, 20)
+    let (a, b) := (10, 20)
 
 Destructuring nests, so an element may itself be a tuple:
 
-    def ((a, b), c) := ((10, 20), 30)
+    let ((a, b), c) := ((10, 20), 30)
 
 Each element is its own binding, so `mut` goes on the elements rather than on the tuple.
 See [Defining Variables](defining_variables.md).
@@ -80,5 +80,5 @@ A map is created using `{` ... `}`, where each mapping is represented as such: `
 A map is an unordered collection of items.
 As with a list, we index it using round brackets.
 
-    def pairs := { "do" => 1, "ree" => 2 }
+    let pairs := { "do" => 1, "ree" => 2 }
     print(pairs("do")) # prints '1'

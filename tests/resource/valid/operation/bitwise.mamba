@@ -1,13 +1,13 @@
-def a := 10
-def b := 20
-def c := 30
-def d := 40
-def e := 50
-def f := 60
-def g := 70
-def h := 80
-def i := 90
-def j := 100
+let a := 10
+let b := 20
+let c := 30
+let d := 40
+let e := 50
+let f := 60
+let g := 70
+let h := 80
+let i := 90
+let j := 100
 
 !! a
 a << b

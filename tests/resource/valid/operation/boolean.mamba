@@ -1,16 +1,16 @@
-def a := True
-def b := a
+let a := True
+let b := a
 
-def c := False or True and False
-def d := c and b and a
-def e := not False
+let c := False or True and False
+let d := c and b and a
+let e := not False
 
 a and b
 c or d
 not e
 
-def f := True
-def g := False
-def h := True
-def i := True
-def j := False
+let f := True
+let g := False
+let h := True
+let i := True
+let j := False

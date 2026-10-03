@@ -1,1 +1,2 @@
-def pure x := 5
+# `pure` belongs to a function, and `let` binds a value
+let pure x := 5

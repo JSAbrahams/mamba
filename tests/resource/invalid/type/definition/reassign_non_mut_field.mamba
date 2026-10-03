@@ -1,6 +1,6 @@
 class A where
-    def my_num: Int := 10
+    let my_num: Int := 10
 end
 
-def a := A.new()
+let a := A.new()
 a.my_num := 20

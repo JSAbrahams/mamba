@@ -1,4 +1,4 @@
 class Point(x: Int, y: Int)
 
-def p := Point.new(3, 4)
+let p := Point.new(3, 4)
 print(p.x) # prints '3'

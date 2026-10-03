@@ -6,8 +6,9 @@
 
 # 2.2.2 Defining Variables and Functions (or Methods)
 
-Every definition must be preceded with the `def` keyword.
-This is not necessary when reassigning however.
+A value is defined with `let`, and a function or method with `def`.
+Neither keyword is written when reassigning.
+See [Why `let` and `def`](#why-let-and-def) for why there are two keywords.
 
 Functions and methods cannot be reassigned, values marked `mut` can, however.
 A value is an expression which may be evaluated.
@@ -16,15 +17,15 @@ A value is an expression which may be evaluated.
 
 A variable definition has the following structure:
 
-    def [ mut ] <identifier> [ : <type> ] := <expression>
+    let [ mut ] <identifier> [ : <type> ] := <expression>
 
 For instance, a variable `x` is assigned to as such:
 
-    def x := <expression>
+    let x := <expression>
 
 Or:
 
-    def mut x := <expression>
+    let mut x := <expression>
 
 Use this if `x` has to be mutable.
 A definition is immutable unless we mark it `mut`, so we reassign the second `x` but not the first:
@@ -36,13 +37,13 @@ A method that assigns to its own fields must take `mut self`.
 
 A tuple binding takes one marker per element, since each element is its own binding:
 
-    def (mut a, b) := (10, 20)
+    let (mut a, b) := (10, 20)
 
 Here `a` may be reassigned and `b` may not.
-Marking the tuple itself, as `def mut (a, b)`, is a parse error.
+Marking the tuple itself, as `let mut (a, b)`, is a parse error.
 This holds at every depth, so a nested tuple takes the marker on its elements too:
 
-    def ((mut a, b), c) := ((10, 20), 30)
+    let ((mut a, b), c) := ((10, 20), 30)
 
 ## Functions
 
@@ -79,13 +80,13 @@ See [Error Handling](../safety/error_handling.md).
 We can have default values:
 
     class MyClass where
-        def mut my_field: Int := 5
+        let mut my_field: Int := 5
         def my_method(mut self, x: Int, y: Int := 2) := self.my_field := x + y
     end
 
 We can now call the method as such:
 
-    def mut my_class := MyClass()
+    let mut my_class := MyClass()
     my_class.my_method(10, 2)
 
 Or, leaving `y` to its default:
@@ -94,3 +95,30 @@ Or, leaving `y` to its default:
 
 Note that a method takes an explicit `self` argument, and that its fields are reached through it.
 So it is `self.my_field`, and not a bare `my_field`.
+
+## Why `let` and `def`
+
+Mamba has two keywords so that the language stays internally consistent.
+Each keyword introduces one kind of thing, and each modifier is accepted only where it means something.
+`let` binds a value, and `def` defines a function.
+The first word of a definition therefore says what is being defined.
+
+Each keyword takes only the modifiers that make sense for it.
+`mut` marks a binding, so it goes with `let`.
+`pure` and `total` say something about a function, so they go with `def`.
+This makes `def mut f(x)` and `let pure x` syntax errors, rather than combinations the compiler has to accept or explain away.
+`meta` asks for evaluation at compile time, which means something for a value and a function alike.
+It is therefore planned for both, as `let meta` and `def meta`, though only `def meta` parses so far.
+
+A function and a value cannot be confused.
+`def` always takes an argument list, so `def f() := 10` is a function and `let f := 10` is a value.
+In a class body a field starts with `let` and a method with `def`, so the two are told apart at a glance.
+
+A function is still a value.
+Binding an anonymous function to a name defines a value, so it uses `let`:
+
+    let add_one := \x: Int := x + 1
+
+Mutability is a modifier rather than a second keyword.
+`mut` marks every binding site, including function arguments and the `self` argument of a method, where there is no keyword to swap.
+One modifier therefore covers them all, so it is `let mut a`, `def f(mut a: Int)` and `def f(mut self)`.

@@ -1,7 +1,7 @@
-def name := "My name"
-def some_brackets := "\{\}"
-def some_more_brackets := "empty expressions are ignored: {}"
-def age := 30
+let name := "My name"
+let some_brackets := "\{\}"
+let some_more_brackets := "empty expressions are ignored: {}"
+let age := 30
 
-def a := "My name is {name} and my age is {age - 10}."
+let a := "My name is {name} and my age is {age - 10}."
 print(a)
