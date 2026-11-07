@@ -182,6 +182,7 @@ fn err_output_relative_path_from_custom_src() -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
+/// `--asm` prints the disassembly to stdout, and writes no output directory or executable.
 #[test]
 fn asm_prints_disassembly_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
     let src_dir = resource_path(true, &["function"], "");
@@ -196,7 +197,6 @@ fn asm_prints_disassembly_to_stdout() -> Result<(), Box<dyn std::error::Error>> 
         "expected disassembly on stdout, got:\n{stdout}"
     );
 
-    // No output directory/file should have been written -- `--asm` only prints.
     assert!(!Path::new(&src_dir).join("target").exists());
     assert!(!Path::new(&src_dir).join("a.out").exists());
     Ok(())

@@ -5,10 +5,11 @@
 use std::fs;
 use std::path::PathBuf;
 
+use test_case::test_case;
+
 use mamba::{
     compile, compile_str, version, Artifact, Diagnostic, LineCol, Options, Output, Source, Stage,
 };
-use test_case::test_case;
 use tests_util::resource_path;
 
 /// The text of the fixture `name` of `tests/resource/invalid/diagnostic`.
@@ -82,7 +83,7 @@ fn version_is_a_tag_or_the_crate_version() {
     );
 }
 
-// The parser reports an error of the lexer, such as an unrecognized character, as its own.
+/// The parser reports an error of the lexer, such as an unrecognized character, as its own.
 #[test_case("lex", Stage::Parse, (2, 12), (2, 13))]
 #[test_case("parse", Stage::Parse, (3, 17), (3, 17))]
 #[test_case("type", Stage::Type, (4, 15), (4, 22))]
@@ -103,9 +104,9 @@ fn invalid_fixture_reports_stage_and_span(
     assert_eq!(primary.span.end, LineCol::new(end.0, end.1));
 }
 
+/// The emoji is four bytes, and one character.
 #[test]
 fn span_offsets_count_bytes() {
-    // The emoji is four bytes, and one character.
     let text = "let s := \"😀\"\nlet b: Int := \"x\"\n";
     let errs = compile_str(text, &Options::default()).unwrap_err();
     let span = errs[0].primary_label().expect("a primary label").span;
@@ -119,9 +120,9 @@ fn span_offsets_count_bytes() {
     );
 }
 
+/// The core counts columns in bytes, and the span counts characters.
 #[test]
 fn span_columns_count_characters_after_non_ascii_on_the_same_line() {
-    // The core counts columns in bytes; the span counts characters.
     let text = "let b: Int := \"é\" + 1\n";
     let errs = compile_str(text, &Options::default()).unwrap_err();
     let span = errs[0].primary_label().expect("a primary label").span;

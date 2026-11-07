@@ -10,7 +10,8 @@ use glob::glob;
 use log::info;
 use pathdiff::diff_paths;
 
-use crate::{compile, Artifact, Diagnostic, Options, Output, Source, Stage};
+use crate::diagnostic::{Diagnostic, Stage};
+use crate::{compile, Artifact, Options, Output, Source};
 
 /// The source directory when none is given.
 const SOURCE: &str = "src";
@@ -168,18 +169,23 @@ fn link(object_paths: &[impl AsRef<Path>], output: &Path) -> Result<(), String> 
 }
 
 /// The name of `file` in diagnostics: its path from the parent of the source directory `source_dir`.
+///
+/// If the source is a file rather than a directory, it is the file name.
 fn display_name(file: &Path, source_dir: &Path) -> PathBuf {
-    match file.strip_prefix(source_dir) {
-        // The source is a file, not a directory.
-        Ok(relative) if relative.as_os_str().is_empty() => file
+    let Ok(relative) = file.strip_prefix(source_dir) else {
+        return file.to_path_buf();
+    };
+    if relative.as_os_str().is_empty() {
+        return file
             .file_name()
-            .map_or_else(|| file.to_path_buf(), PathBuf::from),
-        Ok(relative) => source_dir.file_name().map_or_else(
-            || relative.to_path_buf(),
-            |name| Path::new(name).join(relative),
-        ),
-        Err(_) => file.to_path_buf(),
+            .map_or_else(|| file.to_path_buf(), PathBuf::from);
     }
+
+    let parent = source_dir.file_name();
+    parent.map_or_else(
+        || relative.to_path_buf(),
+        |name| Path::new(name).join(relative),
+    )
 }
 
 fn io_error(msg: impl Into<String>) -> Vec<Diagnostic> {
@@ -228,8 +234,9 @@ fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
 mod test {
     use std::path::Path;
 
+    use crate::diagnostic::Stage;
     use crate::io::compile_dir;
-    use crate::{Options, Stage};
+    use crate::Options;
 
     #[test]
     fn compile_dir_reports_missing_source_directory() {

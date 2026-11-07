@@ -6,8 +6,8 @@
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-use crate::diagnostic::RenderedDiagnostic;
-use crate::{Diagnostic, Options, Output};
+use crate::diagnostic::{Diagnostic, RenderedDiagnostic};
+use crate::{Options, Output};
 
 /// The options of [compile], as JavaScript passes them.
 #[derive(Debug, Default, Deserialize)]

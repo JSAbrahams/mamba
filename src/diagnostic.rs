@@ -4,15 +4,16 @@
 //! They are turned into a [Diagnostic] at the edge of the crate, so that every user of the crate sees one shape.
 //! A [Diagnostic] can be [rendered](Diagnostic::render) as text for a terminal, or, with the `serde` feature, serialized.
 
+use std::collections::BTreeSet;
 use std::fmt::{self, Display, Formatter, Write};
 use std::path::{Path, PathBuf};
 
 use crate::backend::cranelift::result::BackendErr;
 use crate::backend::python::result::UnimplementedErr;
+use crate::check::result::TypeErr;
 use crate::common::position::{CaretPos, Position};
 use crate::common::result::Cause;
 use crate::parse::result::ParseErr;
-use crate::TypeErr;
 
 /// How many of the causes of a parse error become labels.
 ///
@@ -219,9 +220,7 @@ impl Diagnostic {
                 ),
             });
 
-        // The last cause is the file as a whole, which says nothing.
-        let inner = err.causes.len().saturating_sub(1);
-        for cause in err.causes.iter().take(inner.min(PARSE_CAUSE_LABELS)) {
+        for cause in labelled_causes(err) {
             diagnostic.add_cause(cause, Some(text));
         }
         diagnostic
@@ -230,6 +229,7 @@ impl Diagnostic {
     /// A type error in `text`, which is the source named `source`.
     ///
     /// `text` is [None] when it is not known which source the error is in.
+    /// Its causes are private to the type checker, so only its own position becomes a label.
     pub(crate) fn from_type(
         err: &TypeErr,
         text: Option<&str>,
@@ -237,7 +237,6 @@ impl Diagnostic {
     ) -> Diagnostic {
         let mut diagnostic =
             Diagnostic::error(Stage::Type, err.msg.clone()).with_source(owned(source));
-        // Its causes are private to the type checker, so only its own position becomes a label.
         diagnostic.add_primary(err.pos, text);
         diagnostic
     }
@@ -304,19 +303,7 @@ impl Diagnostic {
         let mut out = String::new();
 
         self.write_header(&mut out, paint, gutter, Some(&lines));
-        if !shown.is_empty() {
-            let bar = paint.gutter("│");
-            let _ = writeln!(out, "{} {bar}", pad(gutter));
-            let mut previous: Option<usize> = None;
-            for &line in &shown {
-                if previous.is_some_and(|previous| line > previous + 1) {
-                    let _ = writeln!(out, "{} {}", pad(gutter), paint.gutter("┆"));
-                }
-                self.write_line(&mut out, paint, gutter, &lines, line);
-                previous = Some(line);
-            }
-            let _ = writeln!(out, "{} {bar}", pad(gutter));
-        }
+        self.write_source(&mut out, paint, gutter, &lines, &shown);
         self.write_notes(&mut out, paint, gutter);
         out
     }
@@ -382,6 +369,32 @@ impl Diagnostic {
         }
     }
 
+    /// Write the `shown` lines of the source between two bars, marking where lines are skipped.
+    fn write_source(
+        &self,
+        out: &mut String,
+        paint: Paint,
+        gutter: usize,
+        lines: &Lines,
+        shown: &[usize],
+    ) {
+        if shown.is_empty() {
+            return;
+        }
+
+        let bar = paint.gutter("│");
+        let _ = writeln!(out, "{} {bar}", pad(gutter));
+        let mut previous: Option<usize> = None;
+        for &line in shown {
+            if previous.is_some_and(|previous| line > previous + 1) {
+                let _ = writeln!(out, "{} {}", pad(gutter), paint.gutter("┆"));
+            }
+            self.write_line(out, paint, gutter, lines, line);
+            previous = Some(line);
+        }
+        let _ = writeln!(out, "{} {bar}", pad(gutter));
+    }
+
     /// Write line `line` of the source, followed by a row of markers for each label on it.
     fn write_line(
         &self,
@@ -436,7 +449,7 @@ impl Diagnostic {
 
     /// The numbers of the lines to show: each labelled line, with context around it.
     fn shown_lines(&self, lines: &Lines) -> Vec<usize> {
-        let mut shown = std::collections::BTreeSet::new();
+        let mut shown = BTreeSet::new();
         for label in &self.labels {
             let (start, end) = line_range(lines, label);
             let labelled: Vec<usize> = if end - start + 1 > MAX_SPAN_LINES {
@@ -511,6 +524,14 @@ impl<'a> RenderedDiagnostic<'a> {
             rendered: diagnostic.render(src, RenderStyle::Plain),
         }
     }
+}
+
+/// The causes of `err` that become labels, innermost first, see [PARSE_CAUSE_LABELS].
+///
+/// The last cause is the file as a whole, which says nothing, so it is left out.
+fn labelled_causes(err: &ParseErr) -> impl Iterator<Item = &Cause> {
+    let inner = err.causes.len().saturating_sub(1);
+    err.causes.iter().take(inner.min(PARSE_CAUSE_LABELS))
 }
 
 /// The first and last line that `label` covers.

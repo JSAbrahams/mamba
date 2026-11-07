@@ -61,7 +61,7 @@ const PRIMITIVE: &[(&str, &str)] = &[
 
 /// The Python stubs of the standard library, embedded like [PRIMITIVE].
 ///
-/// The extensionless `std/input` file is left out, as it always was: only `.py` files are stubs.
+/// Only `.py` files are stubs, so the extensionless `std/input` is not among them.
 const STD: &[(&str, &str)] = &[
     ("builtins.py", include_str!("../resource/std/builtins.py")),
     ("callable.py", include_str!("../resource/std/callable.py")),

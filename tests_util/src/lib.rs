@@ -14,7 +14,7 @@ use tempfile::tempdir_in;
 use mamba::check::context::python::python_stmts;
 use mamba::common::delimit::newline_delimited;
 use mamba::io::compile_dir;
-use mamba::{compile, Diagnostic, Options, Output};
+use mamba::{compile, Diagnostic, Options, Output, Source};
 
 #[cfg(target_os = "linux")]
 pub static PYTHON: &str = "python3.14";
@@ -118,19 +118,18 @@ pub fn assert_prints_expected(run: Runner, subdirs: &[&str], file: &str) {
     assert_eq!(stdout, expected_stdout(subdirs, file), "stdout of {file}");
 }
 
-/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
-/// the Cranelift backend, targeting `triple` (`None` for the host), returning the text.
+/// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to assembly with the Cranelift backend.
+/// It targets `triple`, or the host if [None].
 ///
-/// Unlike [run_cli]'s black-box invocation of the `mamba` binary, this drives [compile] (and
-/// so `backend::cranelift::disassemble`/`build_isa`) in-process -- needed for these to
-/// show up in coverage at all, since a separately-built subprocess isn't instrumented.
+/// Unlike [run_cli], which runs the `mamba` binary, this drives [compile] in-process.
+/// That is what makes `disassemble` and `build_isa` show up in coverage, since a subprocess is not instrumented.
 pub fn run_via_asm(
     subdirs: &[&str],
     file: &str,
     triple: Option<&str>,
 ) -> Result<String, Box<dyn Error>> {
     let path = resource_path(true, subdirs, file);
-    let source = mamba::Source::named(file, fs::read_to_string(&path)?);
+    let source = Source::named(file, fs::read_to_string(&path)?);
     let options = Options::new(Output::Asm {
         target: triple.map(String::from),
     });
@@ -143,15 +142,11 @@ pub fn run_via_asm(
 
 /// The diagnostics as one message, for a test failure.
 pub fn describe(diagnostics: Vec<Diagnostic>) -> String {
-    diagnostics
-        .iter()
-        .map(|diagnostic| diagnostic.to_string())
-        .collect::<Vec<_>>()
-        .join("\n")
+    diagnostics.iter().join("\n")
 }
 
-/// Run the `mamba` CLI binary `bin` with `args`, from within `cwd`, returning its captured
-/// stdout. Fails if the process exits with an error.
+/// Run the `mamba` binary `bin` with `args` in `cwd`, returning what it prints to stdout.
+/// Fails if the process exits with an error.
 ///
 /// A test passes `env!("CARGO_BIN_EXE_mamba")` as `bin`, which needs the `cli` feature.
 pub fn run_cli(bin: &str, cwd: &Path, args: &[&str]) -> Result<String, Box<dyn Error>> {

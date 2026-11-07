@@ -210,8 +210,8 @@ fn bin_backend_rejects_gracefully(file: &str) {
     assert!(errs[0].primary_label().is_some(), "{errs:?}");
 }
 
-/// Drives `--asm`'s whole pipeline (`compile` -> `disassemble` -> `build_isa`) in-process, for both the default (host) and an explicit target triple -- see
-/// [run_via_asm]'s doc comment for why this needs to be in-process rather than via [run_cli].
+/// Drives the whole `--asm` pipeline in-process, `compile` -> `disassemble` -> `build_isa`, for the host and for an explicit target triple.
+/// See [run_via_asm] for why this runs in-process rather than through the binary.
 #[test_case(None)]
 #[test_case(Some("x86_64-unknown-linux-gnu"))]
 fn asm_backend_disassembles_in_process(triple: Option<&str>) {

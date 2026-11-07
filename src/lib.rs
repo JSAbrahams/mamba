@@ -154,37 +154,17 @@ pub fn version() -> &'static str {
 pub fn compile(sources: &[Source], options: &Options) -> Result<Vec<Artifact>, Vec<Diagnostic>> {
     let (ctx, typed) = check_all(sources)?;
 
-    let results = typed.iter().zip(sources).map(|(ast_ty, source)| {
-        let (text, name) = (source.text.as_str(), source.name());
-        match &options.output {
-            Output::Python => {
-                let gen_args = GenArguments {
-                    annotate: options.annotate,
-                };
-                backend::python::gen_arguments(ast_ty, &gen_args, &ctx)
-                    .map(|core| Artifact::Text(format!("{core}")))
-                    .map_err(|err| Diagnostic::from_unimplemented(&err, text, name))
-            }
-            Output::Asm { target } => {
-                backend::cranelift::disassemble(ast_ty, target.as_deref(), &ctx)
-                    .map(Artifact::Text)
-                    .map_err(|err| Diagnostic::from_backend(&err, text, name))
-            }
-            Output::Object { target } => {
-                backend::cranelift::compile(ast_ty, target.as_deref(), &ctx)
-                    .map(Artifact::Bytes)
-                    .map_err(|err| Diagnostic::from_backend(&err, text, name))
-            }
-        }
-    });
-
+    let results = typed
+        .iter()
+        .zip(sources)
+        .map(|(ast_ty, source)| generate(ast_ty, source, options, &ctx));
     let (artifacts, errors): (Vec<_>, Vec<_>) = results.partition(Result::is_ok);
-    if errors.is_empty() {
-        trace!("Generated {} artifacts", artifacts.len());
-        Ok(artifacts.into_iter().map(Result::unwrap).collect())
-    } else {
-        Err(unique(errors.into_iter().map(Result::unwrap_err)))
+    if !errors.is_empty() {
+        return Err(unique(errors.into_iter().map(Result::unwrap_err)));
     }
+
+    trace!("Generated {} artifacts", artifacts.len());
+    Ok(artifacts.into_iter().map(Result::unwrap).collect())
 }
 
 /// Compile one unnamed source to text: Python or assembly.
@@ -213,28 +193,12 @@ fn check_all(sources: &[Source]) -> Result<(Context, Vec<ASTTy>), Vec<Diagnostic
     let asts: Vec<AST> = asts.into_iter().map(Result::unwrap).collect();
     trace!("Parsed {} files", asts.len());
 
-    // Building the context does not record which source an error is in, which is only clear if there is one.
-    let only = match sources {
-        [source] => Some(source),
-        _ => None,
-    };
-    let ctx = Context::try_from(asts.as_ref()).map_err(|errs| {
-        let text = only.map(|source| source.text.as_str());
-        let name = only.and_then(Source::name);
-        unique(
-            errs.iter()
-                .map(|err| Diagnostic::from_type(err, text, name)),
-        )
-    })?;
+    let ctx = build_context(&asts, sources)?;
 
-    let checked = asts.iter().zip(sources).map(|(ast, source)| {
-        check(ast, &ctx).map_err(|errs: Vec<TypeErr>| {
-            let text = Some(source.text.as_str());
-            errs.iter()
-                .map(|err| Diagnostic::from_type(err, text, source.name()))
-                .collect::<Vec<_>>()
-        })
-    });
+    let checked = asts
+        .iter()
+        .zip(sources)
+        .map(|(ast, source)| check_source(ast, source, &ctx));
     let (typed, errors): (Vec<_>, Vec<_>) = checked.partition(Result::is_ok);
     if !errors.is_empty() {
         return Err(unique(errors.into_iter().flat_map(Result::unwrap_err)));
@@ -251,6 +215,61 @@ fn parse_source(source: &Source) -> Result<AST, Diagnostic> {
     let (text, name) = (source.text.as_str(), source.name());
     text.parse::<AST>()
         .map_err(|err| Diagnostic::from_parse(&err, text, name))
+}
+
+/// Build the context that every source is checked in.
+///
+/// Its errors do not record which source they are in, so they name one only when there is just one.
+fn build_context(asts: &[AST], sources: &[Source]) -> Result<Context, Vec<Diagnostic>> {
+    let only = match sources {
+        [source] => Some(source),
+        _ => None,
+    };
+    let text = only.map(|source| source.text.as_str());
+    let name = only.and_then(Source::name);
+
+    Context::try_from(asts).map_err(|errs| {
+        unique(
+            errs.iter()
+                .map(|err| Diagnostic::from_type(err, text, name)),
+        )
+    })
+}
+
+/// Type check one parsed source in `ctx`.
+fn check_source(ast: &AST, source: &Source, ctx: &Context) -> Result<ASTTy, Vec<Diagnostic>> {
+    let text = Some(source.text.as_str());
+    check(ast, ctx).map_err(|errs| {
+        errs.iter()
+            .map(|err| Diagnostic::from_type(err, text, source.name()))
+            .collect()
+    })
+}
+
+/// Generate what `options` asks for from one checked source.
+fn generate(
+    ast_ty: &ASTTy,
+    source: &Source,
+    options: &Options,
+    ctx: &Context,
+) -> Result<Artifact, Diagnostic> {
+    let (text, name) = (source.text.as_str(), source.name());
+    match &options.output {
+        Output::Python => {
+            let gen_args = GenArguments {
+                annotate: options.annotate,
+            };
+            backend::python::gen_arguments(ast_ty, &gen_args, ctx)
+                .map(|core| Artifact::Text(format!("{core}")))
+                .map_err(|err| Diagnostic::from_unimplemented(&err, text, name))
+        }
+        Output::Asm { target } => backend::cranelift::disassemble(ast_ty, target.as_deref(), ctx)
+            .map(Artifact::Text)
+            .map_err(|err| Diagnostic::from_backend(&err, text, name)),
+        Output::Object { target } => backend::cranelift::compile(ast_ty, target.as_deref(), ctx)
+            .map(Artifact::Bytes)
+            .map_err(|err| Diagnostic::from_backend(&err, text, name)),
+    }
 }
 
 /// The diagnostics in order, each only once.

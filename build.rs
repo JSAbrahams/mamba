@@ -10,9 +10,7 @@ use std::process::Command;
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("set by cargo"));
     println!("cargo:rerun-if-changed=build.rs");
-    // Git reads these, so they change what it describes.
-    println!("cargo:rerun-if-env-changed=GIT_DIR");
-    println!("cargo:rerun-if-env-changed=GIT_WORK_TREE");
+    watch_git_env();
 
     let version = if is_repository_root(&manifest_dir) {
         watch_git(&manifest_dir);
@@ -38,20 +36,26 @@ fn is_repository_root(dir: &Path) -> bool {
     }
 }
 
+/// Rebuild when `GIT_DIR` or `GIT_WORK_TREE` changes, since git reads them to find the repository it describes.
+fn watch_git_env() {
+    println!("cargo:rerun-if-env-changed=GIT_DIR");
+    println!("cargo:rerun-if-env-changed=GIT_WORK_TREE");
+}
+
 /// Rebuild when a commit, a checkout or a new tag changes what `git describe` gives.
 ///
 /// In a linked worktree, HEAD lives in its own git directory and the refs in the common one.
+/// A path that does not exist, such as a missing packed-refs, is not watched, since that would rerun this every build.
 fn watch_git(dir: &Path) {
     let git_dirs = ["--git-dir", "--git-common-dir"]
         .iter()
         .filter_map(|flag| git(dir, &["rev-parse", flag]))
         .map(|git_dir| dir.join(git_dir));
-    for git_dir in git_dirs {
-        // A path that does not exist, such as a missing packed-refs, would rerun this every build.
-        let watched = ["HEAD", "refs", "packed-refs"].map(|file| git_dir.join(file));
-        for path in watched.iter().filter(|path| path.exists()) {
-            println!("cargo:rerun-if-changed={}", path.display());
-        }
+    let watched =
+        git_dirs.flat_map(|git_dir| ["HEAD", "refs", "packed-refs"].map(|file| git_dir.join(file)));
+
+    for path in watched.filter(|path| path.exists()) {
+        println!("cargo:rerun-if-changed={}", path.display());
     }
 }
 

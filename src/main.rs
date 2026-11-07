@@ -2,7 +2,6 @@ use std::io::IsTerminal;
 use std::path::Path;
 
 use clap::Parser;
-use itertools::Itertools;
 use log::{self, error, info};
 
 use mamba::diagnostic::RenderedDiagnostic;
@@ -17,11 +16,7 @@ pub fn main() {
     #[cfg(windows)]
     let _ = ansi_term::enable_ansi_support();
 
-    // Clap prints the error, or the help or version that was asked for, which is not an error.
-    let cli_input = Cli::try_parse().unwrap_or_else(|err| {
-        let _ = err.print();
-        std::process::exit(if err.use_stderr() { 1 } else { 0 });
-    });
+    let cli_input = parse_cli();
 
     let colour = !cli_input.no_color
         && std::env::var_os("NO_COLOR").is_none()
@@ -73,13 +68,8 @@ fn run(
     let artifacts =
         compile(&project.sources, options).map_err(|errs| (errs, project.sources.clone()))?;
 
-    // Assembly is printed, not written.
     if let Output::Asm { .. } = options.output {
-        for artifact in &artifacts {
-            if let Artifact::Text(asm) = artifact {
-                println!("{asm}");
-            }
-        }
+        print_asm(&artifacts);
         return Ok(());
     }
 
@@ -94,9 +84,28 @@ fn run(
     .map_err(|errs| (errs, vec![]))
 }
 
+/// The command line arguments, or exit.
+///
+/// Clap prints the error, or the help or version that was asked for, which exits successfully.
+fn parse_cli() -> Cli {
+    Cli::try_parse().unwrap_or_else(|err| {
+        let _ = err.print();
+        std::process::exit(if err.use_stderr() { 1 } else { 0 });
+    })
+}
+
+/// Print each assembly artifact to stdout, since assembly is printed rather than written.
+fn print_asm(artifacts: &[Artifact]) {
+    for asm in artifacts.iter().filter_map(Artifact::as_text) {
+        println!("{asm}");
+    }
+}
+
 /// Print `diagnostics` to stderr, each with the text of the source it is about.
+///
+/// [compile] already gives each diagnostic only once.
 fn report(diagnostics: &[Diagnostic], sources: &[Source], style: RenderStyle, format: ErrorFormat) {
-    for diagnostic in diagnostics.iter().unique() {
+    for diagnostic in diagnostics {
         let text = sources
             .iter()
             .find(|source| source.name == diagnostic.source)
@@ -104,13 +113,13 @@ fn report(diagnostics: &[Diagnostic], sources: &[Source], style: RenderStyle, fo
 
         match format {
             ErrorFormat::Human => eprintln!("{}", diagnostic.render(text, style)),
-            ErrorFormat::Json => {
-                let rendered = RenderedDiagnostic::new(diagnostic, text);
-                match serde_json::to_string(&rendered) {
-                    Ok(json) => eprintln!("{json}"),
-                    Err(err) => eprintln!("{err}"),
-                }
-            }
+            ErrorFormat::Json => eprintln!("{}", to_json(diagnostic, text)),
         }
     }
+}
+
+/// `diagnostic` as one line of JSON, or why it could not be serialized.
+fn to_json(diagnostic: &Diagnostic, text: &str) -> String {
+    let rendered = RenderedDiagnostic::new(diagnostic, text);
+    serde_json::to_string(&rendered).unwrap_or_else(|err| err.to_string())
 }
