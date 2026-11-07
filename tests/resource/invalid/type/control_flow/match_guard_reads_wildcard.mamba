@@ -1,0 +1,5 @@
+# '_' matches anything but binds nothing, so a guard has nothing to read
+let a := match 10 where
+    _ if _ > 5 => "big"
+    _          => "small"
+end
