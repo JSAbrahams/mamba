@@ -13,6 +13,7 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::operation::gen_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::constrain::generate::{gen_vec, generate, Constrained};
+use crate::check::constrain::mutation::Mutation;
 use crate::check::context::arg::python::SELF;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{GetField, GetFun};
@@ -40,6 +41,7 @@ pub fn gen_call(
             check_pure_assign(&identifier, env, left.pos)?;
 
             if let NodeOp::Assign = op {
+                record_assignment(left, env, constr);
                 if let Node::Index { item, range } = &left.node {
                     gen_set_item(item, range, right, env, ctx, constr)?;
                 } else if let Node::FunctionCall { name, args } = &left.node {
@@ -381,6 +383,76 @@ fn check_pure_assign(id: &Identifier, env: &Environment, pos: Position) -> TypeR
     }
 }
 
+/// Record the chain an assignment changes, such as `a.b.c` in `a.b.c := x`, to check its fields once their classes are known.
+///
+/// An index, as in `a.b(0) := x`, changes the collection it indexes.
+fn record_assignment(left: &AST, env: &Environment, constr: &mut ConstrBuilder) {
+    let target = match &left.node {
+        Node::Index { item, .. } => item.as_ref(),
+        Node::FunctionCall { name, args } if args.len() == 1 => name.as_ref(),
+        _ => left,
+    };
+
+    let place = chain(target);
+    if place.len() < 2 {
+        return;
+    }
+    let root = bindings(&place[0], env, constr)
+        .into_iter()
+        .map(|(_, exp)| exp)
+        .collect();
+    let pos = left.pos;
+    constr.mutations.push(Mutation::Assign { place, root, pos });
+}
+
+/// Record a call of the method `name` on `receiver`, to check once its class is known whether the method needs it to be `mut`.
+fn record_call(
+    receiver: &[AST],
+    name: &AST,
+    env: &Environment,
+    constr: &mut ConstrBuilder,
+    pos: Position,
+) -> TypeResult<()> {
+    let Some(root) = receiver.first() else {
+        return Ok(());
+    };
+    let bindings = bindings(root, env, constr);
+    let root_mutable =
+        matches!(root.node, Node::Id { .. }) && bindings.iter().all(|(mutable, _)| *mutable);
+
+    let mutation = Mutation::Call {
+        receiver: receiver.to_vec(),
+        root: bindings.into_iter().map(|(_, exp)| exp).collect(),
+        method: StringName::try_from(name)?,
+        pos,
+        root_mutable,
+    };
+
+    constr.mutations.push(mutation);
+    Ok(())
+}
+
+/// The bindings `root` names, each with whether it is `mut`.
+///
+/// Empty if it is not a variable: a class name is left to the rest of the checker, and the result of a call has no binding.
+fn bindings(root: &AST, env: &Environment, constr: &ConstrBuilder) -> Vec<(bool, Expected)> {
+    let Node::Id { lit } = &root.node else {
+        return vec![];
+    };
+    env.get_var(lit, &constr.var_mapping)
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+/// The links of a chain such as `a.b.c`, from its root onward.
+fn chain(ast: &AST) -> Vec<AST> {
+    match &ast.node {
+        Node::PropertyCall { instance, property } => [chain(instance), chain(property)].concat(),
+        _ => vec![ast.clone()],
+    }
+}
+
 fn check_iden_mut(
     id: &Identifier,
     env: &Environment,
@@ -394,7 +466,7 @@ fn check_iden_mut(
             Some(exps) if *f_mut => exps
                 .iter()
                 .filter(|(is_mut, _)| !*is_mut)
-                .map(|(_, var)| format!("Cannot assign to '{var}', which was not declared 'mut'"))
+                .map(|_| format!("Cannot assign to '{var}', which was not declared 'mut'"))
                 .collect(),
             _ if !f_mut => vec![format!(
                 "Cannot assign to '{var}', which was not declared 'mut'"
@@ -493,6 +565,7 @@ fn property_call(
         }
         Node::FunctionCall { name, args } => {
             check_pure_method(last_inst, name, env, ctx, constr, property.pos)?;
+            record_call(instance, name, env, constr, property.pos)?;
             gen_vec(args, env, false, ctx, constr)?;
             let args = [last_inst.clone()]
                 .iter()
@@ -519,8 +592,8 @@ fn property_call(
         Ordering::Less => panic!("Internal error in access"),
         Ordering::Equal => last_inst.clone(),
         Ordering::Greater => {
-            let last = instance.remove(instance.len() - 1);
-            instance.iter().rfold(last, |acc, ast| {
+            let (last, rest) = instance.split_last().expect("unreachable");
+            rest.iter().rfold(last.clone(), |acc, ast| {
                 let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
                 AST::new(ast.pos, Node::PropertyCall { instance, property })
             })
@@ -621,6 +694,13 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
             }
             single => Ok(single),
         },
+        Node::FunctionCall { .. } => {
+            let msg = format!(
+                "Cannot assign through '{}', which gives a value that has no binding to declare 'mut'",
+                ast.node
+            );
+            Err(vec![TypeErr::new(ast.pos, &msg)])
+        }
         _ => Identifier::try_from(ast).map_err(|errs| {
             errs.iter()
                 .map(|err| {

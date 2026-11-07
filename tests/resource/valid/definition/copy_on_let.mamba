@@ -1,0 +1,10 @@
+class Circle(x: Int) where
+    let mut y: Int := self.x
+end
+
+let c := Circle.new(10)
+let mut c_mut := c
+
+c_mut.y := 20
+print(c.y)
+print(c_mut.y)

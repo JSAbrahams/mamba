@@ -1,0 +1,9 @@
+class B where
+    let mut n: Int := 0
+    def tick(mut self) := self.n := self.n + 1
+end
+
+class A(b: B)
+
+let mut a := A.new(B.new())
+a.b.tick()

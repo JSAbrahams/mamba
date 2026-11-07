@@ -8,6 +8,7 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::ConstraintSet;
 use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::mutation::Mutation;
 use crate::check::name::Name;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -46,6 +47,8 @@ pub struct ConstrBuilder {
 
     /// Every match constrained, to check for exhaustiveness once their subjects have types.
     pub matches: Vec<AST>,
+    /// Every change through a field or a method, to check for mutability once their receivers have types.
+    pub mutations: Vec<Mutation>,
 }
 
 impl ConstrBuilder {
@@ -60,6 +63,7 @@ impl ConstrBuilder {
             var_mapping,
             temp_name_offset: 0,
             matches: vec![],
+            mutations: vec![],
         }
     }
 

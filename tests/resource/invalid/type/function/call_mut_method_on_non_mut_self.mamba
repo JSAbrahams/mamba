@@ -1,0 +1,5 @@
+class X where
+    let mut a: Int := 1
+    def f(mut self) := self.a := 2
+    def g(self) := self.f()
+end

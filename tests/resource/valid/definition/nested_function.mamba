@@ -1,6 +1,4 @@
-class A where
-    let b: B
-end
+class A(b: B)
 
 class B where
     def my_c(self) -> C := C.new()
@@ -10,5 +8,5 @@ class C where
     let my_field: Int := 10
 end
 
-let a := A.new()
+let a := A.new(B.new())
 print(a.b.my_c().my_field)

@@ -1,10 +1,8 @@
 class B where
-    let my_num: Int := 10
+    let mut my_num: Int := 10
 end
 
-class A where
-    let b: B
-end
+class A(b: B)
 
-let a := A.new()
+let mut a := A.new(B.new())
 a.b.my_num := 20

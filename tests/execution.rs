@@ -96,6 +96,8 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) {
 #[test_case(run_via_python, &["class"], "redundant_new.mamba")]
 #[test_case(run_via_python, &["class"], "parent_literal_argument.mamba")]
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba")]
+#[test_case(run_via_python, &["class"], "field_per_instance.mamba")]
+#[test_case(run_via_python, &["definition"], "copy_on_let.mamba")]
 // Match patterns and guards. The AST diff in `tests/check/valid.rs` covers these too, since the
 // move to `ruff_python_parser`, but these assert on what the output actually does when run.
 #[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba")]
