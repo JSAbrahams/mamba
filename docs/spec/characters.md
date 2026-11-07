@@ -57,7 +57,7 @@ Symbol | Use
 `.`  | Precedes method call, or fractional digits of real number
 `,`  | Separates arguments in collections or function or method signatures
 `_`  | Anonymous value, and in `new(_)` one class argument that is not written out
-`\`  | Start of an anonymous function, as in `\x := x + 1`
+`\`  | Start of an anonymous function, as in `\x: Int := x + 1`
 
 ## Errors
 

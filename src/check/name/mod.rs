@@ -492,7 +492,7 @@ impl Name {
             other
                 .names
                 .iter()
-                .try_fold(acc, |acc, o_n| s_n.temp_map(&o_n.variant, acc, pos))
+                .try_fold(acc, |acc, o_n| s_n.temp_map(o_n, acc, pos))
         })
     }
 }

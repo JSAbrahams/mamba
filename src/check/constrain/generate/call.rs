@@ -443,10 +443,10 @@ fn call_parameters(
                 })?;
 
                 let arg_exp = Expected::new(*pos, arg);
-                let name = Name::from(&ctx.class(ty, *pos)?);
+                ctx.class(ty, *pos)?;
                 constr.add(
                     "call parameters",
-                    &Expected::new(*pos, &Type { name }),
+                    &Expected::new(*pos, &Type { name: ty.clone() }),
                     &arg_exp,
                     env,
                 )
