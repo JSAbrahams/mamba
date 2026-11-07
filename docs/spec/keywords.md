@@ -5,6 +5,8 @@
 # 3.2 Keywords
 
 The following is a list of all the keywords in the language.
+These are exactly the words the lexer reserves.
+`self`, `True`, `False` and `None` are not among them: the lexer reads each as an identifier, and the type checker gives it its meaning.
 
 ## Imports
 
@@ -12,7 +14,7 @@ Keyword | Use
 ---|---
 `from`  | Specify where to import from
 `import`| Specify what to import
-`as`    | Specify alias of import
+`as`    | Specify alias of import, or of the resource of a `using` block
 
 ## Classes
 
@@ -20,13 +22,12 @@ Keyword | Use
 ---|---
 `trait` | Denote an interface (à la Java interfaces / Rust traits), which a `class` can implement
 `class` | Denote a class
-`when`  | Conditional types (used with `type`, not `trait`)
+`when`  | Reserved for conditional types; no rule of the parser uses it yet
 
 ## Classes and Utils
 
 Keyword | Use
 ---|---
-`self`    | Refer to definitions of this class
 `forward` | Forwarding methods of contained class
 
 ## Definitions and Functions
