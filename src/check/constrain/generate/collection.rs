@@ -41,7 +41,7 @@ pub fn gen_coll(
         }
         Node::Tuple { elements } => {
             let res = gen_vec(elements, env, env.is_def_mode, ctx, constr)?;
-            gen_col(ast, env, constr)?;
+            gen_col(ast, &res, constr)?;
             Ok(res)
         }
         Node::DictBuilder {
