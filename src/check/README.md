@@ -19,10 +19,19 @@ An `Environment` tracks which variables are in scope.
 The `Context` supplies class and function signatures.
 Each constraint records which side must be the supertype, such as an annotation over the value assigned to it.
 
+Each arm of an `if` or a match starts its own set of constraints, so the paths through a program are unified apart.
+A constraint is stored once, behind an `Rc`, and every set it belongs to points to it.
+Sets therefore share what they have in common instead of copying it.
+
 ## Unification
 
 `constrain/unify` solves the constraints by comparing `Name`s, accepting a subtype where a supertype is expected.
 The result maps each `Position` to a `Name`, which is used to annotate the `AST` as `ASTTy`.
+
+Sets are unified one at a time, and their types are merged into one map.
+A set is copied out of the shared constraints only when its turn comes, and dropped after, since unification rewrites it.
+`unify_link` recurses once per constraint, so a very large set can overflow the stack.
+Every set still repeats the constraints it shares, so time grows with the number of arms times the size of the program.
 
 ## Match exhaustiveness
 

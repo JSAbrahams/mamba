@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use log::trace;
 
@@ -7,21 +8,39 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
-#[derive(Clone, Debug)]
+/// The constraints of one set, as unification consumes and rewrites them.
+#[derive(Debug)]
 pub struct Constraints {
-    pub pos: Position,
-    pub msg: String,
-
     pub(super) constraints: VecDeque<Constraint>,
 }
 
-impl From<(Position, String, Vec<Constraint>)> for Constraints {
-    fn from((pos, msg, constraints): (Position, String, Vec<Constraint>)) -> Self {
-        Constraints {
+/// One set of constraints from the builder, sharing the constraints it has in common with other sets.
+#[derive(Debug)]
+pub struct ConstraintSet {
+    pub pos: Position,
+    pub msg: String,
+
+    pub(super) constraints: Vec<Rc<Constraint>>,
+}
+
+impl ConstraintSet {
+    pub fn new(pos: Position, msg: String, constraints: Vec<Rc<Constraint>>) -> Self {
+        ConstraintSet {
             pos,
             msg,
-            constraints: VecDeque::from(constraints),
+            constraints,
         }
+    }
+
+    /// The constraints to unify, which unification rewrites, so each needs its own copy.
+    /// A constraint that no other set still points to is moved instead of copied.
+    pub fn into_constraints(self) -> Constraints {
+        let constraints = self
+            .constraints
+            .into_iter()
+            .map(|constraint| Rc::try_unwrap(constraint).unwrap_or_else(|shared| (*shared).clone()))
+            .collect();
+        Constraints { constraints }
     }
 }
 

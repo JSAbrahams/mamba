@@ -16,7 +16,7 @@ pub type Unified<T = Finished> = Result<T, Vec<TypeErr>>;
 
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified<Finished> {
     let (constrained, matches) = gen_all(ast, ctx)?;
-    let finished = unify(&constrained, ctx)?;
+    let finished = unify(constrained, ctx)?;
     check_matches(&matches, &finished)?;
     Ok(finished)
 }
