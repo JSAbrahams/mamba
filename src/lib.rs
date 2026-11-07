@@ -27,7 +27,6 @@ use crate::check::ast::ASTTy;
 use crate::check::check;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::common::result::WithSource;
 use crate::parse::ast::AST;
 
 pub use crate::diagnostic::{Diagnostic, Label, LineCol, RenderStyle, Severity, Span, Stage};
@@ -261,81 +260,4 @@ fn unique(diagnostics: impl IntoIterator<Item = Diagnostic>) -> Vec<Diagnostic> 
         .into_iter()
         .filter(|diagnostic| seen.insert(diagnostic.clone()))
         .collect()
-}
-
-/// The options of the backends' own `write_output`, which take sources and give errors as text.
-///
-/// [compile] and `io::compile_dir` replace these, which remain only for the backends.
-pub struct PipelineArguments {
-    pub annotate: bool,
-}
-
-/// Strip each source's path down to be relative to `source_dir`, for nicer error messages.
-pub(crate) fn strip_source_paths(
-    source: &[(String, Option<PathBuf>)],
-    source_dir: &PathBuf,
-) -> Vec<(String, Option<PathBuf>)> {
-    let strip_prefix = |p: PathBuf| {
-        p.strip_prefix(source_dir)
-            .map(|p| {
-                PathBuf::from(&source_dir.iter().next_back().unwrap_or_else(|| "".as_ref())).join(p)
-            })
-            .unwrap_or(p)
-    };
-    source
-        .iter()
-        .map(|(src, dir)| (src.clone(), dir.clone().map(strip_prefix)))
-        .collect()
-}
-
-/// Parse and type-check `source`, shared by every backend -- parsing and type-checking don't
-/// depend on which backend eventually turns the result into output.
-pub(crate) fn check_sources(
-    source: &[(String, Option<PathBuf>)],
-) -> Result<(Context, Vec<ASTTy>), Vec<String>> {
-    let (asts, parse_errs): (Vec<_>, Vec<_>) = source
-        .iter()
-        .map(|(src, path)| {
-            src.parse::<AST>()
-                .map_err(|err| Box::new(err.with_source(&Some(src.clone()), &path.clone())))
-        })
-        .partition(Result::is_ok);
-
-    let parse_errs: Vec<_> = parse_errs.into_iter().map(Result::unwrap_err).collect();
-    if !parse_errs.is_empty() {
-        return Err(parse_errs.iter().map(|err| format!("{err}")).collect());
-    }
-
-    let asts: Vec<AST> = asts.into_iter().map(Result::unwrap).collect();
-    trace!("Parsed {} files", asts.len());
-
-    let ctx = Context::try_from(asts.as_ref())
-        .map_err(|errs| errs.iter().map(|e| format!("{e}")).collect::<Vec<String>>())?;
-    let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
-        .iter()
-        .zip(source)
-        .map(|(ast, (src, path))| {
-            check(ast, &ctx).map_err(|errs| {
-                errs.iter()
-                    .map(|err| err.clone().with_source(&Some(src.clone()), &path.clone()))
-                    .collect()
-            })
-        })
-        .partition(Result::is_ok);
-
-    let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
-    if !type_errs.is_empty() {
-        return Err(type_errs
-            .iter()
-            .flatten()
-            .map(|err| format!("{err}"))
-            .collect());
-    }
-    let typed_ast = typed_ast
-        .into_iter()
-        .map(Result::unwrap)
-        .collect::<Vec<ASTTy>>();
-
-    trace!("Checked {} files", typed_ast.len());
-    Ok((ctx, typed_ast))
 }

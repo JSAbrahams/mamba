@@ -59,6 +59,7 @@ It gives you a shell containing exactly the tools this project needs:
 - `cargo-nextest`, `cargo-llvm-cov` and `cargo-sort`, which the git hooks and CI call
 - Python 3.14, which the test suite shells out to (see [Tests and coverage](#-tests-and-coverage))
 - `nushell` and `starship`, so you get the project's shell and prompt
+- `wasm-bindgen` and `wasm-opt` (binaryen), which make the WebAssembly module
 - the odds and ends: `clang` (its `cc` links the `--bin` output), `llvm`, `git`, `jq`, `direnv`, an editor
 
 Resolved versions are locked in `devbox.lock`, which is committed.
@@ -109,13 +110,16 @@ To run a single command in the environment without entering the shell, use `devb
 The named scripts are defined under `shell.scripts` in `devbox.json`:
 
 ```sh
-devbox run build       # cargo build
-devbox run test        # cargo test --package mamba
-devbox run test-ci     # the nextest invocation CI uses
-devbox run lint        # cargo fmt --check, clippy, cargo sort --check
+devbox run build       # the library and the mamba binary
+devbox run test        # the full test suite, with cargo test
+devbox run test-ci     # the same suite with nextest, as CI runs it
+devbox run lint        # cargo fmt --check, clippy, cargo sort --check, actionlint
 devbox run coverage    # cargo llvm-cov with CI's exclusions
 devbox run precommit   # every cargo command the pre-commit hook runs
+devbox run build-wasm  # target/wasm-pkg/mamba.js and mamba_bg.wasm, for a browser
 ```
+
+Each script passes the features it needs, such as `--features cli` for the binary, since the crate has no default features.
 
 `devbox run -- <any command>` works too, for anything without a named script.
 
@@ -138,6 +142,9 @@ Two pins have to be changed in pairs, because something outside Devbox also read
   Devbox covers Linux and macOS, but the Windows CI job installs the toolchain with rustup, which reads `rust-toolchain.toml`.
   Contributors not using Devbox read it too.
   If the two drift apart, `devbox shell` prints a warning on entry, and Windows silently builds with a different compiler than everyone else.
+- **`wasm-bindgen-cli` must match the `wasm-bindgen` crate in `Cargo.toml`.**
+  Both are pinned to the same exact version, `0.2.130`, since the CLI only reads modules made by its own version of the crate.
+  To move to another version, pick one that `devbox search wasm-bindgen-cli` lists, and change both.
 - **`python` must match `tests_util::PYTHON` and `check::context::python::PYTHON_VERSION`.**
   The test suite invokes the interpreter by name, as `python3.14` on Linux.
   `PYTHON_VERSION` is the version `ruff_python_parser` parses as, which must be the same one.
@@ -150,24 +157,9 @@ It shells out to `python3.14` by name on Linux.
 This is because generated Python is validated by compiling and running it.
 Devbox provides this.
 
-```sh
-cargo test --package mamba    # run the full suite
-```
-
-CI runs the suite with [nextest](https://nexte.st/) instead, so to reproduce a CI run exactly:
-
-```sh
-cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
-```
-
-Coverage is measured with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), using the same exclusions as CI/Codecov (see `.github/workflows/coverage.yml`):
-
-```sh
-cargo llvm-cov --lcov --output-path ./target/lcov.info \
-  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
-```
-
-Both `cargo-nextest` and `cargo-llvm-cov` are provided by Devbox.
+`devbox run test` runs the full suite.
+CI runs it with [nextest](https://nexte.st/) instead, which `devbox run test-ci` reproduces exactly.
+`devbox run coverage` measures coverage with [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov), with the same exclusions as CI and Codecov.
 Before treating an uncovered line as a missing test, read [tests/README.md](./tests/README.md).
 It records which lines are uncovered by design, and which are gated on unfinished features.
 It also records a few traps worth knowing about.
@@ -180,9 +172,11 @@ The workflows call the same named scripts you run locally, so the two cannot dri
 | Workflow | Runners | What it runs |
 |----------|---------|--------------|
 | `test.yml` | ubuntu, macOS | `devbox run build`, then `devbox run test-ci` |
-| `test.yml` | windows | rustup plus `actions/setup-python`, then `cargo nextest run` |
+| `test.yml` | windows | rustup plus `actions/setup-python`, then `cargo nextest run --features cli` |
+| `test.yml` | ubuntu | `cargo build --no-default-features`, then `devbox run build-wasm` |
 | `lint.yml` | ubuntu | `devbox run lint` |
 | `coverage.yml` | ubuntu | `devbox run coverage` |
+| `release.yml` | ubuntu | `devbox run build-wasm`, then uploads the module and its checksums to the release |
 
 Windows is the one exception, for the reason given above: Nix does not run there, so that job installs the toolchain natively.
 This is also why `rust-toolchain.toml` has to stay in step with the version Devbox pins.
@@ -191,14 +185,8 @@ This is also why `rust-toolchain.toml` has to stay in step with the version Devb
 
 ### 🔤 Cargo.toml ordering
 
-Dependencies in `Cargo.toml` must stay in alphabetical order, which the `pre-commit` hook enforces with [cargo-sort](https://github.com/DevinR528/cargo-sort) (also provided by Devbox):
-
-```sh
-cargo sort --check   # report only, what the hook runs
-cargo sort           # rewrite Cargo.toml into sorted order
-```
-
-Note the `--check`: a bare `cargo sort` sorts the file in place and exits successfully, so it is the fixing command, not the checking one.
+Dependencies in `Cargo.toml` must stay in alphabetical order, which `devbox run lint` and the `pre-commit` hook check with [cargo-sort](https://github.com/DevinR528/cargo-sort).
+`devbox run -- cargo sort` rewrites the file into that order.
 
 
 ## 📝 Procedures

@@ -47,19 +47,8 @@ This README:
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-The quickest way to get a complete environment is to use [Devbox](https://www.jetify.com/devbox).
-It sets up all the tooling for you.
-Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`.
-The CI also runs this same environment, so what passes locally is what passes in CI.
-
-**We recommend developing on a Unix-like system, meaning Linux or macOS.**
-That is what gives you Nix, and therefore allows use of Devbox.
-On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install) and follow the Linux instructions inside it.
-Developing on plain Windows is supported on a best-effort basis: the test suite does run there in CI, but you install the toolchain yourself, and the more niche corners are likelier to differ.
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the details.
-
-Devbox is a thin layer over the [Nix](https://nixos.org/) package manager.
-This means **Nix needs to be installed first**:
+The quickest way to a complete environment is [Devbox](https://www.jetify.com/devbox), a thin layer over the [Nix](https://nixos.org/) package manager.
+Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`, and CI runs the same environment.
 
 ```sh
 # 1. Install Nix, in case you do not have it
@@ -70,21 +59,8 @@ curl -fsSL https://get.jetify.com/devbox | bash
 devbox shell
 ```
 
-The first `devbox shell` takes a while, as it downloads every pinned package.
-Afterwards it is near-instant.
-Entering the shell also points `git` at the project's hooks (`.githooks`).
-You therefore get the pre-commit checks automatically.
-
-A more minimal setup, to just get started:
-
-```sh
-# Install rustup (if you don't have it already), which is the rust toolchain manager
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-Alternatively, check out <https://www.rust-lang.org/tools/install>, e.g. if on a system with no `curl`.
-
-To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Then `devbox run build`, `devbox run test` and the other scripts build and test Mamba.
+[CONTRIBUTING.md](./CONTRIBUTING.md) lists them, and covers Windows and working without Devbox.
 
 ## ⌨️ Code Examples
 
@@ -956,12 +932,7 @@ They are made for a plain `<script>` tag:
 The version is what `git describe --tags` gave at build time, such as `v0.3.6` on a tag or `v0.3.6-12-g3f2a1bc` after one.
 Built without git or without tags, as from crates.io, it is the version in `Cargo.toml`.
 `mamba::version()` and `mamba --version` give the same.
-To build it yourself:
-
-```sh
-cargo build --target wasm32-unknown-unknown --no-default-features --features wasm --release
-wasm-bindgen target/wasm32-unknown-unknown/release/mamba.wasm --target no-modules --out-name mamba --out-dir pkg
-```
+To build them yourself, `devbox run build-wasm` writes them to `target/wasm-pkg/`.
 
 ## 💻 The Command Line Interface
 

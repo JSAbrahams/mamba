@@ -13,6 +13,9 @@
 
     "actionlint@latest",
 
+    "wasm-bindgen-cli_0_2_130@0.2.130",
+    "binaryen@133",
+
     "python@3.14.4",
 
     "clang@latest",
@@ -90,7 +93,12 @@
     ],
     "scripts": {
       "build": "cargo build --features cli",
-      "build-wasm": "cargo build --target wasm32-unknown-unknown --no-default-features --features wasm --release",
+      "build-wasm": [
+        "cargo build --target wasm32-unknown-unknown --no-default-features --features wasm --release",
+        "rm -rf target/wasm-pkg",
+        "wasm-bindgen target/wasm32-unknown-unknown/release/mamba.wasm --target no-modules --out-name mamba --no-typescript --out-dir target/wasm-pkg",
+        "wasm-opt -Oz target/wasm-pkg/mamba_bg.wasm -o target/wasm-pkg/mamba_bg.wasm"
+      ],
       "test": "cargo test --package mamba --features cli",
       "test-ci": "cargo nextest run --package mamba --features cli --config-file .config/nextest.toml --profile ci",
       "lint": [

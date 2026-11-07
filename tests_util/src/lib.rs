@@ -76,7 +76,7 @@ pub fn run_via_python(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Er
 /// the Cranelift backend and run it, returning its captured stdout.
 ///
 /// The executable is placed a directory level below the temp dir (rather than directly in it) so
-/// that this also exercises `write_output`'s own `create_dir` of that not-yet-existing parent,
+/// that this also exercises `compile_dir` making that not-yet-existing parent,
 /// the way a real `-o some/nested/path` invocation would.
 pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error>> {
     let src_dir = resource_path(true, subdirs, "");

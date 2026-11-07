@@ -2,15 +2,14 @@
 
 use std::ffi::OsString;
 use std::fs;
-use std::fs::OpenOptions;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use glob::glob;
 use log::info;
 use pathdiff::diff_paths;
 
-use crate::backend::cranelift::link;
 use crate::{compile, Artifact, Diagnostic, Options, Output, Source, Stage};
 
 /// The source directory when none is given.
@@ -112,9 +111,7 @@ fn write_tree(
     artifacts: &[Artifact],
     extension: &str,
 ) -> Result<PathBuf, Vec<Diagnostic>> {
-    if !out_dir.exists() {
-        fs::create_dir(out_dir).map_err(|err| io_error(format!("{err}: {}", out_dir.display())))?;
-    }
+    fs::create_dir_all(out_dir).map_err(|err| io_error(format!("{err}: {}", out_dir.display())))?;
     info!("Output will be stored in '{}'", out_dir.display());
 
     for (artifact, relative) in artifacts.iter().zip(&project.relative) {
@@ -128,9 +125,8 @@ fn write_tree(
 /// Link object files into the executable `out_file`.
 fn link_executable(out_file: &Path, artifacts: Vec<Artifact>) -> Result<PathBuf, Vec<Diagnostic>> {
     if let Some(parent) = out_file.parent() {
-        if !parent.exists() {
-            fs::create_dir(parent).map_err(|err| io_error(err.to_string()))?;
-        }
+        fs::create_dir_all(parent)
+            .map_err(|err| io_error(format!("{err}: {}", parent.display())))?;
     }
     info!(
         "Output executable will be stored at '{}'",
@@ -148,8 +144,27 @@ fn link_executable(out_file: &Path, artifacts: Vec<Artifact>) -> Result<PathBuf,
         object_files.push(file.into_temp_path());
     }
 
-    link::link(&object_files, out_file).map_err(io_error)?;
+    link(&object_files, out_file).map_err(io_error)?;
     Ok(out_file.to_path_buf())
+}
+
+/// Link object files into one executable at `output`, with the system `cc`, as `rustc` itself does.
+fn link(object_paths: &[impl AsRef<Path>], output: &Path) -> Result<(), String> {
+    let result = Command::new("cc")
+        .args(object_paths.iter().map(AsRef::as_ref))
+        .arg("-o")
+        .arg(output)
+        .output()
+        .map_err(|e| format!("Could not run 'cc' to link the executable: {e}"))?;
+
+    if result.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Linking failed:\n{}",
+            String::from_utf8_lossy(&result.stderr)
+        ))
+    }
 }
 
 /// The name of `file` in diagnostics: its path from the parent of the source directory `source_dir`.
@@ -171,42 +186,23 @@ fn io_error(msg: impl Into<String>) -> Vec<Diagnostic> {
     vec![Diagnostic::error(Stage::Io, msg)]
 }
 
-pub fn read_source(source_path: &Path) -> Result<String, String> {
-    let mut source = String::new();
-    OpenOptions::new()
-        .read(true)
-        .open(source_path)
-        .map_err(|e| format!("{}: {}", e, source_path.display()))?
-        .read_to_string(&mut source)
-        .map_err(|e| format!("{}: {}", e, source_path.display()))?;
-    Ok(source)
+fn read_source(path: &Path) -> Result<String, String> {
+    fs::read_to_string(path).map_err(|e| format!("{e}: {}", path.display()))
 }
 
-pub fn write_source(source: &str, out_path: &Path) -> Result<usize, String> {
-    match out_path.parent() {
-        Some(parent) => {
-            fs::create_dir_all(parent).map_err(|e| format!("{}: {}", e, parent.display()))?
-        }
-        None => return Err(format!("No parent directory: {}", out_path.display())),
-    };
-
-    // LF instead of CRLF line endings
-    let source = source.replace("\r\n", "\n");
-    OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(out_path)
-        .map_err(|e| format!("{}: {}", e, out_path.display()))?
-        .write(source.as_ref())
-        .map_err(|e| format!("{}: {}", e, out_path.display()))
+/// Write `source` to `path`, with LF line endings, making its directory if need be.
+fn write_source(source: &str, path: &Path) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("{e}: {}", parent.display()))?;
+    }
+    fs::write(path, source.replace("\r\n", "\n")).map_err(|e| format!("{e}: {}", path.display()))
 }
 
 /// Get all `*.mamba` files paths relative to given path.
 ///
 /// If path is file, return file name.
 /// If directory, return all `*.mamba` files as relative paths to given path.
-pub fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
+fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
     if in_path.is_file() {
         let in_file_name = in_path.file_name().unwrap_or_else(|| unreachable!());
         return Ok(vec![in_file_name.to_os_string()]);

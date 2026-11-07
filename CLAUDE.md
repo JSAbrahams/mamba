@@ -14,42 +14,18 @@ Errors leave the crate as a `Diagnostic` (`src/diagnostic.rs`), built from the e
 
 ## Commands
 
-The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json`.
-Versions are pinned in `devbox.lock`.
-Devbox is a layer over Nix.
-It supplies the Rust toolchain, Python 3.14, and the cargo helpers the hooks and CI call.
-`devbox shell` enters the environment.
-`devbox run -- <cmd>` runs a single command in it.
-The cargo commands below assume you are inside that environment.
-`devbox.json` also defines named scripts, such as `devbox run lint` and `devbox run precommit`.
-See CONTRIBUTING.md for those.
-
-```sh
-cargo build --features cli                       # build the transpiler and its CLI
-cargo run --features cli -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
-cargo test --package mamba --features cli        # run the full test suite (matches CI)
-cargo fmt --all -- --check        # check formatting (CI enforces this)
-cargo clippy --all-features --all-targets -- -D warnings  # lint (CI enforces this, treats warnings as errors)
-```
-
-CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`.
-To reproduce a CI test run exactly:
-
-```sh
-cargo nextest run --package mamba --features cli --config-file .config/nextest.toml --profile ci
-```
+The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json` and pinned in `devbox.lock`.
+`devbox shell` enters it, and `devbox run -- <cmd>` runs one command in it.
+Build, test, lint and coverage are named scripts in `devbox.json`, such as `devbox run test`, `devbox run lint` and `devbox run build-wasm`.
+CI runs the same scripts.
+CONTRIBUTING.md lists them, and says which pins must change in pairs, such as Python and the wasm-bindgen CLI.
+Every command that builds the binary or runs its tests needs `--features cli`; the scripts pass it.
 
 CI's clippy step passes `--all-targets`.
 Lints are therefore enforced in test code too, not just in the library and binary.
 That covers `#[cfg(test)]` modules and the integration tests under `tests/`.
 
-Running the test suite requires a `python3` on `PATH`.
-That is `python3.14` on Linux, `python3` on macOS, and `python` on Windows.
-See `tests_util/src/lib.rs` for the exact names.
-The requirement exists because generated Python output is validated with `python -m py_compile`.
-Devbox pins `python@3.14.4` for this.
-If you change the version there, change `tests_util::PYTHON` and `check::context::python::PYTHON_VERSION` to match.
-The latter is the version `ruff_python_parser` parses as, both for the stub files and for the AST diff in `tests_util`.
+The test suite runs the generated Python, with the interpreter Devbox pins; `tests_util::PYTHON` names it per platform.
 
 To run a single test:
 
@@ -69,9 +45,8 @@ Hooks live in `.githooks/` (not `.git/hooks/`) and are opt-in:
 git config core.hooksPath .githooks
 ```
 
-The `pre-commit` hook runs several checks.
-These are `cargo fmt --check`, `cargo check --tests --all` in debug and release, `cargo sort --check`, `cargo clippy --all-targets -D warnings` in debug and release with all features, and `cargo check --benches`.
-`cargo sort --check` is there because Cargo.toml dependencies must stay alphabetically sorted.
+The `pre-commit` hook runs the checks of `devbox run precommit`.
+`cargo sort --check` is among them, because Cargo.toml dependencies must stay alphabetically sorted.
 The `commit-msg` hook enforces Conventional-Commits-style subject lines.
 The form is `<type>: <summary>`.
 `<type>` is one of `doc test feat fix style refactor revert git chore perf build ci cd deploy security`.

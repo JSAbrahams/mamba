@@ -1,151 +1,21 @@
-#[cfg(feature = "native")]
-use std::fs::create_dir;
-use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use cranelift_codegen::isa::{self, OwnedTargetIsa};
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_module::default_libcall_names;
 use cranelift_object::{ObjectBuilder, ObjectModule};
-#[cfg(feature = "native")]
-use log::info;
-use log::trace;
 use target_lexicon::Triple;
 
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
-use crate::common::result::WithSource;
-use crate::{check_sources, strip_source_paths, Context};
+use crate::Context;
 
 mod convert;
-#[cfg(feature = "native")]
-pub(crate) mod link;
 mod primitive;
 mod runtime;
 
 pub mod result;
-
-#[cfg(feature = "native")]
-const TARGET: &str = "a.out";
-
-/// Compile `source` to native object code and link it into an executable, written to disk.
-///
-/// Output is written to `target` (relative to `dir`) if given, otherwise to `a.out` in `dir`.
-/// `triple`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
-/// used.
-#[cfg(feature = "native")]
-pub fn write_output(
-    dir: &Path,
-    target: Option<&str>,
-    source: &[(String, Option<PathBuf>)],
-    src_path: &Path,
-    triple: Option<&str>,
-) -> Result<PathBuf, Vec<String>> {
-    let out_file = dir.join(target.unwrap_or(TARGET));
-    if let Some(parent) = out_file.parent() {
-        if !parent.exists() {
-            create_dir(parent).map_err(|e| vec![e.to_string()])?;
-        }
-    }
-    info!(
-        "Output executable will be stored at '{}'",
-        out_file.display()
-    );
-
-    let objects = mamba_to_object(source, &src_path.to_path_buf(), triple)?;
-
-    let mut object_files = vec![];
-    for object in &objects {
-        let mut file = tempfile::Builder::new()
-            .suffix(".o")
-            .tempfile()
-            .map_err(|e| vec![e.to_string()])?;
-        std::io::Write::write_all(&mut file, object).map_err(|e| vec![e.to_string()])?;
-        object_files.push(file.into_temp_path());
-    }
-
-    link::link(&object_files, &out_file).map_err(|error| vec![error])?;
-
-    Ok(out_file)
-}
-
-/// Compile mamba source to native object files, one per source, via the Cranelift backend.
-///
-/// `target`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
-/// used. A path can optionally be given per source for error messages.
-#[cfg(feature = "native")]
-fn mamba_to_object(
-    source: &[(String, Option<PathBuf>)],
-    source_dir: &PathBuf,
-    target: Option<&str>,
-) -> Result<Vec<Vec<u8>>, Vec<String>> {
-    let source = strip_source_paths(source, source_dir);
-    let (ctx, typed_ast) = check_sources(&source)?;
-
-    let (objects, gen_errs): (Vec<_>, Vec<_>) = typed_ast
-        .iter()
-        .zip(&source)
-        .map(|(ast_ty, (src, path))| {
-            compile(ast_ty, target, &ctx)
-                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
-        })
-        .partition(Result::is_ok);
-
-    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
-    if !gen_errs.is_empty() {
-        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
-    }
-
-    trace!("Compiled {} files to object code", objects.len());
-    Ok(objects.into_iter().map(Result::unwrap).collect())
-}
-
-/// Compile `source` and print its disassembly to stdout, one function at a time.
-///
-/// No file is written -- pipe stdout (`> out.s`) if you want to save it. `triple`, if given, is a
-/// target triple passed on to Cranelift; if `None`, the host triple is used.
-pub fn print_asm(
-    source: &[(String, Option<PathBuf>)],
-    src_path: &Path,
-    triple: Option<&str>,
-) -> Result<(), Vec<String>> {
-    let asm_sources = mamba_to_asm(source, &src_path.to_path_buf(), triple)?;
-    for asm in &asm_sources {
-        println!("{asm}");
-    }
-    Ok(())
-}
-
-/// Compile mamba source to disassembly text, one string per source, via the Cranelift backend.
-///
-/// `target`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
-/// used. A path can optionally be given per source for error messages.
-fn mamba_to_asm(
-    source: &[(String, Option<PathBuf>)],
-    source_dir: &PathBuf,
-    target: Option<&str>,
-) -> Result<Vec<String>, Vec<String>> {
-    let source = strip_source_paths(source, source_dir);
-    let (ctx, typed_ast) = check_sources(&source)?;
-
-    let (asm_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
-        .iter()
-        .zip(&source)
-        .map(|(ast_ty, (src, path))| {
-            disassemble(ast_ty, target, &ctx)
-                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
-        })
-        .partition(Result::is_ok);
-
-    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
-    if !gen_errs.is_empty() {
-        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
-    }
-
-    trace!("Disassembled {} files", asm_sources.len());
-    Ok(asm_sources.into_iter().map(Result::unwrap).collect())
-}
 
 /// Compile a single checked Mamba file to the bytes of a native object file.
 ///

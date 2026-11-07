@@ -10,9 +10,8 @@ Lowering walks the `ASTTy` once and emits IR into a `cranelift_object::ObjectMod
 The goal is Python's arithmetic at native speed, from a binary that is easy to produce.
 It is not to compete with a systems language, see [the philosophy docs](../../../docs/philosophy/README.md#pythons-arithmetic-compiled).
 
-`mod.rs` holds the entry points.
-`write_output` links an executable for `--bin`, and `print_asm` prints the disassembly for `--asm`.
-Both build on `compile` and `disassemble`, which handle a single file.
+`mod.rs` holds the entry points, which handle a single file: `compile` gives an object file, and `disassemble` its assembly.
+`mamba::compile` calls them; for `--bin`, `mamba::io` then links the objects with the system `cc`.
 
 ## Supported subset
 
@@ -108,7 +107,6 @@ Integers reference nothing, so there are no cycles to leak.
   `int.rs` holds the `Int` fast paths and reference counting.
 - `primitive.rs`: maps a checked `Name` to its Cranelift `Type`.
 - `runtime.rs`: the integer runtime.
-- `link.rs`: links object files with the system `cc`, as `rustc` does.
 - `result.rs`: `BackendErr` and `BackendResult`.
 
 `--asm` prints Cranelift's disassembly in AT&T syntax.

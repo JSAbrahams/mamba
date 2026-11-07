@@ -97,6 +97,44 @@
         }
       }
     },
+    "binaryen@133": {
+      "last_modified": "2026-11-06T15:06:19Z",
+      "resolved": "github:NixOS/nixpkgs/4fe25e12eb9f4c744966dd3de5a05246cf098601#binaryen",
+      "source": "devbox-search",
+      "version": "133",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/q1szkjn13cgc14ia9bcc546lm806aby4-binaryen-133",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/q1szkjn13cgc14ia9bcc546lm806aby4-binaryen-133"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/h4k3qfvf9w8dwqqcak6mg1ac91f5j8cg-binaryen-133",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/h4k3qfvf9w8dwqqcak6mg1ac91f5j8cg-binaryen-133"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/fh17vmid459yaw9k71fgqlww55ns56bh-binaryen-133",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/fh17vmid459yaw9k71fgqlww55ns56bh-binaryen-133"
+        }
+      }
+    },
     "carapace@latest": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#carapace",
@@ -1422,6 +1460,44 @@
             }
           ],
           "store_path": "/nix/store/rw9gjjkfmgmcmpbi61nprm5nv68dh33g-vim-9.2.0782"
+        }
+      }
+    },
+    "wasm-bindgen-cli_0_2_130@0.2.130": {
+      "last_modified": "2026-11-06T15:06:19Z",
+      "resolved": "github:NixOS/nixpkgs/4fe25e12eb9f4c744966dd3de5a05246cf098601#wasm-bindgen-cli_0_2_130",
+      "source": "devbox-search",
+      "version": "0.2.130",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/jm9jnl1yaadx0k05rkfv76lil48ab23b-wasm-bindgen-cli-0.2.130",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/jm9jnl1yaadx0k05rkfv76lil48ab23b-wasm-bindgen-cli-0.2.130"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lwf30gfd3h0mpzfk5a8fih58729b42i7-wasm-bindgen-cli-0.2.130",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lwf30gfd3h0mpzfk5a8fih58729b42i7-wasm-bindgen-cli-0.2.130"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3pjkkl5pbip38xyqksihnwq90pmiyhyw-wasm-bindgen-cli-0.2.130",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3pjkkl5pbip38xyqksihnwq90pmiyhyw-wasm-bindgen-cli-0.2.130"
         }
       }
     }
