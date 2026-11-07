@@ -902,3 +902,18 @@ You can type `mamba -help` for a message containing roughly the above informatio
 # 👥 Contributing
 
 Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
+
+## 🤖 Agentic coding
+
+We take a pragmatic approach to coding agents.
+
+If you are learning about software or logic, we encourage you to write code by hand.
+Doing so rewires how you think, and teaches you to reason about problems yourself.
+That being said, not using tools at your disposal at all is ill-advised.
+It would be a bit like writing assembly be hand because you don't want to use compilers.
+In the end, it is your choice.
+
+Either way, we want a human in the loop.
+Whatever an agent produces must stay reviewable and auditable by humans.
+That means small, focused changes, and code and documentation that state what is true without over-explaining it.
+The responsibility for what you submit falls on you, whoever or whatever wrote it.
