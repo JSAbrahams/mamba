@@ -128,6 +128,7 @@ Mutability belongs to a binding, not to a type.
 - `tests/{parse,check}/{valid,invalid}.rs`: table-driven over `tests/resource/{valid,invalid}/<category>/<name>.mamba`.
   A valid check fixture has a reference `<name>.py`, compared by Python AST rather than text, see `tests_util::fallable`.
 - `tests/execution.rs`: runs the output of both backends and compares what they print.
+  The expected output is in `<name>.stdout`, beside the fixture, never inline in the test attribute.
 - `tests/main.rs`: black-box CLI tests through `assert_cmd`.
 - `tests_util`: shared helpers, a separate crate.
 - `tests/README.md`: traps, coverage, and known gaps.
