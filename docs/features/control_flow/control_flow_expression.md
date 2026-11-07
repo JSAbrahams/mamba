@@ -47,7 +47,6 @@ An example would be:
 ### Match Expressions (or Statements)
 
 A `match` can be used to match based on the value of an expression.
-We can even match based on the type of the returned expression.
 
 A `match` has the form:
 

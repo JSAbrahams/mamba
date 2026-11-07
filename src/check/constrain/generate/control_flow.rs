@@ -104,6 +104,7 @@ pub fn gen_flow(
 
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
+            cases.iter().try_for_each(check_no_annotation)?;
             let outer_env = generate(cond, env, ctx, constr)?;
             constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)
         }
@@ -233,6 +234,23 @@ fn add_across_envs(
         &parent_env.var_mapping,
         true,
     );
+}
+
+/// Reject a type annotation on a match case.
+///
+/// Only a handle case gives it a meaning, the exception type it catches.
+fn check_no_annotation(case: &AST) -> Constrained<()> {
+    let Node::Case { cond, .. } = &case.node else {
+        return Ok(());
+    };
+    let Node::ExpressionType { ty: Some(ty), .. } = &cond.node else {
+        return Ok(());
+    };
+
+    Err(vec![TypeErr::new(
+        ty.pos,
+        "A match case cannot have a type annotation",
+    )])
 }
 
 /// Reject a `..` in a match case, which is where it is meant to go next.

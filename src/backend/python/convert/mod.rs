@@ -419,8 +419,14 @@ fn skip_assign(core: &PythonCore) -> bool {
     skip_return(core) || matches!(core, PythonCore::VarDef { .. } | PythonCore::Assign { .. })
 }
 
+/// Statements that never produce a value, so are never wrapped in a `return` or an assignment.
+///
+/// A `del` is the teardown of a scope guard, which a branch body can end in.
 fn skip_return(core: &PythonCore) -> bool {
-    matches!(core, PythonCore::Return { .. } | PythonCore::Raise { .. })
+    matches!(
+        core,
+        PythonCore::Return { .. } | PythonCore::Raise { .. } | PythonCore::Del { .. }
+    )
 }
 
 #[cfg(test)]
