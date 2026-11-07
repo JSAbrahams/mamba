@@ -7,8 +7,6 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::expression::SubRes;
-use crate::check::constrain::unify::finished::Finished;
-use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::{Any, ContainsTemp, IsSuperSet, Name, NameMap, Substitute};
@@ -16,13 +14,14 @@ use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::common::result::WithCause;
 
+/// Unify a constraint where at least one side is a type, substituting a temporary type into the rest.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 pub fn unify_type(
     constraint: &Constraint,
     constr: &mut Constraints,
-    finished: &mut Finished,
     ctx: &Context,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     let (left, right) = (&constraint.parent, &constraint.child);
     let count = if constr.len() <= total {
         total - constr.len()
@@ -34,20 +33,20 @@ pub fn unify_type(
         (Type { name: l_ty }, Type { name: r_ty }) => {
             if l_ty.is_temporary() {
                 sub_ty(right.pos, r_ty, left.pos, l_ty, constr, count, total)?;
-                return unify_link(constr, finished, ctx, total);
+                return Ok(total);
             } else if r_ty.is_temporary() {
                 sub_ty(left.pos, l_ty, right.pos, r_ty, constr, count, total)?;
-                return unify_link(constr, finished, ctx, total);
+                return Ok(total);
             } else if l_ty.contains_temp() {
                 for (old, new) in l_ty.temp_map(r_ty, left.pos)? {
                     sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
                 }
-                return unify_link(constr, finished, ctx, total);
+                return Ok(total);
             } else if r_ty.contains_temp() {
                 for (old, new) in r_ty.temp_map(l_ty, left.pos)? {
                     sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
                 }
-                return unify_link(constr, finished, ctx, total);
+                return Ok(total);
             }
 
             if l_ty.is_superset_of(r_ty, ctx, left.pos)?
@@ -56,7 +55,7 @@ pub fn unify_type(
             {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
-                unify_link(constr, finished, ctx, total)
+                Ok(total)
             } else {
                 Err(unify_type_message(
                     "two types",

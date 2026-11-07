@@ -30,7 +30,7 @@ The result maps each `Position` to a `Name`, which is used to annotate the `AST`
 
 Sets are unified one at a time, and their types are merged into one map.
 A set is copied out of the shared constraints only when its turn comes, and dropped after, since unification rewrites it.
-`unify_link` recurses once per constraint, so a very large set can overflow the stack.
+`unify_link` is a loop, so the stack does not grow with the number of constraints.
 Every set still repeats the constraints it shares, so time grows with the number of arms times the size of the program.
 
 ## Match exhaustiveness

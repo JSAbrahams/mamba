@@ -5,7 +5,7 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::finished::Finished;
-use crate::check::constrain::unify::link::{reinsert, unify_link};
+use crate::check::constrain::unify::link::reinsert;
 use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::constrain::Unified;
 use crate::check::context::arg::{FunctionArg, SELF};
@@ -20,13 +20,15 @@ use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::WithCause;
 
+/// Unify a constraint on a function call or an access, such as a field or method of an entity.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 pub fn unify_function(
     constraint: &Constraint,
     constraints: &mut Constraints,
     finished: &mut Finished,
     ctx: &Context,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     let (left, right) = (&constraint.parent, &constraint.child);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
@@ -58,7 +60,7 @@ pub fn unify_function(
                 }
             }
 
-            unify_link(constraints, finished, ctx, total + count)
+            Ok(total + count)
         }
 
         (Access { entity, name }, _) => access(
@@ -87,6 +89,8 @@ pub fn unify_function(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Unify an access on `entity`, once its type is known, and reinsert the constraint while it is not.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 fn access(
     constraints: &mut Constraints,
     finished: &mut Finished,
@@ -96,7 +100,7 @@ fn access(
     name: &Expected,
     access_left: bool,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     let (left, right) = (&constraint.parent, &constraint.child);
     let (left, right) = if access_left {
         (left, right)
@@ -108,7 +112,6 @@ fn access(
         match &name.expect {
             Field { name } => field_access(
                 constraints,
-                finished,
                 ctx,
                 entity_name,
                 name,
@@ -119,7 +122,6 @@ fn access(
             ),
             Function { name, args } => function_access(
                 constraints,
-                finished,
                 ctx,
                 entity_name,
                 name,
@@ -142,16 +144,17 @@ fn access(
             ),
             _ => {
                 reinsert(constraints, constraint, total)?;
-                unify_link(constraints, finished, ctx, total)
+                Ok(total)
             }
         }
     } else {
         reinsert(constraints, constraint, total)?;
-        unify_link(constraints, finished, ctx, total)
+        Ok(total)
     }
 }
 
 /// Resolve a round-bracket call (`a(0)`, via [`Expect::Call`]) on an entity that isn't necessarily a real function.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 #[allow(clippy::too_many_arguments)]
 fn call_or_index_access(
     constraints: &mut Constraints,
@@ -163,7 +166,7 @@ fn call_or_index_access(
     other: &Expected,
     msg: &str,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     if entity_name.is_empty() {
         let err_msg = format!("Entity '{entity_name}' is not callable and not a collection");
         return Err(vec![TypeErr::new(accessed.pos, &err_msg)]);
@@ -205,7 +208,7 @@ fn call_or_index_access(
                     pushed += 1;
                 }
             }
-            unify_link(constraints, finished, ctx, total + pushed)
+            Ok(total + pushed)
         }
         // Not callable: maybe it's a collection indexed with round brackets, e.g. `a(0)`
         // reads through `__getitem__` rather than calling `a`.
@@ -247,16 +250,17 @@ fn call_or_index_access(
 
             let pushed = resolve().map_err(|_: Vec<TypeErr>| err)?;
             finished.index_calls.insert(other.pos);
-            unify_link(constraints, finished, ctx, total + pushed)
+            Ok(total + pushed)
         }
         Err(err) => Err(err),
     }
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Unify the field `name` of every class in `entity_name` with `other`.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 fn field_access(
     constraints: &mut Constraints,
-    finished: &mut Finished,
     ctx: &Context,
     entity_name: &Name,
     name: &str,
@@ -264,7 +268,7 @@ fn field_access(
     other: &Expected,
     msg: &str,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     if entity_name.is_empty() {
         let msg = format!("Entity '{entity_name}' does not define '{name}'");
         return Err(vec![TypeErr::new(accessed.pos, &msg)]);
@@ -283,13 +287,14 @@ fn field_access(
         pushed += 1;
     }
 
-    unify_link(constraints, finished, ctx, total + pushed)
+    Ok(total + pushed)
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Unify the method `name` of every class in `entity_name`, called with `args`, with `other`.
+/// Returns the count of constraints seen, which only tracing reads, see [`unify_link`](crate::check::constrain::unify::link::unify_link).
 fn function_access(
     constraints: &mut Constraints,
-    finished: &mut Finished,
     ctx: &Context,
     entity_name: &Name,
     name: &StringName,
@@ -298,7 +303,7 @@ fn function_access(
     other: &Expected,
     msg: &str,
     total: usize,
-) -> Unified {
+) -> Unified<usize> {
     if entity_name.is_empty() {
         let msg = format!("Entity '{entity_name}' does not define '{name}'");
         return Err(vec![TypeErr::new(accessed.pos, &msg)]);
@@ -332,7 +337,7 @@ fn function_access(
         )?;
     }
 
-    unify_link(constraints, finished, ctx, total + pushed)
+    Ok(total + pushed)
 }
 
 fn unify_fun_arg(
