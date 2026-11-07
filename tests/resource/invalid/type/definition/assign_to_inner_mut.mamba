@@ -1,6 +1,4 @@
-class A where
-    let mut c: C
-end
+class A(mut c: C)
 
 class C where
     let mut my_class: D := D.new()
@@ -11,5 +9,5 @@ class D where
     let mut my_field: Int := 10
 end
 
-let mut a := A.new()
+let mut a := A.new(C.new())
 a.c.my_field_accessor().my_field := 20

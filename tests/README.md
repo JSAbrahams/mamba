@@ -51,6 +51,8 @@ Checker:
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
 - Two fields whose initializers reference each other check and generate, see `class/cyclic_field_dependency`.
 - `total` and `meta` are parsed but not checked.
+- A method of a Python stub is never held to `mut self`, since a stub cannot say whether it changes its receiver.
+- A `mut` parameter lets a function change the caller's value, even when the caller's binding is not `mut`.
 
 Generator:
 

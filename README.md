@@ -213,6 +213,8 @@ print(a) # prints '12'
 A binding is immutable unless we mark it `mut`, as in Rust.
 This holds everywhere a name is bound, so it covers variables, function arguments, the `self` argument of a method, and class fields.
 A tuple is one binding per element, so it takes one marker per element, as in `let (mut a, b) := (10, 20)`.
+Changing a value through fields, as in `a.b.c := 1`, needs every link to be `mut`: `a`, `b` and `c`.
+The result of a call has no binding to mark `mut`, so it cannot be changed, nor have a `mut self` method called on it.
 The reason is domain.
 Mamba is geared towards mathematical use, and a symbol in mathematics denotes one thing for the length of its scope.
 Substitution of equals for equals, which is the move that makes such reasoning work, is only valid when a name cannot change underneath you.

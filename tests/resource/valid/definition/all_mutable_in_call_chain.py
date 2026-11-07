@@ -1,14 +1,15 @@
-class A :
+class A:
     b: B = B()
 
-class B :
+class B:
     c: C = C()
 
-class C :
+class C:
     d: D = D()
 
-class D :
+class D:
     e: int = 100
 
-a = A()
+a: A = A()
 a.b.c.d.e = 20
+

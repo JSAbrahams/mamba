@@ -12,6 +12,7 @@ use crate::check::constrain::generate::operation::gen_op;
 use crate::check::constrain::generate::resources::gen_resources;
 use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
+use crate::check::constrain::mutation::Mutation;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::Node::*;
@@ -33,12 +34,16 @@ pub(super) mod env;
 pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 
 /// Generate all constraints, alongside every match, which can only be checked for exhaustiveness after unification.
-pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<(Vec<ConstraintSet>, Vec<AST>)> {
+pub fn gen_all(
+    ast: &AST,
+    ctx: &Context,
+) -> Constrained<(Vec<ConstraintSet>, Vec<AST>, Vec<Mutation>)> {
     let mut builder = ConstrBuilder::new();
 
     generate(ast, &Environment::default(), ctx, &mut builder)?;
     let matches = std::mem::take(&mut builder.matches);
-    Ok((builder.all_constr(), matches))
+    let mutations = std::mem::take(&mut builder.mutations);
+    Ok((builder.all_constr(), matches, mutations))
 }
 
 pub fn generate(

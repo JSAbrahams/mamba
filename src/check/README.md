@@ -39,6 +39,12 @@ Every set still repeats the constraints it shares, so time grows with the number
 It reads each subject's type from the unified `Position` to `Name` map.
 A match must cover every value of its subject, and every arm must be reachable.
 
+## Mutability
+
+`constrain/mutation.rs` also runs after unification, on every change through a field and every method call that constraint generation recorded.
+It walks each chain from the type of its root, so every field a change goes through must be `mut`.
+A method that takes `mut self` needs a receiver that may be changed.
+
 ## Names
 
 `name/` defines type identity.

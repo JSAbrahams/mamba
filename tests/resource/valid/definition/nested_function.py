@@ -1,12 +1,16 @@
+import sys
+sys.set_int_max_str_digits(0)
 class A:
-    b: B
+    def __init__(self, b: B):
+        self.b = b
 
 class B:
     def my_c(self) -> C:
-        C()
+        return C()
 
 class C:
-    my_field: Int = 10
+    my_field: int = 10
 
-a = A()
+a: A = A(B())
 print(a.b.my_c().my_field)
+

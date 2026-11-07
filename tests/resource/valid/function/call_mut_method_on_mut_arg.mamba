@@ -1,0 +1,10 @@
+class X where
+    let mut a: Int := 1
+    def f(mut self) := self.a := 2
+end
+
+def h(mut x: X) := x.f()
+
+let mut y := X.new()
+h(y)
+print(y.a)

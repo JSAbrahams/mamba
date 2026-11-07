@@ -168,10 +168,12 @@ They are `Identifier::try_from` in `src/check/ident.rs`, and `id_from_var` in `s
 Both previously forced every element to the definition's own flag via `as_mutable`.
 Destructuring a list or set, as `let [a, b]`, does not parse at all.
 
-What is actually enforced is narrower than what is written down.
-Reassigning a binding that is not `mut` is an error, and so is reassigning through a receiver that is not `mut`.
-`mut` on a class field is recorded in `Context` but never checked, and `mut self` is not required to call a mutating method.
-Each gap has an `ignore[...]` fixture; see `tests/README.md`.
+Reassigning a binding that is not `mut` is an error, and so is changing a value through a receiver that is not `mut`.
+Every field a change goes through must be `mut` too: in `a.b.c := x`, both `b` and `c`.
+A method that takes `mut self` may only be called on such a place, and the result of a call is never one.
+`check_iden_mut` in `generate/call.rs` checks the binding a change starts from.
+Fields and `mut self` need the receiver's class, so `check_mutations` in `src/check/constrain/mutation.rs` checks them after unification.
+The remaining gaps are in `tests/README.md`.
 
 The `pure` rules from the README *are* enforced, in `src/check/constrain/generate/`.
 `env.rs` carries `in_pure`, `outer_mut` and `pure_nonlocal`, set by `in_pure` when entering a pure body.
