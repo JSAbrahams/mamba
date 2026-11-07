@@ -13,50 +13,35 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
 ```ebnf
     file             ::= { expr-or-stmt }
-    # the aliases are one list rather than one per name, so they are positional
     import           ::= [ "from" id ] "import" id { "," id } [ "as" id { "," id } ]
 
-    # a class may list several parents; a trait taking more than one parent is future work
     trait-def        ::= "trait" type-not-fun [ ":" parent ] [ code-set ]
-    # a class's arguments are its fields; there is no constructor to declare
-    # its body holds only field and method declarations, plus a leading docstring
     class-def        ::= "class" type-not-fun [ fun-args ] [ ":" parent { "," parent } ] [ class-set ]
     parent           ::= type-not-fun [ "(" [ expression { "," expression } ] ")" ]
     class-set        ::= "where" [ docstring newline ] class-member { newline class-member } "end"
-    class-member     ::= variable-def | fun-def | class-new
-    # asserts something about the "new" the class already has, rather than declaring one
-    # its list stands for the class arguments: "()" none, "(_)" one, "(..)" one or more
-    class-new        ::= "def" [ "pure" ] "new" "(" [ "_" | ".." ] ")"
-    
+    class-member     ::= variable-def | fun-def
+
     id               ::= { character }
-    # "mut" marks one binding, so it may only precede an id, never a tuple
-    # an id-tuple therefore takes one marker per element, at every depth
     id-tuple         ::= "(" id-element { "," id-element } ")"
     id-element       ::= [ "mut" ] id | id-tuple
     id-maybe-type    ::= ( [ "mut" ] id | id-tuple ) [ ":" type ]
 
-    # "Self" is a type naming the enclosing class, usable anywhere in a class body
-    # a trailing "?" makes a type nullable; a type set is a union
-    type-not-fun     ::= ( id [ generics ] | "Self" | type-tuple | type-set ) [ "?" ]
+    type-not-fun     ::= ( id [ generics ] | type-tuple | type-set ) [ "?" ]
     type             ::= type-not-fun [ "->" type ]
     type-tuple       ::= "(" [ type { "," type } ] ")"
     type-set         ::= "{" [ type { "," type } ] "}"
     generics         ::= "[" generic { "," generic } "]"
-    # the optional id bounds the parameter, as in `[T: Num]`
     generic          ::= id [ ":" id ]
-    
+
     expr-or-stmt     ::= ( statement | expression )
     statement        ::= control-flow-stmt
                       | definition
                       | reassignment
-                      | type-def
-                      | trait-def
-                      | class-def
                       | import
                       | using-block
                       | "return" [ expression ]
                       | code-set
-    expression       ::= control-flow-expr 
+    expression       ::= control-flow-expr
                       | collection
                       | operation
                       | anon-fun
@@ -64,56 +49,37 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "_"
                       | ".."
                       | code-block
-                     
+
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) expression
-    # a call with one argument also indexes a list or a map, as in `a(0)`, which the type checker decides
-    # there is no square-bracket index: `a[0]` is a parse error
+    # a call with one argument also indexes, as in `a(0)`
     call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" match-cases ]
     raise            ::= "!" id { "," id }
-    
-    # for all collections, we require one comma at least to avoid ambiguity
+
     collection       ::= tuple | set | set-builder | list | list-builder | map | map-builder
-    tuple            ::= "(" "," ")" | "(" expression "," ")" 
+    tuple            ::= "(" "," ")" | "(" expression "," ")"
                       | "(" expression "," [ newline ] expression { "," [ newline ] expression } ")"
-    set              ::= "{" "," "}" | "{" expression "," "}" 
+    set              ::= "{" "," "}" | "{" expression "," "}"
                       | "{" expression { "," [ newline ] expression } "}"
     set-builder      ::= "{" expression "|" expression { "," [ newline ] expression } "}"
-    list             ::= "[" "," "]" | "[" expression "," "]" 
+    list             ::= "[" "," "]" | "[" expression "," "]"
                       | "[" expression { "," [ newline ] expression } "]"
     list-builder     ::= "[" expression "|" expression { "," [ newline ] expression } "]"
     map              ::= "{" expression "=>" expression "," "}"
                       | "{" expression "=>" expression { "," [ newline ] expression "=>" expression } "}"
     map-builder      ::= "{" expression "=>" expression "|" expression { "," [ newline ] expression } "}"
-      
+
     range            ::= expression ( ".." | "..=" ) expression
-    
-    definition       ::= variable-def | fun-def | type-def | trait-def | class-def
 
-    # type-def is a type alias / refinement (`type ... when ...`). It is future work: it has no
-    # production below, and the "type" keyword is not accepted by the parser yet.
-
-    # a binding is immutable unless marked "mut", which id-maybe-type carries for
-    # arguments and "self" as well as for variables
-    # destructuring a list or set, as in `let [a, b]`, is future work and does not parse
+    definition       ::= variable-def | fun-def | trait-def | class-def
     variable-def     ::= "let" id-maybe-type [ ":=" expression ]
-    # "def" always defines a function, so it always takes an argument list and never "mut"
-    # type checker should check for valid combination of meta, total, pure
-    # all three are keywords and parse, but only "pure" is checked; "meta" and "total" are future work
     fun-def          ::= "def" [ "meta" ] [ "total" ] [ "pure" ]
-                         ( id | overridable-op ) fun-args [ "->" type ] [ raise ] 
+                         ( id | overridable-op ) fun-args [ "->" type ] [ raise ]
                          [ ":=" expression ]
-    # a fun-def with no "self" argument is an associated function, called on the class
-    # rather than on an instance; "new" is one of these
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    # a placeholder binds nothing, so it takes neither a type nor a default
-    # the grammar lets one stand wherever an expression or an argument does, and the type
-    # checker narrows it to "class-new" above; a match case is where ".." goes next
     fun-arg          ::= id-maybe-type [ ":=" expression ] | "_" | ".."
-    # the type checker requires a type for every argument, as in a fun-def
-    # the return type is inferred, since the body is always an expression
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
-    
-    # loosest binding first; each level is right-recursive into itself
+
+    # loosest binding first
     operation        ::= relation [ boolean-logic operation ]
     relation         ::= arithmetic [ ( comparison | equality | "in" ) relation ]
     arithmetic       ::= term [ additive arithmetic ]
@@ -121,7 +87,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     unary            ::= [ prefix ] inner-term
     inner-term       ::= factor [ power inner-term ]
     factor           ::= literal | id | expression
-    
+
     overridable-op   ::= additive | multiplicative | power | "=" | "<" | ">"
     prefix           ::= "not" | additive
     additive         ::= "+" | "-"
@@ -129,47 +95,30 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     power            ::= "^"
     equality         ::= "=" | "!="
     comparison       ::= "<=" | ">=" | "<" | ">"
-    # "?" is the null-coalescing operator: `a ? b` is `a` unless it is None, then `b`
+    # "?" is null-coalescing
     boolean-logic    ::= "and" | "or" | "?"
-    
-    # the lexer and parser read "True", "False" and "None" as identifiers, so they are not keywords
-    # the type checker gives them their meaning: "True" and "False" are a Bool, and "None" is undefined
-    literal          ::= number | string | "True" | "False" | "None"
-    # a number has no sign: in "-1" the "-" is a prefix operator
-    # a digit is an ASCII digit, and "E" is upper case only
+
+    literal          ::= number | string
     number           ::= real | integer | e-notation
-    # a "." directly followed by a second "." starts a range instead, so "1..5" holds no real
-    # there is no real without an integer part: ".5" does not lex as one
     real             ::= integer "." { digit }
     integer          ::= digit { digit }
-    # the lexer takes the exponent as digits only, and it may be empty
-    # so "1E" is 1, and "1E-5" lexes as "1E" "-" "5"
     e-notation       ::= ( integer | real ) "E" { digit }
-    # a string ends at the first double quote that is neither escaped by a backslash nor inside "{" and "}"
-    # between "{" and "}" is an expression, which is interpolated
     string           ::= '"' { character } '"'
-    # three quotes on each side; the lexer reads it as three strings, of which the outer two are empty
-    # so its text ends at the first double quote, and it is not interpolated
-    # the parser takes it wherever it takes a statement, and the type checker allows it in a class body only first
     docstring        ::= '"""' { character } '"""'
-    
-    code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end" 
+
+    code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end"
     code-set         ::= "where" expr-or-stmt { newline expr-or-stmt } "end"
     using-block      ::= "using" expression [ "as" id-maybe-type ] code-block
-    
+
     control-flow-expr::= if | match
-    # a branch is one expr-or-stmt, so it may be a bare statement or a "do ... end" block
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
     match            ::= "match" expression match-cases
     match-cases      ::= "where" match-case { match-case } "end"
-    # the type annotation names the error a handle case catches, as in `err: MyErr => ...`
-    # the guard is checked after the pattern matches, so it can read what the pattern bound
     match-case       ::= [ "mut" ] expression [ ":" type ] [ "if" expression ] "=>" expr-or-stmt
-    
+
     control-flow-stmt::= while | foreach | "break" | "continue"
     while            ::= "while" expression code-block
-    # the loop variable binds, so it is an id or a tuple of them, not any expression
     foreach          ::= "for" ( id | id-tuple ) "in" expression code-block
-    
+
     newline          ::= <platform dependent>
 ```
