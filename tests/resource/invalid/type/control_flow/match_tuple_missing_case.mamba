@@ -1,0 +1,5 @@
+# (False, False) is covered by no arm
+def f(p: (Bool, Bool)) -> Int := match p where
+    (True, _)     => 1
+    (False, True) => 2
+end

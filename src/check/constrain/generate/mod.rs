@@ -32,11 +32,13 @@ pub(super) mod env;
 
 pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 
-pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<Vec<Constraints>> {
+/// Generate all constraints, alongside every match, which can only be checked for exhaustiveness after unification.
+pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<(Vec<Constraints>, Vec<AST>)> {
     let mut builder = ConstrBuilder::new();
 
     generate(ast, &Environment::default(), ctx, &mut builder)?;
-    Ok(builder.all_constr())
+    let matches = std::mem::take(&mut builder.matches);
+    Ok((builder.all_constr(), matches))
 }
 
 pub fn generate(

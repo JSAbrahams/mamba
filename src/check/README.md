@@ -4,7 +4,7 @@
 
 # Check
 
-Type checks an `AST` in three phases, and annotates it as `ASTTy`.
+Type checks an `AST` in three phases, checks its matches, and annotates it as `ASTTy`.
 
 ## Context
 
@@ -23,6 +23,12 @@ Each constraint records which side must be the supertype, such as an annotation 
 
 `constrain/unify` solves the constraints by comparing `Name`s, accepting a subtype where a supertype is expected.
 The result maps each `Position` to a `Name`, which is used to annotate the `AST` as `ASTTy`.
+
+## Match exhaustiveness
+
+`constrain/exhaustive.rs` runs after unification, on every match that constraint generation recorded.
+It reads each subject's type from the unified `Position` to `Name` map.
+A match must cover every value of its subject, and every arm must be reachable.
 
 ## Names
 

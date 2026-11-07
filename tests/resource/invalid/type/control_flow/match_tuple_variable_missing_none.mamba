@@ -1,0 +1,9 @@
+# the tuple's first element is a nullable Bool, so (None, _) is a value no arm covers.
+# The type of p loses that nullability, so the match is accepted, and a None arm is even rejected.
+let b: Bool? := None
+let p := (b, 1)
+
+match p where
+    (True, _)  => print(1)
+    (False, _) => print(2)
+end

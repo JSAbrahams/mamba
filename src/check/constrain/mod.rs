@@ -1,3 +1,4 @@
+use crate::check::constrain::exhaustive::check_matches;
 use crate::check::constrain::generate::gen_all;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::unify;
@@ -5,16 +6,19 @@ use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::AST;
 
-pub(super) mod constraint;
-
+mod exhaustive;
 mod generate;
+
+pub(super) mod constraint;
 pub(super) mod unify;
 
 pub type Unified<T = Finished> = Result<T, Vec<TypeErr>>;
 
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified<Finished> {
-    let constrained = gen_all(ast, ctx)?;
-    unify(&constrained, ctx)
+    let (constrained, matches) = gen_all(ast, ctx)?;
+    let finished = unify(&constrained, ctx)?;
+    check_matches(&matches, &finished)?;
+    Ok(finished)
 }
 
 #[cfg(test)]

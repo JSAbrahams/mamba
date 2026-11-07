@@ -1,0 +1,5 @@
+# an arm after a default arm can never match
+def f(x: Int) -> Int := match x where
+    _ => 1
+    0 => 2
+end

@@ -10,6 +10,7 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::name::Name;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
+use crate::parse::ast::AST;
 
 pub type VarMapping = HashMap<String, usize>;
 
@@ -39,6 +40,9 @@ pub struct ConstrBuilder {
 
     temp_name_offset: usize,
     pub var_mapping: VarMapping,
+
+    /// Every match constrained, to check for exhaustiveness once their subjects have types.
+    pub matches: Vec<AST>,
 }
 
 impl ConstrBuilder {
@@ -52,6 +56,7 @@ impl ConstrBuilder {
             constraints: vec![(pos, msg, vec![])],
             var_mapping,
             temp_name_offset: 0,
+            matches: vec![],
         }
     }
 

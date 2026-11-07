@@ -70,6 +70,9 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 // move to `ruff_python_parser`, but these assert on what the output actually does when run.
 #[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba" => "on the y axis\non the x axis\noff both axes\n")]
 #[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba" => "yes\nno\n")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_nullable_bool.mamba" => "unknown\n")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_tuple_of_bools.mamba" => "both\nnot first\nnot second\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guarded_arm_does_not_hide_next.mamba" => "zero\nother\n")]
 #[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => "negative\npositive\nzero\n")]
 #[test_case(run_via_python, &["control_flow"], "match_first_arm_wins.mamba" => "positive\nother\n")]
 #[test_case(run_via_python, &["control_flow"], "match_guard_falls_through.mamba" => "big\nmedium\nsmall\n")]

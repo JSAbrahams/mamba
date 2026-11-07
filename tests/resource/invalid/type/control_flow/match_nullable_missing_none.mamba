@@ -1,0 +1,5 @@
+# a nullable Bool can also be None, which no arm covers
+def f(b: Bool?) -> Int := match b where
+    True  => 1
+    False => 2
+end

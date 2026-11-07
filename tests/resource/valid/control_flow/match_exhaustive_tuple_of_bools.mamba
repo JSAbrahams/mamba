@@ -1,0 +1,10 @@
+# The arms cover every pair of Bools between them, so no default arm is needed
+def pure both(p: (Bool, Bool)) -> Str := match p where
+    (True, True) => "both"
+    (False, _)   => "not first"
+    (_, False)   => "not second"
+end
+
+print(both((True, True)))
+print(both((False, True)))
+print(both((True, False)))

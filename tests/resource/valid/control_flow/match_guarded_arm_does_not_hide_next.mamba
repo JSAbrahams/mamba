@@ -1,0 +1,9 @@
+# An arm behind a guarded copy of itself is reachable, since the guard can fail
+def pure f(x: Int) -> Str := match x where
+    0 if x > 5 => "never"
+    0          => "zero"
+    _          => "other"
+end
+
+print(f(0))
+print(f(1))
