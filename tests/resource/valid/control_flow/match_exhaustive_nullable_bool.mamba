@@ -1,0 +1,8 @@
+# True, False and None cover every value of a nullable Bool, so no default arm is needed
+let b: Bool? := None
+
+match b where
+    True  => print("yes")
+    False => print("no")
+    None  => print("unknown")
+end

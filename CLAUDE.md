@@ -115,7 +115,7 @@ The pipeline is `String` → **parse** → `AST` → **check** → `ASTTy` → *
 `src/README.md` gives the overview, and each stage has its own README:
 
 - `src/parse/README.md`: lexer and `TokenIterator`-driven parser.
-- `src/check/README.md`: context, constraint generation, unification, and `Name`s.
+- `src/check/README.md`: context, constraint generation, unification, match exhaustiveness, and `Name`s.
 - `src/backend/python/README.md`: the default backend, through `PythonCore`.
 - `src/backend/cranelift/README.md`: native code for a small subset.
 

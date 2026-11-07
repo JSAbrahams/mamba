@@ -1,0 +1,6 @@
+# the second 0 can never match, since the first already matches every 0
+def f(x: Int) -> Int := match x where
+    0 => 1
+    0 => 2
+    _ => 3
+end

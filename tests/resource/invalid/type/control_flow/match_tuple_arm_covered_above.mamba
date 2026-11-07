@@ -1,0 +1,6 @@
+# True is already covered by the arm above, whatever the second element is
+def f(p: (Bool, Int)) -> Int := match p where
+    (True, _) => 1
+    (True, 0) => 2
+    _         => 3
+end

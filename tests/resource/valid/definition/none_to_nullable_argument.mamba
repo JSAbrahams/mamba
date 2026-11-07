@@ -1,0 +1,4 @@
+# None is a value of every nullable type, including as an argument
+def pure f(b: Int?) -> Int := 1
+
+print(f(None))

@@ -82,8 +82,22 @@ The second is to write out every value of a type that has finitely many:
     end
 
 `Bool` has exactly two values, and both are covered, so no default arm is needed.
+A nullable type adds `None` to its values, and a tuple has every combination of its elements' values.
+A guarded arm never counts towards covering a value, since its guard can fail.
 
-_Note_ Exhaustiveness is not checked yet.
+A `match` that misses a value is rejected, with an example of one it misses:
+
+    def both(p: (Bool, Bool)) -> Int := match p where
+        (True, _)     => 1
+        (False, True) => 2
+    end
+
+Here `(False, False)` is not covered.
+
+#### Every arm must be reachable
+
+An arm whose values are all covered by the unguarded arms above it can never match, and is rejected.
+That includes any arm after a default arm, and a repeated arm.
 
 #### Tuple patterns
 

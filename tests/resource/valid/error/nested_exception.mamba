@@ -6,6 +6,7 @@ def f(x: Int) -> Int ! { MyException1, MyException2 } :=
         0 => 20
         1 => ! MyException1()
         2 => ! MyException2()
+        _ => 0
     end
 
 def g() -> Int ! MyException2 :=

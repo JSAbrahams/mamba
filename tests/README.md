@@ -51,8 +51,9 @@ Unfinished features whose code exists but is not wired in:
 Checker:
 
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
-- Match exhaustiveness is not checked.
-  `control_flow/match_stmt` and `error/nested_exception` are non-exhaustive and need a default arm once it is.
+- Passing `None` as an argument of a nullable type is rejected, see `definition/none_to_nullable_argument`.
+- The type of a tuple built from a nullable value loses its nullability.
+  A match on it then accepts a missing `None`, see `match_tuple_variable_missing_none`.
 - Two fields whose initializers reference each other check and generate, see `class/cyclic_field_dependency`.
 - `total` and `meta` are parsed but not checked.
 

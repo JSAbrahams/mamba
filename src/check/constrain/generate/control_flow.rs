@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::collection::constr_col_lookup;
@@ -105,6 +106,8 @@ pub fn gen_flow(
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             cases.iter().try_for_each(check_no_annotation)?;
+            constr.matches.push(ast.clone());
+            type_at_subject(cond, env, constr);
             let outer_env = generate(cond, env, ctx, constr)?;
             constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)
         }
@@ -193,6 +196,19 @@ fn constrain_cases(
     constr.reset_branches();
 
     Ok(env.clone())
+}
+
+/// Give a match subject a type at its own position, which the exhaustiveness check reads.
+///
+/// Unification otherwise types a variable only where it is defined, not where it is read.
+fn type_at_subject(subject: &AST, env: &Environment, constr: &mut ConstrBuilder) {
+    let ty = Expected::new(
+        subject.pos,
+        &Type {
+            name: constr.temp_name(),
+        },
+    );
+    constr.add("match subject", &ty, &Expected::from(subject), env);
 }
 
 /// Open a new constraint set for every arm after the first, as an `if` does for its `else`.

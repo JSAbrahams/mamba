@@ -1,0 +1,4 @@
+# Bool has two values, and False is not covered
+def f(b: Bool) -> Int := match b where
+    True => 1
+end

@@ -5,6 +5,8 @@ b, bb, bbb = (0, 1, 2)
 match (b, bb, bbb):
     case (0, 1, 2):
         print("hello world")
+    case _:
+        print("something else")
 
 nested: str = "other"
 
@@ -20,3 +22,5 @@ match nested:
                 "better_one"
             case _:
                 "default"
+    case _:
+        "neither"

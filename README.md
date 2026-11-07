@@ -789,6 +789,8 @@ match m.solve(5.0, 6.0) where
 end
 ```
 
+This shows the intended desugaring, which cannot be written by hand yet.
+
 This can also be combined with an assign.
 In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below, assuming the following error classes and fallible function are defined:

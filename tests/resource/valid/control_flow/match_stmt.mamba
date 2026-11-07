@@ -4,6 +4,7 @@ let (b, bb, bbb) := (0, 1, 2)
 
 match (b, bb, bbb) where
     (0, 1, 2) => print("hello world")
+    _         => print("something else")
 end
 
 let nested := "other"
@@ -18,4 +19,5 @@ match nested where
         "other_one" => "better_one"
         _ => "default"
     end
+    _ => "neither"
 end

@@ -14,6 +14,8 @@ def f(x: int) -> int:
             raise MyException1()
         case 2:
             raise MyException2()
+        case _:
+            return 0
 
 def g() -> int:
     try:
