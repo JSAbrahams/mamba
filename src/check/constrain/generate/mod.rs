@@ -1,7 +1,7 @@
 use env::Environment;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::constraint::iterator::ConstraintSet;
 use crate::check::constrain::generate::call::gen_call;
 use crate::check::constrain::generate::class::gen_class;
 use crate::check::constrain::generate::collection::gen_coll;
@@ -33,7 +33,7 @@ pub(super) mod env;
 pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 
 /// Generate all constraints, alongside every match, which can only be checked for exhaustiveness after unification.
-pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<(Vec<Constraints>, Vec<AST>)> {
+pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<(Vec<ConstraintSet>, Vec<AST>)> {
     let mut builder = ConstrBuilder::new();
 
     generate(ast, &Environment::default(), ctx, &mut builder)?;

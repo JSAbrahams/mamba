@@ -1,11 +1,12 @@
 use itertools::Itertools;
 use log::trace;
 
-use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::constraint::iterator::ConstraintSet;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
+use crate::check::result::TypeErr;
 use crate::common::delimit::newline_delimited;
 
 pub mod finished;
@@ -16,44 +17,41 @@ mod expression;
 mod function;
 mod ty;
 
-pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
-    let mut count = 1;
+/// Unify each set in turn, collecting the types of every set into one [Finished].
+/// A set is only copied out of the shared constraints when its turn comes, and dropped after.
+pub fn unify(all_constraints: Vec<ConstraintSet>, ctx: &Context) -> Unified {
+    let sets = all_constraints.len();
     let mut finished = Finished::default();
-    let (_, errs): (Vec<_>, Vec<_>) = all_constraints
-        .iter()
-        .map(|constraints| {
-            trace!(
-                "[unifying set {}\\{}: {} (branched at {})]",
-                count,
-                all_constraints.len(),
-                constraints.msg,
-                constraints.pos
-            );
-            count += 1;
-            unify_link(
-                &mut constraints.clone(),
-                &mut finished,
-                ctx,
-                constraints.len(),
-            )
-            .inspect_err(|e| {
-                trace!(
-                    "[error unifying set {}\\{}:{}]",
-                    count - 1,
-                    all_constraints.len(),
-                    newline_delimited(e.clone().into_iter().map(|e| {
-                        let pos = e.pos.map_or_else(String::new, |pos| format!(" at {pos}: "));
-                        format!("{pos}{}", e.msg)
-                    }))
-                )
-            })
-        })
-        .partition(Result::is_ok);
+    let mut errs = vec![];
+
+    for (count, set) in all_constraints.into_iter().enumerate() {
+        trace!(
+            "[unifying set {}\\{sets}: {} (branched at {})]",
+            count + 1,
+            set.msg,
+            set.pos
+        );
+        let mut constraints = set.into_constraints();
+        let total = constraints.len();
+        if let Err(set_errs) = unify_link(&mut constraints, &mut finished, ctx, total) {
+            trace_errs(count + 1, sets, &set_errs);
+            errs.extend(set_errs);
+        }
+    }
 
     if errs.is_empty() {
         Ok(finished)
     } else {
-        let errs = errs.into_iter().flat_map(Result::unwrap_err);
         Err(errs.into_iter().unique().collect())
     }
+}
+
+fn trace_errs(count: usize, sets: usize, errs: &[TypeErr]) {
+    trace!(
+        "[error unifying set {count}\\{sets}:{}]",
+        newline_delimited(errs.iter().map(|e| {
+            let pos = e.pos.map_or_else(String::new, |pos| format!(" at {pos}: "));
+            format!("{pos}{}", e.msg)
+        }))
+    )
 }

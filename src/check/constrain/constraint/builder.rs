@@ -1,10 +1,11 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use itertools::enumerate;
 use log::trace;
 
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::constraint::iterator::ConstraintSet;
 use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::name::Name;
@@ -22,7 +23,9 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
     }
 }
 
-type ConstraintLvls = Vec<(Constraint, usize)>;
+/// Each constraint is stored once, and every set it belongs to holds a pointer to it.
+/// So a branch shares what it inherits, instead of copying every constraint and the AST inside it.
+type ConstraintLvls = Vec<(Rc<Constraint>, usize)>;
 
 /// The constraint builder allows us to build sets of constraints.
 ///
@@ -163,22 +166,22 @@ impl ConstrBuilder {
         ignore_map: bool,
     ) {
         let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
-        let constraint = if ignore_map {
+        let constraint = Rc::new(if ignore_map {
             constraint.clone()
         } else {
             constraint.map_exp(var_map, &self.var_mapping)
-        };
+        });
 
         if self.joined {
             for (i, (_, _, constraints)) in enumerate(&mut self.constraints) {
-                constraints.push((constraint.clone(), self.branch_point));
+                constraints.push((Rc::clone(&constraint), self.branch_point));
                 lvls.push(i);
             }
         } else {
             // only push to last branch
             self.constraints[last_branch]
                 .2
-                .push((constraint.clone(), self.branch_point));
+                .push((Rc::clone(&constraint), self.branch_point));
             lvls.push(last_branch);
         }
 
@@ -193,17 +196,14 @@ impl ConstrBuilder {
         );
     }
 
-    pub fn all_constr(self) -> Vec<Constraints> {
+    /// Every set, still sharing the constraints they have in common.
+    pub fn all_constr(self) -> Vec<ConstraintSet> {
         self.constraints
             .into_iter()
             .map(|(pos, msg, constraints)| {
-                (
-                    pos,
-                    msg,
-                    constraints.iter().map(|(c, _)| c.clone()).collect(),
-                )
+                let constraints = constraints.into_iter().map(|(c, _)| c).collect();
+                ConstraintSet::new(pos, msg, constraints)
             })
-            .map(Constraints::from)
             .collect()
     }
 }
