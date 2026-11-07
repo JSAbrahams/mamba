@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  release:
+    types: [ published ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  # The WebAssembly module of the playground: mamba.js, the glue for a plain <script> tag, and
+  # mamba_bg.wasm, the compiler itself. Both are uploaded to the release, with their checksums.
+  wasm:
+    runs-on: ubuntu-latest
+    name: WebAssembly module
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # rustup reads rust-toolchain.toml, which also lists the wasm32-unknown-unknown target.
+      - name: Install Rust from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Build the library for wasm32-unknown-unknown
+        run: cargo build --locked --target wasm32-unknown-unknown --no-default-features --features wasm --release
+
+      # The wasm-bindgen CLI must be the exact version of the wasm-bindgen crate, so read it from
+      # Cargo.lock rather than naming it here.
+      - name: Read the wasm-bindgen version
+        id: wasm-bindgen
+        run: |
+          version="$(cargo metadata --format-version 1 --locked \
+            | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install the wasm-bindgen CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ steps.wasm-bindgen.outputs.version }}
+
+      - name: Generate the JavaScript glue
+        run: |
+          wasm-bindgen target/wasm32-unknown-unknown/release/mamba.wasm \
+            --target no-modules --out-name mamba --out-dir pkg --no-typescript
+
+      # Best effort: an older wasm-opt may not read what current Rust emits, and then the module is
+      # shipped as wasm-bindgen left it.
+      - name: Shrink the module
+        run: |
+          sudo apt-get update && sudo apt-get install -y binaryen || true
+          if command -v wasm-opt && wasm-opt -Oz pkg/mamba_bg.wasm -o pkg/mamba_bg.opt.wasm; then
+            mv pkg/mamba_bg.opt.wasm pkg/mamba_bg.wasm
+          else
+            echo "::warning::wasm-opt failed, uploading the module unoptimized"
+          fi
+
+      - name: Write checksums
+        working-directory: pkg
+        run: sha256sum mamba.js mamba_bg.wasm > SHA256SUMS
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" pkg/mamba.js pkg/mamba_bg.wasm pkg/SHA256SUMS --clobber
