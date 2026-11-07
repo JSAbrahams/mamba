@@ -4,34 +4,19 @@
 
 # Structure
 
-The general pipeline, for a single file, is as follows:
+The pipeline for a single file is:
 
-(1) `String` -> (2) `AST` -> (3) check -> (4) `PythonCore` -> (5) `String`
+`String` → **parse** → `AST` → **check** → `ASTTy` → **backend** → output
 
-The general structure is as follows:
+- `parse`: source to `AST`.
+  Errors on an illegal character or on input that does not match the grammar.
+- `check`: type checks the `AST` and annotates it as `ASTTy`.
+  Most of the language semantics live here.
+- `backend`: turns `ASTTy` into output, selected by the `Backend` enum in `backend/mod.rs`.
+  - `backend/python`: Python source, via `PythonCore`, and the default.
+  - `backend/cranelift`: native code for `--bin` and `--asm`, covering a small subset.
+- `common`: shared types, notably `Position` for error messages.
+- `io`: reading sources, writing outputs, and walking a directory of `.mamba` files.
 
-- `parse`: Convert strings to AST.
-  Errors if an illegal character is encountered, or if the AST would not conform to the language grammar.
-  This is step (1) and (2) above.
-- `check`: Checks that this AST is well typed.
-  Errors if it is not well-typed.
-  This is step (3) above, and is where the bulk of the application logic is.
-- `backend`: Converts the checked AST to output.
-  Which backend runs is selected by the `Backend` enum in `backend/mod.rs`:
-  - `backend/python`: Converts AST to a Python string, via the intermediate `PythonCore` representation.
-    This is the default, and is step (4) and (5) above.
-    Errors if converting an unsupported language construct.
-    Also errors in certain situations if the AST is not well-typed, which should have been caught beforehand by the `check` stage.
-  - `backend/cranelift`: Compiles the checked AST straight to native machine code instead, for the `--bin` and `--asm` flags.
-    Only a small subset of the language is supported.
-    See its README for details.
-- `common`: Types shared by all of the above, most notably `Position` for source spans in error messages.
-- `io`: Reading source files, writing output files, and walking a directory of `.mamba` files.
-
-`lib.rs` brings all of the above together in `transpile_dir`, the end-to-end pipeline where the compiler attempts to transpile Mamba files within a directory.
-
-`main.rs` is the executable.
-This takes command-line arguments.
-These arguments are explained in the top-level README.
-The transpiler outputs status messages, which include errors, to the command line.
-If everything went successfully, the final output is Python files in the specified output directory.
+`lib.rs` wires the stages together in `transpile_dir`.
+`main.rs` is the CLI binary, with its flags defined in `cli.rs`.

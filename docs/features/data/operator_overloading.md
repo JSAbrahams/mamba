@@ -46,5 +46,5 @@ print(c.to_string()) # prints (3.0, 5.0)
 ```
 
 _Note_ The above type checks, and the overloads generate as Python's `__add__` and friends.
-Generating a *runnable* module from it still hits two known generator bugs, though: annotating a method with its own class type (`other: Vec2`) emits a forward reference Python rejects, and without `--annotate` a single-expression body loses its `return`.
-See [tests/README.md](../../../tests/README.md) for both.
+With `--annotate`, annotating a method with its own class type (`other: Vec2`) emits a forward reference Python rejects.
+See [tests/README.md](../../../tests/README.md).
