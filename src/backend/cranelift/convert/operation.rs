@@ -88,8 +88,8 @@ impl<'a> FnLower<'a> {
         }
     }
 
-    /// Lower a comparison, picking `icmp`/`fcmp` (with the matching condition code) depending on
-    /// whether either operand turns out to be `Float`. See [`Self::float_pair`]'s doc comment.
+    /// Lower a comparison by the operands' actual Cranelift types, for the reason [`Self::float_pair`]'s doc comment gives.
+    /// An `Int` and a `Float` are compared exactly through [`Self::int_float_cmp`].
     /// Two `Int` operands go through [`Self::int_cmp`], and only two `Bool` ones are a plain `icmp`.
     fn lower_cmp(
         &mut self,
@@ -100,13 +100,14 @@ impl<'a> FnLower<'a> {
     ) -> BackendResult<Value> {
         let l = self.lower_expr(left)?;
         let r = self.lower_expr(right)?;
-        match self.float_pair(l, r) {
-            Some((l, r)) => Ok(self.builder.ins().fcmp(float_cc, l, r)),
-            None if self.builder.func.dfg.value_type(l) == types::I64 => {
-                Ok(self.int_cmp(int_cc, l, r))
-            }
-            None => Ok(self.builder.ins().icmp(int_cc, l, r)),
-        }
+        let dfg = &self.builder.func.dfg;
+        Ok(match (dfg.value_type(l), dfg.value_type(r)) {
+            (types::F64, types::F64) => self.builder.ins().fcmp(float_cc, l, r),
+            (types::I64, types::F64) => self.int_float_cmp(int_cc, float_cc, l, r, true),
+            (types::F64, _) => self.int_float_cmp(int_cc, float_cc, r, l, false),
+            (types::I64, _) => self.int_cmp(int_cc, l, r),
+            _ => self.builder.ins().icmp(int_cc, l, r),
+        })
     }
 
     /// If either `l` or `r` is actually `Float`, return both as `Float` (converting whichever

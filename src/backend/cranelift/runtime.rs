@@ -35,6 +35,8 @@ pub struct Runtime {
     pub mul: FuncId,
     /// -1, 0 or 1.
     pub cmp: FuncId,
+    /// An `Int` against a `Float`, exactly: -1, 0 or 1, or 2 when the `Float` is NaN.
+    pub cmp_float: FuncId,
     pub to_float: FuncId,
     pub print: FuncId,
 }
@@ -369,6 +371,46 @@ pub fn define_runtime(module: &mut ObjectModule) -> BackendResult<Runtime> {
         },
     )?;
 
+    // Compare an `Int` with a `Float` exactly, as Python does: -1, 0 or 1, or 2 when the `Float` is NaN.
+    // A finite `Float` is compared by its floor, which is an integer, and its fraction breaks a tie.
+    let cmp_float = define(
+        module,
+        libc,
+        "mamba.int.cmp_float",
+        &[I64, F64],
+        &[I64],
+        |f, args| {
+            let (word, x) = (args[0], args[1]);
+            let unordered = f.b.ins().fcmp(FloatCC::Unordered, x, x);
+            let nan = f.c(2);
+            f.return_if(unordered, &[nan]);
+
+            let magnitude = f.b.ins().fabs(x);
+            let infinity = f.b.ins().f64const(f64::INFINITY);
+            let infinite = f.b.ins().fcmp(FloatCC::Equal, magnitude, infinity);
+            let zero = f.b.ins().f64const(0.0);
+            let positive = f.b.ins().fcmp(FloatCC::GreaterThan, x, zero);
+            let less = f.c(-1);
+            let greater = f.c(1);
+            let beyond = f.b.ins().select(positive, less, greater);
+            f.return_if(infinite, &[beyond]);
+
+            let floor = f.floor(x);
+            let whole = f.float_to_int(alloc, normalize, floor);
+            let order = f.call(cmp, &[word, whole])[0];
+            let heap = f.b.ins().band_imm(whole, 1);
+            f.when(heap, |f| {
+                f.call(release, &[whole]);
+            });
+
+            let tie = f.b.ins().icmp_imm(IntCC::Equal, order, 0);
+            let fraction = f.b.ins().fcmp(FloatCC::GreaterThan, x, floor);
+            let below_fraction = f.b.ins().band(tie, fraction);
+            let order = f.b.ins().select(below_fraction, less, order);
+            f.b.ins().return_(&[order]);
+        },
+    )?;
+
     // The nearest `Float`, rounding half to even as Python does.
     let to_float = define(
         module,
@@ -546,6 +588,7 @@ pub fn define_runtime(module: &mut ObjectModule) -> BackendResult<Runtime> {
         add_sub,
         mul,
         cmp,
+        cmp_float,
         to_float,
         print,
     })
@@ -659,6 +702,87 @@ impl Body<'_> {
                 f.b.def_var(index, i);
             },
         );
+    }
+
+    /// The floor of `x`, a finite `Float`.
+    /// Cranelift's own `floor` becomes a call into libm on a target without SSE4.1, which `cc` does not link.
+    /// A `Float` of at least 2^52 is already whole, and a smaller one truncates exactly through an `i64`.
+    fn floor(&mut self, x: Value) -> Value {
+        let truncated = self.b.ins().fcvt_to_sint_sat(I64, x);
+        let back = self.b.ins().fcvt_from_sint(F64, truncated);
+        let one = self.b.ins().f64const(1.0);
+        let lower = self.b.ins().fsub(back, one);
+        let rounded_up = self.b.ins().fcmp(FloatCC::GreaterThan, back, x);
+        let floored = self.b.ins().select(rounded_up, lower, back);
+
+        let magnitude = self.b.ins().fabs(x);
+        let limit = self.b.ins().f64const((1_u64 << 52) as f64);
+        let whole = self
+            .b
+            .ins()
+            .fcmp(FloatCC::GreaterThanOrEqual, magnitude, limit);
+        self.b.ins().select(whole, x, floored)
+    }
+
+    /// The `Int` word for `x`, a finite `Float` holding a whole number.
+    /// Below 2^62 in magnitude it is a small integer, and otherwise a heap integer.
+    fn float_to_int(&mut self, alloc: FuncId, normalize: FuncId, x: Value) -> Value {
+        let zero = self.c(0);
+        let word = self.var(zero);
+        let magnitude = self.b.ins().fabs(x);
+        let limit = self.b.ins().f64const((1_u64 << 62) as f64);
+
+        let small = self.b.ins().fcmp(FloatCC::LessThan, magnitude, limit);
+        self.when(small, |f| {
+            let value = f.b.ins().fcvt_to_sint(I64, x);
+            let tagged = f.b.ins().ishl_imm(value, 1);
+            f.b.def_var(word, tagged);
+        });
+
+        let large = self
+            .b
+            .ins()
+            .fcmp(FloatCC::GreaterThanOrEqual, magnitude, limit);
+        self.when(large, |f| {
+            let heap = f.heap_from_float(alloc, normalize, x);
+            f.b.def_var(word, heap);
+        });
+        self.b.use_var(word)
+    }
+
+    /// A heap integer for `x`, a whole `Float` of at least 2^62 in magnitude.
+    /// That is its 53-bit mantissa shifted left by its exponent, which spans at most three limbs.
+    fn heap_from_float(&mut self, alloc: FuncId, normalize: FuncId, x: Value) -> Value {
+        let bits = self.b.ins().bitcast(I64, MemFlags::new(), x);
+        let biased = self.b.ins().ushr_imm(bits, 52);
+        let biased = self.b.ins().band_imm(biased, 0x7ff);
+        let shift = self.b.ins().iadd_imm(biased, -1023 - 52);
+        let fraction = self.b.ins().band_imm(bits, (1 << 52) - 1);
+        let mantissa = self.b.ins().bor_imm(fraction, 1 << 52);
+
+        let offset = self.b.ins().ushr_imm(shift, 5);
+        let s = self.b.ins().band_imm(shift, 31);
+        let low = self.b.ins().ishl(mantissa, s);
+        let anti = self.b.ins().irsub_imm(s, 64);
+        let high = self.b.ins().ushr(mantissa, anti);
+        let zero = self.c(0);
+        let aligned = self.b.ins().icmp_imm(IntCC::Equal, s, 0);
+        let high = self.b.ins().select(aligned, zero, high);
+
+        let len = self.b.ins().iadd_imm(offset, 3);
+        let p = self.call(alloc, &[len])[0];
+        self.set_limb(p, offset, low);
+        let middle = self.b.ins().ushr_imm(low, 32);
+        let next = self.b.ins().iadd_imm(offset, 1);
+        self.set_limb(p, next, middle);
+        let top = self.b.ins().iadd_imm(offset, 2);
+        self.set_limb(p, top, high);
+
+        let zero = self.b.ins().f64const(0.0);
+        let negative = self.b.ins().fcmp(FloatCC::LessThan, x, zero);
+        let sign = self.b.ins().uextend(I64, negative);
+        self.store(sign, p, SIGN);
+        self.call(normalize, &[p])[0]
     }
 
     /// A pointer to `word` as a heap integer.

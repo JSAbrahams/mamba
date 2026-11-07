@@ -1,4 +1,4 @@
-use cranelift_codegen::ir::condcodes::IntCC;
+use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::{types, InstBuilder, Opcode, Value, ValueDef};
 use cranelift_frontend::Variable;
 use cranelift_module::{FuncId, Module};
@@ -201,6 +201,70 @@ impl FnLower<'_> {
         self.drop_temp(l);
         self.drop_temp(r);
         self.builder.block_params(done)[0]
+    }
+
+    /// Compare `int` with `float` exactly, as Python does, rather than rounding `int` to a `Float` first.
+    /// `int_left` says which operand `int` was, since `cc` reads left to right.
+    /// A small integer within 2^53 converts to `Float` exactly, so that is compared inline.
+    pub(super) fn int_float_cmp(
+        &mut self,
+        int_cc: IntCC,
+        float_cc: FloatCC,
+        int: Value,
+        float: Value,
+        int_left: bool,
+    ) -> Value {
+        let tag = self.builder.ins().band_imm(int, 1);
+        let untagged = self.builder.ins().sshr_imm(int, 1);
+        let shifted = self.builder.ins().iadd_imm(untagged, 1 << 53);
+        let inexact = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThan, shifted, 1 << 54);
+        let inexact = self.builder.ins().uextend(types::I64, inexact);
+        let slow = self.builder.ins().bor(tag, inexact);
+
+        let converted = self.builder.ins().fcvt_from_sint(types::F64, untagged);
+        let (l, r) = if int_left {
+            (converted, float)
+        } else {
+            (float, converted)
+        };
+        let fast = self.builder.ins().fcmp(float_cc, l, r);
+
+        let runtime = self.builder.create_block();
+        let done = self.builder.create_block();
+        self.builder.append_block_param(done, types::I8);
+        self.builder.ins().brif(slow, runtime, &[], done, &[fast]);
+        self.builder.switch_to_block(runtime);
+        let callee = self
+            .module
+            .declare_func_in_func(self.runtime.cmp_float, self.builder.func);
+        let call = self.builder.ins().call(callee, &[int, float]);
+        let order = self.builder.inst_results(call)[0];
+        let result = self.order_satisfies(int_cc, order, int_left);
+        self.builder.ins().jump(done, &[result]);
+        self.builder.switch_to_block(done);
+
+        self.drop_temp(int);
+        self.builder.block_params(done)[0]
+    }
+
+    /// Whether `order`, from `mamba.int.cmp_float`, satisfies `cc` once read from the left operand.
+    /// A NaN satisfies only `!=`, as in Python.
+    fn order_satisfies(&mut self, cc: IntCC, order: Value, int_left: bool) -> Value {
+        let unordered = self.builder.ins().icmp_imm(IntCC::Equal, order, 2);
+        let order = if int_left {
+            order
+        } else {
+            self.builder.ins().ineg(order)
+        };
+        let ordered = self.builder.ins().icmp_imm(cc, order, 0);
+        let nan = self
+            .builder
+            .ins()
+            .iconst(types::I8, i64::from(cc == IntCC::NotEqual));
+        self.builder.ins().select(unordered, nan, ordered)
     }
 
     pub(super) fn int_to_float(&mut self, value: Value) -> Value {

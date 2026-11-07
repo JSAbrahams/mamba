@@ -72,6 +72,7 @@ Operation | How
 `+` and `-` | One pass over the limbs. Differing signs subtract the smaller magnitude from the larger.
 `*` | Schoolbook multiplication, quadratic in the number of limbs.
 Comparison | By sign, then length, then limb by limb from the top.
+`Int` against `Float` | Exactly, as Python does, not by rounding the `Int` to a `Float`. The `Int` is compared with the `Float`'s floor, and its fraction breaks a tie.
 `print` | Repeated division by 10^9, nine digits at a time.
 `Int` to `Float` | The nearest `Float`, rounding half to even, as Python does.
 A long literal | Built at run time, from pieces of eighteen digits.
