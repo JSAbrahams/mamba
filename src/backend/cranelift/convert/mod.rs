@@ -160,10 +160,7 @@ impl<'a> FnLower<'a> {
                 self.ret(&[]);
                 Ok(true)
             }
-            other => Err(BackendErr::unimplemented(
-                ast,
-                &format!("{other:?} statement"),
-            )),
+            other => Err(BackendErr::unimplemented(ast, common::construct(other))),
         }
     }
 
@@ -239,10 +236,7 @@ impl<'a> FnLower<'a> {
             | NodeTy::AddU { .. }
             | NodeTy::SubU { .. } => self.lower_operation(ast),
             NodeTy::FunctionCall { .. } => self.lower_call_expr(ast),
-            other => Err(BackendErr::unimplemented(
-                ast,
-                &format!("{other:?} expression"),
-            )),
+            other => Err(BackendErr::unimplemented(ast, common::construct(other))),
         }
     }
 }

@@ -1,13 +1,13 @@
 //! Mamba: a statically typed, Python-like language, and its compiler.
 //!
 //! The crate has no default features.
-//! As it is, it is the pure compiler: [compile], [compile_str], [tokens] and [Diagnostic].
+//! As it is, it is the pure compiler: [compile], [compile_str], [version] and [Diagnostic].
 //! It reads no files and writes none, so it runs anywhere, WebAssembly included.
 //!
 //! - `native` adds [io]: compiling directories and linking executables.
 //! - `cli` builds the `mamba` binary.
 //! - `wasm` adds the JavaScript bindings.
-//! - `serde` makes diagnostics and tokens serializable.
+//! - `serde` makes diagnostics serializable.
 //!
 //! ```
 //! use mamba::{compile_str, Options};
@@ -29,10 +29,8 @@ use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::common::result::WithSource;
 use crate::parse::ast::AST;
-use crate::parse::lex::tokenize;
 
 pub use crate::diagnostic::{Diagnostic, Label, LineCol, RenderStyle, Severity, Span, Stage};
-pub use crate::token::{tokens, Token, TokenKind};
 
 pub mod common;
 
@@ -41,7 +39,6 @@ pub mod check;
 pub mod parse;
 
 pub mod diagnostic;
-pub mod token;
 
 #[cfg(feature = "native")]
 pub mod io;
@@ -144,9 +141,11 @@ impl Artifact {
     }
 }
 
-/// The version of Mamba.
+/// The version of Mamba: what `git describe --tags` gave when it was built, such as `v0.3.6-12-g3f2a1bc`.
+///
+/// Built without git or without tags, as from crates.io, it is the version in Cargo.toml, such as `0.3.6`.
 pub fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
+    env!("MAMBA_VERSION")
 }
 
 /// Compile Mamba sources, giving one artifact per source, in order.
@@ -205,7 +204,7 @@ pub fn compile_str(text: &str, options: &Options) -> Result<String, Vec<Diagnost
     }
 }
 
-/// Lex, parse and type check `sources`, which every output needs.
+/// Parse and type check `sources`, which every output needs.
 fn check_all(sources: &[Source]) -> Result<(Context, Vec<ASTTy>), Vec<Diagnostic>> {
     let parsed = sources.iter().map(parse_source);
     let (asts, errors): (Vec<_>, Vec<_>) = parsed.partition(Result::is_ok);
@@ -246,12 +245,11 @@ fn check_all(sources: &[Source]) -> Result<(Context, Vec<ASTTy>), Vec<Diagnostic
     Ok((ctx, typed.into_iter().map(Result::unwrap).collect()))
 }
 
-/// Lex and parse one source.
+/// Parse one source.
 ///
-/// The parser lexes too, but reports a lex error as a parse error, so the source is lexed first to tell them apart.
+/// The parser lexes too, and reports a lex error as a parse error.
 fn parse_source(source: &Source) -> Result<AST, Diagnostic> {
     let (text, name) = (source.text.as_str(), source.name());
-    tokenize(text).map_err(|err| Diagnostic::from_lex(&err, text, name))?;
     text.parse::<AST>()
         .map_err(|err| Diagnostic::from_parse(&err, text, name))
 }

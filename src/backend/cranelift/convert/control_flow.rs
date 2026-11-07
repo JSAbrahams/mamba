@@ -1,7 +1,7 @@
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{types, InstBuilder, TrapCode};
 
-use crate::backend::cranelift::convert::common::fun_name;
+use crate::backend::cranelift::convert::common::{construct, fun_name};
 use crate::backend::cranelift::convert::int::Arith;
 use crate::backend::cranelift::convert::FnLower;
 use crate::backend::cranelift::primitive::cranelift_type;
@@ -120,7 +120,7 @@ impl<'a> FnLower<'a> {
             other => {
                 return Err(BackendErr::unimplemented(
                     col,
-                    &format!("{other:?} for-loop collection"),
+                    &format!("{} as a for-loop collection", construct(other)),
                 ))
             }
         };

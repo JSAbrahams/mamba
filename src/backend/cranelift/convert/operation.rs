@@ -1,6 +1,7 @@
 use cranelift_codegen::ir::condcodes::{FloatCC, IntCC};
 use cranelift_codegen::ir::{types, InstBuilder, Value};
 
+use crate::backend::cranelift::convert::common::construct;
 use crate::backend::cranelift::convert::int::Arith;
 use crate::backend::cranelift::convert::FnLower;
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
@@ -38,10 +39,7 @@ impl<'a> FnLower<'a> {
             }
             NodeTy::AddU { expr } => self.lower_expr(expr),
             NodeTy::SubU { expr } => self.lower_negate(expr),
-            other => Err(BackendErr::unimplemented(
-                ast,
-                &format!("{other:?} operation"),
-            )),
+            other => Err(BackendErr::unimplemented(ast, construct(other))),
         }
     }
 

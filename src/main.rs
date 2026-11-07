@@ -17,10 +17,11 @@ pub fn main() {
     #[cfg(windows)]
     let _ = ansi_term::enable_ansi_support();
 
-    // if error, then defer printing error to clap
-    let Ok(cli_input) = Cli::try_parse().map_err(|e| e.print()) else {
-        std::process::exit(1);
-    };
+    // Clap prints the error, or the help or version that was asked for, which is not an error.
+    let cli_input = Cli::try_parse().unwrap_or_else(|err| {
+        let _ = err.print();
+        std::process::exit(if err.use_stderr() { 1 } else { 0 });
+    });
 
     let colour = !cli_input.no_color
         && std::env::var_os("NO_COLOR").is_none()

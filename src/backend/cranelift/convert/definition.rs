@@ -9,7 +9,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
 use cranelift_module::{FuncId, Linkage, Module};
 use cranelift_object::ObjectModule;
 
-use crate::backend::cranelift::convert::common::fun_name;
+use crate::backend::cranelift::convert::common::{construct, fun_name};
 use crate::backend::cranelift::convert::{FnLower, Funcs};
 use crate::backend::cranelift::primitive::{cranelift_type, cranelift_type_of_name};
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
@@ -53,7 +53,7 @@ pub(super) fn arg_type(arg: &ASTTy) -> BackendResult<cranelift_codegen::ir::Type
         )),
         other => Err(BackendErr::unimplemented(
             arg,
-            &format!("{other:?} argument"),
+            &format!("{} as a function argument", construct(other)),
         )),
     }
 }
@@ -258,9 +258,9 @@ impl<'a> FnLower<'a> {
                 self.vars.insert(name, (var, ty));
                 Ok(())
             }
-            other => Err(BackendErr::unimplemented(
+            _ => Err(BackendErr::unimplemented(
                 ast,
-                &format!("{other:?} variable definition"),
+                "a variable definition without a value",
             )),
         }
     }
@@ -282,13 +282,12 @@ impl<'a> FnLower<'a> {
                 self.assign(var, value);
                 Ok(())
             }
-            NodeTy::Reassign { op, .. } => Err(BackendErr::unimplemented(
-                ast,
-                &format!("{op:?} compound reassignment"),
-            )),
+            NodeTy::Reassign { .. } => {
+                Err(BackendErr::unimplemented(ast, "a compound reassignment"))
+            }
             other => Err(BackendErr::unimplemented(
                 ast,
-                &format!("{other:?} reassignment"),
+                &format!("{} as a reassignment", construct(other)),
             )),
         }
     }

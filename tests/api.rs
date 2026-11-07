@@ -1,4 +1,4 @@
-//! The public API of the crate as a library: compiling text, tokens, and diagnostics as data.
+//! The public API of the crate as a library: compiling text, and diagnostics as data.
 //!
 //! Nothing here needs a feature, except the JSON round trip, which needs `serde`.
 
@@ -6,8 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use mamba::{
-    compile, compile_str, tokens, version, Artifact, Diagnostic, LineCol, Options, Output, Source,
-    Stage, TokenKind,
+    compile, compile_str, version, Artifact, Diagnostic, LineCol, Options, Output, Source, Stage,
 };
 use test_case::test_case;
 use tests_util::resource_path;
@@ -70,12 +69,21 @@ fn compile_gives_one_artifact_per_source() {
     assert_eq!(artifacts.len(), 2);
 }
 
+/// The version comes from `git describe --tags`, or is the crate version without git.
+///
+/// A shallow clone may have no tags, so the exact string is not checked.
 #[test]
-fn version_is_the_crate_version() {
-    assert_eq!(version(), env!("CARGO_PKG_VERSION"));
+fn version_is_a_tag_or_the_crate_version() {
+    let version = version();
+    assert!(!version.is_empty());
+    assert!(
+        version.starts_with(env!("CARGO_PKG_VERSION")) || version.starts_with('v'),
+        "{version}"
+    );
 }
 
-#[test_case("lex", Stage::Lex, (2, 12), (2, 13))]
+// The parser reports an error of the lexer, such as an unrecognized character, as its own.
+#[test_case("lex", Stage::Parse, (2, 12), (2, 13))]
 #[test_case("parse", Stage::Parse, (3, 17), (3, 17))]
 #[test_case("type", Stage::Type, (4, 15), (4, 22))]
 fn invalid_fixture_reports_stage_and_span(
@@ -96,16 +104,19 @@ fn invalid_fixture_reports_stage_and_span(
 }
 
 #[test]
-fn span_offsets_count_bytes_and_utf16() {
-    // The emoji is four bytes, and two UTF-16 code units.
+fn span_offsets_count_bytes() {
+    // The emoji is four bytes, and one character.
     let text = "let s := \"😀\"\nlet b: Int := \"x\"\n";
     let errs = compile_str(text, &Options::default()).unwrap_err();
     let span = errs[0].primary_label().expect("a primary label").span;
 
     let start = text.find("\"x\"").unwrap();
     assert_eq!(span.byte_start, start);
-    assert_eq!(span.utf16_start, start - 2);
     assert_eq!(&text[span.byte_start..span.byte_end], "\"x\"");
+    assert_eq!(
+        (span.start, span.end),
+        (LineCol::new(2, 15), LineCol::new(2, 18))
+    );
 }
 
 #[test]
@@ -116,8 +127,8 @@ fn span_columns_count_characters_after_non_ascii_on_the_same_line() {
     let span = errs[0].primary_label().expect("a primary label").span;
 
     assert_eq!(span.start, LineCol::new(1, 15));
+    assert_eq!(span.end, LineCol::new(1, 18));
     assert_eq!(&text[span.byte_start..span.byte_end], "\"é\"");
-    assert_eq!(span.utf16_end - span.utf16_start, 3);
 }
 
 #[test]
@@ -128,86 +139,21 @@ fn a_parse_error_at_the_end_points_at_the_end() {
     assert_eq!(primary.span.start, LineCol::new(1, 28));
 }
 
+/// A construct the machine code backend does not support is named, not dumped.
 #[test]
-fn tokens_classify_and_include_comments() {
-    let text = "def f(x: Int) -> Int := x + 1 # add one\nprint(\"a # b\")\n";
-    let tokens = tokens(text).expect("lexes");
-    let kinds: Vec<(TokenKind, &str)> = tokens
-        .iter()
-        .map(|token| {
-            (
-                token.kind,
-                &text[token.span.byte_start..token.span.byte_end],
-            )
-        })
-        .collect();
+fn unsupported_construct_is_named_in_a_short_message() {
+    let text = "def f(x: Int) -> Int := match x where\n    0 => 1\n    n => n\nend\nprint(f(1))\n";
+    let options = Options::new(Output::Asm {
+        target: Some(String::from("x86_64-unknown-linux-gnu")),
+    });
+    let errs = compile_str(text, &options).unwrap_err();
+    let error = &errs[0];
 
-    assert_eq!(kinds[0], (TokenKind::Keyword, "def"));
-    assert_eq!(kinds[1], (TokenKind::Identifier, "f"));
-    assert!(kinds.contains(&(TokenKind::Operator, ":=")));
-    assert!(kinds.contains(&(TokenKind::Number, "1")));
-    assert!(kinds.contains(&(TokenKind::Comment, "# add one")));
-    assert!(kinds.contains(&(TokenKind::String, "\"a # b\"")));
-    assert_eq!(
-        kinds
-            .iter()
-            .filter(|(kind, _)| *kind == TokenKind::Comment)
-            .count(),
-        1
-    );
-}
-
-#[test]
-fn tokens_of_a_string_over_lines_end_at_its_quote() {
-    let text = "let s := \"one\ntwo\"\nprint(s)\n";
-    let tokens = tokens(text).expect("lexes");
-    let string = tokens
-        .iter()
-        .find(|token| token.kind == TokenKind::String)
-        .unwrap();
-    assert_eq!(
-        &text[string.span.byte_start..string.span.byte_end],
-        "\"one\ntwo\""
-    );
-}
-
-#[test]
-fn tokens_after_non_ascii_on_the_same_line_keep_their_place() {
-    let text = "let s := \"é\" + \"a\" # ü\n";
-    let tokens = tokens(text).expect("lexes");
-    let texts: Vec<&str> = tokens
-        .iter()
-        .map(|token| &text[token.span.byte_start..token.span.byte_end])
-        .collect();
-    assert_eq!(texts, ["let", "s", ":=", "\"é\"", "+", "\"a\"", "# ü"]);
-    assert_eq!(tokens[5].span.start, LineCol::new(1, 16));
-}
-
-#[test]
-fn a_quote_in_an_interpolation_does_not_end_the_string() {
-    let text = "print(\"a {f(\"x\")} b\") # done\n";
-    let tokens = tokens(text).expect("lexes");
-    let string = tokens
-        .iter()
-        .find(|token| token.kind == TokenKind::String)
-        .unwrap();
-    assert_eq!(
-        &text[string.span.byte_start..string.span.byte_end],
-        "\"a {f(\"x\")} b\""
-    );
-    assert_eq!(
-        tokens
-            .iter()
-            .filter(|token| token.kind == TokenKind::Comment)
-            .count(),
-        1
-    );
-}
-
-#[test]
-fn tokens_report_a_lex_error() {
-    let errs = tokens("let a := 1 $ 2").unwrap_err();
-    assert_eq!(errs[0].stage, Stage::Lex);
+    assert_eq!(error.stage, Stage::Generate);
+    assert!(error.message.len() < 200, "{}", error.message);
+    assert!(error.message.contains("match"), "{}", error.message);
+    let primary = error.primary_label().expect("a primary label");
+    assert_eq!(primary.span.start.line, 1);
 }
 
 #[cfg(feature = "serde")]

@@ -11,7 +11,6 @@ use crate::backend::cranelift::result::BackendErr;
 use crate::backend::python::result::UnimplementedErr;
 use crate::common::position::{CaretPos, Position};
 use crate::common::result::Cause;
-use crate::parse::lex::result::LexErr;
 use crate::parse::result::ParseErr;
 use crate::TypeErr;
 
@@ -35,9 +34,7 @@ const TAB_WIDTH: usize = 4;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum Stage {
-    /// Turning text into tokens.
-    Lex,
-    /// Turning tokens into a syntax tree.
+    /// Turning text into a syntax tree, including any error of the lexer.
     Parse,
     /// Type checking.
     Type,
@@ -71,7 +68,7 @@ pub struct LineCol {
 
 /// A range in a source, from `start` up to but not including `end`.
 ///
-/// The range is given three ways: as lines and columns, as byte offsets for Rust, and as UTF-16 offsets for JavaScript.
+/// The range is given two ways: as lines and columns, and as byte offsets.
 /// The offsets count from the start of the source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -81,8 +78,6 @@ pub struct Span {
     pub end: LineCol,
     pub byte_start: usize,
     pub byte_end: usize,
-    pub utf16_start: usize,
-    pub utf16_end: usize,
 }
 
 /// A span of source with something to say about it.
@@ -124,16 +119,6 @@ pub enum RenderStyle {
 impl LineCol {
     pub fn new(line: usize, column: usize) -> LineCol {
         LineCol { line, column }
-    }
-
-    /// The line and column of the byte offset `offset` in `text`, which must be at a character boundary.
-    pub fn at(text: &str, offset: usize) -> LineCol {
-        let before = &text[..offset];
-        let line_start = before.rfind('\n').map_or(0, |newline| newline + 1);
-        LineCol::new(
-            before.matches('\n').count() + 1,
-            before[line_start..].chars().count() + 1,
-        )
     }
 }
 
@@ -218,20 +203,6 @@ impl Diagnostic {
     /// The primary label, if the compiler knows where the problem is.
     pub fn primary_label(&self) -> Option<&Label> {
         self.labels.iter().find(|label| label.primary)
-    }
-
-    /// A lex error in `text`, which is the source named `source`.
-    pub(crate) fn from_lex(err: &LexErr, text: &str, source: Option<&Path>) -> Diagnostic {
-        let width = err.token.as_ref().map_or(1, |token| token.width().max(1));
-        let end = err.pos.offset_pos(width);
-
-        let mut diagnostic =
-            Diagnostic::error(Stage::Lex, err.msg.clone()).with_source(owned(source));
-        if err.pos.line > 0 {
-            let span = Lines::new(text).core_span(err.pos, end);
-            diagnostic = diagnostic.with_label(Label::primary(span, None));
-        }
-        diagnostic
     }
 
     /// A parse error in `text`, which is the source named `source`.
@@ -494,7 +465,6 @@ impl Diagnostic {
 impl Display for Stage {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let name = match self {
-            Stage::Lex => "lex",
             Stage::Parse => "parse",
             Stage::Type => "type",
             Stage::Generate => "generate",
@@ -626,39 +596,21 @@ fn digits(number: usize) -> usize {
     number.max(1).ilog10() as usize + 1
 }
 
-fn utf16_len(text: &str) -> usize {
-    text.chars().map(char::len_utf16).sum()
-}
-
 /// The lines of a source, split on `\n` with any trailing `\r` dropped.
 ///
 /// Made once per source, it turns many offsets into spans without reading the text from the start each time.
-pub(crate) struct Lines<'a> {
+struct Lines<'a> {
     text: &'a str,
     /// The byte offset at which each line starts.
     starts: Vec<usize>,
-    /// The UTF-16 offset at which each line starts.
-    utf16_starts: Vec<usize>,
 }
 
 impl<'a> Lines<'a> {
-    pub(crate) fn new(text: &'a str) -> Lines<'a> {
-        let starts: Vec<usize> = std::iter::once(0)
+    fn new(text: &'a str) -> Lines<'a> {
+        let starts = std::iter::once(0)
             .chain(text.match_indices('\n').map(|(index, _)| index + 1))
             .collect();
-        let mut utf16_starts = Vec::with_capacity(starts.len());
-        let mut utf16 = 0;
-        for (line, start) in starts.iter().enumerate() {
-            if line > 0 {
-                utf16 += utf16_len(&text[starts[line - 1]..*start]);
-            }
-            utf16_starts.push(utf16);
-        }
-        Lines {
-            text,
-            starts,
-            utf16_starts,
-        }
+        Lines { text, starts }
     }
 
     fn count(&self) -> usize {
@@ -694,21 +646,21 @@ impl<'a> Lines<'a> {
     }
 
     /// The byte offset of a place as the core gives it, whose column counts bytes from 1.
-    pub(crate) fn core_offset(&self, caret: CaretPos) -> usize {
+    fn core_offset(&self, caret: CaretPos) -> usize {
         let line = caret.line.clamp(1, self.count());
         let within = caret.pos.saturating_sub(1).min(self.line(line).len());
         self.starts[line - 1] + within
     }
 
     /// The span between two places as the core gives them, see [Lines::core_offset].
-    pub(crate) fn core_span(&self, start: CaretPos, end: CaretPos) -> Span {
+    fn core_span(&self, start: CaretPos, end: CaretPos) -> Span {
         self.span(self.core_offset(start), self.core_offset(end))
     }
 
     /// The span between two byte offsets, clamped to the text and its character boundaries.
     ///
     /// An empty or reversed span is widened to the next character, unless that ends the line.
-    pub(crate) fn span(&self, start: usize, end: usize) -> Span {
+    fn span(&self, start: usize, end: usize) -> Span {
         let text = self.text;
         let mut start = start.min(text.len());
         while !text.is_char_boundary(start) {
@@ -725,24 +677,19 @@ impl<'a> Lines<'a> {
             }
         }
 
-        let ((start_place, utf16_start), (end_place, utf16_end)) =
-            (self.place(start), self.place(end));
         Span {
-            start: start_place,
-            end: end_place,
+            start: self.place(start),
+            end: self.place(end),
             byte_start: start,
             byte_end: end,
-            utf16_start,
-            utf16_end,
         }
     }
 
-    /// The line and column, and the UTF-16 offset, of a byte offset at a character boundary.
-    fn place(&self, offset: usize) -> (LineCol, usize) {
+    /// The line and column of a byte offset at a character boundary.
+    fn place(&self, offset: usize) -> LineCol {
         let line = self.starts.partition_point(|start| *start <= offset);
         let within = &self.text[self.starts[line - 1]..offset];
-        let place = LineCol::new(line, within.chars().count() + 1);
-        (place, self.utf16_starts[line - 1] + utf16_len(within))
+        LineCol::new(line, within.chars().count() + 1)
     }
 }
 

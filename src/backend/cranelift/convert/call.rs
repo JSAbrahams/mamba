@@ -1,6 +1,7 @@
 use cranelift_codegen::ir::{types, InstBuilder, Value};
 use cranelift_module::{DataDescription, Module};
 
+use crate::backend::cranelift::convert::common::construct;
 use crate::backend::cranelift::convert::FnLower;
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
 use crate::check::ast::{ASTTy, NodeTy};
@@ -38,7 +39,7 @@ impl<'a> FnLower<'a> {
             other => {
                 return Err(BackendErr::unimplemented(
                     ast,
-                    &format!("{other:?} function call"),
+                    &format!("{} as a function call", construct(other)),
                 ))
             }
         };

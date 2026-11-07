@@ -20,7 +20,7 @@ struct JsOptions {
     annotate: bool,
 }
 
-/// What [compile] and [tokens] return: the fields of `value`, or the diagnostics.
+/// What [compile] returns: the fields of `value`, or the diagnostics.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Outcome<'a, T: Serialize> {
@@ -36,11 +36,6 @@ struct Text<'a> {
     text: &'a str,
 }
 
-#[derive(Serialize)]
-struct Tokens<'a> {
-    tokens: &'a [crate::Token],
-}
-
 /// Compile `source` to Python or assembly.
 ///
 /// `options` is `{ output?: "python" | "asm", target?: string, annotate?: boolean }`, and may be left out.
@@ -51,15 +46,6 @@ pub fn compile(source: &str, options: JsValue) -> Result<JsValue, JsError> {
     let options = options_from_js(options)?;
     let compiled = crate::compile_str(source, &options);
     to_js(&outcome(&compiled, source, |text| Text { text }))
-}
-
-/// The tokens of `source`, for syntax highlighting.
-///
-/// Returns `{ ok: true, tokens }` or `{ ok: false, diagnostics }`.
-#[wasm_bindgen]
-pub fn tokens(source: &str) -> Result<JsValue, JsError> {
-    let tokenized = crate::tokens(source);
-    to_js(&outcome(&tokenized, source, |tokens| Tokens { tokens }))
 }
 
 fn outcome<'a, T, V: Serialize>(

@@ -5,8 +5,6 @@ use crate::check::ast::ASTTy;
 use crate::common::position::Position;
 use crate::common::result::{format_err, WithSource};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 pub type BackendResult<T> = Result<T, Box<BackendErr>>;
 
 #[derive(Debug, Clone)]
@@ -22,10 +20,15 @@ impl BackendErr {
     /// which aims to eventually support the whole language, this one is intentionally scoped to a
     /// small subset (see `src/backend/cranelift/lower.rs`), so this is expected long-term, not
     /// just a temporary gap.
+    ///
+    /// `msg` names the construct, as in "a match expression".
     pub fn unimplemented(ast: &ASTTy, msg: &str) -> Box<BackendErr> {
-        let msg = format!(
-            "The {msg} construct is not supported by the machine-code backend (v{VERSION})"
-        );
+        let mut chars = msg.chars();
+        let msg = match chars.next() {
+            Some(first) => first.to_uppercase().chain(chars).collect(),
+            None => String::from("This construct"),
+        };
+        let msg = format!("{msg} is not supported by the machine-code backend");
         Box::from(BackendErr {
             position: ast.pos,
             msg,
