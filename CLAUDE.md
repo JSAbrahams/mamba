@@ -133,7 +133,7 @@ Class arguments are fields, written without `let`, as `class X(a: Int)`.
 Inside the class they are read as `self.a`, never bare `a`.
 `gen_class` in `src/check/constrain/generate/class.rs` binds `self` while checking the body.
 
-A field initializer that reads `self` runs per instance.
+A field initializer runs per instance, unless it is an immutable literal such as `10`.
 `hoist_constructor_dependent_stmts` in `src/backend/python/convert/class.rs` moves it into the generated `__init__`.
 `order_by_self_field_deps` then orders those by dependency, not declaration.
 
@@ -166,6 +166,7 @@ The reason is that `mut` belongs to a binding, and a tuple introduces one bindin
 Two places must then leave those per-element flags alone.
 They are `Identifier::try_from` in `src/check/ident.rs`, and `id_from_var` in `src/check/constrain/generate/definition.rs`.
 Both previously forced every element to the definition's own flag via `as_mutable`.
+A tuple class field reads the same flags, in `GenericFields::try_from` in `src/check/context/field/generic.rs`.
 Destructuring a list or set, as `let [a, b]`, does not parse at all.
 
 Reassigning a binding that is not `mut` is an error, and so is changing a value through a receiver that is not `mut`.

@@ -198,6 +198,8 @@ fn extract_class(
 /// Move class-body statements referencing `self` into `__init__`, ordered by dependency
 /// (see `order_by_self_field_deps`).
 ///
+/// A field initializer moves too unless it is an immutable literal, since a class attribute is one value shared by every instance.
+///
 /// A field declaration keeps its class-level slot with `None` in place of the initializer;
 /// any other statement (e.g. a bare `print(self.a)`) is moved wholesale.
 fn hoist_constructor_dependent_stmts(
@@ -213,21 +215,16 @@ fn hoist_constructor_dependent_stmts(
                 var,
                 expr: Some(expr),
                 ..
-            } if references_free_var(expr, self_name) => {
+            } if references_free_var(expr, self_name) || !is_immutable_literal(expr) => {
                 hoisted.push((
                     *pos,
                     PythonCore::Assign {
-                        left: Box::from(PythonCore::PropertyCall {
-                            object: Box::from(PythonCore::Id {
-                                lit: String::from(arg::python::SELF),
-                            }),
-                            property: var.clone(),
-                        }),
+                        left: Box::from(self_target(var)),
                         right: expr.clone(),
                         op: CoreOp::Assign,
                     },
                 ));
-                *expr = Box::from(PythonCore::None);
+                *expr = Box::from(placeholder(var));
             }
             // A docstring must stay a literal first statement in the class body, not move into
             // `__init__`.
@@ -382,6 +379,48 @@ fn any_node(core: &PythonCore, test: &impl Fn(&PythonCore) -> bool) -> bool {
 }
 
 /// Whether `core` contains a free reference to any name in `names`.
+/// Whether `expr` is a literal of an immutable type, which every instance may share.
+///
+/// `None`, `True` and `False` are names in Mamba, so they reach here as identifiers.
+fn is_immutable_literal(expr: &PythonCore) -> bool {
+    match expr {
+        PythonCore::Int { .. }
+        | PythonCore::Float { .. }
+        | PythonCore::ENum { .. }
+        | PythonCore::Str { .. }
+        | PythonCore::Bool { .. }
+        | PythonCore::None => true,
+        PythonCore::Id { lit } => matches!(lit.as_str(), "None" | "True" | "False"),
+        PythonCore::Tuple { elements } | PythonCore::TupleLiteral { elements } => {
+            elements.iter().all(is_immutable_literal)
+        }
+        _ => false,
+    }
+}
+
+/// The field `var` on `self`, element by element for a tuple, as in `self.a, self.b`.
+fn self_target(var: &PythonCore) -> PythonCore {
+    let PythonCore::TupleLiteral { elements } = var else {
+        return PythonCore::PropertyCall {
+            object: Box::from(PythonCore::Id {
+                lit: String::from(arg::python::SELF),
+            }),
+            property: Box::from(var.clone()),
+        };
+    };
+    let elements = elements.iter().map(self_target).collect();
+    PythonCore::TupleLiteral { elements }
+}
+
+/// The class-level value of a field that `__init__` sets: `None`, once for each name in `var`.
+fn placeholder(var: &PythonCore) -> PythonCore {
+    let PythonCore::TupleLiteral { elements } = var else {
+        return PythonCore::None;
+    };
+    let elements = elements.iter().map(placeholder).collect();
+    PythonCore::TupleLiteral { elements }
+}
+
 fn references_free_var(core: &PythonCore, names: &HashSet<String>) -> bool {
     any_node(
         core,

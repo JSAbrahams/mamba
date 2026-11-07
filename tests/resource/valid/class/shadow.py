@@ -16,15 +16,16 @@ class MyClass4:
 
 x: MyClass1 = MyClass1()
 x.f1()
-
 x: MyClass2 = MyClass2()
 x.f2()
-
 class MyClass:
-    x: MyClass3 = MyClass3()
+    x: MyClass3 = None
+    def __init__(self):
+        self.x = MyClass3()
 
     def g():
         x.f3()
 
     def f(x: MyClass4):
         x.f4()
+

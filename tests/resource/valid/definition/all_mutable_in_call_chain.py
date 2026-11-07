@@ -1,11 +1,17 @@
 class A:
-    b: B = B()
+    b: B = None
+    def __init__(self):
+        self.b = B()
 
 class B:
-    c: C = C()
+    c: C = None
+    def __init__(self):
+        self.c = C()
 
 class C:
-    d: D = D()
+    d: D = None
+    def __init__(self):
+        self.d = D()
 
 class D:
     e: int = 100

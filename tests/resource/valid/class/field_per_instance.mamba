@@ -1,0 +1,15 @@
+class D where
+    let mut e: Int := 100
+end
+
+class A where
+    let mut d: D := D.new()
+    let (mut t, n): (D, Int) := (D.new(), 1)
+end
+
+let mut a1 := A.new()
+let a2 := A.new()
+a1.d.e := 20
+a1.t.e := 30
+print(a2.d.e)
+print(a2.t.e)
