@@ -1,4 +1,6 @@
+import sys
 from typing import Tuple
+sys.set_int_max_str_digits(0)
 def on_axis(point: Tuple[int, int]) -> str: 
     match point:
         case (0, _): 

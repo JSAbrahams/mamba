@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 def sign_of(x: int) -> str:
     match x:
         case -1:

@@ -1,7 +1,7 @@
 use crate::parse::ast::{Node, AST};
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::result::ParseResult;
 
 /// The left operand is already parsed; eat the operator and parse the right at `fun`.
@@ -74,22 +74,27 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
     )
 }
 
+/// Addition and subtraction group to the left, so `10 - 3 - 2` is `(10 - 3) - 2`.
 fn parse_level_4(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (4)")?;
-    let left = it.parse(&parse_level_3, "operation", start)?;
-    it.peek(
-        &|it, lex| match lex.token {
-            Token::Add => bin_op!(it, start, parse_level_4, Add, left.clone(), "add"),
-            Token::Sub => bin_op!(it, start, parse_level_4, Sub, left.clone(), "sub"),
-            _ => Ok(left.clone()),
-        },
-        Ok(left.clone()),
-    )
+    let mut left = it.parse(&parse_level_3, "operation", start)?;
+    while it.peek_if(&|lex| matches!(lex.token, Token::Add | Token::Sub)) {
+        left = it.peek(
+            &|it, lex| match lex.token {
+                Token::Add => bin_op!(it, start, parse_level_3, Add, left.clone(), "add"),
+                Token::Sub => bin_op!(it, start, parse_level_3, Sub, left.clone(), "sub"),
+                _ => Ok(left.clone()),
+            },
+            Ok(left.clone()),
+        )?;
+    }
+    Ok(left)
 }
 
+/// Multiplication and division group to the left, so `100 // 10 // 5` is `(100 // 10) // 5`.
 fn parse_level_3(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation (3)")?;
-    let left = it.parse(&parse_level_2, "operation", start)?;
+    let mut left = it.parse(&parse_level_2, "operation", start)?;
     /// A second `..` after the bound is the step, as in `0 .. 10 .. 2`.
     macro_rules! range {
         ($it:expr, $token:ident, $incl:expr) => {{
@@ -113,18 +118,27 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
         }};
     }
 
-    it.peek(
-        &|it, lex| match lex.token {
-            Token::Mul => bin_op!(it, start, parse_level_3, Mul, left.clone(), "mul"),
-            Token::Div => bin_op!(it, start, parse_level_3, Div, left.clone(), "div"),
-            Token::FDiv => bin_op!(it, start, parse_level_3, FDiv, left.clone(), "floor div"),
-            Token::Mod => bin_op!(it, start, parse_level_3, Mod, left.clone(), "mod"),
-            Token::Range => range!(it, Range, false),
-            Token::RangeIncl => range!(it, RangeIncl, true),
-            _ => Ok(left.clone()),
-        },
-        Ok(left.clone()),
-    )
+    let is_level_3 = |lex: &Lex| {
+        matches!(
+            lex.token,
+            Token::Mul | Token::Div | Token::FDiv | Token::Mod | Token::Range | Token::RangeIncl
+        )
+    };
+    while it.peek_if(&is_level_3) {
+        left = it.peek(
+            &|it, lex| match lex.token {
+                Token::Mul => bin_op!(it, start, parse_level_2, Mul, left.clone(), "mul"),
+                Token::Div => bin_op!(it, start, parse_level_2, Div, left.clone(), "div"),
+                Token::FDiv => bin_op!(it, start, parse_level_2, FDiv, left.clone(), "floor div"),
+                Token::Mod => bin_op!(it, start, parse_level_2, Mod, left.clone(), "mod"),
+                Token::Range => range!(it, Range, false),
+                Token::RangeIncl => range!(it, RangeIncl, true),
+                _ => Ok(left.clone()),
+            },
+            Ok(left.clone()),
+        )?;
+    }
+    Ok(left)
 }
 
 fn parse_level_2(it: &mut LexIterator) -> ParseResult {

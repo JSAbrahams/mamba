@@ -114,6 +114,7 @@ impl State {
 pub struct Imports {
     imports: Vec<PythonCore>,
     from_imports: BTreeMap<String, PythonCore>,
+    unbounded_int_text: bool,
 }
 
 impl Default for Imports {
@@ -127,6 +128,7 @@ impl Imports {
         Imports {
             imports: vec![],
             from_imports: BTreeMap::new(),
+            unbounded_int_text: false,
         }
     }
 
@@ -189,13 +191,40 @@ impl Imports {
         self.from_imports.insert(String::from(from), import);
     }
 
+    /// Lift CPython's limit of 4300 digits when turning an `int` into text, since a Mamba `Int` is unbounded.
+    pub fn unbounded_int_text(&mut self) {
+        self.add_import("sys");
+        self.unbounded_int_text = true;
+    }
+
     pub fn is_empty(&self) -> bool {
         self.imports.is_empty() && self.from_imports.is_empty()
     }
 
+    /// The statements a module starts with: its imports, then any setting they are needed for.
     pub fn imports(&self) -> Vec<PythonCore> {
         let mut statements = self.imports.clone();
         statements.append(&mut self.from_imports.clone().into_values().collect());
+        if self.unbounded_int_text {
+            statements.push(unlimited_int_digits());
+        }
         statements
+    }
+}
+
+/// `sys.set_int_max_str_digits(0)`, where `0` means no limit.
+fn unlimited_int_digits() -> PythonCore {
+    PythonCore::PropertyCall {
+        object: Box::from(PythonCore::Id {
+            lit: String::from("sys"),
+        }),
+        property: Box::from(PythonCore::FunctionCall {
+            function: Box::from(PythonCore::Id {
+                lit: String::from("set_int_max_str_digits"),
+            }),
+            args: vec![PythonCore::Int {
+                int: String::from("0"),
+            }],
+        }),
     }
 }

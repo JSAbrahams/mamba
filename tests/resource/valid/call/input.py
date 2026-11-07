@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 num: str = input("Compute factorial: ")
 
 if num.is_digit():

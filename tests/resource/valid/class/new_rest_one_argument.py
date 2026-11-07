@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Wrapper: 
     def __init__(self, x: int): 
         self.x = x

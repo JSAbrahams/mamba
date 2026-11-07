@@ -1,5 +1,6 @@
+import sys
 from typing import Callable, Optional, Tuple
-
+sys.set_int_max_str_digits(0)
 def fun_a() -> Optional[int]:
     print(11)
     if True and True:

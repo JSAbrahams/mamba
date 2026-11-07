@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 m: dict[str, int] = {"x": 1, "y": 2}
 m["x"] = 42
 print(m["x"])

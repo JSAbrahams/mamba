@@ -4,7 +4,7 @@ use crate::backend::python::ast::node::{CoreOp, PythonCore};
 use crate::backend::python::convert::builder::convert_builder;
 use crate::backend::python::convert::call::convert_call;
 use crate::backend::python::convert::class::convert_class;
-use crate::backend::python::convert::common::convert_vec;
+use crate::backend::python::convert::common::{convert_vec, turned_into_text};
 use crate::backend::python::convert::control_flow::{
     convert_cntrl_flow, scope_guarded, wrap_scoped,
 };
@@ -88,9 +88,12 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Str { lit, expressions } if expressions.is_empty() => PythonCore::Str {
             string: lit.clone(),
         },
-        NodeTy::Str { lit, .. } => PythonCore::FStr {
-            string: lit.clone(),
-        },
+        NodeTy::Str { lit, expressions } => {
+            turned_into_text(expressions, imp);
+            PythonCore::FStr {
+                string: lit.clone(),
+            }
+        }
 
         NodeTy::Undefined => PythonCore::None,
         NodeTy::ExpressionType { expr, .. } => {

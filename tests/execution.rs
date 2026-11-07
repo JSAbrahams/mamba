@@ -164,7 +164,7 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case("mutability" => "12\n")]
 #[test_case("pure_construction" => "0\n")]
 #[test_case("pure_construction_methods" => "2\n")]
-#[test_case("pure_functions" => "8.436563051146386\n")]
+#[test_case("pure_functions" => "1.2182815255731925\n")]
 #[test_case("sets_maps" => "2\n")]
 #[test_case("total_functions" => ignore["`Nat` type not implemented"])]
 #[test_case("trait_inheritance" => ignore["composing multiple parent traits not implemented"])]

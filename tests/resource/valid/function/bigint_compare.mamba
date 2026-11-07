@@ -1,7 +1,7 @@
-def a := 18446744073709551617
-def b := 36893488147419103232
-def c: Int := -36893488147419103233
-def d := 18446744073709551617
+let a := 18446744073709551617
+let b := 36893488147419103232
+let c: Int := -36893488147419103233
+let d := 18446744073709551617
 if a < b then print(1) else print(0)
 if b <= a then print(1) else print(0)
 if a = d then print(1) else print(0)

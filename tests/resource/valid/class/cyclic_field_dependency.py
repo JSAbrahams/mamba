@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Cyclic:
     a: int = None
     b: int = None

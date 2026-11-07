@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 limit: int = 10
 def under(x: int, bound: int) -> str:
     match x:

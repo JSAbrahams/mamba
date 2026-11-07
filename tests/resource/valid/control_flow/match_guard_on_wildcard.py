@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 threshold: float = 5
 def over(x: int) -> str:
     match x:

@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Matrix2x2: 
     def __init__(self, a: float, b: float, c: float, d: float): 
         self.a = a

@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class MatrixErr(Exception): 
     def __init__(self, message: str): 
         Exception.__init__(self, message)

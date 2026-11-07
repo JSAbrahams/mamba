@@ -1,5 +1,5 @@
 use crate::backend::python::ast::node::PythonCore;
-use crate::backend::python::convert::common::convert_vec;
+use crate::backend::python::convert::common::{convert_vec, turned_into_text};
 use crate::backend::python::convert::convert_node;
 use crate::backend::python::convert::state::{Imports, State};
 use crate::backend::python::name::ToPy;
@@ -69,10 +69,15 @@ pub fn convert_call(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             item: Box::from(name.to_py(imp)),
             range: Box::from(convert_node(&args[0], imp, state, ctx)?),
         },
-        NodeTy::FunctionCall { name, args, .. } => PythonCore::FunctionCall {
-            function: Box::from(name.to_py(imp)),
-            args: convert_vec(args, imp, state, ctx)?,
-        },
+        NodeTy::FunctionCall { name, args, .. } => {
+            if matches!(name.name.as_str(), "print" | "str") {
+                turned_into_text(args, imp);
+            }
+            PythonCore::FunctionCall {
+                function: Box::from(name.to_py(imp)),
+                args: convert_vec(args, imp, state, ctx)?,
+            }
+        }
         other => {
             let msg = format!("Expected call flow but was: {other:?}.");
             return Err(Box::from(UnimplementedErr::new(ast, &msg)));

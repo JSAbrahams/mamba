@@ -1,4 +1,6 @@
+import sys
 from typing import Tuple
+sys.set_int_max_str_digits(0)
 def both(p: Tuple[bool, bool]) -> str: 
     match p:
         case (True, True): 

@@ -68,8 +68,9 @@ A large number makes a program slower, not wrong.
 This is one half of a wider goal, see [Slow Rather Than Stopped](../../philosophy/safety.md#slow-rather-than-stopped).
 
 Both backends agree on this.
-The Python backend gets it from Python's own `int`.
+The Python backend gets it from Python's own `int`, and lifts CPython's limit of 4300 digits when printing one.
 Compiling to machine code with `--bin` or `--asm` uses arbitrary-precision arithmetic.
+It has no such limit.
 A value that fits a machine word stays in one, and only a larger value moves to the heap.
 See [the Cranelift backend](../../../src/backend/cranelift/README.md#unbounded-integers) for how.
 

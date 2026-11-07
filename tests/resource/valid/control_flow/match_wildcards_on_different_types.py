@@ -1,4 +1,6 @@
+import sys
 from typing import Tuple
+sys.set_int_max_str_digits(0)
 def first(p: Tuple[int, int]) -> int: 
     match p:
         case (0, _): 

@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 def ackermann(m: int, n: int) -> int:
     match (m, n):
         case (m, n) if m == 0:

@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Point2D: 
     x: int = None
     y: int = None

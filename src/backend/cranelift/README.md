@@ -37,6 +37,9 @@ A checked operand's type can reflect the operator's parameter type instead of it
 `Int` is unbounded, as [the language docs](../../../docs/features/safety/types.md#unbounded-integers) describe.
 The Python backend gets that from Python's `int`, and this backend supplies arbitrary-precision arithmetic itself.
 
+CPython refuses to turn an `int` of more than 4300 digits into text, so generated Python lifts that limit with `sys.set_int_max_str_digits(0)`.
+This backend has no such limit, and prints an `Int` of any length.
+
 ### Representation
 
 An `Int` is one 64-bit word, so `primitive.rs` maps it to `types::I64`.

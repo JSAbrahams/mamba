@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 b: bool = False
 e: str = "Hello world"
 while b:

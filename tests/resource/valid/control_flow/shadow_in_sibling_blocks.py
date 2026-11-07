@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 n: int = 1
 if True:
     __mamba_n_existed = "n" in locals()
