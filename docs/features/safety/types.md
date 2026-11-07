@@ -60,8 +60,8 @@ A number that silently wraps is a correctness bug.
 `Nat`, the non-negative integers, is a refinement of `Int` and inherits this.
 `Nat` is future work, see [`Nat`](#nat) below.
 
-    def a := 18446744073709551617    # larger than 2^64
-    def b := 36893488147419103232
+    let a := 18446744073709551617    # larger than 2^64
+    let b := 36893488147419103232
     print(a + b)                     # 55340232221128654849
 
 A large number makes a program slower, not wrong.
