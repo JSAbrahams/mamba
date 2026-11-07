@@ -85,7 +85,10 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 // The outer `n` is 1, and the arm binds `n` to 10. The generated `case n:` leaks that binding
 // into the enclosing scope, so this prints 10. `if` guards the same shadowing correctly.
 #[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => ignore["a capture pattern leaks out of its arm and clobbers the shadowed outer variable"])]
-#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => ignore["a match assigned without an annotation leaves the variable untyped"])]
+#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => "11\n")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcard_only.mamba" => "always\n")]
+#[test_case(run_via_python, &["control_flow"], "match_subject_is_call.mamba" => "three\n")]
+#[test_case(run_via_python, &["control_flow"], "match_arm_body_block.mamba" => "4\n")]
 #[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => "safe\n")]
 #[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => "origin\nright of the axis, at height 7\nleft of the axis, at height 7\n")]
 #[test_case(run_via_python, &["control_flow"], "match_nested_tuple_pattern.mamba" => "x!\nsmall\n")]

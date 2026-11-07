@@ -88,7 +88,7 @@ use mamba::parse::ast::AST;
 #[test_case("control_flow", "match_shadowing_binding_takes_subject_type" => matches Err(_))]
 #[test_case("control_flow", "match_tuple_pattern_wrong_arity" => matches Err(_) ; "a tuple pattern of the wrong arity can never match")]
 #[test_case("control_flow", "match_wildcard_binds_nothing" => ignore matches Err(_) ; "reading `_` is accepted and generates a Python NameError")]
-#[test_case("control_flow", "match_case_type_annotation" => ignore matches Err(_) ; "a type annotation on a match case is dropped, generating an unreachable-pattern SyntaxError")]
+#[test_case("control_flow", "match_case_type_annotation" => matches Err(_) ; "a type annotation only means something on a handle case")]
 #[test_case("control_flow", "access_match_arms_variable" => matches Err(_))]
 #[test_case("control_flow", "float_and" => matches Err(_))]
 #[test_case("control_flow", "for_non_iterable" => matches Err(_))]

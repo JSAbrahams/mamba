@@ -139,7 +139,7 @@ pub fn gen_flow(
 fn constrain_cases(
     ast: &AST,
     expr: &Option<AST>,
-    cases: &Vec<AST>,
+    cases: &[AST],
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
@@ -148,10 +148,10 @@ fn constrain_cases(
     constr.branch_point();
 
     let mut envs = vec![];
-    for case in cases {
+    for (i, case) in cases.iter().enumerate() {
         match &case.node {
             Node::Case { cond, guard, body } => {
-                constr.branch("match arm", case.pos);
+                branch_unless_first(i, case, constr);
                 check_no_rest(cond)?;
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 tie_pattern_to_subject(expr, cond, env, &cond_env, constr);
@@ -192,6 +192,15 @@ fn constrain_cases(
     constr.reset_branches();
 
     Ok(env.clone())
+}
+
+/// Open a new constraint set for every arm after the first, as an `if` does for its `else`.
+///
+/// The first arm stays in the enclosing set, so code after the match learns the match's type.
+fn branch_unless_first(i: usize, case: &AST, constr: &mut ConstrBuilder) {
+    if i > 0 {
+        constr.branch("match arm", case.pos);
+    }
 }
 
 /// Give a match pattern the type of the subject it is matched against.

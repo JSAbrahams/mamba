@@ -91,12 +91,10 @@ use test_case::test_case;
 #[test_case("control_flow", "match_negative_int_literal")]
 #[test_case("control_flow", "match_nested_tuple_literals")]
 #[test_case("control_flow", "match_in_for_body")]
-// Assigning a match to an unannotated variable leaves that variable's type unresolved, so any
-// later use of it fails. `def a: Int := match ... end` is accepted. See tests/README.md.
-#[test_case("control_flow", "match_wildcard_only" => ignore["a match assigned without an annotation leaves the variable untyped"])]
-#[test_case("control_flow", "match_single_irrefutable_arm" => ignore["a match assigned without an annotation leaves the variable untyped"])]
-#[test_case("control_flow", "match_subject_is_call" => ignore["a match assigned without an annotation leaves the variable untyped"])]
-#[test_case("control_flow", "match_arm_body_block" => ignore["a match assigned without an annotation leaves the variable untyped"])]
+#[test_case("control_flow", "match_wildcard_only")]
+#[test_case("control_flow", "match_single_irrefutable_arm")]
+#[test_case("control_flow", "match_subject_is_call")]
+#[test_case("control_flow", "match_arm_body_block")]
 #[test_case("control_flow", "match_shadow_restores_outer" => ignore["a capture pattern leaks out of its arm and clobbers the shadowed outer variable"])]
 #[test_case("control_flow", "match_binding_read_in_arm")]
 #[test_case("control_flow", "match_tuple_shadows_argument")]

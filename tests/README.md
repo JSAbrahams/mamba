@@ -51,7 +51,6 @@ Unfinished features whose code exists but is not wired in:
 Checker:
 
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
-- A `match` assigned without an annotation leaves the variable untyped, so later uses fail.
 - Match exhaustiveness is not checked.
   `control_flow/match_stmt` and `error/nested_exception` are non-exhaustive and need a default arm once it is.
 - `_ => _` is accepted, but produces invalid Python.
