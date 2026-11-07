@@ -30,7 +30,8 @@ use mamba::parse::result::ParseResult;
 #[test_case("match_without_where"=> matches Err(_))]
 #[test_case("match_without_end"=> matches Err(_))]
 #[test_case("match_case_without_arrow"=> matches Err(_))]
-#[test_case("match_no_arms"=> ignore matches Err(_) ; "a match needs at least one arm, and zero arms generates Python that does not compile")]
+#[test_case("match_no_arms"=> matches Err(_) ; "a match needs at least one arm")]
+#[test_case("handle_no_cases"=> matches Err(_) ; "a handle needs at least one case")]
 fn syntax(file_name: &str) -> ParseResult<()> {
     let file_name = format!("{file_name}.mamba");
     let source = resource_content(false, &["syntax"], &file_name).unwrap();

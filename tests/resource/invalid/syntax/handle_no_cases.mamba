@@ -1,0 +1,7 @@
+# a handle needs at least one case
+class MyErr(msg: Str): Exception(msg)
+
+def f() -> Int ! MyErr := 10
+
+let a := f() ! where
+end
