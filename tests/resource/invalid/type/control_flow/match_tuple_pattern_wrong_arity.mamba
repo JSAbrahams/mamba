@@ -1,0 +1,5 @@
+# the subject has two elements, so a pattern of three can never match
+def f(p: (Int, Int)) -> Int := match p where
+    (a, b, c) => a
+    _         => 0
+end

@@ -86,8 +86,10 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 // into the enclosing scope, so this prints 10. `if` guards the same shadowing correctly.
 #[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => ignore["a capture pattern leaks out of its arm and clobbers the shadowed outer variable"])]
 #[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => ignore["a match assigned without an annotation leaves the variable untyped"])]
-#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => ignore["a tuple case pattern does not bind into the guard or body"])]
-#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => ignore["a tuple case pattern does not bind into the guard or body"])]
+#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => "safe\n")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => "origin\nright of the axis, at height 7\nleft of the axis, at height 7\n")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_pattern.mamba" => "x!\nsmall\n")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_shadows_argument.mamba" => "5\n")]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }

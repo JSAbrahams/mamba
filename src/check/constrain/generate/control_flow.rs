@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::{generate, Constrained};
@@ -153,17 +153,7 @@ fn constrain_cases(
                 constr.branch("match arm", case.pos);
                 check_no_rest(cond)?;
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
-
-                if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
-                    if let Some(expr) = &expr {
-                        constr.add(
-                            "arm body",
-                            &Expected::from(expr),
-                            &Expected::from(cond),
-                            env,
-                        );
-                    }
-                }
+                tie_pattern_to_subject(expr, cond, env, &cond_env, constr);
 
                 // Generated after the pattern is tied to the subject, and in the environment the
                 // pattern produced, so the guard can read what the pattern bound.
@@ -177,13 +167,22 @@ fn constrain_cases(
                 }
 
                 let body_env = generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
-                envs.push(body_env);
-                let exp_body = Expected::from(body);
-                constr.add("arm body", &exp_body, &Expected::from(ast), env);
-
+                let (exp_body, exp_match) = (Expected::from(body), Expected::from(ast));
+                add_across_envs(
+                    "arm body",
+                    (&exp_body, &body_env),
+                    (&exp_match, env),
+                    constr,
+                );
                 if env.is_expr {
-                    constr.add("arm body and outer", &Expected::from(ast), &exp_body, env);
+                    add_across_envs(
+                        "arm body and outer",
+                        (&exp_match, env),
+                        (&exp_body, &body_env),
+                        constr,
+                    );
                 }
+                envs.push(body_env);
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")]),
         }
@@ -194,10 +193,51 @@ fn constrain_cases(
     Ok(env.clone())
 }
 
+/// Give a match pattern the type of the subject it is matched against.
+///
+/// The subject is read in the outer environment and the pattern in the one it binds into.
+/// A pattern name that shadows an outer one, such as `(m, n)` in a function taking `m` and `n`, then refers to the new binding.
+fn tie_pattern_to_subject(
+    subject: &Option<AST>,
+    cond: &AST,
+    env: &Environment,
+    cond_env: &Environment,
+    constr: &mut ConstrBuilder,
+) {
+    let (Some(subject), Node::ExpressionType { expr: pattern, .. }) = (subject, &cond.node) else {
+        return;
+    };
+
+    let (subject, pattern) = (Expected::from(subject), Expected::from(pattern.as_ref()));
+    add_across_envs(
+        "match pattern",
+        (&subject, env),
+        (&pattern, cond_env),
+        constr,
+    );
+}
+
+/// Constrain `parent >= child`, reading each side's names in its own environment.
+///
+/// [ConstrBuilder::add] maps both sides through one environment, so each side is mapped up front instead.
+fn add_across_envs(
+    msg: &str,
+    (parent, parent_env): (&Expected, &Environment),
+    (child, child_env): (&Expected, &Environment),
+    constr: &mut ConstrBuilder,
+) {
+    let parent = parent.map_exp(&parent_env.var_mapping, &constr.var_mapping);
+    let child = child.map_exp(&child_env.var_mapping, &constr.var_mapping);
+    constr.add_constr_map(
+        &Constraint::new(msg, &parent, &child),
+        &parent_env.var_mapping,
+        true,
+    );
+}
+
 /// Reject a `..` in a match case, which is where it is meant to go next.
 ///
-/// A case that is not a plain identifier is not walked at all, so a `..` in one never reaches
-/// [generate]. Allowing `(2, ..)` later means matching on the elided elements here.
+/// Allowing `(2, ..)` later means matching on the elided elements here.
 fn check_no_rest(ast: &AST) -> Constrained<()> {
     match &ast.node {
         Node::Rest => Err(vec![TypeErr::new(

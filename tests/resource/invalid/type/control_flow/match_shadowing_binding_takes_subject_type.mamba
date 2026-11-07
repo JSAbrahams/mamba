@@ -1,0 +1,4 @@
+# m shadows the Str argument, so in the arm it is the Int element and cannot be returned as a Str
+def f(m: Str, p: (Int, Int)) -> Str := match p where
+    (m, n) => m
+end

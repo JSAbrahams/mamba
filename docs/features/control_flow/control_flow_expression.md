@@ -84,7 +84,19 @@ The second is to write out every value of a type that has finitely many:
 
 `Bool` has exactly two values, and both are covered, so no default arm is needed.
 
-_Note_ Exhaustiveness is not checked yet, and tuple patterns do not bind their names yet.
+_Note_ Exhaustiveness is not checked yet.
+
+#### Tuple patterns
+
+A tuple pattern matches element by element.
+A literal compares, and a name binds to the element in its place, with that element's type:
+
+    def quadrant(point: (Int, Int)) -> Str := match point where
+        (0, 0) => "origin"
+        (x, y) => "at height {y}"
+    end
+
+A pattern name may shadow an outer one, and then refers to the element within its arm.
 
 #### Guards
 

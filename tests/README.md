@@ -52,9 +52,6 @@ Checker:
 
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
 - A `match` assigned without an annotation leaves the variable untyped, so later uses fail.
-- A match capture that shadows an outer name cannot be read in its arm, see `match_binding_read_in_arm`.
-- Tuple match patterns do not bind yet, though a bare name such as `n` does.
-  `readme_example/ackermann` passes only because its tuple's names coincide with the function's parameters.
 - Match exhaustiveness is not checked.
   `control_flow/match_stmt` and `error/nested_exception` are non-exhaustive and need a default arm once it is.
 - `_ => _` and a typed match case `n: Int => 1` are accepted, but produce invalid Python.
