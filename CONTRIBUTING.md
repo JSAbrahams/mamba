@@ -176,7 +176,7 @@ The workflows call the same named scripts you run locally, so the two cannot dri
 | `test.yml` | ubuntu | `cargo build --no-default-features`, then `devbox run build-wasm` |
 | `lint.yml` | ubuntu | `devbox run lint` |
 | `coverage.yml` | ubuntu | `devbox run coverage` |
-| `release.yml` | ubuntu | `devbox run build-wasm`, then uploads the module and its checksums to the release |
+| `release.yml` | ubuntu | `devbox run build-wasm`, then uploads the module to the release; then the SHA-256 of every file of the release, as `SHA256SUMS` and in its notes |
 
 Windows is the one exception, for the reason given above: Nix does not run there, so that job installs the toolchain natively.
 This is also why `rust-toolchain.toml` has to stay in step with the version Devbox pins.

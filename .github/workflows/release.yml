@@ -3,6 +3,12 @@ name: Release
 on:
   release:
     types: [ published ]
+  # The checksums of a release that is out already, for instance one from before they were written.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag of the release to write the checksums of
+        required: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,8 +18,9 @@ permissions:
 
 jobs:
   # The WebAssembly module of the playground: mamba.js, the glue for a plain <script> tag, and
-  # mamba_bg.wasm, the compiler itself. Both are uploaded to the release, with their checksums.
+  # mamba_bg.wasm, the compiler itself. Both are uploaded to the release.
   wasm:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     name: WebAssembly module
 
@@ -32,13 +39,56 @@ jobs:
       - name: Build the WebAssembly module
         run: devbox run build-wasm
 
-      - name: Write checksums
-        working-directory: target/wasm-pkg
-        run: sha256sum mamba.js mamba_bg.wasm > SHA256SUMS
-
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         working-directory: target/wasm-pkg
-        run: gh release upload "$TAG" mamba.js mamba_bg.wasm SHA256SUMS --clobber
+        run: gh release upload "$TAG" mamba.js mamba_bg.wasm --clobber
+
+  # The SHA-256 of every file of every release, so that whoever downloads one can check it, and so that a site
+  # that runs the module can be told apart from one that built its own: as SHA256SUMS among the files, and in
+  # the notes of the release, in a section that is written anew each time.
+  checksums:
+    needs: wasm
+    if: ${{ always() && (needs.wasm.result == 'success' || needs.wasm.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    name: Checksums
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+    steps:
+      - name: Download the files of the release
+        run: |
+          count="$(gh release view "$TAG" --json assets --jq '[.assets[] | select(.name != "SHA256SUMS")] | length')"
+          if [ "$count" -eq 0 ]; then
+            echo "The release $TAG has no files to write the checksums of."
+            exit 0
+          fi
+          gh release download "$TAG" --dir files
+          rm -f files/SHA256SUMS
+
+      - name: Write the checksums
+        run: |
+          [ -d files ] || exit 0
+          (cd files && sha256sum -- *) > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload them, and put them in the notes
+        run: |
+          [ -f SHA256SUMS ] || exit 0
+          gh release upload "$TAG" SHA256SUMS --clobber
+          gh release view "$TAG" --json body --jq .body > notes.md
+          sed -i '/<!-- sha256 -->/,/<!-- \/sha256 -->/d' notes.md
+          {
+            echo '<!-- sha256 -->'
+            echo '### SHA-256'
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+            echo '<!-- /sha256 -->'
+          } >> notes.md
+          gh release edit "$TAG" --notes-file notes.md

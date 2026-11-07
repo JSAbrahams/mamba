@@ -913,7 +913,7 @@ From a checkout, `cargo run --features cli -- -i <input>` does the same.
 
 ### As WebAssembly
 
-Each GitHub release has `mamba.js`, `mamba_bg.wasm` and `SHA256SUMS` attached, built by `.github/workflows/release.yml`.
+Each GitHub release has `mamba.js` and `mamba_bg.wasm` attached, built by `.github/workflows/release.yml`, and the SHA-256 of all its files, in `SHA256SUMS` and in its notes.
 They are made for a plain `<script>` tag:
 
 ```html
