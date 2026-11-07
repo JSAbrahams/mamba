@@ -40,8 +40,31 @@ impl Display for PythonCore {
     /// assert_eq!(format!("{core_node}"), "if a: \n    \"b\"\nelse: \n    \"c\"\n");
     /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", to_py(self, 0))
+        let source = to_py(self, 0) + "\n";
+        write!(f, "{}", at_most_one_empty_line(&source))
     }
+}
+
+/// `source` with every run of empty lines cut to one, where a line of only white space counts as empty.
+fn at_most_one_empty_line(source: &str) -> String {
+    let mut out = String::with_capacity(source.len());
+    let mut previous_empty = false;
+    for line in source.split_inclusive('\n') {
+        let empty = line.trim().is_empty();
+        if empty && previous_empty {
+            continue;
+        }
+
+        out.push_str(if !empty {
+            line
+        } else if line.ends_with('\n') {
+            "\n"
+        } else {
+            ""
+        });
+        previous_empty = empty;
+    }
+    out
 }
 
 fn to_py(core: &PythonCore, ind: usize) -> String {
