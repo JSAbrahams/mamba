@@ -61,15 +61,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | operation
                       | anon-fun
                       | call
-                      | index
                       | "_"
                       | ".."
                       | code-block
                      
     reassignment     ::= expression ( ":=" | "+=" | "-=" | "*=" | "/=" | "^=" ) expression
+    # a call with one argument also indexes a list or a map, as in `a(0)`, which the type checker decides
+    # there is no square-bracket index: `a[0]` is a parse error
     call             ::= expression [ ( "." | "?." ) ] id tuple [ "!" match-cases ]
-    # round brackets call, square brackets index
-    index            ::= expression "[" expression "]"
     raise            ::= "!" id { "," id }
     
     # for all collections, we require one comma at least to avoid ambiguity

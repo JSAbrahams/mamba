@@ -405,10 +405,6 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::Id { lit } if lit.as_str() == "True" => NodeTy::Bool { lit: true },
             Node::Id { lit } if lit.as_str() == "False" => NodeTy::Bool { lit: false },
             Node::Id { lit } => NodeTy::Id { lit: lit.clone() },
-            Node::Index { item, range } => NodeTy::Index {
-                item: Box::from(ASTTy::from((item, finished))),
-                range: Box::from(ASTTy::from((range, finished))),
-            },
             Node::Real { lit } => NodeTy::Real { lit: lit.clone() },
             Node::Int { lit } => NodeTy::Int { lit: lit.clone() },
             Node::ENum { num, exp } => NodeTy::ENum {

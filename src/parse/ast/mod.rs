@@ -186,10 +186,6 @@ pub enum Node {
         inclusive: bool,
         step: OptAST,
     },
-    Index {
-        item: Box<AST>,
-        range: Box<AST>,
-    },
     Block {
         statements: Vec<AST>,
     },

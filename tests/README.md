@@ -53,6 +53,8 @@ Checker:
 - `total` and `meta` are parsed but not checked.
 - A method of a Python stub is never held to `mut self`, since a stub cannot say whether it changes its receiver.
 - A `mut` parameter lets a function change the caller's value, even when the caller's binding is not `mut`.
+- Calling or indexing the result of a call, as in `f()(0)`, is not supported, see `collection/set_behind_function_not_subscriptable`.
+- Constructing a generic class, as in `MyClass.new()` for `class MyClass[A]`, does not resolve, see `class/wrong_generic_type`.
 
 Generator:
 
