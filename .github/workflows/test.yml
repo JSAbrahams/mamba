@@ -92,7 +92,10 @@ jobs:
     name: wasm32-unknown-unknown, Devbox
 
     steps:
+      # The tags are needed: build.rs takes the version from `git describe --tags`.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Devbox
         uses: jetify-com/devbox-install-action@v0.12.0

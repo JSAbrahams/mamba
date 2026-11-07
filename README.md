@@ -892,9 +892,9 @@ Everything else is opt-in:
 
 | Feature   | Adds                                                                                   | Implies           |
 |-----------|----------------------------------------------------------------------------------------|-------------------|
-| (none)    | `compile`, `compile_str`, `tokens`, `version`, and `Diagnostic` with `render`          |                   |
+| (none)    | `compile`, `compile_str`, `version`, and `Diagnostic` with `render`                    |                   |
 | `native`  | `mamba::io`: read sources from disk, write `.py` files, link an executable with `cc`   |                   |
-| `serde`   | `Serialize` and `Deserialize` for diagnostics and tokens                               |                   |
+| `serde`   | `Serialize` and `Deserialize` for diagnostics                                          |                   |
 | `cli`     | the `mamba` binary                                                                     | `native`, `serde` |
 | `wasm`    | the JavaScript bindings of `src/wasm.rs`                                               | `serde`           |
 | `imports` | the type checker accepts `import`, which is not part of the language yet               |                   |
@@ -922,7 +922,7 @@ match compile_str(source, &Options::default()) {
 let asm = compile_str("print(1 + 2)\n", &Options::new(Output::Asm { target: None }));
 ```
 
-A `Diagnostic` is data: its stage, message, and labelled spans as lines and columns, byte offsets and UTF-16 offsets.
+A `Diagnostic` is data: its stage, message, and labelled spans as lines and columns, and as byte offsets.
 A span may be empty, as at the end of a line or of the source.
 `render` turns it into text that quotes the code it points at.
 
@@ -952,7 +952,10 @@ They are made for a plain `<script>` tag:
 ```
 
 `compile(source, { output: "python" | "asm", target, annotate })` gives `{ ok: true, text }` or `{ ok: false, diagnostics }`.
-`tokens(source)` gives `{ ok: true, tokens }` for syntax highlighting, and `version()` the version of Mamba.
+`version()` gives the version of Mamba.
+The version is what `git describe --tags` gave at build time, such as `v0.3.6` on a tag or `v0.3.6-12-g3f2a1bc` after one.
+Built without git or without tags, as from crates.io, it is the version in `Cargo.toml`.
+`mamba::version()` and `mamba --version` give the same.
 To build it yourself:
 
 ```sh
@@ -982,6 +985,7 @@ Options:
   -l, --level                        Print log level
   -a, --annotate                     Enable type annotation of the output source. Currently still buggy feature
   -h, --help                         Print help (see more with '--help')
+  -V, --version                      Print version
 ```
 
 Errors are printed with the code they point at, in colour when stderr is a terminal.

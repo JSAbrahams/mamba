@@ -10,6 +10,7 @@ The crate is a library (`src/lib.rs`), the `mamba` CLI (`src/main.rs`), and a We
 It has no default features: the plain library is the pure compiler, without filesystem, CLI or linker.
 `native` adds `src/io.rs`, `cli` builds the binary, `wasm` the JavaScript bindings, and `serde` serializes diagnostics.
 Errors leave the crate as a `Diagnostic` (`src/diagnostic.rs`), built from the error types of the core.
+`build.rs` sets the version, `MAMBA_VERSION`, from `git describe --tags`, and falls back to the version in `Cargo.toml`.
 
 ## Commands
 
@@ -133,7 +134,7 @@ Mutability belongs to a binding, not to a type.
 - `tests/execution.rs`: runs the output of both backends and compares what they print.
   The expected output is in `<name>.stdout`, beside the fixture, never inline in the test attribute.
 - `tests/main.rs`: black-box CLI tests, run through `CARGO_BIN_EXE_mamba`, so only with `--features cli`.
-- `tests/api.rs`: the library API, tokens, and diagnostics as data.
+- `tests/api.rs`: the library API, and diagnostics as data.
   Tests check the stage and span of a `Diagnostic`, never its rendered text.
 - `tests_util`: shared helpers, a separate crate.
 - `tests/README.md`: traps, coverage, and known gaps.

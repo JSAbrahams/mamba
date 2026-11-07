@@ -5,6 +5,7 @@ use clap::{ArgAction, Parser, ValueEnum};
 #[command(
     name = "Mamba",
     author = "Joël Abrahams",
+    version = mamba::version(),
     about = "Transpile Mamba to Python code, compile it to a native binary, or print its assembly."
 )]
 pub struct Cli {

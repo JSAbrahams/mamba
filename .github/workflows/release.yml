@@ -18,7 +18,10 @@ jobs:
     name: WebAssembly module
 
     steps:
+      # The tags are needed: build.rs takes the version from `git describe --tags`.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # rustup reads rust-toolchain.toml, which also lists the wasm32-unknown-unknown target.
       - name: Install Rust from rust-toolchain.toml
