@@ -93,8 +93,35 @@ impl From<&str> for StringName {
 
 impl IsSuperSet<StringName> for StringName {
     fn is_superset_of(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
+        if self.is_callable() && other.is_callable() {
+            return callable_is_superset_of(self, other, ctx, pos);
+        }
         ctx.class(other, pos)?.has_parent(self, ctx, pos)
     }
+}
+
+/// Whether a function of type `other` may be used where one of type `expected` is.
+///
+/// It must take as many arguments, accept every argument `expected` would be given, and give what `expected` gives.
+fn callable_is_superset_of(
+    expected: &StringName,
+    other: &StringName,
+    ctx: &Context,
+    pos: Position,
+) -> TypeResult<bool> {
+    let (expected_args, other_args) = (expected.args(pos)?, other.args(pos)?);
+    if expected_args.len() != other_args.len() {
+        return Ok(false);
+    }
+
+    for (expected_arg, other_arg) in expected_args.iter().zip(&other_args) {
+        if !other_arg.is_superset_of(expected_arg, ctx, pos)? {
+            return Ok(false);
+        }
+    }
+    expected
+        .ret_ty(pos)?
+        .is_superset_of(&other.ret_ty(pos)?, ctx, pos)
 }
 
 impl From<&StringName> for Name {
@@ -236,20 +263,20 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
 impl MatchTempName for StringName {
     fn temp_map(
         &self,
-        other: &StringName,
+        other: &TrueName,
         mut mapping: NameMap,
         pos: Position,
     ) -> TypeResult<NameMap> {
         if self.name.starts_with(TEMP) {
             mapping.insert(Name::from(self.name.as_str()), Name::from(other));
-        } else if self.name != other.name {
+        } else if self.name != other.variant.name {
             return Err(vec![TypeErr::new(
                 pos,
                 &format!("Cannot unify {self} and {other}"),
             )]);
         }
 
-        for either in self.generics.iter().zip_longest(&other.generics) {
+        for either in self.generics.iter().zip_longest(&other.variant.generics) {
             match either {
                 Both(self_generic, other_generic) => {
                     mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;

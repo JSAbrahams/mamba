@@ -1,0 +1,3 @@
+def apply2(f: (Int) -> Int, g: (Int) -> Int, x: Int) -> Int := g(f(x))
+
+print(apply2(\a: Int, b: Int := a, \a: Int := a + 1, 1))

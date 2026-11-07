@@ -1,0 +1,3 @@
+let f: (Int) -> Int := \a: Int, b: Int := a + b
+
+print(f(1))

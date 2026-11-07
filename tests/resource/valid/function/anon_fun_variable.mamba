@@ -1,0 +1,2 @@
+let f := \a: Int := a + 1
+print(f(1))

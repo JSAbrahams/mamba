@@ -1,0 +1,9 @@
+# the tuple's first element is a nullable Bool, so (None, _) is one of its values.
+let b: Bool? := None
+let p := (b, 1)
+
+match p where
+    (True, _)  => print(1)
+    (False, _) => print(2)
+    (None, _)  => print(3)
+end

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
@@ -38,9 +39,10 @@ impl MapExp for Expected {
                         _ => ast.clone(),
                     };
 
+                    let own_arguments = own_arguments(&ast);
                     Expression {
-                        ast: ast.map(&|node: &Node| {
-                            if let Node::Id { lit } = node {
+                        ast: ast.map(&|node: &Node| match node {
+                            Node::Id { lit } if !own_arguments.contains(lit) => {
                                 let offset = if let Some(offset) = var_mapping.get(lit) {
                                     *offset
                                 } else if let Some(offset) = global_var_mapping.get(lit) {
@@ -52,9 +54,8 @@ impl MapExp for Expected {
                                 Node::Id {
                                     lit: format_var_map(lit, &offset),
                                 }
-                            } else {
-                                node.clone()
                             }
+                            _ => node.clone(),
                         }),
                     }
                 }
@@ -73,6 +74,26 @@ impl MapExp for Expected {
             },
         )
     }
+}
+
+/// The names an anonymous function binds for its own arguments.
+///
+/// Mapped like the variables of the same name outside, one function would read differently in two constraints.
+fn own_arguments(ast: &AST) -> HashSet<String> {
+    let Node::AnonFun { args, .. } = &ast.node else {
+        return HashSet::new();
+    };
+    args.iter().filter_map(argument_name).collect()
+}
+
+fn argument_name(arg: &AST) -> Option<String> {
+    let Node::FunArg { var, .. } = &arg.node else {
+        return None;
+    };
+    let Node::Id { lit } = &var.node else {
+        return None;
+    };
+    Some(lit.clone())
 }
 
 impl Expected {

@@ -42,15 +42,14 @@ Stubs must parse as Python.
 
 Unfinished features whose code exists but is not wired in:
 
-- `Function::args_compatible`: callable arity is never checked, so the arity arm in `check/constrain/unify/function.rs` is unreachable.
+- `Function::args_compatible`: never called, since the arity of a callable is checked by comparing function types.
+  The arity arm of `unify_function` in `check/constrain/unify/function.rs` is unreachable for the same reason.
 - `Context::field`: top-level fields from stubs, such as `__debug__`, are parsed but never looked up.
 
 Checker:
 
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
-- Passing `None` as an argument of a nullable type is rejected, see `definition/none_to_nullable_argument`.
-- The type of a tuple built from a nullable value loses its nullability.
-  A match on it then accepts a missing `None`, see `match_tuple_variable_missing_none`.
+- An anonymous function with an argument that is not annotated gets no function type, so its arity is not checked.
 - Two fields whose initializers reference each other check and generate, see `class/cyclic_field_dependency`.
 - `total` and `meta` are parsed but not checked.
 

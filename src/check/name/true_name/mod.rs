@@ -53,7 +53,7 @@ pub trait IsTemp {
 pub trait MatchTempName {
     fn temp_map(
         &self,
-        other: &StringName,
+        other: &TrueName,
         mapping: HashMap<Name, Name>,
         pos: Position,
     ) -> TypeResult<HashMap<Name, Name>>;
@@ -183,10 +183,19 @@ impl Nullable for TrueName {
 impl Substitute for TrueName {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<TrueName> {
         Ok(TrueName {
+            is_nullable: self.is_nullable || substitutes_nullable(&self.variant, generics),
             variant: self.variant.substitute(generics, pos)?,
             ..self.clone()
         })
     }
+}
+
+/// Whether `variant` is replaced by a type that may be `None`.
+///
+/// The replacement is a [StringName], which cannot carry that itself, so the [TrueName] around it must.
+fn substitutes_nullable(variant: &StringName, generics: &HashMap<Name, Name>) -> bool {
+    let replacement = generics.get(&Name::from(variant));
+    replacement.is_some_and(|name| name.names.iter().any(Nullable::is_nullable))
 }
 
 impl From<&Vec<TrueName>> for Name {
@@ -214,12 +223,20 @@ impl ContainsTemp for TrueName {
 impl MatchTempName for TrueName {
     fn temp_map(
         &self,
-        other: &StringName,
+        other: &TrueName,
         mapping: HashMap<Name, Name>,
         pos: Position,
     ) -> TypeResult<HashMap<Name, Name>> {
+        if is_none_of_nullable(self, other) {
+            return Ok(mapping);
+        }
         self.variant.temp_map(other, mapping, pos)
     }
+}
+
+/// Whether one of the two is `None` and the other is nullable, so that `None` is one of its values.
+fn is_none_of_nullable(left: &TrueName, right: &TrueName) -> bool {
+    (left.is_null() && right.is_nullable()) || (left.is_nullable() && right.is_null())
 }
 
 impl TupleCallable<bool, Vec<Name>, Name> for TrueName {
