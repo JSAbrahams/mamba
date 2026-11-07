@@ -6,7 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Mamba is a statically-typed, Python-like language.
 This repo is its transpiler, written in Rust, which turns `.mamba` files into Python 3.
-The crate is a library (`src/lib.rs`) and the `mamba` CLI (`src/main.rs`).
+The crate is a library (`src/lib.rs`), the `mamba` CLI (`src/main.rs`), and a WebAssembly module (`src/wasm.rs`).
+It has no default features: the plain library is the pure compiler, without filesystem, CLI or linker.
+`native` adds `src/io.rs`, `cli` builds the binary, `wasm` the JavaScript bindings, and `serde` serializes diagnostics.
+Errors leave the crate as a `Diagnostic` (`src/diagnostic.rs`), built from the error types of the core.
 
 ## Commands
 
@@ -21,9 +24,9 @@ The cargo commands below assume you are inside that environment.
 See CONTRIBUTING.md for those.
 
 ```sh
-cargo build                       # build the transpiler
-cargo run -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
-cargo test --package mamba        # run the full test suite (matches CI)
+cargo build --features cli                       # build the transpiler and its CLI
+cargo run --features cli -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
+cargo test --package mamba --features cli        # run the full test suite (matches CI)
 cargo fmt --all -- --check        # check formatting (CI enforces this)
 cargo clippy --all-features --all-targets -- -D warnings  # lint (CI enforces this, treats warnings as errors)
 ```
@@ -32,7 +35,7 @@ CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`.
 To reproduce a CI test run exactly:
 
 ```sh
-cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+cargo nextest run --package mamba --features cli --config-file .config/nextest.toml --profile ci
 ```
 
 CI's clippy step passes `--all-targets`.
@@ -50,8 +53,8 @@ The latter is the version `ruff_python_parser` parses as, both for the stub file
 To run a single test:
 
 ```sh
-cargo test --package mamba <test_name>            # e.g. cargo test transpile_src_in_dir
-cargo test --package mamba -- --list               # list all test names, including test_case-expanded ones
+cargo test --package mamba --features cli <test_name>   # e.g. cargo test transpile_src_in_dir
+cargo test --package mamba --features cli -- --list     # list all test names, including test_case-expanded ones
 ```
 
 A `#[test_case(...)]` test's name embeds its arguments, so `#[test_case("class", "generics")]` contains `class_generics`.
@@ -129,7 +132,9 @@ Mutability belongs to a binding, not to a type.
   A valid check fixture has a reference `<name>.py`, compared by Python AST rather than text, see `tests_util::fallable`.
 - `tests/execution.rs`: runs the output of both backends and compares what they print.
   The expected output is in `<name>.stdout`, beside the fixture, never inline in the test attribute.
-- `tests/main.rs`: black-box CLI tests through `assert_cmd`.
+- `tests/main.rs`: black-box CLI tests, run through `CARGO_BIN_EXE_mamba`, so only with `--features cli`.
+- `tests/api.rs`: the library API, tokens, and diagnostics as data.
+  Tests check the stage and span of a `Diagnostic`, never its rendered text.
 - `tests_util`: shared helpers, a separate crate.
 - `tests/README.md`: traps, coverage, and known gaps.
   Read it before un-ignoring a test or chasing an uncovered line.
