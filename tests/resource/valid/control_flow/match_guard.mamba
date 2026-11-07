@@ -1,0 +1,10 @@
+# A guard is an extra condition on an arm, checked after the pattern matches
+def pure sign(x: Int) -> Str := match x where
+    n if n < 0 => "negative"
+    n if n > 0 => "positive"
+    _          => "zero"
+end
+
+print(sign(-3))
+print(sign(3))
+print(sign(0))

@@ -2,5 +2,5 @@ class A where
     let my_num: Int := 10
 end
 
-let a := A.new()
+let mut a := A.new()
 a.my_num := 20

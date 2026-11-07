@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Mamba is a statically-typed, Python-like programming language, implemented here as a **transpiler written in
-Rust** that converts `.mamba` source files into `.py` (Python 3) source files. The crate is both a library
-(`src/lib.rs`) and a binary (`src/main.rs`, the `mamba` CLI).
+Mamba is a statically-typed, Python-like language.
+This repo is its transpiler, written in Rust, which turns `.mamba` files into Python 3.
+The crate is a library (`src/lib.rs`) and the `mamba` CLI (`src/main.rs`).
 
 ## Commands
 
@@ -54,10 +54,8 @@ cargo test --package mamba <test_name>            # e.g. cargo test transpile_sr
 cargo test --package mamba -- --list               # list all test names, including test_case-expanded ones
 ```
 
-Most `check`/`parse` behavior tests are table-driven via `#[test_case(...)]` macros in `tests/check/valid.rs`,
-`tests/check/invalid.rs`, `tests/parse/valid.rs`, `tests/parse/invalid.rs` — the generated test name is derived
-from the macro arguments (e.g. `#[test_case("class", "generics")]` → a test whose name embeds `class_generics`).
-Use `cargo test -- --list` to find the exact generated name before running one directly.
+A `#[test_case(...)]` test's name embeds its arguments, so `#[test_case("class", "generics")]` contains `class_generics`.
+Use `--list` to find the exact name.
 
 ### Git hooks
 
@@ -113,94 +111,49 @@ Cross-check against `tests/`, where each unimplemented feature carries an `ignor
 
 ## Architecture
 
-The pipeline for a single file is: `String` → **parse** → `AST` → **check** → typed AST (`ASTTy`) →
-**generate** → `Core` → `String` (Python). Each stage lives in its own top-level module under `src/`, and each
-has its own README worth reading before making non-trivial changes there (`src/parse/README.md`,
-`src/check/README.md`, `src/generate/README.md`).
+The pipeline is `String` → **parse** → `AST` → **check** → `ASTTy` → **backend** → output.
+`src/README.md` gives the overview, and each stage has its own README:
 
-- **`src/parse`**: `lex/` tokenizes source into a `Vec<Token>`. The parser (`expression.rs`, `statement.rs`,
-  `class.rs`, `definition.rs`, `control_flow_*.rs`, `collection.rs`, `call.rs`, `operation.rs`, `ty.rs`, etc.)
-  walks tokens via a `TokenIterator` and builds an `AST` (`parse/ast`), where each node carries a `Position` for
-  error reporting.
+- `src/parse/README.md`: lexer and `TokenIterator`-driven parser.
+- `src/check/README.md`: context, constraint generation, unification, and `Name`s.
+- `src/backend/python/README.md`: the default backend, through `PythonCore`.
+- `src/backend/cranelift/README.md`: native code for a small subset.
 
-- **`src/check`**: the type checker, and where most language semantics live. Three phases:
-  1. **Context building** (`check/context`): scans all ASTs (including implicit/explicit imports and built-in
-     Python primitives/stdlib shims under `check/resource/primitive` and `check/resource/std`, which are `.py`
-     files with Mamba-visible signatures) into a `Context` of function/class signatures — this does not type
-     check bodies, only validates signatures are well-formed.
-  2. **Constraint generation** (`check/constrain`): walks the AST plus an environment (tracks variable
-     definition/scope) and the `Context` (tracks class/function existence and signatures) to produce a list of
-     type constraints, noting expected supertype relationships (e.g. an assignment's annotation must be a
-     supertype of the RHS expression).
-  3. **Substitution & unification**: unifies constrained types by comparing `Name`s, checking supertype
-     relationships, and produces a `Position` → `Name` mapping, which is then used to annotate the AST into
-     `ASTTy` (`check/ast`).
-  Type identity is centered on `check/name`: a `Name` is a set of `TrueName`s (a type union); a `TrueName` wraps
-  nullability + mutability flags around a `NameVariant`, which is one of `StringName` (nominal type),
-  `Tuple`, or `Function` (args + return `Name`).
-
-Type identity is centered on `check/name`.
 A `Name` is a set of `TrueName`s, which is a type union.
-A `TrueName` wraps nullability and mutability flags around a `NameVariant`.
-The mutability flag is display-only, and is excluded from `TrueName`'s `PartialEq`, `Hash` and `Ord`, since mutability belongs to a binding rather than to a type.
-A `NameVariant` is one of `StringName` (a nominal type), `Tuple`, or `Function` (arguments plus a return `Name`).
-
-- **`src/common`**: shared types used across all stages, notably `Position` (source spans, used for error
-  messages) and `WithSource`/error-formatting helpers.
-
-- **`src/lib.rs`**: wires the three stages together via `mamba_to_python` (source strings → Python strings) and
-  `transpile_dir` (walks an input directory of `.mamba` files, mirrors the structure into an output directory of
-  `.py` files). `src/cli.rs` defines the `clap` CLI surface; `src/main.rs` is the thin binary entrypoint.
+The mutability flag on a `TrueName` is display-only, and is excluded from `PartialEq`, `Hash` and `Ord`.
+Mutability belongs to a binding, not to a type.
 
 ### Tests
 
-- `tests/parse/{valid,invalid}.rs` and `tests/check/{valid,invalid}.rs`: table-driven tests over fixtures in
-  `tests/resource/{valid,invalid}/<category>/<name>.mamba` (+ a `<name>.py` reference file for valid
-  check tests — see `tests_util::fallable`, which diffs the transpiler's Python AST against the reference file's
-  Python AST, not raw text). `valid`/`invalid` fixtures are separate directory trees under `tests/resource/`.
-- `tests/main.rs`: black-box CLI tests (invokes the built binary via `assert_cmd`) covering input/output
-  directory resolution and error paths.
-- `tests_util` (a separate crate, path-dependency of `mamba`'s dev-dependencies) holds shared test helpers:
-  fixture path resolution, randomized temp output dirs, and the Python-AST-diff assertion logic used by
-  `test_directory`/`test_directory_args`.
-- `tests/README.md`: coverage-archaeology notes — confirmed dead code, which checker branches are gated by
-  Python-stub-file content rather than `.mamba` fixtures, known type-checker gaps found while chasing coverage,
-  and a flaky-test note. Read before assuming an uncovered line is just a missing test.
+- `tests/{parse,check}/{valid,invalid}.rs`: table-driven over `tests/resource/{valid,invalid}/<category>/<name>.mamba`.
+  A valid check fixture has a reference `<name>.py`, compared by Python AST rather than text, see `tests_util::fallable`.
+- `tests/execution.rs`: runs the output of both backends and compares what they print.
+- `tests/main.rs`: black-box CLI tests through `assert_cmd`.
+- `tests_util`: shared helpers, a separate crate.
+- `tests/README.md`: traps, coverage, and known gaps.
+  Read it before un-ignoring a test or chasing an uncovered line.
 
-## Block syntax (post indent/dedent removal)
+## Block syntax
 
-`for`/`while`/`using` bodies always require an explicit `do ... end` block — there is no single-statement
-shorthand for these three (`for a in b do c` is a parse error; it must be `for a in b do c end`). `if`/`then`/
-`else` branches are the exception: each branch is parsed as one `parse_expr_or_stmt`, which accepts either a
-bare single statement/expression or an explicit `do ... end` block (`if a then do ... end else c` is valid).
-A leading newline before a statement/expression is insignificant whitespace and is skipped (see
-`parse_expression`'s and `parse_expr_or_stmt`'s `eat_while(&Token::NL)`) — but a *trailing* newline is still
-usually required as a statement separator inside a block, so constructs that need to look past it for an
-optional following keyword (e.g. `parse_if` scanning past newlines for a possible `else`) must use a
-lookahead-with-rollback helper (`LexIterator::peek_if_skipping`) rather than unconditionally consuming the
-newline, or they'll break "no `else`, followed by more statements in the same block".
+`for`, `while` and `using` bodies always need `do ... end`, as in `for a in b do c end`.
+An `if`/`then`/`else` branch takes either a single statement or a `do ... end` block, via `parse_expr_or_stmt`.
 
-The call-site "handle" construct for a call that may raise is `<expr> ! where <case> ... end`, e.g.
-`f(10) ! where err: MyErr => do ... end end` — the `!` marks the call as fallible and must be consumed before
-looking for `where` (`parse_expr_or_stmt` in `expr_or_stmt.rs`).
+A leading newline is skipped, but a trailing one usually separates statements.
+To look past newlines for an optional keyword, such as `else` after an `if`, use `LexIterator::peek_if_skipping`.
+Consuming the newline instead breaks an `if` without `else` followed by more statements.
+
+A fallible call is handled with `<expr> ! where <case> ... end`, as in `f(10) ! where err: MyErr => do ... end end`.
+`parse_expr_or_stmt` in `expr_or_stmt.rs` consumes the `!` before looking for `where`.
 
 ### Class arguments
 
-Class constructor arguments are always fields, stored on `self` — no `let` prefix (`class X(a: Int)`, not
-`class X(let a: Int)`; `parse_class` in `src/parse/class.rs` rejects the latter). Inside the class body they
-must be accessed via `self.a`, never bare `a` — `self` is bound (typed as the class) while checking a class
-body (`gen_class` in `src/check/constrain/generate/class.rs`), the same way a method's own `self` argument is.
+Class arguments are fields, written without `let`, as `class X(a: Int)`.
+Inside the class they are read as `self.a`, never bare `a`.
+`gen_class` in `src/check/constrain/generate/class.rs` binds `self` while checking the body.
 
-A class body runs once per instance, like a constructor — not once at class-definition time like a real
-Python class body — so `src/generate/convert/class.rs`'s `hoist_constructor_dependent_stmts` moves anything
-that isn't a field/method declaration into a generated `__init__`: a field initializer referencing `self`
-(keeping its class-level slot with `None` in place of the real value) or any other bare statement (e.g.
-`print(self.a)`), unconditionally, whether or not it references `self` — a docstring is the one exception,
-which must stay a literal first statement in the class body. Hoisted statements are then ordered by
-dependency (`order_by_self_field_deps`), not just declaration order — a field can read another hoisted field
-declared later in the body, which would still be `None` at that point otherwise. `get_fields_and_functions`
-in `src/check/context/clss/generic.rs` (context building, runs before any of this) must likewise treat a bare
-statement as "not part of the signature" rather than rejecting it.
+A field initializer that reads `self` runs per instance.
+`hoist_constructor_dependent_stmts` in `src/backend/python/convert/class.rs` moves it into the generated `__init__`.
+`order_by_self_field_deps` then orders those by dependency, not declaration.
 
 ## Definitions: `let` for values, `def` for functions
 

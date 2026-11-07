@@ -66,6 +66,34 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["class"], "redundant_new.mamba" => "1\n")]
 #[test_case(run_via_python, &["class"], "parent_literal_argument.mamba" => "404\n2\n")]
 #[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
+// Match patterns and guards. The AST diff in `tests/check/valid.rs` covers these too, since the
+// move to `ruff_python_parser`, but these assert on what the output actually does when run.
+#[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba" => "on the y axis\non the x axis\noff both axes\n")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba" => "yes\nno\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => "negative\npositive\nzero\n")]
+#[test_case(run_via_python, &["control_flow"], "match_first_arm_wins.mamba" => "positive\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_falls_through.mamba" => "big\nmedium\nsmall\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_calls_function.mamba" => "even\nodd\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_literal_pattern.mamba" => "zero and flagged\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_wildcard.mamba" => "over\nunder\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_reads_outer.mamba" => "under\nover\n")]
+#[test_case(run_via_python, &["control_flow"], "match_compound_guard.mamba" => "single digit\nout of range\nzero\n")]
+#[test_case(run_via_python, &["control_flow"], "match_literal_str.mamba" => "hi\ncya\n?\n")]
+#[test_case(run_via_python, &["control_flow"], "match_negative_int_literal.mamba" => "minus one\nzero\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_literals.mamba" => "all zero\nflat\nother\n")]
+#[test_case(run_via_python, &["control_flow"], "match_in_for_body.mamba" => "zero\none\nmany\n")]
+#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => "in arm\n1\n")]
+#[test_case(run_via_python, &["control_flow"], "match_partial_pattern_restores_outer.mamba" => "fallback\n1\n")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcards_on_different_types.mamba" => "1\n2\n")]
+#[test_case(run_via_python, &["control_flow"], "shadow_in_sibling_blocks.mamba" => "2\ns\n1\n")]
+#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => "11\n")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcard_only.mamba" => "always\n")]
+#[test_case(run_via_python, &["control_flow"], "match_subject_is_call.mamba" => "three\n")]
+#[test_case(run_via_python, &["control_flow"], "match_arm_body_block.mamba" => "4\n")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => "safe\n")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => "origin\nright of the axis, at height 7\nleft of the axis, at height 7\n")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_pattern.mamba" => "x!\nsmall\n")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_shadows_argument.mamba" => "5\n")]
 fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
     run(dirs, file).unwrap()
 }
@@ -84,7 +112,7 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 /// Those reasons match the ones on the same fixture in `tests/check/valid.rs`.
 /// Where only a line or two is unimplemented, that line is commented out in the fixture instead,
 /// so the rest still runs and the intent is still on record.
-#[test_case("ackermann" => ignore["match case guards (`case if <cond> =>`) not implemented"])]
+#[test_case("ackermann" => "9\n")]
 #[test_case("builtin_trait" => ignore["@ decorator syntax and meta trait/external impl for a built-in type not implemented"])]
 #[test_case("class" => "")]
 #[test_case("class_associated_function" => "1.0\n")]

@@ -1,0 +1,10 @@
+# A guard is an ordinary expression, so it may combine conditions
+def pure band(x: Int) -> Str := match x where
+    n if n > 0 and n < 10 => "single digit"
+    n if n >= 10 or n < 0 => "out of range"
+    _                     => "zero"
+end
+
+print(band(5))
+print(band(50))
+print(band(0))

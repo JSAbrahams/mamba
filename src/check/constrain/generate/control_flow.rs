@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::{generate, Constrained};
@@ -26,6 +26,10 @@ pub fn gen_flow(
             let (raises, errs): (Vec<Result<_, _>>, Vec<Result<_, _>>) = cases
                 .iter()
                 .map(|c| match &c.node {
+                    // A handle case becomes a Python `except`, which has nowhere to put a guard.
+                    Node::Case {
+                        guard: Some(guard), ..
+                    } => Err(TypeErr::new(guard.pos, "Handle case cannot have a guard")),
                     Node::Case { cond, .. } => match &cond.node {
                         Node::ExpressionType { ty: Some(ty), .. } => TrueName::try_from(ty)
                             .map_err(|errs| errs.first().expect("At least one").clone()),
@@ -100,6 +104,7 @@ pub fn gen_flow(
 
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
+            cases.iter().try_for_each(check_no_annotation)?;
             let outer_env = generate(cond, env, ctx, constr)?;
             constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)
         }
@@ -134,7 +139,7 @@ pub fn gen_flow(
 fn constrain_cases(
     ast: &AST,
     expr: &Option<AST>,
-    cases: &Vec<AST>,
+    cases: &[AST],
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
@@ -143,32 +148,43 @@ fn constrain_cases(
     constr.branch_point();
 
     let mut envs = vec![];
-    for case in cases {
+    for (i, case) in cases.iter().enumerate() {
         match &case.node {
-            Node::Case { cond, body } => {
-                constr.branch("match arm", case.pos);
+            Node::Case { cond, guard, body } => {
+                branch_unless_first(i, case, constr);
                 check_no_rest(cond)?;
+                let cond = &distinct_wildcards(cond);
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
+                tie_pattern_to_subject(expr, cond, env, &cond_env, constr);
 
-                if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
-                    if let Some(expr) = &expr {
-                        constr.add(
-                            "arm body",
-                            &Expected::from(expr),
-                            &Expected::from(cond),
-                            env,
-                        );
-                    }
+                // Generated after the pattern is tied to the subject, and in the environment the
+                // pattern produced, so the guard can read what the pattern bound.
+                if let Some(guard) = guard {
+                    let guard_env = cond_env.is_def_mode(false);
+                    constr.add_constr(
+                        &Constraint::truthy("match arm guard", &Expected::from(guard)),
+                        &guard_env,
+                    );
+                    generate(guard, &guard_env, ctx, constr)?;
                 }
 
                 let body_env = generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
-                envs.push(body_env);
-                let exp_body = Expected::from(body);
-                constr.add("arm body", &exp_body, &Expected::from(ast), env);
-
+                let (exp_body, exp_match) = (Expected::from(body), Expected::from(ast));
+                add_across_envs(
+                    "arm body",
+                    (&exp_body, &body_env),
+                    (&exp_match, env),
+                    constr,
+                );
                 if env.is_expr {
-                    constr.add("arm body and outer", &Expected::from(ast), &exp_body, env);
+                    add_across_envs(
+                        "arm body and outer",
+                        (&exp_match, env),
+                        (&exp_body, &body_env),
+                        constr,
+                    );
                 }
+                envs.push(body_env);
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")]),
         }
@@ -179,10 +195,100 @@ fn constrain_cases(
     Ok(env.clone())
 }
 
+/// Open a new constraint set for every arm after the first, as an `if` does for its `else`.
+///
+/// The first arm stays in the enclosing set, so code after the match learns the match's type.
+fn branch_unless_first(i: usize, case: &AST, constr: &mut ConstrBuilder) {
+    if i > 0 {
+        constr.branch("match arm", case.pos);
+    }
+}
+
+/// Give every `_` in a pattern a name of its own, for constraint generation only.
+///
+/// Unification identifies an expression by its value, not its position, so every `_` in a program would otherwise be one type.
+/// Two matches on different types, each with a `_` arm, would then conflict.
+/// The name holds an `@`, so no program can write or read it.
+fn distinct_wildcards(pattern: &AST) -> AST {
+    let node = match &pattern.node {
+        Node::Underscore => Node::Id {
+            lit: format!("_@{}:{}", pattern.pos.start.line, pattern.pos.start.pos),
+        },
+        Node::Tuple { elements } => Node::Tuple {
+            elements: elements.iter().map(distinct_wildcards).collect(),
+        },
+        Node::ExpressionType { expr, mutable, ty } => Node::ExpressionType {
+            expr: Box::from(distinct_wildcards(expr)),
+            mutable: *mutable,
+            ty: ty.clone(),
+        },
+        other => other.clone(),
+    };
+    AST::new(pattern.pos, node)
+}
+
+/// Give a match pattern the type of the subject it is matched against.
+///
+/// The subject is read in the outer environment and the pattern in the one it binds into.
+/// A pattern name that shadows an outer one, such as `(m, n)` in a function taking `m` and `n`, then refers to the new binding.
+fn tie_pattern_to_subject(
+    subject: &Option<AST>,
+    cond: &AST,
+    env: &Environment,
+    cond_env: &Environment,
+    constr: &mut ConstrBuilder,
+) {
+    let (Some(subject), Node::ExpressionType { expr: pattern, .. }) = (subject, &cond.node) else {
+        return;
+    };
+
+    let (subject, pattern) = (Expected::from(subject), Expected::from(pattern.as_ref()));
+    add_across_envs(
+        "match pattern",
+        (&subject, env),
+        (&pattern, cond_env),
+        constr,
+    );
+}
+
+/// Constrain `parent >= child`, reading each side's names in its own environment.
+///
+/// [ConstrBuilder::add] maps both sides through one environment, so each side is mapped up front instead.
+fn add_across_envs(
+    msg: &str,
+    (parent, parent_env): (&Expected, &Environment),
+    (child, child_env): (&Expected, &Environment),
+    constr: &mut ConstrBuilder,
+) {
+    let parent = parent.map_exp(&parent_env.var_mapping, &constr.var_mapping);
+    let child = child.map_exp(&child_env.var_mapping, &constr.var_mapping);
+    constr.add_constr_map(
+        &Constraint::new(msg, &parent, &child),
+        &parent_env.var_mapping,
+        true,
+    );
+}
+
+/// Reject a type annotation on a match case.
+///
+/// Only a handle case gives it a meaning, the exception type it catches.
+fn check_no_annotation(case: &AST) -> Constrained<()> {
+    let Node::Case { cond, .. } = &case.node else {
+        return Ok(());
+    };
+    let Node::ExpressionType { ty: Some(ty), .. } = &cond.node else {
+        return Ok(());
+    };
+
+    Err(vec![TypeErr::new(
+        ty.pos,
+        "A match case cannot have a type annotation",
+    )])
+}
+
 /// Reject a `..` in a match case, which is where it is meant to go next.
 ///
-/// A case that is not a plain identifier is not walked at all, so a `..` in one never reaches
-/// [generate]. Allowing `(2, ..)` later means matching on the elided elements here.
+/// Allowing `(2, ..)` later means matching on the elided elements here.
 fn check_no_rest(ast: &AST) -> Constrained<()> {
     match &ast.node {
         Node::Rest => Err(vec![TypeErr::new(

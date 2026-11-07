@@ -250,8 +250,16 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
                 newline_delimited(cases, ind + 1)
             )
         }
-        PythonCore::Case { expr, body } => {
-            format!("case {}: {}", to_py(expr, ind), newline_if_body(body, ind))
+        PythonCore::Case { expr, guard, body } => {
+            let guard = guard
+                .as_ref()
+                .map_or_else(String::new, |guard| format!(" if {}", to_py(guard, ind)));
+            format!(
+                "case {}{}: {}",
+                to_py(expr, ind),
+                guard,
+                newline_if_body(body, ind)
+            )
         }
         PythonCore::KeyValue { key, value } => {
             format!("{}: {}", to_py(key, ind), to_py(value, ind))

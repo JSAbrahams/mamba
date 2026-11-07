@@ -1,0 +1,14 @@
+# Two sibling blocks may each shadow the same outer name, with a type of their own
+let n := 1
+
+if True then do
+    let n := 2
+    print(n)
+end
+
+if True then do
+    let n := "s"
+    print(n)
+end
+
+print(n)

@@ -1,0 +1,9 @@
+# The first arm whose pattern and guard both hold wins, even when a later arm also matches
+def pure classify(x: Int) -> Str := match x where
+    n if n > 0 => "positive"
+    1          => "one"
+    _          => "other"
+end
+
+print(classify(1))
+print(classify(0))

@@ -145,9 +145,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # a branch is one expr-or-stmt, so it may be a bare statement or a "do ... end" block
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
     match            ::= "match" expression match-cases
-    match-cases      ::= "where" { match-case } "end"
+    match-cases      ::= "where" match-case { match-case } "end"
     # the type annotation names the error a handle case catches, as in `err: MyErr => ...`
-    match-case       ::= [ "mut" ] expression [ ":" type ] "=>" expr-or-stmt
+    # the guard is checked after the pattern matches, so it can read what the pattern bound
+    match-case       ::= [ "mut" ] expression [ ":" type ] [ "if" expression ] "=>" expr-or-stmt
     
     control-flow-stmt::= while | foreach | "break" | "continue"
     while            ::= "while" expression code-block

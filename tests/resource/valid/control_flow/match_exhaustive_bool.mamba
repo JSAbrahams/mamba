@@ -1,0 +1,8 @@
+# Covering both Bool literals is exhaustive, so no catch-all arm is needed
+def pure label(b: Bool) -> Str := match b where
+    True  => "yes"
+    False => "no"
+end
+
+print(label(True))
+print(label(False))

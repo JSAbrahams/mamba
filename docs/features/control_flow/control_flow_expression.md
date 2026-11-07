@@ -47,39 +47,70 @@ An example would be:
 ### Match Expressions (or Statements)
 
 A `match` can be used to match based on the value of an expression.
-We can even match based on the type of the returned expression.
 
 A `match` has the form:
 
     match <expression> where <one-or-more-cases> end
 
-Where each case has the form `<expression> => <expression or statement>`.
+Where each case has the form `<expression> [ if <guard> ] => <expression or statement>`.
 An example would be (if `b` is a number):
 
     match b where
         1 => print("one")
         4 => print("four")
         5 => print("five")
+        _ => print("anything else")
     end
 
-We can also add a default case:
+The last arm is the default case.
+`_` matches one thing and binds nothing.
 
-    match b where
-        1 => print("one")
-        4 => print("four")
-        5 => print("five")
-        _ => print("this is executed if we didn't match with any other")
+#### Every `match` must be exhaustive
+
+Every possible value of the matched expression must be covered by some arm.
+This holds whether the `match` is used as an expression or as a statement.
+This is also to avoid confusing situations where users have to reason about whether a match is an expression or statement.
+
+There are two ways to cover every value.
+The first is a default arm, which is an arm whose pattern always matches.
+That is `_`, a bare name, or a tuple whose elements all always match.
+The second is to write out every value of a type that has finitely many:
+
+    def label(b: Bool) -> Str := match b where
+        True  => "yes"
+        False => "no"
     end
 
-A `match` is an expression if:
+`Bool` has exactly two values, and both are covered, so no default arm is needed.
 
-- Every `match` arm returns an `<expression>` (not a `<statement>`).
-  An expression must evaluate to a value, whereas a statement doesn't.
-- There is a match arm for every situation.
-This can be achieved by either exhaustively covering every possible value, or by having a default arm.
+_Note_ Exhaustiveness is not checked yet.
 
-So, a `match` _expression_ has the form:
+#### Tuple patterns
 
-    match <expression> where <one-or-more-cases> end
+A tuple pattern matches element by element.
+A literal compares, and a name binds to the element in its place, with that element's type:
 
-With the additional requirement that every case evaluates to a value, and that we have an arm for every possible value of a given input type.
+    def quadrant(point: (Int, Int)) -> Str := match point where
+        (0, 0) => "origin"
+        (x, y) => "at height {y}"
+    end
+
+A pattern name may shadow an outer one, and then refers to the element within its arm.
+After the `match`, the outer name holds its own value again.
+
+#### Guards
+
+An arm may carry a guard, which is an extra condition checked after the pattern matches:
+
+    def sign(x: Int) -> Str := match x where
+        n if n < 0 => "negative"
+        n if n > 0 => "positive"
+        _          => "zero"
+    end
+
+The guard is checked after the pattern, so it can read what the pattern bound.
+Here `n` is bound by the pattern and then tested by the guard.
+A guard is an expression and must evaluate to a `Bool`.
+
+A `match` is an expression if every arm returns an `<expression>` rather than a `<statement>`.
+An expression evaluates to a value, whereas a statement does not.

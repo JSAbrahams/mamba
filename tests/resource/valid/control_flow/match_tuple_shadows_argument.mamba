@@ -1,0 +1,6 @@
+# A tuple pattern name may shadow an argument, and then has the type of its element, not of the argument
+def pure add_pair(m: Str, p: (Int, Int)) -> Int := match p where
+    (m, n) => m + n
+end
+
+print(add_pair("ignored", (2, 3)))

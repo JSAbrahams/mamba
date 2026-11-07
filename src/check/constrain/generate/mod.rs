@@ -111,7 +111,13 @@ pub fn generate(
         #[cfg(feature = "imports")]
         Import { .. } => Ok(env.clone()),
 
-        Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => Ok(env.clone()),
+        Underscore if env.is_def_mode => Ok(env.clone()),
+        Underscore => Err(vec![TypeErr::new(
+            ast.pos,
+            "'_' binds nothing, so it cannot be read",
+        )]),
+
+        Generic { .. } | Parent { .. } | DocStr { .. } => Ok(env.clone()),
     }
 }
 

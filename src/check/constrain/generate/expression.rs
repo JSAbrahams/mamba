@@ -99,6 +99,6 @@ fn match_id(
                 )])
             }
         }
-        _ => Ok(env.clone()),
+        _ => generate(ast, env, ctx, constr),
     }
 }

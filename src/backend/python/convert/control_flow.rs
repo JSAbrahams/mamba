@@ -71,23 +71,28 @@ pub fn convert_cntrl_flow(
 
             let mut cases = vec![];
             for case in match_cases {
-                if let NodeTy::Case { cond, body } = &case.node {
+                if let NodeTy::Case { cond, guard, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         let body_core = convert_node(body.as_ref(), imp, state, ctx)?;
+                        let pattern_state =
+                            state.is_last_must_be_ret(false).must_assign_to(None, None);
+                        let guard = guard
+                            .as_ref()
+                            .map(|guard| {
+                                convert_node(guard.as_ref(), imp, &pattern_state, ctx)
+                                    .map(Box::from)
+                            })
+                            .transpose()?;
                         cases.push(PythonCore::Case {
-                            expr: Box::from(convert_node(
-                                expr.as_ref(),
-                                imp,
-                                &state.is_last_must_be_ret(false).must_assign_to(None, None),
-                                ctx,
-                            )?),
+                            expr: Box::from(convert_node(expr.as_ref(), imp, &pattern_state, ctx)?),
+                            guard,
                             body: Box::from(scope_guarded(body.as_ref(), body_core)),
                         })
                     }
                 }
             }
 
-            PythonCore::Match { expr, cases }
+            pattern_guarded(match_cases, PythonCore::Match { expr, cases }, state)
         }
         NodeTy::While { cond, body } => {
             let while_core = PythonCore::While {
@@ -133,6 +138,46 @@ pub fn convert_cntrl_flow(
 /// handled when *it* is converted) doesn't leak or overwrite an outer variable of the same name
 /// once this block exits. `body` runs at most once here (an `if`/`case` branch), so the guard can
 /// wrap `core` itself directly -- contrast [`wrap_scoped`], used where the body is a loop.
+/// Keep the names a match's patterns bind from escaping the match.
+///
+/// Python binds a capture pattern in the enclosing scope, before the arm body runs, and a pattern that fails partway can leave names bound too.
+/// So the names are saved before the whole match and restored after it.
+/// A match that must return leaves the function from every arm, so nothing after it can see the names.
+fn pattern_guarded(cases: &[ASTTy], core: PythonCore, state: &State) -> PythonCore {
+    if state.is_last_must_be_ret {
+        return core;
+    }
+
+    let mut names = vec![];
+    cases
+        .iter()
+        .for_each(|case| case_pattern_names(case, &mut names));
+    wrap_scoped(&names, core)
+}
+
+fn case_pattern_names(case: &ASTTy, names: &mut Vec<String>) {
+    let NodeTy::Case { cond, .. } = &case.node else {
+        return;
+    };
+    let NodeTy::ExpressionType { expr, .. } = &cond.node else {
+        return;
+    };
+    pattern_names(expr, names);
+}
+
+/// The names a pattern binds, which is every identifier in it other than a literal such as `None`.
+fn pattern_names(pattern: &ASTTy, names: &mut Vec<String>) {
+    match &pattern.node {
+        NodeTy::Id { lit } if is_capture(lit) && !names.contains(lit) => names.push(lit.clone()),
+        NodeTy::Tuple { elements } => elements.iter().for_each(|e| pattern_names(e, names)),
+        _ => {}
+    }
+}
+
+fn is_capture(lit: &str) -> bool {
+    !matches!(lit, "None" | "True" | "False")
+}
+
 pub(super) fn scope_guarded(body: &ASTTy, core: PythonCore) -> PythonCore {
     wrap_scoped(&direct_def_names(body), core)
 }

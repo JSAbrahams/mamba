@@ -37,7 +37,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                     let mut except = Vec::new();
                     for case in cases {
                         let (cond, body) = match &case.node {
-                            NodeTy::Case { cond, body } => (cond, body),
+                            NodeTy::Case { cond, body, .. } => (cond, body),
                             other => {
                                 let msg = format!("Expected case, was {other:?}");
                                 return Err(Box::from(UnimplementedErr::new(case, &msg)));

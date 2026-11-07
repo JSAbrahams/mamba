@@ -214,6 +214,7 @@ pub enum PythonCore {
     },
     Case {
         expr: Box<PythonCore>,
+        guard: Option<Box<PythonCore>>,
         body: Box<PythonCore>,
     },
     Ternary {

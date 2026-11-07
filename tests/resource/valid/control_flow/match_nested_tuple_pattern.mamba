@@ -1,0 +1,8 @@
+# A nested tuple pattern binds every name, at any depth, with the type of its element
+def pure describe(p: ((Int, Str), Int)) -> Str := match p where
+    ((a, s), b) if a + b > 3 => s + "!"
+    _                        => "small"
+end
+
+print(describe(((1, "x"), 5)))
+print(describe(((1, "x"), 1)))

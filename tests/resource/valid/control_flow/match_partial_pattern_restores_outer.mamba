@@ -1,0 +1,10 @@
+# Python can bind n while matching (n, 0) against (5, 1), even though the pattern then fails.
+# The outer n must still hold its own value after the match.
+let n := 1
+
+match (5, 1) where
+    (n, 0) => print("never")
+    _      => print("fallback")
+end
+
+print(n)

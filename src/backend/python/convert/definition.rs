@@ -47,8 +47,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             } else {
                 let expr = match (&var, expr) {
                     (_, Some(expr)) => match convert_node(expr, imp, &state, ctx)? {
-                        PythonCore::IfElse { .. } | PythonCore::Match { .. } => {
-                            // redo convert but with assign to state
+                        core if assigns_in_branches(expr, &core) => {
                             let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
                             return convert_node(expr, imp, &state, ctx);
                         }
@@ -166,6 +165,14 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }
+}
+
+/// Whether a definition's value is a statement, so must be assigned within each of its branches.
+///
+/// A match always is, even when it is wrapped in the guard that keeps its pattern names from leaking.
+/// An if only is when it did not become a ternary.
+fn assigns_in_branches(expr: &ASTTy, core: &PythonCore) -> bool {
+    matches!(expr.node, NodeTy::Match { .. }) || matches!(core, PythonCore::IfElse { .. })
 }
 
 #[cfg(test)]

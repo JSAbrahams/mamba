@@ -118,6 +118,9 @@ impl Environment {
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
+    ///
+    /// The rename comes from `var_mapping`, the builder's global one, which the caller has just advanced.
+    /// Counting up from this environment instead would give two sibling scopes that shadow the same name the same rename, and so the same type.
     pub fn insert_var(
         &self,
         mutable: bool,
@@ -130,10 +133,10 @@ impl Environment {
             .collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
-        let offset = if let Some(offset) = self.var_mapping.get(var) {
-            *offset + 1
-        } else if let Some(offset) = var_mapping.get(var) {
+        let offset = if let Some(offset) = var_mapping.get(var) {
             *offset
+        } else if let Some(offset) = self.var_mapping.get(var) {
+            *offset + 1
         } else {
             0_usize
         };

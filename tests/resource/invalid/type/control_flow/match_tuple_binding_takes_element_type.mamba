@@ -1,0 +1,4 @@
+# s is bound to the first element, a Str, so it cannot be returned as an Int
+def f(p: (Str, Int)) -> Int := match p where
+    (s, n) => s
+end

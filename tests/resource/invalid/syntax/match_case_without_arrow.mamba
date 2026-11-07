@@ -1,0 +1,4 @@
+# a match case needs '=>' between its pattern and its body
+match 10 where
+    0 1
+end

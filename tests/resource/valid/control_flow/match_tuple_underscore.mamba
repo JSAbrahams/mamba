@@ -1,0 +1,10 @@
+# '_' in a pattern matches one thing and binds nothing
+def pure on_axis(point: (Int, Int)) -> Str := match point where
+    (0, _) => "on the y axis"
+    (_, 0) => "on the x axis"
+    _      => "off both axes"
+end
+
+print(on_axis((0, 5)))
+print(on_axis((5, 0)))
+print(on_axis((5, 5)))

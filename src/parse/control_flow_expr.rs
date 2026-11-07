@@ -3,7 +3,7 @@ use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{expected_one_of, ParseResult};
+use crate::parse::result::{custom, expected_one_of, ParseResult};
 use crate::parse::ty::parse_type;
 
 pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
@@ -53,7 +53,6 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "match", start)?;
     it.eat_while(&Token::NL);
     it.eat(&Token::Where, "match")?;
-    it.eat_while(&Token::NL);
     let cases = it.parse_vec(&parse_match_cases, "match", start)?;
     let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
 
@@ -62,6 +61,7 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
+    it.eat_while(&Token::NL);
     let mut cases = vec![];
     it.peek_while_not_token(&Token::End, &mut |it, _| {
         cases.push(*it.parse(
@@ -73,18 +73,23 @@ pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
         Ok(())
     })?;
 
-    it.eat(&Token::End, "match cases")?;
+    let end = it.eat(&Token::End, "match cases")?;
+    if cases.is_empty() {
+        return Err(Box::from(custom("Expected at least one case", end)));
+    }
     Ok(cases)
 }
 
 fn parse_match_case(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match case")?;
     let cond = it.parse(&parse_expression_maybe_type, "match case", start)?;
+    let guard = it.parse_if(&Token::If, &parse_expression, "match case guard", start)?;
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", start)?;
 
     let node = Node::Case {
         cond,
+        guard,
         body: body.clone(),
     };
     Ok(Box::from(AST::new(start.union(body.pos), node)))
@@ -167,6 +172,7 @@ mod test {
                         Node::Case {
                             cond: cond1,
                             body: expr1,
+                            ..
                         },
                     ..
                 },
@@ -175,6 +181,7 @@ mod test {
                         Node::Case {
                             cond: cond2,
                             body: expr2,
+                            ..
                         },
                     ..
                 },
