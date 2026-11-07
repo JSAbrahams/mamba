@@ -2,14 +2,8 @@
     <link rel="icon" type="image/x-icon" href="image/logo.ico">
 </head>
 
-<p align="center"><i>
-The documentation is currently outdated.
-There are some examples in the README of the original project.
-We are currently in the process of updating the documentation here however!
-</i></p>
-
 <p align="center">
-    <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE"><img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/></a>
+    <a href="https://github.com/JSAbrahams/mamba/blob/main/LICENSE"><img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/></a>
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
 </p>
  

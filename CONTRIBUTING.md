@@ -228,5 +228,5 @@ For all the below, every merge is preceded by a Pull Request.
 - New featuers branch off and are merged with the development branch.
 - Large features get their own branch, and sub-features branch from this branch and are merged with this branch, before the feature branch is merged with develop.
 - Once develop has amassed enough features for a new release, we new branch is created where a release is staged ( e.g. `v0.3.1`).
-- Once approved, the new feature branch is merged with master.
+- Once approved, the new feature branch is merged with main.
 - The new merged release is tagged, and a new release is published on GitHub and published to [Cargo](https://crates.io/crates/mamba).

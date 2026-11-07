@@ -212,7 +212,7 @@ Check those for concrete syntax before assuming behavior from the grammar spec a
 
 ## Contribution conventions
 
-- PRs target `develop`, not `main`/`master` (see `CONTRIBUTING.md`); `main` is release-only.
+- PRs target `develop`, not `main` (see `CONTRIBUTING.md`); `main` is release-only.
 - Keep `Cargo.toml` dependencies alphabetically sorted (`cargo sort`).
 
 ### Git is off limits unless asked
