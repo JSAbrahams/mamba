@@ -84,7 +84,7 @@ To use such a function, we must explicitly cast a `Composer`:
 
     let chopin := Composer("Chopin")
 
-    if chopin isa DeadComposer then do
+    if is_instance(chopin, DeadComposer) then do
         let years_ago := my_function(chopin)                    # chopin is dynamically casted to a DeadComposer
         print("{chopin.name} died {years_ago} years ago.")
     end
@@ -224,11 +224,11 @@ During casting, the defined conditions are checked, and the respective error is 
     let y: EvenNum := random_int()
     let third := g(y)
 
-    # We can also use isa to check that the conditions hold without raising an error
+    # We can also use is_instance to check that the conditions hold without raising an error
     let a := random_int()
     # notice how we don't have to cast a to an EvenNum if the condition holds.
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
-    let fourth := if a isa EvenNum then g(a) else 0
+    let fourth := if is_instance(a, EvenNum) then g(a) else 0
 
     # If it can be statically verified that the properties hold, it is not necessary to handle any type specific errors
     let c := 2
@@ -263,7 +263,7 @@ We can even ensure that the function never returns an error:
     def h(x: EvenNum) -> EvenNum := do
         print("this number is even: {x}")
         let y := x + some_other_function(x)
-        if y isa EvenNum then
+        if is_instance(y, EvenNum) then
             y # type sensitive flow ensure that this is an EvenNum
         else x
     end
@@ -299,13 +299,8 @@ In the branch where it fails, it narrows to the complement, where that complemen
 This is also why `is_instance` is a function the compiler knows about rather than an ordinary call.
 An ordinary call returns a `Bool` and tells the checker nothing about its argument.
 
-So far every example has narrowed on an `if`.
-Facts reach a point from three places.
-The first is the branches of an `if`.
-The second is the guard on a `match` arm, which holds for that arm's body.
-The third is the negated guards of every earlier arm, which hold for every later one, because a later arm is only reached when all the earlier ones failed.
-
-That third source is the one that does the most work:
+Facts come from three places: the branches of an `if`, the guard of a `match` arm, and the negated guards of every earlier arm.
+A later arm is only reached when all earlier ones failed, and that third source does the most work:
 
     def classify(x: Str?) -> Str := match x where
         n if n = None => "nothing"
@@ -348,10 +343,9 @@ For the three arms above:
 | `if n = 0` | `m` in `[1..]` | `m - 1` is `Nat` | `[1..] - 1` is `[0..]` |
 | catch-all | `m, n` in `[1..]` | `m - 1`, `n - 1` are `Nat` | same, for each |
 
-One detail decides whether this works at all.
-Negating `m = 0` gives a disequality, and a range cannot represent "everything except zero".
-It narrows here only because `Int` is discrete, so `m >= 0` together with `m != 0` gives `m >= 1`.
-A disequality against a range endpoint has to be handled for that step, or Ackermann silently fails to narrow and the feature does nothing for the one example that motivates it.
+Negating `m = 0` gives `m != 0`, which a range cannot represent.
+It narrows only because `Int` is discrete, so `m >= 0` and `m != 0` give `m >= 1`.
+Without handling a disequality at a range endpoint, Ackermann does not narrow at all.
 
 Ranges are not relational.
 A range records what is known about one value against constants.
@@ -373,8 +367,6 @@ The checker either discharges the obligation or reports the one it could not, na
 
     Cannot prove 'm - 1' is Nat
       m is in [1..] here, from Nat and from 'm = 0' failing on the arm above
-
-Both sections above are future work.
 
 **Further reading:**
 

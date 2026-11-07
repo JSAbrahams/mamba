@@ -1,5 +1,5 @@
 # A guard may sit on a wildcard, which binds nothing but still matches
-def threshold := 5
+let threshold := 5
 
 def pure over(x: Int) -> Str := match x where
     _ if x > threshold => "over"

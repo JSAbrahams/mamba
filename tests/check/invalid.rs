@@ -78,7 +78,7 @@ use mamba::parse::ast::AST;
 #[test_case("control_flow", "match_not_exhaustive" => ignore matches Err(_) ; "a match must cover every case")]
 #[test_case("control_flow", "match_stmt_not_exhaustive" => ignore matches Err(_) ; "a match must be exhaustive even as a statement")]
 #[test_case("control_flow", "match_guard_not_exhaustive" => ignore matches Err(_) ; "a guarded arm can always fail, so it never makes a match exhaustive")]
-#[test_case("control_flow", "match_rest_not_last" => ignore matches Err(_) ; "'..' stands for the elided tail, so it only reads as one at the end")]
+#[test_case("control_flow", "match_rest_not_last" => matches Err(_) ; "'..' stands for the elided tail, so it only reads as one at the end")]
 #[test_case("control_flow", "handle_case_guard" => matches Err(_) ; "a handle becomes a Python except, which has nowhere to put a guard")]
 #[test_case("control_flow", "handle_case_without_type" => matches Err(_) ; "a handle case must name the exception type it catches")]
 #[test_case("control_flow", "match_guard_undefined_var" => matches Err(_))]

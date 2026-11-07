@@ -119,8 +119,8 @@ Also note that:
 - A value is bound with `let` and a function is defined with `def`, so the first word of a definition says which it is.
   See [docs/features/data/defining_variables.md](docs/features/data/defining_variables.md#why-let-and-def) for why.
 - Code blocks are denoted using `do` and `end` because this is a list of statements and expressions that gets executed _in order_.
-- For a match expression or statement we denote cases starting with `where` and ending with `end`, as this is a _set_ of cases which we match on.
-  You can read `match x where ... end`, where we read this as "match `x` on this set of conditions in `where ... end`".
+- The cases of a `match` sit between `where` and `end`, because they are a _set_ of cases to match on.
+  Read `match x where ... end` as "match `x` on this set of cases".
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
 
@@ -188,13 +188,13 @@ However, indexing is still done using `(` and `)`:
 
 ```mamba
 # lists
-def a := [0, 2, 51]
-def b := ["list", "of", "strings"]
-def empty_list := []
+let a := [0, 2, 51]
+let b := ["list", "of", "strings"]
+let empty_list := []
 # lists, builder syntax
-def a_positive := [x | x in a, x > 0]
+let a_positive := [x | x in a, x > 0]
 # lists of tuples, builder syntax binding more than one variable, not resolved yet
-# def ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
+# let ab := [(x, y) | x in a, x > 0, y in b, b != "of" ]
 
 # Indexing is done using round brackets!
 print(a(0)) # prints '0'
@@ -370,8 +370,8 @@ We can change the relevant parts of the above example to use a class constant:
 
 ```mamba
 class Point2D(x_0: Int, y_0: Int) where
-    def mut x: Int := self.x_0
-    def mut y: Int := self.y_0
+    let mut x: Int := self.x_0
+    let mut y: Int := self.y_0
 
     def move(mut self, dx: Int, dy: Int) := do
         self.x := self.x + dx

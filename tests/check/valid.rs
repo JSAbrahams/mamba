@@ -117,7 +117,7 @@ use test_case::test_case;
 #[test_case("definition", "tuple_annotated_element_type")]
 #[test_case("definition", "tuple_nested")]
 #[test_case("definition", "identifier_sqrt")]
-#[test_case("definition", "f_strings" => ignore["cannot nest strings: #481"])]
+#[test_case("definition", "f_strings")]
 #[test_case("definition", "collection_in_f_strings")]
 #[test_case("definition", "assign_with_if")]
 #[test_case("definition", "assign_with_if_different_types" => ignore["annotating output reveals bug in check stage"])]

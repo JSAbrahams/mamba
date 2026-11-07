@@ -64,7 +64,7 @@ use mamba::parse::result::ParseResult;
 #[test_case("readme_example", "error_handling_early_exit")]
 #[test_case("readme_example", "error_handling_result_type" => ignore["explicit Result[...] type not implemented, and a nested generic argument such as Union[...] does not parse"])]
 #[test_case("readme_example", "error_handling_handle_subset")]
-#[test_case("readme_example", "error_handling" => ignore["match case cannot bind an error's constructor arguments yet (err: Type(args))"])]
+#[test_case("readme_example", "error_handling")]
 #[test_case("readme_example", "factorial_dynamic")]
 #[test_case("readme_example", "factorial")]
 #[test_case("readme_example", "impl_trait" => ignore["`def <Trait> for <Class> where ...` external-implementation syntax not implemented"])]

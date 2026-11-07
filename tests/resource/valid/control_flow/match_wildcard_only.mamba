@@ -1,5 +1,5 @@
 # A lone wildcard arm matches anything
-def a := match "anything" where
+let a := match "anything" where
     _ => "always"
 end
 

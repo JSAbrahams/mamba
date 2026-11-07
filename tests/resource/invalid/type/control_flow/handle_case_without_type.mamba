@@ -3,6 +3,6 @@ class MyErr(msg: Str): Exception(msg)
 
 def f() -> Int ! MyErr := 10
 
-def a := f() ! where
+let a := f() ! where
     err => 0
 end

@@ -70,7 +70,7 @@ The last arm is the default case.
 
 Every possible value of the matched expression must be covered by some arm.
 This holds whether the `match` is used as an expression or as a statement.
-This is also to avoid confusing situations where users have to reason about whether a match is and expression or statement.
+This is also to avoid confusing situations where users have to reason about whether a match is an expression or statement.
 
 There are two ways to cover every value.
 The first is a default arm, which is an arm whose pattern always matches.
@@ -83,6 +83,8 @@ The second is to write out every value of a type that has finitely many:
     end
 
 `Bool` has exactly two values, and both are covered, so no default arm is needed.
+
+_Note_ Exhaustiveness is not checked yet, and tuple patterns do not bind their names yet.
 
 #### Guards
 
