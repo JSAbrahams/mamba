@@ -2,3 +2,5 @@
 channel = "1.97.1"
 profile = "minimal"
 components = ["rustfmt", "clippy"]
+# The WebAssembly module of the playground, see src/wasm.rs and .github/workflows/release.yml.
+targets = ["wasm32-unknown-unknown"]

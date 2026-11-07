@@ -29,12 +29,7 @@ Each unimplemented feature also carries an `ignore[...]` reason at its `test_cas
 
 ## Coverage
 
-Use the same exclusions as CI, from `.github/workflows/coverage.yml`:
-
-```sh
-cargo llvm-cov --package mamba --lcov --output-path target/lcov.info \
-  --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\.rs$'
-```
+`devbox run coverage` measures it with the same exclusions as CI.
 
 The goal is 100% outside thin plumbing files: `main.rs`, `io.rs`, and the `result.rs` error-formatting modules.
 

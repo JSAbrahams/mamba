@@ -1,0 +1,4 @@
+def f(x: Int) -> Int := x
+
+let b := (f(1) +
+print(b)

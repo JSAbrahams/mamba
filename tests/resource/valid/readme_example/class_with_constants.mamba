@@ -7,7 +7,7 @@ class Point2D(ORIGIN_X: Int, ORIGIN_Y: Int) where
         self.y := self.y + dy
     end
 
-    # Unlike the matrix before, reset resets this point to the value it was when it was instantiated.
+    # Reset moves this point back to where it was when it was made.
     def reset(mut self) := do
         self.x := self.ORIGIN_X
         self.y := self.ORIGIN_Y

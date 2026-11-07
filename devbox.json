@@ -13,6 +13,9 @@
 
     "actionlint@latest",
 
+    "wasm-bindgen-cli_0_2_130@0.2.130",
+    "binaryen@133",
+
     "python@3.14.4",
 
     "clang@latest",
@@ -89,9 +92,15 @@
       "fi"
     ],
     "scripts": {
-      "build": "cargo build",
-      "test": "cargo test --package mamba",
-      "test-ci": "cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci",
+      "build": "cargo build --features cli",
+      "build-wasm": [
+        "cargo build --target wasm32-unknown-unknown --no-default-features --features wasm --release",
+        "rm -rf target/wasm-pkg",
+        "wasm-bindgen target/wasm32-unknown-unknown/release/mamba.wasm --target no-modules --out-name mamba --no-typescript --out-dir target/wasm-pkg",
+        "wasm-opt -Oz target/wasm-pkg/mamba_bg.wasm -o target/wasm-pkg/mamba_bg.wasm"
+      ],
+      "test": "cargo test --package mamba --features cli",
+      "test-ci": "cargo nextest run --package mamba --features cli --config-file .config/nextest.toml --profile ci",
       "lint": [
         "cargo fmt --all -- --check",
         "cargo clippy --all-features --all-targets -- -D warnings",
@@ -99,10 +108,10 @@
         "actionlint"
       ],
       "coverage": [
-        "cargo llvm-cov --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
+        "cargo llvm-cov --features cli --lcov --output-path ./target/lcov.info --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
       ],
       "coverage-json": [
-        "cargo llvm-cov --summary-only --json --output-path ./target/cov.json --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
+        "cargo llvm-cov --features cli --summary-only --json --output-path ./target/cov.json --ignore-filename-regex '(^|/)tests?/.*|(^|/)tests_util/.*|.*_tests\\.rs$'"
       ],
       "precommit": [
         "cargo fmt --all -- --check",

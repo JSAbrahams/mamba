@@ -47,19 +47,8 @@ This README:
 
 ## 🧑‍💻 Quickstart for developers 👨‍💻
 
-The quickest way to get a complete environment is to use [Devbox](https://www.jetify.com/devbox).
-It sets up all the tooling for you.
-Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`.
-The CI also runs this same environment, so what passes locally is what passes in CI.
-
-**We recommend developing on a Unix-like system, meaning Linux or macOS.**
-That is what gives you Nix, and therefore allows use of Devbox.
-On Windows, use [WSL](https://learn.microsoft.com/windows/wsl/install) and follow the Linux instructions inside it.
-Developing on plain Windows is supported on a best-effort basis: the test suite does run there in CI, but you install the toolchain yourself, and the more niche corners are likelier to differ.
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the details.
-
-Devbox is a thin layer over the [Nix](https://nixos.org/) package manager.
-This means **Nix needs to be installed first**:
+The quickest way to a complete environment is [Devbox](https://www.jetify.com/devbox), a thin layer over the [Nix](https://nixos.org/) package manager.
+Everything is declared in [`devbox.json`](./devbox.json) and pinned in `devbox.lock`, and CI runs the same environment.
 
 ```sh
 # 1. Install Nix, in case you do not have it
@@ -70,21 +59,8 @@ curl -fsSL https://get.jetify.com/devbox | bash
 devbox shell
 ```
 
-The first `devbox shell` takes a while, as it downloads every pinned package.
-Afterwards it is near-instant.
-Entering the shell also points `git` at the project's hooks (`.githooks`).
-You therefore get the pre-commit checks automatically.
-
-A more minimal setup, to just get started:
-
-```sh
-# Install rustup (if you don't have it already), which is the rust toolchain manager
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-Alternatively, check out <https://www.rust-lang.org/tools/install>, e.g. if on a system with no `curl`.
-
-To get more elaboration, see the tooling documentation in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Then `devbox run build`, `devbox run test` and the other scripts build and test Mamba.
+[CONTRIBUTING.md](./CONTRIBUTING.md) lists them, and covers Windows and working without Devbox.
 
 ## ⌨️ Code Examples
 
@@ -876,6 +852,92 @@ We prefer writing our own boilerplate, or depending on rust crates, over dependi
 The reasoning is that we want to reduce external dependencies, and more importantly, that this arguably improves the educational value this crate provides (for the author).
 Having to (re)-implement difficult compilation problems which have been solved in the past (and there are _many_, including edge cases) increases our exposure to them.
 
+## 📦 Using Mamba
+
+Mamba comes in three forms, all from this one crate:
+
+1. **A library crate**, the pure compiler: text in, Python or assembly out, and errors as data.
+2. **The `mamba` binary**, which compiles files and directories, and links executables.
+3. **A WebAssembly module**, `mamba.js` and `mamba_bg.wasm`, which runs the compiler in a browser.
+
+### Features
+
+**There are no default features.**
+A plain `mamba` dependency is only the pure compiler, without filesystem, command line or linker.
+Everything else is opt-in:
+
+| Feature   | Adds                                                                                   | Implies           |
+|-----------|----------------------------------------------------------------------------------------|-------------------|
+| (none)    | `compile`, `compile_str`, `version`, and `Diagnostic` with `render`                    |                   |
+| `native`  | `mamba::io`: read sources from disk, write `.py` files, link an executable with `cc`   |                   |
+| `serde`   | `Serialize` and `Deserialize` for diagnostics                                          |                   |
+| `cli`     | the `mamba` binary                                                                     | `native`, `serde` |
+| `wasm`    | the JavaScript bindings of `src/wasm.rs`                                               | `serde`           |
+| `imports` | the type checker accepts `import`, which is not part of the language yet               |                   |
+
+### As a library
+
+```sh
+cargo add mamba                     # the pure compiler
+cargo add mamba --features native   # or: also compile directories on disk
+```
+
+```rust
+use mamba::{compile_str, Options, Output, RenderStyle};
+
+let source = "let b: Int := \"hello\"\n";
+match compile_str(source, &Options::default()) {
+    Ok(python) => println!("{python}"),
+    Err(diagnostics) => {
+        for diagnostic in diagnostics {
+            eprintln!("{}", diagnostic.render(source, RenderStyle::Ansi));
+        }
+    }
+}
+
+let asm = compile_str("print(1 + 2)\n", &Options::new(Output::Asm { target: None }));
+```
+
+A `Diagnostic` is data: its stage, message, and labelled spans as lines and columns, and as byte offsets.
+A span may be empty, as at the end of a line or of the source.
+`render` turns it into text that quotes the code it points at.
+
+### As a binary
+
+```sh
+cargo install mamba --features cli
+mamba -i src -o target
+```
+
+From a checkout, `cargo run --features cli -- -i <input>` does the same.
+
+Each GitHub release also has the binary, as `mamba-<target>.tar.gz`, or `mamba-<target>.zip` on Windows.
+The targets are `x86_64-unknown-linux-musl`, which runs on any x86_64 Linux, `aarch64-apple-darwin` and `x86_64-pc-windows-msvc`.
+macOS does not run a binary downloaded with a browser until `xattr -d com.apple.quarantine mamba` clears its quarantine.
+
+### As WebAssembly
+
+Each GitHub release has `mamba.js` and `mamba_bg.wasm` attached, built by `.github/workflows/release.yml`, and the SHA-256 of all its files, in `SHA256SUMS` and in its notes.
+They are made for a plain `<script>` tag:
+
+```html
+<script src="mamba.js"></script>
+<script>
+  wasm_bindgen({ module_or_path: "mamba_bg.wasm" }).then(() => {
+    const result = wasm_bindgen.compile("print(1 + 2)", { output: "python" });
+    if (result.ok) console.log(result.text);
+    else result.diagnostics.forEach((diagnostic) => console.error(diagnostic.rendered));
+  });
+</script>
+```
+
+`compile(source, { output: "python" | "asm", target, annotate })` gives `{ ok: true, text }` or `{ ok: false, diagnostics }`.
+`version()` gives the version of Mamba.
+The version is what `git describe --tags` gave at build time, such as `v0.3.6` on a tag or `v0.3.6-12-g3f2a1bc` after one.
+Built without git or without tags, as from crates.io, it is the version in `Cargo.toml`.
+`mamba::version()` and `mamba --version` give the same.
+To build them yourself, `devbox run build-wasm` writes them to `target/wasm-pkg/`.
+
 ## 💻 The Command Line Interface
 
 ```
@@ -884,20 +946,25 @@ Transpile Mamba to Python code, compile it to a native binary, or print its asse
 Usage: mamba [OPTIONS]
 
 Options:
-  -i, --input <INPUT>    Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
-  -o, --output <OUTPUT>  Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with `--asm`, which always prints to stdout instead of writing a file
-      --python           Output Python source (the default)
-      --bin              Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported:literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
-      --asm              Compile via the Cranelift backend and print the resulting disassembly to stdout, instead of outputting Python source or linking an executable. No file is written -- pipe stdout (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help). Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own disassembler doesn't support switching to Intel syntax
-      --target <TARGET>  Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`/`--asm`; defaults to the host triple)
-  -v...                  Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
-  -d, --debug            Add line numbers to log statements
-      --no-module-path   Disable the module path in the log statements
-      --no-color         Disable colorized output
-  -l, --level            Print log level
-  -a, --annotate         Enable type annotation of the output source. Currently still buggy feature
-  -h, --help             Print help (see more with '--help')
+  -i, --input <INPUT>                Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
+  -o, --output <OUTPUT>              Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with `--asm`, which always prints to stdout instead of writing a file
+      --python                       Output Python source (the default)
+      --bin                          Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported: literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
+      --asm                          Compile via the Cranelift backend and print the resulting disassembly to stdout, instead of outputting Python source or linking an executable. No file is written -- pipe stdout (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help). Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own disassembler doesn't support switching to Intel syntax
+      --target <TARGET>              Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`/`--asm`; defaults to the host triple)
+  -v...                              Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
+  -d, --debug                        Add line numbers to log statements
+      --no-module-path               Disable the module path in the log statements
+      --no-color                     Disable colorized output, of both the log and the errors. Colour is also off when stderr is not a terminal, or when the NO_COLOR environment variable is set
+      --error-format <ERROR_FORMAT>  How to print errors: `human`, text with the code they point at, or `json`, one JSON object per line [default: human] [possible values: human, json]
+  -l, --level                        Print log level
+  -a, --annotate                     Enable type annotation of the output source. Currently still buggy feature
+  -h, --help                         Print help (see more with '--help')
+  -V, --version                      Print version
 ```
+
+Errors are printed with the code they point at, in colour when stderr is a terminal.
+`--error-format json` prints one JSON object per error instead, with the same fields as the WebAssembly module gives.
 
 You can type `mamba -help` for a message containing roughly the above information.
 

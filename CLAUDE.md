@@ -6,52 +6,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Mamba is a statically-typed, Python-like language.
 This repo is its transpiler, written in Rust, which turns `.mamba` files into Python 3.
-The crate is a library (`src/lib.rs`) and the `mamba` CLI (`src/main.rs`).
+The crate is a library (`src/lib.rs`), the `mamba` CLI (`src/main.rs`), and a WebAssembly module (`src/wasm.rs`).
+It has no default features: the plain library is the pure compiler, without filesystem, CLI or linker.
+`native` adds `src/io.rs`, `cli` builds the binary, `wasm` the JavaScript bindings, and `serde` serializes diagnostics.
+Errors leave the crate as a `Diagnostic` (`src/diagnostic.rs`), built from the error types of the core.
+`build.rs` sets the version, `MAMBA_VERSION`, from `git describe --tags`, and falls back to the version in `Cargo.toml`.
 
 ## Commands
 
-The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json`.
-Versions are pinned in `devbox.lock`.
-Devbox is a layer over Nix.
-It supplies the Rust toolchain, Python 3.14, and the cargo helpers the hooks and CI call.
-`devbox shell` enters the environment.
-`devbox run -- <cmd>` runs a single command in it.
-The cargo commands below assume you are inside that environment.
-`devbox.json` also defines named scripts, such as `devbox run lint` and `devbox run precommit`.
-See CONTRIBUTING.md for those.
-
-```sh
-cargo build                       # build the transpiler
-cargo run -- -i <input> -o <out>  # run the CLI directly (see src/cli.rs for all flags)
-cargo test --package mamba        # run the full test suite (matches CI)
-cargo fmt --all -- --check        # check formatting (CI enforces this)
-cargo clippy --all-features --all-targets -- -D warnings  # lint (CI enforces this, treats warnings as errors)
-```
-
-CI runs the suite with [nextest](https://nexte.st/) rather than `cargo test`.
-To reproduce a CI test run exactly:
-
-```sh
-cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
-```
+The dev environment is [Devbox](https://www.jetify.com/devbox), configured by `devbox.json` and pinned in `devbox.lock`.
+`devbox shell` enters it, and `devbox run -- <cmd>` runs one command in it.
+Build, test, lint and coverage are named scripts in `devbox.json`, such as `devbox run test`, `devbox run lint` and `devbox run build-wasm`.
+CI runs the same scripts.
+CONTRIBUTING.md lists them, and says which pins must change in pairs, such as Python and the wasm-bindgen CLI.
+Every command that builds the binary or runs its tests needs `--features cli`; the scripts pass it.
 
 CI's clippy step passes `--all-targets`.
 Lints are therefore enforced in test code too, not just in the library and binary.
 That covers `#[cfg(test)]` modules and the integration tests under `tests/`.
 
-Running the test suite requires a `python3` on `PATH`.
-That is `python3.14` on Linux, `python3` on macOS, and `python` on Windows.
-See `tests_util/src/lib.rs` for the exact names.
-The requirement exists because generated Python output is validated with `python -m py_compile`.
-Devbox pins `python@3.14.4` for this.
-If you change the version there, change `tests_util::PYTHON` and `check::context::python::PYTHON_VERSION` to match.
-The latter is the version `ruff_python_parser` parses as, both for the stub files and for the AST diff in `tests_util`.
+The test suite runs the generated Python, with the interpreter Devbox pins; `tests_util::PYTHON` names it per platform.
 
 To run a single test:
 
 ```sh
-cargo test --package mamba <test_name>            # e.g. cargo test transpile_src_in_dir
-cargo test --package mamba -- --list               # list all test names, including test_case-expanded ones
+cargo test --package mamba --features cli <test_name>   # e.g. cargo test --features cli transpile_src_in_dir
+cargo test --package mamba --features cli -- --list     # list all test names, including test_case-expanded ones
 ```
 
 A `#[test_case(...)]` test's name embeds its arguments, so `#[test_case("class", "generics")]` contains `class_generics`.
@@ -65,9 +45,8 @@ Hooks live in `.githooks/` (not `.git/hooks/`) and are opt-in:
 git config core.hooksPath .githooks
 ```
 
-The `pre-commit` hook runs several checks.
-These are `cargo fmt --check`, `cargo check --tests --all` in debug and release, `cargo sort --check`, `cargo clippy --all-targets -D warnings` in debug and release with all features, and `cargo check --benches`.
-`cargo sort --check` is there because Cargo.toml dependencies must stay alphabetically sorted.
+The `pre-commit` hook runs the checks of `devbox run precommit`.
+`cargo sort --check` is among them, because Cargo.toml dependencies must stay alphabetically sorted.
 The `commit-msg` hook enforces Conventional-Commits-style subject lines.
 The form is `<type>: <summary>`.
 `<type>` is one of `doc test feat fix style refactor revert git chore perf build ci cd deploy security`.
@@ -129,7 +108,9 @@ Mutability belongs to a binding, not to a type.
   A valid check fixture has a reference `<name>.py`, compared by Python AST rather than text, see `tests_util::fallable`.
 - `tests/execution.rs`: runs the output of both backends and compares what they print.
   The expected output is in `<name>.stdout`, beside the fixture, never inline in the test attribute.
-- `tests/main.rs`: black-box CLI tests through `assert_cmd`.
+- `tests/main.rs`: black-box CLI tests, run through `CARGO_BIN_EXE_mamba`, so only with `--features cli`.
+- `tests/api.rs`: the library API, and diagnostics as data.
+  Tests check the stage and span of a `Diagnostic`, never its rendered text.
 - `tests_util`: shared helpers, a separate crate.
 - `tests/README.md`: traps, coverage, and known gaps.
   Read it before un-ignoring a test or chasing an uncovered line.
@@ -231,7 +212,7 @@ Check those for concrete syntax before assuming behavior from the grammar spec a
 
 ## Contribution conventions
 
-- PRs target `develop`, not `main`/`master` (see `CONTRIBUTING.md`); `main` is release-only.
+- PRs target `develop`, not `main` (see `CONTRIBUTING.md`); `main` is release-only.
 - Keep `Cargo.toml` dependencies alphabetically sorted (`cargo sort`).
 
 ### Git is off limits unless asked

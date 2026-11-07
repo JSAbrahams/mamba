@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ main, develop ]
   pull_request:
   release:
     types: [ published ]
@@ -76,10 +76,34 @@ jobs:
         run: rustc --version && cargo --version
 
       - name: Build
-        run: cargo build
+        run: cargo build --features cli
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
 
       - name: Run tests
-        run: cargo nextest run --package mamba --config-file .config/nextest.toml --profile ci
+        run: cargo nextest run --package mamba --features cli --config-file .config/nextest.toml --profile ci
+
+  # The pure library must build for the browser, without the filesystem, the CLI or the linker.
+  # release.yml builds the same thing and packages it for the playground.
+  wasm:
+    environment: development
+    runs-on: ubuntu-latest
+    name: wasm32-unknown-unknown, Devbox
+
+    steps:
+      # The tags are needed: build.rs takes the version from `git describe --tags`.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          enable-cache: 'true'
+
+      - name: Build the library without default features
+        run: devbox run -- cargo build --no-default-features
+
+      - name: Build the WebAssembly module
+        run: devbox run build-wasm

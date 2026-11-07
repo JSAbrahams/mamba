@@ -9,6 +9,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 - ```( a | b | ... )``` = a or b or ...
 - ```[ ... ]``` = zero or one
 - ```{ ... }``` = zero or more
+- ```'"'``` = a terminal that holds a double quote, so it is in single quotes
 
 ```ebnf
     file             ::= { expr-or-stmt }
@@ -83,7 +84,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     list-builder     ::= "[" expression "|" expression { "," [ newline ] expression } "]"
     map              ::= "{" expression "=>" expression "," "}"
                       | "{" expression "=>" expression { "," [ newline ] expression "=>" expression } "}"
-    map-builder      ::= "{ expression "=>" expression | expression { "," [ newline ] expression } }
+    map-builder      ::= "{" expression "=>" expression "|" expression { "," [ newline ] expression } "}"
       
     range            ::= expression ( ".." | "..=" ) expression
     
@@ -130,12 +131,26 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # "?" is the null-coalescing operator: `a ? b` is `a` unless it is None, then `b`
     boolean-logic    ::= "and" | "or" | "?"
     
-    literal          ::= number | string
+    # the lexer and parser read "True", "False" and "None" as identifiers, so they are not keywords
+    # the type checker gives them their meaning: "True" and "False" are a Bool, and "None" is undefined
+    literal          ::= number | string | "True" | "False" | "None"
+    # a number has no sign: in "-1" the "-" is a prefix operator
+    # a digit is an ASCII digit, and "E" is upper case only
     number           ::= real | integer | e-notation
-    real             ::= integer "." integer | "." integer | integer "."
-    integer          ::= { digit }
-    e-notation       ::= ( integer | real ) "E" [ "-" ] integer
-    string           ::= """ { character } """
+    # a "." directly followed by a second "." starts a range instead, so "1..5" holds no real
+    # there is no real without an integer part: ".5" does not lex as one
+    real             ::= integer "." { digit }
+    integer          ::= digit { digit }
+    # the lexer takes the exponent as digits only, and it may be empty
+    # so "1E" is 1, and "1E-5" lexes as "1E" "-" "5"
+    e-notation       ::= ( integer | real ) "E" { digit }
+    # a string ends at the first double quote that is neither escaped by a backslash nor inside "{" and "}"
+    # between "{" and "}" is an expression, which is interpolated
+    string           ::= '"' { character } '"'
+    # three quotes on each side; the lexer reads it as three strings, of which the outer two are empty
+    # so its text ends at the first double quote, and it is not interpolated
+    # the parser takes it wherever it takes a statement, and the type checker allows it in a class body only first
+    docstring        ::= '"""' { character } '"""'
     
     code-block       ::= "do" expr-or-stmt { newline expr-or-stmt } "end" 
     code-set         ::= "where" expr-or-stmt { newline expr-or-stmt } "end"

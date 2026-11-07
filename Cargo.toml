@@ -12,30 +12,73 @@ repository = "https://github.com/JSAbrahams/mamba"
 keywords = ["python", "transpiler", "compiler"]
 categories = ["parsing"]
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "mamba"
+path = "src/main.rs"
+required-features = ["cli"]
+
 [features]
+# There are no default features: the plain crate is the pure compiler, without filesystem, CLI or linker.
+default = []
 # Imports are not part of the language, so the type checker rejects them by default.
 # The grammar and the Python backend still handle them, and this feature makes the checker accept them again.
 imports = []
+# Read and write files, compile whole directories, detect the host ISA, and link executables with `cc`.
+native = [
+    "dep:cranelift-native",
+    "dep:glob",
+    "dep:pathdiff",
+    "dep:tempfile",
+    "cranelift-codegen/all-native-arch",
+]
+# Serialize diagnostics.
+serde = ["dep:serde"]
+# The `mamba` command line interface: `cargo install mamba --features cli`.
+cli = [
+    "native",
+    "serde",
+    "dep:ansi_term",
+    "dep:clap",
+    "dep:loggerv",
+    "dep:serde_json",
+]
+# WebAssembly bindings for JavaScript, see src/wasm.rs.
+wasm = ["serde", "dep:serde-wasm-bindgen", "dep:wasm-bindgen"]
 
 [dependencies]
-ansi_term = "0.12.1"   # Colors in the terminal
-clap = { version = "4.5.40", features = ["derive"] } # Compiler frontend
-cranelift-codegen = { version = "0.114.0", features = ["all-native-arch"] } # Machine code IR, instruction selection and register allocation
+ansi_term = { version = "0.12.1", optional = true } # Colors in the terminal
+clap = { version = "4.5.40", features = ["derive"], optional = true } # Compiler frontend
+# Machine code IR, instruction selection and register allocation.
+# No default features: `timing` reads the clock, which panics on wasm32-unknown-unknown.
+cranelift-codegen = { version = "0.114.0", default-features = false, features = ["arm64", "std", "unwind", "x86"] }
 cranelift-frontend = "0.114.0" # Build Cranelift IR function bodies (SSA construction)
 cranelift-module = "0.114.0" # Function/data declaration shared across Cranelift backends
-cranelift-native = "0.114.0" # Detect the host target when --target is not given
-cranelift-object = "0.114.0" # Emit a native object file from compiled Cranelift IR
-glob = "0.3.0"          # Make traversing directories (Mamba projects) easier
+cranelift-native = { version = "0.114.0", optional = true } # Detect the host target when --target is not given
+cranelift-object = "0.114.0" # Emit an object file from compiled Cranelift IR, also the module behind --asm
+glob = { version = "0.3.0", optional = true } # Make traversing directories (Mamba projects) easier
 itertools = "0.8.2"     # Tools to make iterating over collections easier
 log = "0.4"             # Log frontend
-loggerv = "0.7"         # Logger which accepts -vvv flag
-pathdiff = "0.1.0"      # Traverse directories (Mamba projects)
+loggerv = { version = "0.7", optional = true } # Logger which accepts -vvv flag
+pathdiff = { version = "0.1.0", optional = true } # Traverse directories (Mamba projects)
 ruff_python_ast = "0.0.13" # Python AST nodes, and range-insensitive AST comparison
 ruff_python_parser = "0.0.13" # Parse Python, both in tests and to generate Mamba IR
+serde = { version = "1.0.229", features = ["derive"], optional = true } # Diagnostics as data
+serde-wasm-bindgen = { version = "0.6.5", optional = true } # Pass diagnostics to JavaScript as plain objects
+serde_json = { version = "1.0.151", optional = true } # --error-format json
 target-lexicon = "0.12.16" # Parse a --target triple for the Cranelift backend
-tempfile = "3.1.0"      # Stage object files before linking them into a --bin executable
+tempfile = { version = "3.1.0", optional = true } # Stage object files before linking them into a --bin executable
+# Must match the wasm-bindgen CLI exactly, which devbox.json pins.
+wasm-bindgen = { version = "=0.2.130", optional = true }
 
 [dev-dependencies]
-assert_cmd = "0.10"     # Assert commands work
+serde_json = "1.0.151"  # Round-trip diagnostics in tests
 test-case = "3.3.1"     # Parameterize tests
 tests_util = { path = "./tests_util" }
+
+[[test]]
+name = "main"
+path = "tests/main.rs"
+required-features = ["cli"]

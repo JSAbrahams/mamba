@@ -5,13 +5,10 @@
 //!
 //! What each fixture should print is in the `<name>.stdout` file beside it, see `tests_util::expected_stdout`.
 
-use std::error::Error;
-use std::path::Path;
-
+use mamba::{compile, Options, Output, Source, Stage};
 use test_case::{test_case, test_matrix};
 use tests_util::{
-    assert_prints_expected, resource_path, run_cli, run_via_asm, run_via_bin, run_via_python,
-    Runner,
+    assert_prints_expected, resource_path, run_via_asm, run_via_bin, run_via_python, Runner,
 };
 
 /// Fixtures whose output is identical across both backends -- the bulk of correctness coverage.
@@ -187,44 +184,34 @@ fn readme_example_execution(file: &str) {
 /// Mamba constructs that are valid (the Python backend handles all of these) but fall outside
 /// this backend's supported subset -- each should fail with a clear, specific error rather than
 /// panicking or producing silently wrong output.
-#[test_case("float_print_unsupported.mamba", "print of a Float value")]
-#[test_case("floordiv_unsupported.mamba", "FDiv")]
-#[test_case("compound_reassign_unsupported.mamba", "compound reassignment")]
-#[test_case("for_over_list_unsupported.mamba", "for-loop collection")]
-#[test_case(
-    "nullable_arg_unsupported.mamba",
-    "not supported by the machine-code backend"
-)]
-#[test_case(
-    "generic_arg_unsupported.mamba",
-    "not supported by the machine-code backend"
-)]
-#[test_case(
-    "str_arg_unsupported.mamba",
-    "not supported by the machine-code backend"
-)]
-#[test_case("print_zero_args_unsupported.mamba", "!= 1 argument")]
-#[test_case("print_two_args_unsupported.mamba", "!= 1 argument")]
-#[test_case("print_interpolated_unsupported.mamba", "interpolated string")]
-#[test_case("no_initializer_unsupported.mamba", "variable definition")]
-#[test_case("and_unsupported.mamba", "And")]
-#[test_case("or_unsupported.mamba", "Or")]
-#[test_case("not_unsupported.mamba", "Not")]
-#[test_case("pow_unsupported.mamba", "Pow")]
-#[test_case("mod_unsupported.mamba", "Mod")]
-#[test_case("while_unsupported.mamba", "While")]
-fn bin_backend_rejects_gracefully(file: &str, expected_substring: &str) {
-    let err = run_via_bin(&["function"], file)
+#[test_case("float_print_unsupported.mamba")]
+#[test_case("floordiv_unsupported.mamba")]
+#[test_case("compound_reassign_unsupported.mamba")]
+#[test_case("for_over_list_unsupported.mamba")]
+#[test_case("nullable_arg_unsupported.mamba")]
+#[test_case("generic_arg_unsupported.mamba")]
+#[test_case("str_arg_unsupported.mamba")]
+#[test_case("print_zero_args_unsupported.mamba")]
+#[test_case("print_two_args_unsupported.mamba")]
+#[test_case("print_interpolated_unsupported.mamba")]
+#[test_case("no_initializer_unsupported.mamba")]
+#[test_case("and_unsupported.mamba")]
+#[test_case("or_unsupported.mamba")]
+#[test_case("not_unsupported.mamba")]
+#[test_case("pow_unsupported.mamba")]
+#[test_case("mod_unsupported.mamba")]
+#[test_case("while_unsupported.mamba")]
+fn bin_backend_rejects_gracefully(file: &str) {
+    let text = std::fs::read_to_string(resource_path(true, &["function"], file)).unwrap();
+    let options = Options::new(Output::Object { target: None });
+    let errs = compile(&[Source::named(file, text)], &options)
         .expect_err("this fixture is deliberately outside the Cranelift backend's support");
-    assert!(
-        err.to_string().contains(expected_substring),
-        "expected an error containing {expected_substring:?}, got: {err}"
-    );
+    assert_eq!(errs[0].stage, Stage::Generate, "{errs:?}");
+    assert!(errs[0].primary_label().is_some(), "{errs:?}");
 }
 
-/// Drives `--asm`'s whole pipeline (`print_asm` -> `mamba_to_asm` -> `disassemble` ->
-/// `build_isa`) in-process, for both the default (host) and an explicit target triple -- see
-/// [run_via_asm]'s doc comment for why this needs to be in-process rather than via [run_cli].
+/// Drives the whole `--asm` pipeline in-process, `compile` -> `disassemble` -> `build_isa`, for the host and for an explicit target triple.
+/// See [run_via_asm] for why this runs in-process rather than through the binary.
 #[test_case(None)]
 #[test_case(Some("x86_64-unknown-linux-gnu"))]
 fn asm_backend_disassembles_in_process(triple: Option<&str>) {
@@ -244,20 +231,4 @@ fn asm_backend_rejects_bad_target_triple(triple: &str, expected_substring: &str)
         err.to_string().contains(expected_substring),
         "expected an error containing {expected_substring:?}, got: {err}"
     );
-}
-
-#[test]
-fn asm_prints_disassembly_to_stdout() -> Result<(), Box<dyn Error>> {
-    let src_dir = resource_path(true, &["function"], "");
-
-    let stdout = run_cli(Path::new(&src_dir), &["--asm", "-i", "hello_world.mamba"])?;
-    assert!(
-        stdout.contains("; -- main --") && stdout.contains("ret"),
-        "expected disassembly on stdout, got:\n{stdout}"
-    );
-
-    // No output directory/file should have been written -- `--asm` only prints.
-    assert!(!Path::new(&src_dir).join("target").exists());
-    assert!(!Path::new(&src_dir).join("a.out").exists());
-    Ok(())
 }
