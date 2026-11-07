@@ -911,6 +911,10 @@ mamba -i src -o target
 
 From a checkout, `cargo run --features cli -- -i <input>` does the same.
 
+Each GitHub release also has the binary, as `mamba-<target>.tar.gz`, or `mamba-<target>.zip` on Windows.
+The targets are `x86_64-unknown-linux-musl`, which runs on any x86_64 Linux, `aarch64-apple-darwin` and `x86_64-pc-windows-msvc`.
+macOS does not run a binary downloaded with a browser until `xattr -d com.apple.quarantine mamba` clears its quarantine.
+
 ### As WebAssembly
 
 Each GitHub release has `mamba.js` and `mamba_bg.wasm` attached, built by `.github/workflows/release.yml`, and the SHA-256 of all its files, in `SHA256SUMS` and in its notes.

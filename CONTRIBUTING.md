@@ -139,7 +139,7 @@ Use `@latest` for incidental tooling.
 Two pins have to be changed in pairs, because something outside Devbox also reads them:
 
 - **`rustc`/`cargo`/`rustfmt`/`clippy` must match `rust-toolchain.toml`.**
-  Devbox covers Linux and macOS, but the Windows CI job installs the toolchain with rustup, which reads `rust-toolchain.toml`.
+  Devbox covers Linux and macOS, but the Windows CI job and the release binaries install the toolchain with rustup, which reads `rust-toolchain.toml`.
   Contributors not using Devbox read it too.
   If the two drift apart, `devbox shell` prints a warning on entry, and Windows silently builds with a different compiler than everyone else.
 - **`wasm-bindgen-cli` must match the `wasm-bindgen` crate in `Cargo.toml`.**
@@ -177,8 +177,10 @@ The workflows call the same named scripts you run locally, so the two cannot dri
 | `lint.yml` | ubuntu | `devbox run lint` |
 | `coverage.yml` | ubuntu | `devbox run coverage` |
 | `release.yml` | ubuntu | `devbox run build-wasm`, then uploads the module to the release; then the SHA-256 of every file of the release, as `SHA256SUMS` and in its notes |
+| `release.yml` | ubuntu, macOS, windows | rustup, then `cargo build --release --features cli`, and uploads the `mamba` binary to the release |
 
-Windows is the one exception, for the reason given above: Nix does not run there, so that job installs the toolchain natively.
+Windows is one exception, for the reason given above: Nix does not run there, so that job installs the toolchain natively.
+The release binaries are the other: a binary built with Nix looks for its libraries in `/nix/store`, so each is built with rustup on its own OS.
 This is also why `rust-toolchain.toml` has to stay in step with the version Devbox pins.
 
 `devbox run lint` includes [actionlint](https://github.com/rhysd/actionlint) over these workflow files, so a mistake in CI configuration is caught locally rather than on push.

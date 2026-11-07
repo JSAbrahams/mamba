@@ -46,12 +46,72 @@ jobs:
         working-directory: target/wasm-pkg
         run: gh release upload "$TAG" mamba.js mamba_bg.wasm --clobber
 
+  # The `mamba` binary, to download and run locally: mamba-<target>.tar.gz, or .zip on Windows.
+  # The names have no version, so releases/latest/download/<name> always links the newest.
+  binaries:
+    if: github.event_name == 'release'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Static, so it runs on any x86_64 Linux.
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+    name: Binary, ${{ matrix.target }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ matrix.target }}
+
+    steps:
+      # The tags are needed: build.rs takes the version from `git describe --tags`.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # psm, which ruff_python_parser needs, compiles C, so a static build needs a C compiler for musl.
+      - name: Install a C compiler for musl
+        if: endsWith(matrix.target, '-musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      # Not Devbox: a binary built with Nix looks for its libraries in /nix/store, which whoever downloads it does
+      # not have. rustup reads the version from rust-toolchain.toml, as in the Windows job of test.yml.
+      - name: Install Rust from rust-toolchain.toml
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add "$TARGET"
+
+      - name: Build
+        run: cargo build --release --locked --features cli --target "$TARGET"
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        working-directory: target/${{ matrix.target }}/release
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then
+            archive="mamba-$TARGET.zip"
+            7z a "$archive" mamba.exe
+          else
+            archive="mamba-$TARGET.tar.gz"
+            tar -czf "$archive" mamba
+          fi
+          gh release upload "$TAG" "$archive" --clobber
+
   # The SHA-256 of every file of every release, so that whoever downloads one can check it, and so that a site
   # that runs the module can be told apart from one that built its own: as SHA256SUMS among the files, and in
   # the notes of the release, in a section that is written anew each time.
   checksums:
-    needs: wasm
-    if: ${{ always() && (needs.wasm.result == 'success' || needs.wasm.result == 'skipped') }}
+    needs: [ wasm, binaries ]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     name: Checksums
     env:
