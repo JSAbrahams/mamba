@@ -1,9 +1,5 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
 
 use ruff_python_ast::{PythonVersion, Stmt};
 use ruff_python_parser::{Mode, ParseOptions};
@@ -33,8 +29,11 @@ pub fn python_stmts(python_src: &str) -> TypeResult<Vec<Stmt>> {
     Ok(module.into_suite().into_iter().collect())
 }
 
+/// Collect the classes, fields and functions of the given Python stubs.
+///
+/// Each stub is a file name, used only to tell them apart, and its source.
 pub fn python_files(
-    python_dir: &Path,
+    stubs: &[(&str, &str)],
 ) -> TypeResult<(
     HashSet<GenericClass>,
     HashSet<GenericField>,
@@ -43,32 +42,8 @@ pub fn python_files(
     let mut types = HashSet::new();
     let (mut fields, mut functions) = (HashSet::new(), HashSet::new());
 
-    let entries = fs::read_dir(python_dir)
-        .map_err(|io_err| TypeErr::new_no_pos(io_err.to_string().as_str()))?;
-
-    for entry in entries {
-        let path = entry
-            .map_err(|err| TypeErr::new_no_pos(err.to_string().as_str()))?
-            .path();
-        // A stub directory also holds things that are not Python source: a `__pycache__`
-        // directory the moment anything runs the interpreter over it, for one.
-        if path.extension().is_none_or(|extension| extension != "py") {
-            continue;
-        }
-        let python_src_path = path
-            .as_os_str()
-            .to_str()
-            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for python resource"))?;
-
-        let mut python_src = String::new();
-        match File::open(python_src_path) {
-            Ok(mut path) => path.read_to_string(&mut python_src).map_err(|err| {
-                TypeErr::new_no_pos(&format!("Unable to read python file: {err:?}"))
-            })?,
-            Err(_) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")]),
-        };
-
-        for statement in python_stmts(&python_src)? {
+    for (_, python_src) in stubs {
+        for statement in python_stmts(python_src)? {
             match &statement {
                 Stmt::Assign(assign) => GenericFields::from((assign.targets.as_slice(), None))
                     .fields
