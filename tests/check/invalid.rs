@@ -163,6 +163,7 @@ use mamba::parse::ast::AST;
 #[test_case("function", "empty_return_outside_function" => matches Err(_))]
 #[test_case("function", "not_enough_arg_with_default" => matches Err(_))]
 #[test_case("function", "arg_no_type" => matches Err(_))]
+#[test_case("function", "anon_fun_arg_no_type" => matches Err(_))]
 #[test_case("function", "arg_default_not_literal" => matches Err(_))]
 #[test_case("function", "as_statement" => matches Err(_))]
 #[test_case("function", "return_illegal" => matches Err(_))]

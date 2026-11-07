@@ -23,12 +23,11 @@ pub fn gen_expr(
 ) -> Constrained {
     match &ast.node {
         Node::AnonFun { args, body } => {
+            let arg_types = arg_types(args)?;
             let anon_env = constrain_args(args, &env.is_def_mode(true), ctx, constr)?;
             generate(body, &anon_env, ctx, constr)?;
 
-            if let Some(arg_types) = annotated_arg_types(args)? {
-                constrain_fun_type(ast, body, &arg_types, env, &anon_env, constr);
-            }
+            constrain_fun_type(ast, body, &arg_types, env, &anon_env, constr);
             Ok(env.clone())
         }
         Node::ExpressionType { expr, mutable, ty } => {
@@ -60,22 +59,20 @@ pub fn gen_expr(
     }
 }
 
-/// The type of each argument of an anonymous function, or [None] if one is not annotated.
+/// The type of each argument of an anonymous function.
 ///
-/// An argument without an annotation is typed by its use, which a function type cannot refer to yet.
-fn annotated_arg_types(args: &[AST]) -> TypeResult<Option<Vec<Name>>> {
-    let types: Vec<Option<Name>> = args
-        .iter()
-        .map(annotated_arg_type)
-        .collect::<TypeResult<_>>()?;
-    Ok(types.into_iter().collect())
+/// As in a function signature, every argument must have one.
+/// The return type is inferred, since the body is always an expression.
+fn arg_types(args: &[AST]) -> TypeResult<Vec<Name>> {
+    args.iter().map(arg_type).collect()
 }
 
-fn annotated_arg_type(arg: &AST) -> TypeResult<Option<Name>> {
+fn arg_type(arg: &AST) -> TypeResult<Name> {
     let Node::FunArg { ty: Some(ty), .. } = &arg.node else {
-        return Ok(None);
+        let msg = "An argument of an anonymous function must have a type";
+        return Err(vec![TypeErr::new(arg.pos, msg)]);
     };
-    Name::try_from(ty).map(Some)
+    Name::try_from(ty)
 }
 
 /// Type an anonymous function as a function from `args` to whatever its body gives.

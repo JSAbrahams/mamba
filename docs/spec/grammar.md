@@ -110,6 +110,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     # the grammar lets one stand wherever an expression or an argument does, and the type
     # checker narrows it to "class-new" above; a match case is where ".." goes next
     fun-arg          ::= id-maybe-type [ ":=" expression ] | "_" | ".."
+    # the type checker requires a type for every argument, as in a fun-def
+    # the return type is inferred, since the body is always an expression
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] ":=" expression
     
     # loosest binding first; each level is right-recursive into itself

@@ -49,7 +49,6 @@ Unfinished features whose code exists but is not wired in:
 Checker:
 
 - Multi-variable builders, `[(x, y) | x in a, y in b]`, only bind the first variable.
-- An anonymous function with an argument that is not annotated gets no function type, so its arity is not checked.
 - Two fields whose initializers reference each other check and generate, see `class/cyclic_field_dependency`.
 - `total` and `meta` are parsed but not checked.
 
