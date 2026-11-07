@@ -1,4 +1,4 @@
-use mamba::Arguments;
+use mamba::Options;
 use tests_util::OutTestRet;
 
 use test_case::test_case;
@@ -218,7 +218,7 @@ fn to_python(input_dir: &str, file_name: &str) -> OutTestRet {
     tests_util::test_directory(true, &[input_dir], &[input_dir, "target"], file_name)
 }
 
-#[test_case("collection", "tuple", Arguments { annotate: false, ..Arguments::default() })]
-fn to_python_with_args(input_dir: &str, file_name: &str, args: Arguments) -> OutTestRet {
+#[test_case("collection", "tuple", Options::default().annotate(false))]
+fn to_python_with_args(input_dir: &str, file_name: &str, args: Options) -> OutTestRet {
     tests_util::test_directory_args(true, &[input_dir], &[input_dir, "target"], file_name, &args)
 }

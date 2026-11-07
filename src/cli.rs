@@ -1,4 +1,4 @@
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, Parser, ValueEnum};
 
 /// Transpile Mamba to Python code, compile it to a native binary, or print its assembly.
 #[derive(Debug, Parser)]
@@ -69,9 +69,14 @@ pub struct Cli {
     #[arg(long = "no-module-path", action = ArgAction::SetTrue)]
     pub no_module_path: bool,
 
-    /// Disable colorized output
+    /// Disable colorized output, of both the log and the errors.
+    /// Colour is also off when stderr is not a terminal, or when the NO_COLOR environment variable is set.
     #[arg(long = "no-color", action = ArgAction::SetTrue)]
     pub no_color: bool,
+
+    /// How to print errors: `human`, text with the code they point at, or `json`, one JSON object per line.
+    #[arg(long = "error-format", value_enum, default_value_t = ErrorFormat::Human)]
+    pub error_format: ErrorFormat,
 
     /// Print log level
     #[arg(short = 'l', long = "level", action = ArgAction::SetTrue)]
@@ -81,4 +86,13 @@ pub struct Cli {
     /// Currently still buggy feature.
     #[arg(short = 'a', long = "annotate", action = ArgAction::SetTrue)]
     pub annotate: bool,
+}
+
+/// How the CLI prints errors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum ErrorFormat {
+    /// Text with the code the error points at.
+    Human,
+    /// One JSON object per error, per line, with the same fields as the WebAssembly module gives.
+    Json,
 }

@@ -1,0 +1,5 @@
+def f(x: Int) -> Int := x + 1
+
+let a := 10
+let b: Int := "hello"
+print(f(b))

@@ -876,6 +876,90 @@ We prefer writing our own boilerplate, or depending on rust crates, over dependi
 The reasoning is that we want to reduce external dependencies, and more importantly, that this arguably improves the educational value this crate provides (for the author).
 Having to (re)-implement difficult compilation problems which have been solved in the past (and there are _many_, including edge cases) increases our exposure to them.
 
+## 📦 Using Mamba
+
+Mamba comes in three forms, all from this one crate:
+
+1. **A library crate**, the pure compiler: text in, Python or assembly out, and errors as data.
+2. **The `mamba` binary**, which compiles files and directories, and links executables.
+3. **A WebAssembly module**, `mamba.js` and `mamba_bg.wasm`, which runs the compiler in a browser.
+
+### Features
+
+**There are no default features.**
+A plain `mamba` dependency is only the pure compiler, without filesystem, command line or linker.
+Everything else is opt-in:
+
+| Feature   | Adds                                                                                   | Implies           |
+|-----------|----------------------------------------------------------------------------------------|-------------------|
+| (none)    | `compile`, `compile_str`, `tokens`, `version`, and `Diagnostic` with `render`          |                   |
+| `native`  | `mamba::io`: read sources from disk, write `.py` files, link an executable with `cc`   |                   |
+| `serde`   | `Serialize` and `Deserialize` for diagnostics and tokens                               |                   |
+| `cli`     | the `mamba` binary                                                                     | `native`, `serde` |
+| `wasm`    | the JavaScript bindings of `src/wasm.rs`                                               | `serde`           |
+| `imports` | the type checker accepts `import`, which is not part of the language yet               |                   |
+
+### As a library
+
+```sh
+cargo add mamba                     # the pure compiler
+cargo add mamba --features native   # or: also compile directories on disk
+```
+
+```rust
+use mamba::{compile_str, Options, Output, RenderStyle};
+
+let source = "let b: Int := \"hello\"\n";
+match compile_str(source, &Options::default()) {
+    Ok(python) => println!("{python}"),
+    Err(diagnostics) => {
+        for diagnostic in diagnostics {
+            eprintln!("{}", diagnostic.render(source, RenderStyle::Ansi));
+        }
+    }
+}
+
+let asm = compile_str("print(1 + 2)\n", &Options::new(Output::Asm { target: None }));
+```
+
+A `Diagnostic` is data: its stage, message, and labelled spans as lines and columns, byte offsets and UTF-16 offsets.
+A span may be empty, as at the end of a line or of the source.
+`render` turns it into text that quotes the code it points at.
+
+### As a binary
+
+```sh
+cargo install mamba --features cli
+mamba -i src -o target
+```
+
+From a checkout, `cargo run --features cli -- -i <input>` does the same.
+
+### As WebAssembly
+
+Each GitHub release has `mamba.js`, `mamba_bg.wasm` and `SHA256SUMS` attached, built by `.github/workflows/release.yml`.
+They are made for a plain `<script>` tag:
+
+```html
+<script src="mamba.js"></script>
+<script>
+  wasm_bindgen({ module_or_path: "mamba_bg.wasm" }).then(() => {
+    const result = wasm_bindgen.compile("print(1 + 2)", { output: "python" });
+    if (result.ok) console.log(result.text);
+    else result.diagnostics.forEach((diagnostic) => console.error(diagnostic.rendered));
+  });
+</script>
+```
+
+`compile(source, { output: "python" | "asm", target, annotate })` gives `{ ok: true, text }` or `{ ok: false, diagnostics }`.
+`tokens(source)` gives `{ ok: true, tokens }` for syntax highlighting, and `version()` the version of Mamba.
+To build it yourself:
+
+```sh
+cargo build --target wasm32-unknown-unknown --no-default-features --features wasm --release
+wasm-bindgen target/wasm32-unknown-unknown/release/mamba.wasm --target no-modules --out-name mamba --out-dir pkg
+```
+
 ## 💻 The Command Line Interface
 
 ```
@@ -884,20 +968,24 @@ Transpile Mamba to Python code, compile it to a native binary, or print its asse
 Usage: mamba [OPTIONS]
 
 Options:
-  -i, --input <INPUT>    Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
-  -o, --output <OUTPUT>  Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with `--asm`, which always prints to stdout instead of writing a file
-      --python           Output Python source (the default)
-      --bin              Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported:literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
-      --asm              Compile via the Cranelift backend and print the resulting disassembly to stdout, instead of outputting Python source or linking an executable. No file is written -- pipe stdout (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help). Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own disassembler doesn't support switching to Intel syntax
-      --target <TARGET>  Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`/`--asm`; defaults to the host triple)
-  -v...                  Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
-  -d, --debug            Add line numbers to log statements
-      --no-module-path   Disable the module path in the log statements
-      --no-color         Disable colorized output
-  -l, --level            Print log level
-  -a, --annotate         Enable type annotation of the output source. Currently still buggy feature
-  -h, --help             Print help (see more with '--help')
+  -i, --input <INPUT>                Input file or directory. If file, file taken as input. If directory, recursively search all sub-directories for *.mamba files. If no input given, current directory used as input directory
+  -o, --output <OUTPUT>              Output location. With `--python` (the default): output directory to store Python files, structured to reflect the input directory; if not given, a 'target' directory is created in the current directory. With `--bin`: path of the linked executable to produce; if not given, 'a.out' is created in the current directory. Ignored with `--asm`, which always prints to stdout instead of writing a file
+      --python                       Output Python source (the default)
+      --bin                          Compile and link a native executable via the Cranelift backend, instead of outputting Python source. Only a small subset of the language is currently supported: literals, arithmetic and comparison operators, if/else, top-level function definitions and calls, and `print`
+      --asm                          Compile via the Cranelift backend and print the resulting disassembly to stdout, instead of outputting Python source or linking an executable. No file is written -- pipe stdout (e.g. `> out.s`) if you want to save it. Same language subset as `--bin` (see its help). Printed in AT&T syntax (`movq %rsp, %rbp`, source before destination) -- Cranelift's own disassembler doesn't support switching to Intel syntax
+      --target <TARGET>              Target triple to pass to Cranelift, e.g. `x86_64-unknown-linux-gnu` (only meaningful with `--bin`/`--asm`; defaults to the host triple)
+  -v...                              Set level of verbosity: - `-v`   : info, error, warning printed to stderr (default) - `-vv`  : debug messages are printed - `-vvv` : trace messages are printed
+  -d, --debug                        Add line numbers to log statements
+      --no-module-path               Disable the module path in the log statements
+      --no-color                     Disable colorized output, of both the log and the errors. Colour is also off when stderr is not a terminal, or when the NO_COLOR environment variable is set
+      --error-format <ERROR_FORMAT>  How to print errors: `human`, text with the code they point at, or `json`, one JSON object per line [default: human] [possible values: human, json]
+  -l, --level                        Print log level
+  -a, --annotate                     Enable type annotation of the output source. Currently still buggy feature
+  -h, --help                         Print help (see more with '--help')
 ```
+
+Errors are printed with the code they point at, in colour when stderr is a terminal.
+`--error-format json` prints one JSON object per error instead, with the same fields as the WebAssembly module gives.
 
 You can type `mamba -help` for a message containing roughly the above information.
 

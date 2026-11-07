@@ -1,3 +1,4 @@
+#[cfg(feature = "native")]
 use std::fs::create_dir;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -6,7 +7,9 @@ use cranelift_codegen::isa::{self, OwnedTargetIsa};
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_module::default_libcall_names;
 use cranelift_object::{ObjectBuilder, ObjectModule};
-use log::{info, trace};
+#[cfg(feature = "native")]
+use log::info;
+use log::trace;
 use target_lexicon::Triple;
 
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
@@ -16,12 +19,14 @@ use crate::common::result::WithSource;
 use crate::{check_sources, strip_source_paths, Context};
 
 mod convert;
-mod link;
+#[cfg(feature = "native")]
+pub(crate) mod link;
 mod primitive;
 mod runtime;
 
 pub mod result;
 
+#[cfg(feature = "native")]
 const TARGET: &str = "a.out";
 
 /// Compile `source` to native object code and link it into an executable, written to disk.
@@ -29,6 +34,7 @@ const TARGET: &str = "a.out";
 /// Output is written to `target` (relative to `dir`) if given, otherwise to `a.out` in `dir`.
 /// `triple`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
 /// used.
+#[cfg(feature = "native")]
 pub fn write_output(
     dir: &Path,
     target: Option<&str>,
@@ -68,6 +74,7 @@ pub fn write_output(
 ///
 /// `target`, if given, is a target triple passed on to Cranelift; if `None`, the host triple is
 /// used. A path can optionally be given per source for error messages.
+#[cfg(feature = "native")]
 fn mamba_to_object(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,
@@ -190,8 +197,12 @@ pub fn disassemble(ast_ty: &ASTTy, target: Option<&str>, ctx: &Context) -> Backe
         .join("\n"))
 }
 
+/// The target when none is given and the host cannot be detected, as on WebAssembly.
+#[cfg(not(feature = "native"))]
+const DEFAULT_TARGET: &str = "x86_64-unknown-linux-gnu";
+
 /// Create target which is understood by cranelift.
-/// If None, then default to host architecture as target.
+/// If None, then default to host architecture as target, or to [DEFAULT_TARGET] without the `native` feature.
 ///
 /// Cranelift defaults to non-PIC (Position-Independent Code), which is direct/absolute addressing for calls and data.
 /// This is fine for `cc`-driven linking on Linux.
@@ -204,6 +215,9 @@ fn build_isa(target: Option<&str>) -> BackendResult<OwnedTargetIsa> {
         .set("is_pic", "true")
         .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))?;
     let flags = settings::Flags::new(flag_builder);
+
+    #[cfg(not(feature = "native"))]
+    let target = Some(target.unwrap_or(DEFAULT_TARGET));
 
     match target {
         Some(target) => {
@@ -223,6 +237,7 @@ fn build_isa(target: Option<&str>) -> BackendResult<OwnedTargetIsa> {
                 .finish(flags)
                 .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string()))
         }
+        #[cfg(feature = "native")]
         None => cranelift_native::builder()
             .map_err(|e| {
                 BackendErr::new(
@@ -232,5 +247,7 @@ fn build_isa(target: Option<&str>) -> BackendResult<OwnedTargetIsa> {
             })?
             .finish(flags)
             .map_err(|e| BackendErr::new(Position::invisible(), &e.to_string())),
+        #[cfg(not(feature = "native"))]
+        None => unreachable!("the target defaults to DEFAULT_TARGET"),
     }
 }

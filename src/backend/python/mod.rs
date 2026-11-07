@@ -1,7 +1,11 @@
+#[cfg(feature = "native")]
 use std::ffi::OsString;
+#[cfg(feature = "native")]
 use std::fs::create_dir;
+#[cfg(feature = "native")]
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "native")]
 use log::{info, trace};
 
 use crate::backend::python::ast::node::PythonCore;
@@ -9,8 +13,11 @@ use crate::backend::python::convert::convert_node;
 use crate::backend::python::convert::state::{Imports, State};
 use crate::backend::python::result::GenResult;
 use crate::check::ast::ASTTy;
+#[cfg(feature = "native")]
 use crate::common::result::WithSource;
-use crate::{check_sources, io, strip_source_paths, Context, PipelineArguments};
+#[cfg(feature = "native")]
+use crate::{check_sources, io, strip_source_paths};
+use crate::{Context, PipelineArguments};
 
 mod convert;
 
@@ -19,12 +26,14 @@ pub mod name;
 
 pub mod result;
 
+#[cfg(feature = "native")]
 const TARGET: &str = "target";
 
 /// Transpile `source` to Python and write the result to disk under `dir`.
 ///
 /// Output is written to `target` (relative to `dir`) if given, otherwise to a `target`
 /// directory created in `dir`; the output directory structure mirrors `relative_paths`.
+#[cfg(feature = "native")]
 pub fn write_output(
     dir: &Path,
     target: Option<&str>,
@@ -53,6 +62,7 @@ pub fn write_output(
 ///
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
+#[cfg(feature = "native")]
 fn mamba_to_python(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,

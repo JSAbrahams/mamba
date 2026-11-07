@@ -22,7 +22,7 @@ mod control_flow_stmt;
 mod definition;
 mod expr_or_stmt;
 mod expression;
-mod lex;
+pub(crate) mod lex;
 mod operation;
 mod statement;
 mod ty;

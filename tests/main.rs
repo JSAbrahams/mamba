@@ -1,12 +1,11 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use assert_cmd::prelude::*;
 use tests_util::{delete_dir, resource_content_randomize, resource_path};
 
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
@@ -25,7 +24,7 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
@@ -47,7 +46,7 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn transpile_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v");
@@ -63,7 +62,7 @@ fn transpile_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn transpile_custom_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--input").arg("custom_src");
@@ -80,7 +79,7 @@ fn transpile_custom_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn transpile_src_in_dir_custom_target() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--output").arg("custom_target");
@@ -97,7 +96,7 @@ fn transpile_src_in_dir_custom_target() -> Result<(), Box<dyn std::error::Error>
 
 #[test]
 fn transpile_file_not_src() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     let input_path = PathBuf::from("src").join(PathBuf::from("hello_world.mamba"));
@@ -118,7 +117,7 @@ fn transpile_file_not_src() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn transpile_non_existent_custom_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("-input").arg("non_existent");
@@ -128,7 +127,7 @@ fn transpile_non_existent_custom_src_in_dir() -> Result<(), Box<dyn std::error::
 
 #[test]
 fn transpile_non_existent_file() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     let input_path = PathBuf::from("src").join(PathBuf::from("hello_world_does_not_exist.mamba"));
@@ -141,7 +140,7 @@ fn transpile_non_existent_file() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn err_output_relative_path_from_src() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(false, &["dummy", "proj1"], ""));
 
     cmd.arg("-v");
@@ -163,7 +162,7 @@ fn err_output_relative_path_from_src() -> Result<(), Box<dyn std::error::Error>>
 
 #[test]
 fn err_output_relative_path_from_custom_src() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::main_binary()?;
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_mamba"));
     cmd.current_dir(resource_path(false, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--input").arg("custom_src");
@@ -180,5 +179,25 @@ fn err_output_relative_path_from_custom_src() -> Result<(), Box<dyn std::error::
         res.contains(&path_res_str),
         "err msg did not contain: \"{path_res_str}\"\nerr:\n{res}\n\n",
     );
+    Ok(())
+}
+
+#[test]
+fn asm_prints_disassembly_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
+    let src_dir = resource_path(true, &["function"], "");
+
+    let stdout = tests_util::run_cli(
+        env!("CARGO_BIN_EXE_mamba"),
+        Path::new(&src_dir),
+        &["--asm", "-i", "hello_world.mamba"],
+    )?;
+    assert!(
+        stdout.contains("; -- main --") && stdout.contains("ret"),
+        "expected disassembly on stdout, got:\n{stdout}"
+    );
+
+    // No output directory/file should have been written -- `--asm` only prints.
+    assert!(!Path::new(&src_dir).join("target").exists());
+    assert!(!Path::new(&src_dir).join("a.out").exists());
     Ok(())
 }

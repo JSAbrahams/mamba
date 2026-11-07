@@ -6,16 +6,15 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use assert_cmd::prelude::*;
 use itertools::{EitherOrBoth, Itertools};
 use ruff_python_ast::comparable::ComparableStmt;
 use ruff_python_ast::Stmt;
 use tempfile::tempdir_in;
 
-use mamba::backend::Backend;
 use mamba::check::context::python::python_stmts;
 use mamba::common::delimit::newline_delimited;
-use mamba::{transpile_dir, Arguments};
+use mamba::io::compile_dir;
+use mamba::{compile, Diagnostic, Options, Output};
 
 #[cfg(target_os = "linux")]
 pub static PYTHON: &str = "python3.14";
@@ -61,14 +60,13 @@ pub fn run_via_python(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Er
     let src_dir = resource_path(true, subdirs, "");
     let out_dir = tempfile::tempdir()?;
 
-    let arguments = Arguments::default(); // backend defaults to `Backend::Python`
-    let output_dir = transpile_dir(
+    let output_dir = compile_dir(
         Path::new(&src_dir),
         Some(file),
         Some(out_dir.path().join("out").to_str().unwrap()),
-        &arguments,
+        &Options::default(),
     )
-    .map_err(|errs| format!("{errs:?}"))?;
+    .map_err(describe)?;
 
     let py_file = Path::new(file).with_extension("py");
     Ok(run_python(&output_dir.join(py_file))?)
@@ -85,17 +83,14 @@ pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error
     let out_dir = tempfile::tempdir()?;
     let bin_path = out_dir.path().join("nested").join("bin_out");
 
-    let arguments = Arguments {
-        annotate: false,
-        backend: Backend::Bin { target: None },
-    };
-    let produced = transpile_dir(
+    let options = Options::new(Output::Object { target: None });
+    let produced = compile_dir(
         Path::new(&src_dir),
         Some(file),
         Some(bin_path.to_str().unwrap()),
-        &arguments,
+        &options,
     )
-    .map_err(|errs| format!("{errs:?}"))?;
+    .map_err(describe)?;
 
     let output = Command::new(&produced).output()?;
     if !output.status.success() {
@@ -124,34 +119,43 @@ pub fn assert_prints_expected(run: Runner, subdirs: &[&str], file: &str) {
 }
 
 /// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
-/// the Cranelift backend, targeting `triple` (`None` for the host), discarding the printed
-/// output but propagating any error.
+/// the Cranelift backend, targeting `triple` (`None` for the host), returning the text.
 ///
-/// Unlike [run_cli]'s black-box invocation of the `mamba` binary, this drives `transpile_dir` (and
-/// so `backend::cranelift::print_asm`/`disassemble`/`build_isa`) in-process -- needed for these to
+/// Unlike [run_cli]'s black-box invocation of the `mamba` binary, this drives [compile] (and
+/// so `backend::cranelift::disassemble`/`build_isa`) in-process -- needed for these to
 /// show up in coverage at all, since a separately-built subprocess isn't instrumented.
 pub fn run_via_asm(
     subdirs: &[&str],
     file: &str,
     triple: Option<&str>,
-) -> Result<(), Box<dyn Error>> {
-    let src_dir = resource_path(true, subdirs, "");
-    let arguments = Arguments {
-        annotate: false,
-        backend: Backend::Asm {
-            target: triple.map(String::from),
-        },
-    };
-    transpile_dir(Path::new(&src_dir), Some(file), None, &arguments)
-        .map_err(|errs| format!("{errs:?}"))?;
-    Ok(())
+) -> Result<String, Box<dyn Error>> {
+    let path = resource_path(true, subdirs, file);
+    let source = mamba::Source::named(file, fs::read_to_string(&path)?);
+    let options = Options::new(Output::Asm {
+        target: triple.map(String::from),
+    });
+    let mut artifacts = compile(&[source], &options).map_err(describe)?;
+    let asm = artifacts
+        .pop()
+        .and_then(|artifact| artifact.as_text().map(String::from));
+    Ok(asm.unwrap_or_default())
 }
 
-/// Run the `mamba` CLI binary itself with `args`, from within `cwd`, returning its captured
+/// The diagnostics as one message, for a test failure.
+pub fn describe(diagnostics: Vec<Diagnostic>) -> String {
+    diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.to_string())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Run the `mamba` CLI binary `bin` with `args`, from within `cwd`, returning its captured
 /// stdout. Fails if the process exits with an error.
-pub fn run_cli(cwd: &Path, args: &[&str]) -> Result<String, Box<dyn Error>> {
-    let mut cmd = Command::main_binary()?;
-    let output = cmd.current_dir(cwd).args(args).output()?;
+///
+/// A test passes `env!("CARGO_BIN_EXE_mamba")` as `bin`, which needs the `cli` feature.
+pub fn run_cli(bin: &str, cwd: &Path, args: &[&str]) -> Result<String, Box<dyn Error>> {
+    let output = Command::new(bin).current_dir(cwd).args(args).output()?;
     if !output.status.success() {
         return Err(format!(
             "mamba {} exited with an error:\n{}",
@@ -181,10 +185,7 @@ impl Debug for OutTestErr {
 
 /// Test directory with default set to annotate output.
 pub fn test_directory(valid: bool, input: &[&str], output: &[&str], file_name: &str) -> OutTestRet {
-    let args = Arguments {
-        annotate: true,
-        ..Arguments::default()
-    };
+    let args = Options::default().annotate(true);
     test_directory_args(valid, input, output, file_name, &args)
 }
 
@@ -193,7 +194,7 @@ pub fn test_directory_args(
     input: &[&str],
     _: &[&str],
     file_name: &str,
-    args: &Arguments,
+    args: &Options,
 ) -> OutTestRet {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
@@ -264,18 +265,18 @@ pub fn fallable(
     output_path: &str,
     output_file: &str,
     file_name: &str,
-    arguments: &Arguments,
+    arguments: &Options,
 ) -> OutTestRet<(Vec<Stmt>, String, Vec<Stmt>, String)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
-    transpile_dir(
+    compile_dir(
         &current_dir,
         Some(&format!("{}.mamba", file_name)),
         Some(output_path),
         arguments,
     )
-    .map_err(|errs| OutTestErr(errs))?;
+    .map_err(|errs| OutTestErr(errs.iter().map(|err| err.to_string()).collect()))?;
 
     // Check that reference check is proper Python file
     let cmd1 = Command::new(PYTHON)

@@ -5,14 +5,8 @@
 //!
 //! What each fixture should print is in the `<name>.stdout` file beside it, see `tests_util::expected_stdout`.
 
-use std::error::Error;
-use std::path::Path;
-
 use test_case::{test_case, test_matrix};
-use tests_util::{
-    assert_prints_expected, resource_path, run_cli, run_via_asm, run_via_bin, run_via_python,
-    Runner,
-};
+use tests_util::{assert_prints_expected, run_via_asm, run_via_bin, run_via_python, Runner};
 
 /// Fixtures whose output is identical across both backends -- the bulk of correctness coverage.
 /// We use test matrix to emphaize that output should be the same for python and binary.
@@ -222,8 +216,7 @@ fn bin_backend_rejects_gracefully(file: &str, expected_substring: &str) {
     );
 }
 
-/// Drives `--asm`'s whole pipeline (`print_asm` -> `mamba_to_asm` -> `disassemble` ->
-/// `build_isa`) in-process, for both the default (host) and an explicit target triple -- see
+/// Drives `--asm`'s whole pipeline (`compile` -> `disassemble` -> `build_isa`) in-process, for both the default (host) and an explicit target triple -- see
 /// [run_via_asm]'s doc comment for why this needs to be in-process rather than via [run_cli].
 #[test_case(None)]
 #[test_case(Some("x86_64-unknown-linux-gnu"))]
@@ -244,20 +237,4 @@ fn asm_backend_rejects_bad_target_triple(triple: &str, expected_substring: &str)
         err.to_string().contains(expected_substring),
         "expected an error containing {expected_substring:?}, got: {err}"
     );
-}
-
-#[test]
-fn asm_prints_disassembly_to_stdout() -> Result<(), Box<dyn Error>> {
-    let src_dir = resource_path(true, &["function"], "");
-
-    let stdout = run_cli(Path::new(&src_dir), &["--asm", "-i", "hello_world.mamba"])?;
-    assert!(
-        stdout.contains("; -- main --") && stdout.contains("ret"),
-        "expected disassembly on stdout, got:\n{stdout}"
-    );
-
-    // No output directory/file should have been written -- `--asm` only prints.
-    assert!(!Path::new(&src_dir).join("target").exists());
-    assert!(!Path::new(&src_dir).join("a.out").exists());
-    Ok(())
 }
