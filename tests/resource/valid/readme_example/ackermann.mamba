@@ -1,5 +1,6 @@
 # The Ackermann function, which grows faster than any primitive recursive function.
 # Its arguments are never negative, but they are typed as Int, since there is no Nat type yet.
+# def ackermann(m: Nat, n: Nat) -> Nat := match (m, n) where
 def ackermann(m: Int, n: Int) -> Int := match (m, n) where
     (m, n) if m = 0 => n + 1
     (m, n) if n = 0 => ackermann(m - 1, 1)

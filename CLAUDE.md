@@ -30,7 +30,7 @@ The test suite runs the generated Python, with the interpreter Devbox pins; `tes
 To run a single test:
 
 ```sh
-cargo test --package mamba --features cli <test_name>   # e.g. cargo test transpile_src_in_dir
+cargo test --package mamba --features cli <test_name>   # e.g. cargo test --features cli transpile_src_in_dir
 cargo test --package mamba --features cli -- --list     # list all test names, including test_case-expanded ones
 ```
 
