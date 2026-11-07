@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 name: str = "My name"
 some_brackets: str = "\{\}"
 some_more_brackets: str = "empty expressions are ignored: {}"

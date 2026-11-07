@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Circle: 
     diameter: float = None
     def __init__(self, radius: float): 

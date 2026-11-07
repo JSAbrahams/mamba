@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 match 2:
     case 2: 
         __mamba_doubled_existed = "doubled" in locals()

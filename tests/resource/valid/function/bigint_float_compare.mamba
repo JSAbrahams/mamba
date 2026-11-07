@@ -1,0 +1,47 @@
+let just_above: Int := 9007199254740993
+let power: Float := 9007199254740992.0
+if just_above > power then print(1) else print(0)
+if power < just_above then print(1) else print(0)
+if just_above >= 9007199254740994.0 then print(1) else print(0)
+
+let huge: Int := 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+if huge > 1.0 then print(1) else print(0)
+let tiny: Int := 1 - huge
+if tiny < 0.5 then print(1) else print(0)
+
+let e20: Float := 100000000000000000000.0
+let above: Int := 100000000000000000001
+if above > e20 then print(1) else print(0)
+let exact: Int := 100000000000000000000
+if exact >= e20 then print(1) else print(0)
+if exact <= e20 then print(1) else print(0)
+if exact < e20 then print(1) else print(0)
+let below: Int := 99999999999999999999
+if e20 > below then print(1) else print(0)
+let negative: Int := 0 - above
+let neg_e20: Float := 0.0 - e20
+if negative < neg_e20 then print(1) else print(0)
+
+let small: Int := 3
+if small < 3.5 then print(1) else print(0)
+if small > 2.5 then print(1) else print(0)
+
+let large_float: Float := 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
+let inf: Float := large_float * large_float
+let nan: Float := inf - inf
+let neg_inf: Float := 0.0 - inf
+if huge < inf then print(1) else print(0)
+if huge > inf then print(1) else print(0)
+if huge > neg_inf then print(1) else print(0)
+if huge > nan then print(1) else print(0)
+if huge <= nan then print(1) else print(0)
+if nan < huge then print(1) else print(0)
+
+let two_84: Float := 19342813113834066795298816.0
+let int_84: Int := 19342813113834066795298816
+if int_84 >= two_84 then print(1) else print(0)
+if int_84 <= two_84 then print(1) else print(0)
+let past_84: Int := 19342813113834066795298817
+if past_84 > two_84 then print(1) else print(0)
+let before_84: Int := 19342813113834066795298815
+if before_84 < two_84 then print(1) else print(0)

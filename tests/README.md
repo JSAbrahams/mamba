@@ -10,6 +10,8 @@ Each unimplemented feature also carries an `ignore[...]` reason at its `test_cas
   Valid check tests diff the transpiler's Python AST against a reference `.py`, via `ruff_python_parser`.
   They never run the output, and always transpile with `annotate: true`.
 - `tests/execution.rs`: transpiles with both backends, runs the result, and asserts both print the same.
+  What a fixture should print is in a `<name>.stdout` file beside its `<name>.mamba`, read by `tests_util::expected_stdout`.
+  A new execution fixture needs that file, even if empty, or its test panics.
   It goes through the CLI's default path, without `--annotate`.
   Fixtures here must stay within the Cranelift subset, see `src/backend/cranelift/README.md`.
 - `tests/main.rs`: black-box CLI tests.

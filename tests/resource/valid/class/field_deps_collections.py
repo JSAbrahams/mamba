@@ -1,4 +1,6 @@
+import sys
 from typing import Tuple
+sys.set_int_max_str_digits(0)
 class Deps2: 
     gt: bool = None
     leq: bool = None

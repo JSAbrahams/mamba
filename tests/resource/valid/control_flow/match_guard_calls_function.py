@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 def is_even(x: int) -> bool:
     return x % 2 == 0
 

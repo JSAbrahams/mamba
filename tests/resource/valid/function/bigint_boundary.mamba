@@ -1,0 +1,13 @@
+let largest := 4611686018427387903
+let smallest: Int := -4611686018427387904
+let one := 1
+let above := largest + one
+let below := smallest - one
+print(above)
+print(below)
+print(above - one)
+print(below + one)
+print(largest * largest)
+print(smallest * smallest)
+let negated: Int := -smallest
+print(negated)

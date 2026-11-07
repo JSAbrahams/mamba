@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 def band(x: int) -> str:
     match x:
         case n if n > 0 and n < 10:

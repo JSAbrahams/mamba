@@ -108,6 +108,21 @@ pub fn run_via_bin(subdirs: &[&str], file: &str) -> Result<String, Box<dyn Error
     Ok(String::from_utf8(output.stdout)?.replace("\r\n", "\n"))
 }
 
+/// What `file` should print, read from the `<name>.stdout` file beside it.
+/// A file keeps a long expected output readable, where a string in a test attribute does not.
+pub fn expected_stdout(subdirs: &[&str], file: &str) -> String {
+    let path = Path::new(&resource_path(true, subdirs, file)).with_extension("stdout");
+    fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("Could not read {}: {err}", path.display()))
+        .replace("\r\n", "\n")
+}
+
+/// Run `file` through `run`, and check that it prints what its `.stdout` file says.
+pub fn assert_prints_expected(run: Runner, subdirs: &[&str], file: &str) {
+    let stdout = run(subdirs, file).unwrap_or_else(|err| panic!("{file} failed: {err}"));
+    assert_eq!(stdout, expected_stdout(subdirs, file), "stdout of {file}");
+}
+
 /// Compile `file` (relative to `subdirs`, under `tests/resource/valid`) to disassembly text via
 /// the Cranelift backend, targeting `triple` (`None` for the host), discarding the printed
 /// output but propagating any error.

@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Deps:
     cmp: bool = None
     eqcmp: bool = None

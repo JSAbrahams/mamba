@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 def factorial(x: int) -> int: 
     match x:
         case 0: 

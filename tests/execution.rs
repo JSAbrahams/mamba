@@ -2,103 +2,136 @@
 //! (`tests_util::test_directory`), which only check that generated Python is *structurally*
 //! equivalent to a reference file, these actually run the compiled output and assert on what it
 //! prints -- for both backends.
+//!
+//! What each fixture should print is in the `<name>.stdout` file beside it, see `tests_util::expected_stdout`.
 
 use std::error::Error;
 use std::path::Path;
 
 use test_case::{test_case, test_matrix};
-use tests_util::{resource_path, run_cli, run_via_asm, run_via_bin, run_via_python, Runner};
+use tests_util::{
+    assert_prints_expected, resource_path, run_cli, run_via_asm, run_via_bin, run_via_python,
+    Runner,
+};
 
 /// Fixtures whose output is identical across both backends -- the bulk of correctness coverage.
 /// We use test matrix to emphaize that output should be the same for python and binary.
-#[test_matrix([run_via_python, run_via_bin], &["function"], "hello_world.mamba" => "hello world\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_sum.mamba" => "14\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_ops.mamba" => "6\n40\n1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "float_arithmetic.mamba" => "1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_int.mamba" => "0\n0\n1\n1\n0\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_bool.mamba" => "0\n1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "if_no_else_stmt.mamba" => "5\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "void_function_call_stmt.mamba" => "42\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_sum.mamba" => "10\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_exclusive_range.mamba" => "10\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_shadow.mamba" => "6\n100\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "let_in_if_shadow.mamba" => "999\n100\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "let_in_loop_shadow.mamba" => "999\n999\n999\n100\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_int.mamba" => "1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_float.mamba" => "1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "float_comparison.mamba" => "1\n0\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "simple_reassign.mamba" => "5\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "forward_ref.mamba" => "4\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "void_implicit_body.mamba" => "4\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "recursion_factorial.mamba" => "120\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "early_return.mamba" => "7\n7\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "both_branches_return.mamba" => "-1\n1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "nested_for_sum.mamba" => "9\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "if_else_tail.mamba" => "1\n-1\n")]
-#[test_matrix([run_via_python, run_via_bin], &["function"], "implicit_last_expr_return.mamba" => "36\n")]
-fn execution(run: Runner, dirs: &[&str], file: &str) -> String {
-    run(dirs, file).unwrap()
+#[test_matrix([run_via_python, run_via_bin], &["function"], "hello_world.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_sum.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "arithmetic_ops.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "float_arithmetic.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_int.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "comparison_bool.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "if_no_else_stmt.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "void_function_call_stmt.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_sum.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_exclusive_range.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "for_loop_shadow.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "let_in_if_shadow.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "let_in_loop_shadow.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_int.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "neq_float.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "float_comparison.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "simple_reassign.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "forward_ref.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "void_implicit_body.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "recursion_factorial.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "early_return.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "both_branches_return.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "nested_for_sum.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "if_else_tail.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "implicit_last_expr_return.mamba")]
+fn execution(run: Runner, dirs: &[&str], file: &str) {
+    assert_prints_expected(run, dirs, file);
+}
+
+/// `Int` is unbounded, so both backends must print the same digits once a value outgrows a machine word.
+/// The operands in the `bigint_add*` fixtures each exceed 2^64.
+/// `bigint_boundary` crosses 2^62 in both directions, which is where the Cranelift backend moves a value to the heap and back.
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add_carry.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_add_negative.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_sub.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_mul.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_boundary.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_compare.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_factorial.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_for_loop.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_function.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_literal.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_to_float.mamba")]
+#[test_matrix([run_via_python, run_via_bin], &["function"], "bigint_float_compare.mamba")]
+fn unbounded_int_execution(run: Runner, dirs: &[&str], file: &str) {
+    assert_prints_expected(run, dirs, file);
+}
+
+/// A `Float` cannot hold every `Int`, and 2^1100 is past its range.
+/// Both backends stop with an error, rather than carry on with infinity.
+#[test_case(run_via_python)]
+#[test_case(run_via_bin)]
+fn int_too_large_for_float(run: Runner) {
+    run(&["function"], "bigint_float_overflow.mamba").expect_err("2^1100 does not fit a Float");
 }
 
 /// Fixtures that only run through one specific backend, because the two backends' output
 /// legitimately diverges.
-/// The Cranelift backend prints a `Bool` as `1`/`0` via `printf`, where the Python backend prints
+/// The Cranelift backend prints a `Bool` as `1`/`0`, where the Python backend prints
 /// `True`/`False`.
-#[test_case(run_via_bin, &["function"], "print_bool.mamba" => "1\n0\n")]
-#[test_case(run_via_bin, &["function"], "float_var_decl.mamba" => "1\n")]
-fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
-    run(dirs, file).unwrap()
+#[test_case(run_via_bin, &["function"], "print_bool.mamba")]
+#[test_case(run_via_bin, &["function"], "float_var_decl.mamba")]
+fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) {
+    assert_prints_expected(run, dirs, file);
 }
 
 /// Fixtures that only run through the Python backend, because they use language features
 /// outside the Cranelift backend's supported subset. Tuples are not lowered to machine code
 /// at all, so there is no second backend to compare against.
-#[test_case(run_via_python, &["definition"], "tuple_nested.mamba" => "10\n20\n30\n150\n")]
-#[test_case(run_via_python, &["definition"], "identifier_sqrt.mamba" => "9\n4\n")]
-#[test_case(run_via_python, &["class"], "associated_function.mamba" => "3\n0\n")]
-#[test_case(run_via_python, &["class"], "self_type.mamba" => "True\n")]
-#[test_case(run_via_python, &["class"], "derived_field.mamba" => "4\n4\n")]
-#[test_case(run_via_python, &["class"], "pure_new_with_impure_method.mamba" => "2\n")]
-#[test_case(run_via_python, &["class"], "pure_new_written_out.mamba" => "1\n0\n")]
-#[test_case(run_via_python, &["class"], "pure_new_no_class_arguments.mamba" => "0\n")]
-#[test_case(run_via_python, &["class"], "new_underscore_one_argument.mamba" => "7\n")]
-#[test_case(run_via_python, &["class"], "new_rest_one_argument.mamba" => "8\n")]
-#[test_case(run_via_python, &["class"], "redundant_new.mamba" => "1\n")]
-#[test_case(run_via_python, &["class"], "parent_literal_argument.mamba" => "404\n2\n")]
-#[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba" => "30\n")]
+#[test_case(run_via_python, &["definition"], "tuple_nested.mamba")]
+#[test_case(run_via_python, &["definition"], "identifier_sqrt.mamba")]
+#[test_case(run_via_python, &["class"], "associated_function.mamba")]
+#[test_case(run_via_python, &["class"], "self_type.mamba")]
+#[test_case(run_via_python, &["class"], "derived_field.mamba")]
+#[test_case(run_via_python, &["class"], "pure_new_with_impure_method.mamba")]
+#[test_case(run_via_python, &["class"], "pure_new_written_out.mamba")]
+#[test_case(run_via_python, &["class"], "pure_new_no_class_arguments.mamba")]
+#[test_case(run_via_python, &["class"], "new_underscore_one_argument.mamba")]
+#[test_case(run_via_python, &["class"], "new_rest_one_argument.mamba")]
+#[test_case(run_via_python, &["class"], "redundant_new.mamba")]
+#[test_case(run_via_python, &["class"], "parent_literal_argument.mamba")]
+#[test_case(run_via_python, &["definition"], "tuple_element_mut_annotated.mamba")]
 // Match patterns and guards. The AST diff in `tests/check/valid.rs` covers these too, since the
 // move to `ruff_python_parser`, but these assert on what the output actually does when run.
-#[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba" => "on the y axis\non the x axis\noff both axes\n")]
-#[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba" => "yes\nno\n")]
-#[test_case(run_via_python, &["control_flow"], "match_exhaustive_nullable_bool.mamba" => "unknown\n")]
-#[test_case(run_via_python, &["control_flow"], "match_exhaustive_tuple_of_bools.mamba" => "both\nnot first\nnot second\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guarded_arm_does_not_hide_next.mamba" => "zero\nother\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard.mamba" => "negative\npositive\nzero\n")]
-#[test_case(run_via_python, &["control_flow"], "match_first_arm_wins.mamba" => "positive\nother\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_falls_through.mamba" => "big\nmedium\nsmall\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_calls_function.mamba" => "even\nodd\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_on_literal_pattern.mamba" => "zero and flagged\nother\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_on_wildcard.mamba" => "over\nunder\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_reads_outer.mamba" => "under\nover\n")]
-#[test_case(run_via_python, &["control_flow"], "match_compound_guard.mamba" => "single digit\nout of range\nzero\n")]
-#[test_case(run_via_python, &["control_flow"], "match_literal_str.mamba" => "hi\ncya\n?\n")]
-#[test_case(run_via_python, &["control_flow"], "match_negative_int_literal.mamba" => "minus one\nzero\nother\n")]
-#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_literals.mamba" => "all zero\nflat\nother\n")]
-#[test_case(run_via_python, &["control_flow"], "match_in_for_body.mamba" => "zero\none\nmany\n")]
-#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => "in arm\n1\n")]
-#[test_case(run_via_python, &["control_flow"], "match_partial_pattern_restores_outer.mamba" => "fallback\n1\n")]
-#[test_case(run_via_python, &["control_flow"], "match_wildcards_on_different_types.mamba" => "1\n2\n")]
-#[test_case(run_via_python, &["control_flow"], "shadow_in_sibling_blocks.mamba" => "2\ns\n1\n")]
-#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => "11\n")]
-#[test_case(run_via_python, &["control_flow"], "match_wildcard_only.mamba" => "always\n")]
-#[test_case(run_via_python, &["control_flow"], "match_subject_is_call.mamba" => "three\n")]
-#[test_case(run_via_python, &["control_flow"], "match_arm_body_block.mamba" => "4\n")]
-#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba" => "safe\n")]
-#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba" => "origin\nright of the axis, at height 7\nleft of the axis, at height 7\n")]
-#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_pattern.mamba" => "x!\nsmall\n")]
-#[test_case(run_via_python, &["control_flow"], "match_tuple_shadows_argument.mamba" => "5\n")]
-fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
-    run(dirs, file).unwrap()
+#[test_case(run_via_python, &["control_flow"], "match_tuple_underscore.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_bool.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_nullable_bool.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_exhaustive_tuple_of_bools.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guarded_arm_does_not_hide_next.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_first_arm_wins.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_falls_through.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_calls_function.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_literal_pattern.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_on_wildcard.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_reads_outer.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_compound_guard.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_literal_str.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_negative_int_literal.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_literals.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_in_for_body.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_partial_pattern_restores_outer.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcards_on_different_types.mamba")]
+#[test_case(run_via_python, &["control_flow"], "shadow_in_sibling_blocks.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcard_only.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_subject_is_call.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_arm_body_block.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_guard_not_evaluated_when_pattern_fails.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_pattern.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_nested_tuple_pattern.mamba")]
+#[test_case(run_via_python, &["control_flow"], "match_tuple_shadows_argument.mamba")]
+fn python_only_execution(run: Runner, dirs: &[&str], file: &str) {
+    assert_prints_expected(run, dirs, file);
 }
 
 /// Every example in the top-level `README.md`, actually run.
@@ -115,36 +148,40 @@ fn python_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 /// Those reasons match the ones on the same fixture in `tests/check/valid.rs`.
 /// Where only a line or two is unimplemented, that line is commented out in the fixture instead,
 /// so the rest still runs and the intent is still on record.
-#[test_case("ackermann" => "9\n")]
+#[test_case("ackermann")]
 #[test_case("builtin_trait" => ignore["@ decorator syntax and meta trait/external impl for a built-in type not implemented"])]
-#[test_case("class" => "")]
-#[test_case("class_associated_function" => "1.0\n")]
-#[test_case("class_construction" => "3\n")]
-#[test_case("class_derived_field" => "4.0\n12.56636\n")]
-#[test_case("class_new_enforces" => "2\n")]
-#[test_case("class_with_constants" => "Currently at (4, 6), originally from (1, 2)\n")]
-#[test_case("error_handling" => "Solution is: [-4.0, 4.5]\n")]
-#[test_case("error_handling_as_expression" => "a has value 10.\n")]
+#[test_case("class")]
+#[test_case("class_associated_function")]
+#[test_case("class_construction")]
+#[test_case("class_derived_field")]
+#[test_case("class_new_enforces")]
+#[test_case("class_with_constants")]
+#[test_case("error_handling")]
+#[test_case("error_handling_as_expression")]
 #[test_case("error_handling_desyntax_sugared" => ignore["a bare `match` on a fallible call is not checked as one, and a case cannot bind an error's constructor arguments yet"])]
-#[test_case("error_handling_early_exit" => "a has value 10.\n")]
+#[test_case("error_handling_early_exit")]
 #[test_case("error_handling_handle_subset" => ignore["explicit Result[...] type and re-raising via `<var> = <var> !` not implemented"])]
 #[test_case("error_handling_result_type" => ignore["explicit Result[...] type not implemented, and a nested generic argument such as Union[...] does not parse"])]
-#[test_case("factorial" => "Factorial 5 is: 120.\n")]
-#[test_case("factorial_dynamic" => "120\n")]
+#[test_case("factorial")]
+#[test_case("factorial_dynamic")]
 #[test_case("impl_trait" => ignore["`def <Trait> for <Class> where ...` external-implementation syntax not implemented"])]
-#[test_case("list_shorthand" => "504\n504\n")]
-#[test_case("lists" => "0\nof\n")]
-#[test_case("mutability" => "12\n")]
-#[test_case("pure_construction" => "0\n")]
-#[test_case("pure_construction_methods" => "2\n")]
-#[test_case("pure_functions" => "8.436563051146386\n")]
-#[test_case("sets_maps" => "2\n")]
+#[test_case("list_shorthand")]
+#[test_case("lists")]
+#[test_case("mutability")]
+#[test_case("pure_construction")]
+#[test_case("pure_construction_methods")]
+#[test_case("pure_functions")]
+#[test_case("sets_maps")]
 #[test_case("total_functions" => ignore["`Nat` type not implemented"])]
 #[test_case("trait_inheritance" => ignore["composing multiple parent traits not implemented"])]
 #[test_case("trait_meta" => ignore["`Measurable` trait not implemented"])]
 #[test_case("traits" => ignore["generics on traits and external-implementation syntax not implemented"])]
-fn readme_example_execution(file: &str) -> String {
-    run_via_python(&["readme_example"], &format!("{file}.mamba")).unwrap()
+fn readme_example_execution(file: &str) {
+    assert_prints_expected(
+        run_via_python,
+        &["readme_example"],
+        &format!("{file}.mamba"),
+    );
 }
 
 /// Mamba constructs that are valid (the Python backend handles all of these) but fall outside

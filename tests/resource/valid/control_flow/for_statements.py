@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 b: set[int] = {1, 2}
 __mamba_b_existed = "b" in locals()
 __mamba_b_saved = b if __mamba_b_existed else None

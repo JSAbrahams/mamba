@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cranelift_codegen::ir::{
     types, AbiParam, Function, InstBuilder, Signature, UserFuncName, Value,
@@ -13,6 +13,7 @@ use crate::backend::cranelift::convert::common::fun_name;
 use crate::backend::cranelift::convert::{FnLower, Funcs};
 use crate::backend::cranelift::primitive::{cranelift_type, cranelift_type_of_name};
 use crate::backend::cranelift::result::{BackendErr, BackendResult};
+use crate::backend::cranelift::runtime::Runtime;
 use crate::check::ast::{ASTTy, NodeTy};
 use crate::check::name::Name;
 use crate::common::position::Position;
@@ -95,12 +96,17 @@ pub(super) fn declare_libc(
 pub(super) fn define_function(
     module: &mut ObjectModule,
     func_id: FuncId,
-    sig: Signature,
     args: &[ASTTy],
     body: Option<&ASTTy>,
     funcs: &Funcs,
+    runtime: &Runtime,
     want_asm: bool,
 ) -> BackendResult<Option<String>> {
+    let sig = module
+        .declarations()
+        .get_function_decl(func_id)
+        .signature
+        .clone();
     let is_void = sig.returns.is_empty();
     let mut ctx = ClifContext::new();
     ctx.set_disasm(want_asm);
@@ -121,6 +127,9 @@ pub(super) fn define_function(
             var_seq: 0,
             funcs,
             puts_id,
+            runtime,
+            temps: HashSet::new(),
+            live: vec![],
         };
 
         let block_params = lower.builder.block_params(entry).to_vec();
@@ -140,13 +149,11 @@ pub(super) fn define_function(
             // instruction to an already-filled block and panic.
             Some(body) if is_void => {
                 if !lower.lower_stmt(body)? {
-                    lower.builder.ins().return_(&[]);
+                    lower.ret(&[]);
                 }
             }
             Some(body) => lower.lower_tail(body)?,
-            None => {
-                lower.builder.ins().return_(&[]);
-            }
+            None => lower.ret(&[]),
         }
 
         lower.builder.seal_all_blocks();
@@ -168,6 +175,7 @@ pub(super) fn define_main(
     sig: Signature,
     statements: &[ASTTy],
     funcs: &Funcs,
+    runtime: &Runtime,
     want_asm: bool,
 ) -> BackendResult<Option<String>> {
     let mut ctx = ClifContext::new();
@@ -188,6 +196,9 @@ pub(super) fn define_main(
             var_seq: 0,
             funcs,
             puts_id,
+            runtime,
+            temps: HashSet::new(),
+            live: vec![],
         };
 
         let mut terminated = false;
@@ -199,7 +210,7 @@ pub(super) fn define_main(
         }
         if !terminated {
             let zero = lower.builder.ins().iconst(types::I32, 0);
-            lower.builder.ins().return_(&[zero]);
+            lower.ret(&[zero]);
         }
 
         lower.builder.seal_all_blocks();
@@ -239,12 +250,11 @@ impl<'a> FnLower<'a> {
                 // (see its own doc comment), so convert here if the declared type says
                 // otherwise.
                 let value = if ty == types::F64 && self.builder.func.dfg.value_type(value) != ty {
-                    self.builder.ins().fcvt_from_sint(ty, value)
+                    self.int_to_float(value)
                 } else {
                     value
                 };
-                let var = self.new_var(ty);
-                self.builder.def_var(var, value);
+                let var = self.bind(value);
                 self.vars.insert(name, (var, ty));
                 Ok(())
             }
@@ -269,7 +279,7 @@ impl<'a> FnLower<'a> {
                     BackendErr::new(ast.pos, &format!("Undefined variable '{name}'"))
                 })?;
                 let value = self.lower_expr(right)?;
-                self.builder.def_var(var, value);
+                self.assign(var, value);
                 Ok(())
             }
             NodeTy::Reassign { op, .. } => Err(BackendErr::unimplemented(
@@ -291,6 +301,9 @@ impl<'a> FnLower<'a> {
         let ty = arg_type(arg)?;
         let var = self.new_var(ty);
         self.builder.def_var(var, value);
+        if ty == types::I64 {
+            self.live.push(var);
+        }
         self.vars.insert(name, (var, ty));
         Ok(())
     }

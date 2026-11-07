@@ -1,3 +1,5 @@
+import sys
+sys.set_int_max_str_digits(0)
 class Base: 
     def __init__(self, code: int, offset: int): 
         self.code = code

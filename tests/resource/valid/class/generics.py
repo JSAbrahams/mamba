@@ -1,4 +1,6 @@
+import sys
 from typing import Callable, Optional
+sys.set_int_max_str_digits(0)
 class Err1(Exception): 
     def __init__(self, msg: str): 
         Exception.__init__(self, msg)

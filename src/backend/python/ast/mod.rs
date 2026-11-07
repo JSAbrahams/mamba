@@ -267,115 +267,25 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
 
         PythonCore::UnderScore => String::from("_"),
 
-        PythonCore::Ge { left, right } => {
-            format!(
-                "{} > {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Geq { left, right } => {
-            format!(
-                "{} >= {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Le { left, right } => {
-            format!(
-                "{} < {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Leq { left, right } => {
-            format!(
-                "{} <= {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
+        PythonCore::Ge { left, right } => binary(core, left, ">", right, ind),
+        PythonCore::Geq { left, right } => binary(core, left, ">=", right, ind),
+        PythonCore::Le { left, right } => binary(core, left, "<", right, ind),
+        PythonCore::Leq { left, right } => binary(core, left, "<=", right, ind),
 
-        PythonCore::Not { expr } => format!("not {}", to_py(expr.as_ref(), ind)),
-        PythonCore::And { left, right } => {
-            format!(
-                "{} and {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Or { left, right } => {
-            format!(
-                "{} or {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Eq { left, right } => {
-            format!(
-                "{} == {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Neq { left, right } => {
-            format!(
-                "{} != {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::AddU { expr } => format!("+{}", to_py(expr, ind)),
-        PythonCore::Add { left, right } => {
-            format!(
-                "{} + {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::SubU { expr } => format!("-{}", to_py(expr, ind)),
-        PythonCore::Sub { left, right } => {
-            format!(
-                "{} - {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Mul { left, right } => {
-            format!(
-                "{} * {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Div { left, right } => {
-            format!(
-                "{} / {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::FDiv { left, right } => {
-            format!(
-                "{} // {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Pow { left, right } => {
-            format!(
-                "{} ** {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
-        PythonCore::Mod { left, right } => {
-            format!(
-                "{} % {}",
-                to_py(left.as_ref(), ind),
-                to_py(right.as_ref(), ind)
-            )
-        }
+        PythonCore::Not { expr } => unary(core, "not ", expr, ind),
+        PythonCore::And { left, right } => binary(core, left, "and", right, ind),
+        PythonCore::Or { left, right } => binary(core, left, "or", right, ind),
+        PythonCore::Eq { left, right } => binary(core, left, "==", right, ind),
+        PythonCore::Neq { left, right } => binary(core, left, "!=", right, ind),
+        PythonCore::AddU { expr } => unary(core, "+", expr, ind),
+        PythonCore::Add { left, right } => binary(core, left, "+", right, ind),
+        PythonCore::SubU { expr } => unary(core, "-", expr, ind),
+        PythonCore::Sub { left, right } => binary(core, left, "-", right, ind),
+        PythonCore::Mul { left, right } => binary(core, left, "*", right, ind),
+        PythonCore::Div { left, right } => binary(core, left, "/", right, ind),
+        PythonCore::FDiv { left, right } => binary(core, left, "//", right, ind),
+        PythonCore::Pow { left, right } => binary(core, left, "**", right, ind),
+        PythonCore::Mod { left, right } => binary(core, left, "%", right, ind),
 
         PythonCore::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
 
@@ -385,7 +295,7 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
             to_py(col.as_ref(), ind),
             newline_if_body(body, ind)
         ),
-        PythonCore::In { left, right } => format! {"{} in {}", to_py(left, ind), to_py(right, ind)},
+        PythonCore::In { left, right } => binary(core, left, "in", right, ind),
         PythonCore::Index { item, range } => format!("{}[{}]", to_py(item, ind), to_py(range, ind)),
         PythonCore::If { cond, then } => {
             format!(
@@ -403,9 +313,9 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
         ),
         PythonCore::Ternary { cond, then, el } => format!(
             "{} if {} else {}",
-            to_py(then.as_ref(), ind),
-            to_py(cond.as_ref(), ind + 1),
-            to_py(el.as_ref(), ind + 1)
+            operand(then, ind, precedence(then) <= TERNARY),
+            operand(cond, ind + 1, precedence(cond) <= TERNARY),
+            operand(el, ind + 1, precedence(el) < TERNARY)
         ),
         PythonCore::While { cond, body } => {
             format!(
@@ -481,6 +391,79 @@ fn to_py(core: &PythonCore, ind: usize) -> String {
         }
 
         PythonCore::Raise { error } => format!("raise {}", to_py(error, ind)),
+    }
+}
+
+/// How tightly a Python expression binds, lowest first, following the Python grammar.
+///
+/// Mamba's grouping lives in the tree rather than in brackets, so brackets are put back wherever Python would otherwise regroup.
+fn precedence(core: &PythonCore) -> u8 {
+    match core {
+        PythonCore::AnonFun { .. } => LAMBDA,
+        PythonCore::Ternary { .. } => TERNARY,
+        PythonCore::Or { .. } => 3,
+        PythonCore::And { .. } => 4,
+        PythonCore::Not { .. } => 5,
+        PythonCore::Ge { .. }
+        | PythonCore::Geq { .. }
+        | PythonCore::Le { .. }
+        | PythonCore::Leq { .. }
+        | PythonCore::Eq { .. }
+        | PythonCore::Neq { .. }
+        | PythonCore::In { .. } => COMPARISON,
+        PythonCore::Add { .. } | PythonCore::Sub { .. } => 7,
+        PythonCore::Mul { .. }
+        | PythonCore::Div { .. }
+        | PythonCore::FDiv { .. }
+        | PythonCore::Mod { .. } => 8,
+        PythonCore::AddU { .. } | PythonCore::SubU { .. } => 9,
+        PythonCore::Pow { .. } => POWER,
+        _ => ATOM,
+    }
+}
+
+const LAMBDA: u8 = 1;
+const TERNARY: u8 = 2;
+const COMPARISON: u8 = 6;
+const POWER: u8 = 10;
+const ATOM: u8 = 11;
+
+/// A binary operation, bracketing an operand where Python would otherwise group it differently.
+///
+/// `**` groups to the right, and comparisons chain, so `(a < b) < c` keeps its brackets.
+fn binary(
+    core: &PythonCore,
+    left: &PythonCore,
+    op: &str,
+    right: &PythonCore,
+    ind: usize,
+) -> String {
+    let own = precedence(core);
+    let (wrap_left, wrap_right) = match own {
+        POWER => (precedence(left) <= own, precedence(right) < own),
+        COMPARISON => (precedence(left) <= own, precedence(right) <= own),
+        _ => (precedence(left) < own, precedence(right) <= own),
+    };
+    format!(
+        "{} {op} {}",
+        operand(left, ind, wrap_left),
+        operand(right, ind, wrap_right)
+    )
+}
+
+/// A unary operation, bracketing an operand that binds less tightly, as in `-(a + b)`.
+fn unary(core: &PythonCore, op: &str, expr: &PythonCore, ind: usize) -> String {
+    format!(
+        "{op}{}",
+        operand(expr, ind, precedence(expr) < precedence(core))
+    )
+}
+
+fn operand(core: &PythonCore, ind: usize, wrap: bool) -> String {
+    if wrap {
+        format!("({})", to_py(core, ind))
+    } else {
+        to_py(core, ind)
     }
 }
 

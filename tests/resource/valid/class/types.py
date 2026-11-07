@@ -1,6 +1,7 @@
+import sys
 from abc import ABC, abstractmethod
 from typing import Callable
-
+sys.set_int_max_str_digits(0)
 class MyGeneric(str):                                                          
     def __init__(self):                                                      
         str.__init__(self)  
