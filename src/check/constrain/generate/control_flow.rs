@@ -153,6 +153,7 @@ fn constrain_cases(
             Node::Case { cond, guard, body } => {
                 branch_unless_first(i, case, constr);
                 check_no_rest(cond)?;
+                let cond = &distinct_wildcards(cond);
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 tie_pattern_to_subject(expr, cond, env, &cond_env, constr);
 
@@ -201,6 +202,29 @@ fn branch_unless_first(i: usize, case: &AST, constr: &mut ConstrBuilder) {
     if i > 0 {
         constr.branch("match arm", case.pos);
     }
+}
+
+/// Give every `_` in a pattern a name of its own, for constraint generation only.
+///
+/// Unification identifies an expression by its value, not its position, so every `_` in a program would otherwise be one type.
+/// Two matches on different types, each with a `_` arm, would then conflict.
+/// The name holds an `@`, so no program can write or read it.
+fn distinct_wildcards(pattern: &AST) -> AST {
+    let node = match &pattern.node {
+        Node::Underscore => Node::Id {
+            lit: format!("_@{}:{}", pattern.pos.start.line, pattern.pos.start.pos),
+        },
+        Node::Tuple { elements } => Node::Tuple {
+            elements: elements.iter().map(distinct_wildcards).collect(),
+        },
+        Node::ExpressionType { expr, mutable, ty } => Node::ExpressionType {
+            expr: Box::from(distinct_wildcards(expr)),
+            mutable: *mutable,
+            ty: ty.clone(),
+        },
+        other => other.clone(),
+    };
+    AST::new(pattern.pos, node)
 }
 
 /// Give a match pattern the type of the subject it is matched against.

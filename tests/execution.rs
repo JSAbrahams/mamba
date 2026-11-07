@@ -82,9 +82,10 @@ fn bin_only_execution(run: Runner, dirs: &[&str], file: &str) -> String {
 #[test_case(run_via_python, &["control_flow"], "match_negative_int_literal.mamba" => "minus one\nzero\nother\n")]
 #[test_case(run_via_python, &["control_flow"], "match_nested_tuple_literals.mamba" => "all zero\nflat\nother\n")]
 #[test_case(run_via_python, &["control_flow"], "match_in_for_body.mamba" => "zero\none\nmany\n")]
-// The outer `n` is 1, and the arm binds `n` to 10. The generated `case n:` leaks that binding
-// into the enclosing scope, so this prints 10. `if` guards the same shadowing correctly.
-#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => ignore["a capture pattern leaks out of its arm and clobbers the shadowed outer variable"])]
+#[test_case(run_via_python, &["control_flow"], "match_shadow_restores_outer.mamba" => "in arm\n1\n")]
+#[test_case(run_via_python, &["control_flow"], "match_partial_pattern_restores_outer.mamba" => "fallback\n1\n")]
+#[test_case(run_via_python, &["control_flow"], "match_wildcards_on_different_types.mamba" => "1\n2\n")]
+#[test_case(run_via_python, &["control_flow"], "shadow_in_sibling_blocks.mamba" => "2\ns\n1\n")]
 #[test_case(run_via_python, &["control_flow"], "match_single_irrefutable_arm.mamba" => "11\n")]
 #[test_case(run_via_python, &["control_flow"], "match_wildcard_only.mamba" => "always\n")]
 #[test_case(run_via_python, &["control_flow"], "match_subject_is_call.mamba" => "three\n")]

@@ -58,7 +58,6 @@ Checker:
 
 Generator:
 
-- A match capture that shadows an outer name leaks out of its arm, see `match_shadow_restores_outer`.
 - A top-level function named `size` becomes `__size__`, but its call sites do not.
 - With `--annotate`, a method annotated with its own class emits a forward reference Python rejects.
 

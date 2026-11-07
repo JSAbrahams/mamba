@@ -96,6 +96,7 @@ A literal compares, and a name binds to the element in its place, with that elem
     end
 
 A pattern name may shadow an outer one, and then refers to the element within its arm.
+After the `match`, the outer name holds its own value again.
 
 #### Guards
 

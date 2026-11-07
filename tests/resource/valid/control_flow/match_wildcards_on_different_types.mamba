@@ -1,0 +1,13 @@
+# Every '_' is its own wildcard, so the same pattern may match subjects of different types
+def pure first(p: (Int, Int)) -> Int := match p where
+    (0, _) => 1
+    _      => 2
+end
+
+def pure second(p: (Int, Str)) -> Int := match p where
+    (0, _) => 1
+    _      => 2
+end
+
+print(first((0, 5)))
+print(second((3, "s")))
