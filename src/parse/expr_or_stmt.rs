@@ -4,7 +4,7 @@ use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::ParseResult;
+use crate::parse::result::{custom, ParseResult};
 use crate::parse::statement::{is_start_statement, parse_reassignment, parse_statement};
 use crate::parse::Lex;
 
@@ -27,7 +27,10 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 
         // parse handle cases if indentation block after
         let cases = it.parse_vec(&parse_match_cases, "handle cases", expr_or_stmt.pos)?;
-        let end = cases.last().map_or(expr_or_stmt.pos, |stmt| stmt.pos);
+        let end = it.eat(&Token::End, "match cases")?;
+        if cases.is_empty() {
+            return Err(Box::from(custom("Expected at least one case", end)));
+        }
 
         return Ok(Box::from(AST::new(
             expr_or_stmt.pos.union(end),

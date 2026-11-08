@@ -53,8 +53,12 @@ fn parse_match(it: &mut LexIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "match", start)?;
     it.eat_while(&Token::NL);
     it.eat(&Token::Where, "match")?;
+
     let cases = it.parse_vec(&parse_match_cases, "match", start)?;
-    let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
+    let end = it.eat(&Token::End, "match cases")?;
+    if cases.is_empty() {
+        return Err(Box::from(custom("Expected at least one case", end)));
+    }
 
     let node = Node::Match { cond, cases };
     Ok(Box::from(AST::new(start.union(end), node)))
@@ -73,10 +77,6 @@ pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
         Ok(())
     })?;
 
-    let end = it.eat(&Token::End, "match cases")?;
-    if cases.is_empty() {
-        return Err(Box::from(custom("Expected at least one case", end)));
-    }
     Ok(cases)
 }
 
