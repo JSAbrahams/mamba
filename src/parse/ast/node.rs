@@ -113,7 +113,6 @@ impl Display for Node {
             Node::Tuple { elements } => {
                 format!("({})", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::Index { item, range } => format!("{}[{}]", item.node, range.node),
             Node::Range { .. } => String::from("range"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
@@ -992,7 +991,6 @@ impl Node {
             | Node::ListBuilder { .. }
             | Node::Tuple { .. }
             | Node::Range { .. }
-            | Node::Index { .. }
             | Node::Real { .. }
             | Node::Int { .. }
             | Node::ENum { .. }

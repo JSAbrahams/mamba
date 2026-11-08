@@ -8,6 +8,7 @@ use mamba::common::result::WithSource;
 use mamba::parse::result::ParseResult;
 
 #[test_case("assign_and_while"=> matches Err(_))]
+#[test_case("square_bracket_index"=> matches Err(_))]
 #[test_case("top_lvl_class_access"=> matches Err(_))]
 #[test_case("type_annotation_in_tuple"=> matches Err(_))]
 #[test_case("pure_variable_def"=> matches Err(_))]

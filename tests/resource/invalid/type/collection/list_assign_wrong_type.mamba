@@ -1,2 +1,2 @@
-let a := [1, 2, 3]
-a[0] := "hello"
+let mut a := [1, 2, 3]
+a(0) := "hello"

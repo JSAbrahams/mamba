@@ -129,10 +129,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Set { elements } => PythonCore::Set {
             elements: convert_vec(elements, imp, state, ctx)?,
         },
-        NodeTy::Index { item, range } => PythonCore::Index {
-            item: Box::from(convert_node(item, imp, state, ctx)?),
-            range: Box::from(convert_node(range, imp, state, ctx)?),
-        },
 
         NodeTy::DictBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
         NodeTy::ListBuilder { .. } => convert_builder(ast, imp, state, ctx)?,

@@ -62,7 +62,6 @@ pub fn generate(
 
         Reassign { .. } => gen_call(ast, env, ctx, constr),
         FunctionCall { .. } | PropertyCall { .. } => gen_call(ast, env, ctx, constr),
-        Index { .. } => gen_call(ast, env, ctx, constr),
 
         TypeTup { .. } | TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),
         TypeFun { .. } => gen_ty(ast, env, ctx, constr),

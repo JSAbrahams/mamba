@@ -10,14 +10,13 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::constrain::generate::operation::gen_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::constrain::mutation::Mutation;
 use crate::check::context::arg::python::SELF;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::context::function::python::{GET_ITEM, SET_ITEM};
+use crate::check::context::function::python::SET_ITEM;
 use crate::check::context::{arg, function, Context, LookupClass, LookupFunction};
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::string_name::StringName;
@@ -42,10 +41,7 @@ pub fn gen_call(
 
             if let NodeOp::Assign = op {
                 record_assignment(left, env, constr);
-                if let Node::Index { item, range } = &left.node {
-                    gen_set_item(item, range, right, env, ctx, constr)?;
-                } else if let Node::FunctionCall { name, args } = &left.node {
-                    // Round-bracket equivalent of `Node::Index`: `item(range) := right`.
+                if let Node::FunctionCall { name, args } = &left.node {
                     let range = args.first().ok_or_else(|| {
                         vec![TypeErr::new(
                             left.pos,
@@ -136,7 +132,6 @@ pub fn gen_call(
                 constr,
             )
         }
-        Node::Index { item, range } => gen_magic(GET_ITEM, ast, item, range, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
     }
@@ -388,7 +383,6 @@ fn check_pure_assign(id: &Identifier, env: &Environment, pos: Position) -> TypeR
 /// An index, as in `a.b(0) := x`, changes the collection it indexes.
 fn record_assignment(left: &AST, env: &Environment, constr: &mut ConstrBuilder) {
     let target = match &left.node {
-        Node::Index { item, .. } => item.as_ref(),
         Node::FunctionCall { name, args } if args.len() == 1 => name.as_ref(),
         _ => left,
     };
@@ -617,7 +611,7 @@ fn property_call(
 
 /// Generate the constraint for `item(range) := value`, i.e. `item.__setitem__(range, value)`.
 ///
-/// Deliberately not [gen_magic], which is built for binary magic methods (`self`, one other
+/// Deliberately not `gen_magic`, which is built for binary magic methods (`self`, one other
 /// argument); `__setitem__` takes two logical arguments (`range`, `value`) besides `self`.
 fn gen_set_item(
     item: &AST,
@@ -679,13 +673,6 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
                 let id_call = IdentiCall::Call(Box::from(inst_call), Box::from(prop_call));
                 Ok(Identifier::Single(m, id_call))
             }
-        },
-        Node::Index { item, .. } => match check_reassignable(item)? {
-            Identifier::Multi(_) => {
-                let msg = format!("Cannot reassign to {}", ast.node);
-                Err(vec![TypeErr::new(ast.pos, &msg)])
-            }
-            single => Ok(single),
         },
         Node::FunctionCall { name, args } if args.len() == 1 => match check_reassignable(name)? {
             Identifier::Multi(_) => {

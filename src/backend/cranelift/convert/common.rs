@@ -25,7 +25,7 @@ pub(super) fn construct(node: &NodeTy) -> &'static str {
         NodeTy::Raise { .. } => "a raise",
         NodeTy::Handle { .. } => "an error handler",
         NodeTy::Using { .. } => "a using block",
-        NodeTy::FunctionCall { is_index: true, .. } | NodeTy::Index { .. } => "an index",
+        NodeTy::FunctionCall { is_index: true, .. } => "an index",
         NodeTy::FunctionCall { .. } => "a function call",
         NodeTy::PropertyCall { .. } => "a method call or field access",
         NodeTy::Id { .. } => "an identifier",

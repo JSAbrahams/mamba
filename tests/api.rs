@@ -35,6 +35,17 @@ fn compile_str_to_python() {
     assert!(python.contains("print(f(2))"), "{python}");
 }
 
+/// The generated Python never has two empty lines in a row, which classes used to leave behind.
+#[test]
+fn python_has_at_most_one_empty_line_in_a_row() {
+    let source = "class A where\n    def f(self) -> Int := 1\nend\n\nclass B where\n    def g(self) -> Int := 2\nend\n\nlet a := A.new()\nprint(a.f())\n";
+    let python = compile_str(source, &Options::default()).expect("compiles");
+
+    let empty: Vec<bool> = python.lines().map(|line| line.trim().is_empty()).collect();
+    let consecutive = empty.windows(2).any(|pair| pair[0] && pair[1]);
+    assert!(!consecutive, "{python}");
+}
+
 #[test]
 fn compile_str_to_asm() {
     let options = Options::new(Output::Asm {

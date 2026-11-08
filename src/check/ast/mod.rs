@@ -201,10 +201,6 @@ pub enum NodeTy {
         inclusive: bool,
         step: OptASTTy,
     },
-    Index {
-        item: Box<ASTTy>,
-        range: Box<ASTTy>,
-    },
     Block {
         statements: Vec<ASTTy>,
     },

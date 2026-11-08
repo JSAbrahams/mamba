@@ -8,7 +8,7 @@ use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{expected_one_of, ParseResult};
+use crate::parse::result::{custom, expected_one_of, ParseResult};
 use crate::parse::ty::parse_id;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
@@ -103,10 +103,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)
             }
-            Token::LSBrack => {
-                let res = parse_index(pre, it)?;
-                parse_post_expr(&res, it)
-            }
+            Token::LSBrack => square_bracket_index(lex),
             Token::If => Ok(Box::from(pre.clone())),
             _ if is_start_expression_exclude_unary(lex) => {
                 let res = parse_call(pre, it)?;
@@ -118,15 +115,12 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     )
 }
 
-fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    it.eat(&Token::LSBrack, "index")?;
-
-    let item = Box::from(pre.clone());
-    let range = it.parse(&parse_expression, "index", pre.pos)?;
-
-    let node = Node::Index { item, range };
-    let end = it.eat(&Token::RSBrack, "index")?;
-    Ok(Box::from(AST::new(pre.pos.union(end), node)))
+/// Square brackets after an expression, as in `a[0]`, which other languages read as an index.
+///
+/// Mamba indexes with round brackets, so this says so rather than reading `a [0]` as a call.
+fn square_bracket_index(lex: &Lex) -> ParseResult {
+    let msg = "a collection is indexed with round brackets, as in `a(0)`, not square brackets";
+    Err(Box::from(custom(msg, lex.pos)))
 }
 
 /// Excluding unary addition and subtraction
