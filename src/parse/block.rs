@@ -58,9 +58,8 @@ pub fn parse_block(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Do, "code block")?;
 
     let statements = it.parse_vec(&parse_statements, "code block", start)?;
-    let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
 
-    it.eat(&Token::End, "code block")?;
+    let end = it.eat(&Token::End, "code block")?;
     Ok(Box::from(AST::new(
         start.union(end),
         Node::Block { statements },
@@ -73,9 +72,8 @@ pub fn parse_set(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Where, "code set")?;
 
     let statements = it.parse_vec(&parse_statements, "code set", start)?;
-    let end = statements.last().cloned().map_or(start, |stmt| stmt.pos);
 
-    it.eat(&Token::End, "code set")?;
+    let end = it.eat(&Token::End, "code set")?;
     Ok(Box::from(AST::new(
         start.union(end),
         Node::Block { statements },
