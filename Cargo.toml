@@ -4,7 +4,7 @@ version = "0.3.6"
 authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which converts Mamba files to Python 3 files"
 edition = "2021"
-license-file = "LICENSE"
+license = "MIT"
 rust-version = "1.96.0"
 
 readme = "README.md"
